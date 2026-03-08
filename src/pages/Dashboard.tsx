@@ -33,10 +33,10 @@ const Dashboard = () => {
   const roi = computeROI(data);
 
   const kpis = [
-    { label: "Mails reçus", value: data.mailsRecus, icon: Mail, trend: "+12%" },
-    { label: "Mails ouverts", value: data.mailsOuverts, icon: MailOpen, trend: "+8%" },
-    { label: "Brouillons créés", value: data.brouillonsCrees, icon: FileText, trend: "+15%" },
-    { label: "Brouillons validés", value: data.brouillonsValides, icon: CheckCircle2, trend: "+10%" },
+    { label: "Mails reçus", value: data.mailsRecus, icon: Mail, trend: "+12%", color: "bg-blue-50 text-blue-600 border-blue-100" },
+    { label: "Mails ouverts", value: data.mailsOuverts, icon: MailOpen, trend: "+8%", color: "bg-violet-50 text-violet-600 border-violet-100" },
+    { label: "Brouillons créés", value: data.brouillonsCrees, icon: FileText, trend: "+15%", color: "bg-amber-50 text-amber-600 border-amber-100" },
+    { label: "Brouillons validés", value: data.brouillonsValides, icon: CheckCircle2, trend: "+10%", color: "bg-emerald-50 text-emerald-600 border-emerald-100" },
   ];
 
   const handleCopy = (brouillon: string) => {
