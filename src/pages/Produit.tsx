@@ -52,7 +52,7 @@ const Produit = () => {
           transition={{ duration: 0.6 }}
         >
           <p className="text-xs font-sans font-medium uppercase tracking-widest text-muted-foreground mb-4">
-            Produit
+            Solution
           </p>
           <h1 className="text-3xl sm:text-5xl font-serif font-bold text-foreground leading-tight mb-5">
             Votre premier employé

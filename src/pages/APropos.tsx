@@ -10,7 +10,7 @@ const APropos = () => {
           <h2 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground">Donna</h2>
         </Link>
         <div className="flex items-center gap-6 text-sm font-sans text-muted-foreground">
-          <Link to="/produit" className="hidden sm:inline hover:text-foreground transition-colors">Produit</Link>
+          <Link to="/produit" className="hidden sm:inline hover:text-foreground transition-colors">Solution</Link>
           <Link to="/login" className="hover:text-foreground transition-colors">Se connecter</Link>
         </div>
       </nav>
