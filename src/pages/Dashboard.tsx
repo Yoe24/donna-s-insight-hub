@@ -125,8 +125,8 @@ const Dashboard = () => {
                 <AreaChart data={miniChartData[period]}>
                   <defs>
                     <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(152, 45%, 45%)" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="hsl(152, 45%, 45%)" stopOpacity={0} />
+                      <stop offset="0%" stopColor="hsl(0, 0%, 8%)" stopOpacity={0.15} />
+                      <stop offset="100%" stopColor="hsl(0, 0%, 8%)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'hsl(0, 0%, 45%)' }} />
@@ -134,7 +134,7 @@ const Dashboard = () => {
                     contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid hsl(0,0%,90%)' }}
                     labelStyle={{ fontWeight: 600 }}
                   />
-                  <Area type="monotone" dataKey="value" stroke="hsl(152, 45%, 45%)" strokeWidth={2} fill="url(#chartGrad)" />
+                  <Area type="monotone" dataKey="value" stroke="hsl(0, 0%, 8%)" strokeWidth={2} fill="url(#chartGrad)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
