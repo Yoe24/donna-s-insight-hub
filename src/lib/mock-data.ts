@@ -130,6 +130,7 @@ export const activityFeed: ActivityItem[] = [
     statut: "brouillon_genere",
     brouillon: "Madame Bernard,\n\nJe serais ravie de vous accompagner dans votre procédure de divorce par consentement mutuel. Pour notre premier rendez-vous, merci de préparer : livret de famille, justificatifs de revenus, et état du patrimoine.\n\nCordialement,",
     dossier: "Bernard - Droit de la famille",
+    pipelineStep: "extraction",
   },
 ];
 
