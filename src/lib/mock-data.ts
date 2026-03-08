@@ -44,6 +44,8 @@ export const computeROI = (data: typeof kpiData) => {
   return { heures, minutes, argentGagne };
 };
 
+export type PipelineStep = "reception" | "extraction" | "classification" | "lecture_pj" | "brouillon" | "controle_juridique" | "log_activite" | "dashboard";
+
 export interface ActivityItem {
   id: string;
   expediteur: string;
@@ -54,6 +56,7 @@ export interface ActivityItem {
   statut: "brouillon_genere" | "en_attente" | "valide";
   brouillon: string;
   dossier: string;
+  pipelineStep: PipelineStep;
 }
 
 export const activityFeed: ActivityItem[] = [
