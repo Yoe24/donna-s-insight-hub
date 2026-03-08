@@ -96,35 +96,35 @@ const Dashboard = () => {
         </div>
 
         {/* ROI */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="border-border bg-card">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
-                <Clock className="h-5 w-5 text-accent" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Card className="border-blue-100 bg-gradient-to-br from-blue-50/80 to-background">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-blue-100 flex items-center justify-center">
+                <Clock className="h-4 w-4 text-blue-600" />
               </div>
               <div>
-                <p className="text-xs font-sans text-muted-foreground">
+                <p className="text-[11px] font-sans text-muted-foreground">
                   Temps gagné — {periodLabels[period].toLowerCase()}
                 </p>
-                <p className="text-2xl font-serif font-bold text-foreground">
+                <p className="text-xl font-serif font-bold text-foreground">
                   {roi.heures}h {roi.minutes}min
                 </p>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-border bg-card">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
-                <DollarSign className="h-5 w-5 text-accent" />
+          <Card className="border-emerald-100 bg-gradient-to-br from-emerald-50/80 to-background">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-emerald-600" />
               </div>
               <div>
-                <p className="text-xs font-sans text-muted-foreground">
+                <p className="text-[11px] font-sans text-muted-foreground">
                   Économisé — {periodLabels[period].toLowerCase()}
                 </p>
-                <p className="text-2xl font-serif font-bold text-foreground">
+                <p className="text-xl font-serif font-bold text-foreground">
                   {roi.argentGagne.toLocaleString("fr-FR")}€
                 </p>
-                <p className="text-xs text-muted-foreground font-sans">
+                <p className="text-[10px] text-muted-foreground font-sans">
                   Base : {data.tauxHoraire}€/h
                 </p>
               </div>
@@ -133,8 +133,8 @@ const Dashboard = () => {
         </div>
 
         {/* Activity Feed — Mailbox style */}
-        <div>
-          <h2 className="text-lg font-serif font-semibold text-foreground mb-3">Boîte de réception</h2>
+        <div className="mt-8 pt-6 border-t border-border">
+          <h2 className="text-base font-serif font-semibold text-foreground mb-3">📬 Votre boîte de réception</h2>
           <Card className="border-border bg-card overflow-hidden divide-y divide-border">
             {activityFeed.map((item, i) => (
               <motion.div
