@@ -9,7 +9,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <div className="flex-1 flex flex-col">
           <header className="h-14 flex items-center border-b border-border px-4">
             <SidebarTrigger className="text-muted-foreground" />
-            <span className="ml-4 text-sm font-sans text-muted-foreground">Donna — Assistant IA</span>
+            <span className="ml-4 text-sm font-serif font-semibold text-foreground">Donna</span>
           </header>
           <main className="flex-1 p-6 md:p-8 overflow-auto bg-muted/30">
             {children}

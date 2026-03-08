@@ -1,18 +1,19 @@
+import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { kpiData, computeROI, activityFeed, type ActivityItem } from "@/lib/mock-data";
-import { Mail, MailOpen, FileText, CheckCircle2, Clock, DollarSign, Copy, TrendingUp } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { kpiByPeriod, computeROI, activityFeed, type ActivityItem, type Period } from "@/lib/mock-data";
+import { Mail, MailOpen, FileText, CheckCircle2, Clock, DollarSign, Copy, TrendingUp, Eye, Paperclip, User } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
-const kpis = [
-  { label: "Mails reçus", value: kpiData.mailsRecus, icon: Mail, trend: "+12%" },
-  { label: "Mails ouverts", value: kpiData.mailsOuverts, icon: MailOpen, trend: "+8%" },
-  { label: "Brouillons créés", value: kpiData.brouillonsCrees, icon: FileText, trend: "+15%" },
-  { label: "Brouillons validés", value: kpiData.brouillonsValides, icon: CheckCircle2, trend: "+10%" },
-];
+const periodLabels: Record<Period, string> = {
+  jour: "Jour",
+  semaine: "Semaine",
+  mois: "Mois",
+};
 
 const statutLabels: Record<ActivityItem["statut"], string> = {
   brouillon_genere: "Brouillon prêt",
@@ -27,7 +28,16 @@ const statutColors: Record<ActivityItem["statut"], string> = {
 };
 
 const Dashboard = () => {
-  const roi = computeROI(kpiData);
+  const [period, setPeriod] = useState<Period>("jour");
+  const data = kpiByPeriod[period];
+  const roi = computeROI(data);
+
+  const kpis = [
+    { label: "Mails reçus", value: data.mailsRecus, icon: Mail, trend: "+12%" },
+    { label: "Mails ouverts", value: data.mailsOuverts, icon: MailOpen, trend: "+8%" },
+    { label: "Brouillons créés", value: data.brouillonsCrees, icon: FileText, trend: "+15%" },
+    { label: "Brouillons validés", value: data.brouillonsValides, icon: CheckCircle2, trend: "+10%" },
+  ];
 
   const handleCopy = (brouillon: string) => {
     navigator.clipboard.writeText(brouillon);
@@ -36,7 +46,27 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Period Toggle */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-serif font-bold text-foreground">Tableau de bord</h1>
+          <div className="flex items-center bg-card border border-border rounded-lg p-0.5">
+            {(["jour", "semaine", "mois"] as Period[]).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-4 py-1.5 text-xs font-sans font-medium rounded-md transition-all ${
+                  period === p
+                    ? "bg-foreground text-background shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {periodLabels[p]}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {kpis.map((kpi, i) => (
@@ -44,7 +74,7 @@ const Dashboard = () => {
               key={kpi.label}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
+              transition={{ delay: i * 0.08 }}
             >
               <Card className="border-border bg-card">
                 <CardContent className="p-5">
@@ -71,7 +101,9 @@ const Dashboard = () => {
                 <Clock className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <p className="text-xs font-sans text-muted-foreground">Temps gagné aujourd'hui</p>
+                <p className="text-xs font-sans text-muted-foreground">
+                  Temps gagné — {periodLabels[period].toLowerCase()}
+                </p>
                 <p className="text-2xl font-serif font-bold text-foreground">
                   {roi.heures}h {roi.minutes}min
                 </p>
@@ -84,63 +116,109 @@ const Dashboard = () => {
                 <DollarSign className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <p className="text-xs font-sans text-muted-foreground">Économisé aujourd'hui</p>
+                <p className="text-xs font-sans text-muted-foreground">
+                  Économisé — {periodLabels[period].toLowerCase()}
+                </p>
                 <p className="text-2xl font-serif font-bold text-foreground">
-                  {roi.argentGagne}€
+                  {roi.argentGagne.toLocaleString("fr-FR")}€
                 </p>
                 <p className="text-xs text-muted-foreground font-sans">
-                  Base : {kpiData.tauxHoraire}€/h
+                  Base : {data.tauxHoraire}€/h
                 </p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Activity Feed */}
+        {/* Activity Feed — Mailbox style */}
         <div>
-          <h2 className="text-xl font-serif font-semibold text-foreground mb-4">Flux d'activité</h2>
-          <div className="space-y-3">
+          <h2 className="text-lg font-serif font-semibold text-foreground mb-3">Boîte de réception</h2>
+          <Card className="border-border bg-card overflow-hidden divide-y divide-border">
             {activityFeed.map((item, i) => (
               <motion.div
                 key={item.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + i * 0.05 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 + i * 0.04 }}
+                className="flex items-start gap-4 px-5 py-4 hover:bg-muted/40 transition-colors group"
               >
-                <Card className="border-border bg-card hover:shadow-md transition-shadow">
-                  <CardContent className="p-5">
-                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <span className="font-sans font-medium text-sm text-foreground">{item.expediteur}</span>
-                          <span className="text-xs text-muted-foreground font-sans">{item.heureReception}</span>
-                          <Badge variant="outline" className={`text-xs font-sans ${statutColors[item.statut]}`}>
-                            {statutLabels[item.statut]}
-                          </Badge>
-                        </div>
-                        <p className="text-sm font-sans font-medium text-foreground/80 mb-1">{item.objet}</p>
-                        <p className="text-sm font-sans text-muted-foreground leading-relaxed">{item.resume}</p>
-                        <p className="text-xs font-sans text-muted-foreground mt-2">
-                          📁 {item.dossier}
+                {/* Avatar */}
+                <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-sans font-semibold text-sm text-foreground truncate">
+                      {item.expediteur}
+                    </span>
+                    <Badge variant="outline" className={`text-[10px] font-sans px-1.5 py-0 ${statutColors[item.statut]}`}>
+                      {statutLabels[item.statut]}
+                    </Badge>
+                    <span className="text-[11px] text-muted-foreground font-sans ml-auto shrink-0">
+                      {item.heureReception}
+                    </span>
+                  </div>
+                  <p className="text-sm font-sans font-medium text-foreground/80 truncate">{item.objet}</p>
+                  <p className="text-xs font-sans text-muted-foreground line-clamp-1 mt-0.5">{item.resume}</p>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className="text-[11px] font-sans text-muted-foreground">📁 {item.dossier}</span>
+                    {item.brouillon && (
+                      <span className="text-[11px] font-sans text-muted-foreground flex items-center gap-1">
+                        <Paperclip className="h-3 w-3" /> Brouillon disponible
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Draft popover */}
+                {item.brouillon && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-sans text-accent hover:text-accent hover:bg-accent/10 mt-1"
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1" />
+                        Voir le brouillon
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-96 p-0">
+                      <div className="p-4 border-b border-border">
+                        <p className="text-xs font-sans font-semibold text-foreground mb-1">Brouillon généré par Donna</p>
+                        <p className="text-[11px] font-sans text-muted-foreground">Re : {item.objet}</p>
+                      </div>
+                      <div className="p-4 max-h-60 overflow-auto">
+                        <p className="text-sm font-sans text-foreground whitespace-pre-line leading-relaxed">
+                          {item.brouillon}
                         </p>
                       </div>
-                      {item.brouillon && (
+                      <div className="p-3 border-t border-border bg-muted/30 flex items-center gap-2">
                         <Button
-                          variant="outline"
                           size="sm"
+                          variant="outline"
+                          className="text-xs font-sans flex-1"
                           onClick={() => handleCopy(item.brouillon)}
-                          className="shrink-0 font-sans text-xs border-accent/30 text-accent hover:bg-accent/10 hover:text-accent"
                         >
-                          <Copy className="h-3.5 w-3.5 mr-1.5" />
-                          Copier le brouillon
+                          <Copy className="h-3 w-3 mr-1" />
+                          Copier
                         </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                        <Button
+                          size="sm"
+                          className="text-xs font-sans flex-1 bg-accent text-accent-foreground hover:bg-accent/90"
+                        >
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Vérifier & valider
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
               </motion.div>
             ))}
-          </div>
+          </Card>
         </div>
       </div>
     </DashboardLayout>
