@@ -106,6 +106,7 @@ export const activityFeed: ActivityItem[] = [
     statut: "brouillon_genere",
     brouillon: "Cher confrère,\n\nJe vous remercie pour cette proposition de collaboration sur le dossier Roux. Le sujet m'intéresse particulièrement. Je suis disponible pour un échange la semaine prochaine afin de discuter des modalités.\n\nConfraternellement,",
     dossier: "Roux - Immobilier",
+    pipelineStep: "dashboard",
   },
   {
     id: "5",
