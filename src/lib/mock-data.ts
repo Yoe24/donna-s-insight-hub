@@ -1,11 +1,41 @@
-export const kpiData = {
-  mailsRecus: 47,
-  mailsOuverts: 38,
-  brouillonsCrees: 32,
-  brouillonsValides: 25,
-  tempsGagneMinutes: 186,
-  tauxHoraire: 350,
+export type Period = "jour" | "semaine" | "mois";
+
+export const kpiByPeriod: Record<Period, {
+  mailsRecus: number;
+  mailsOuverts: number;
+  brouillonsCrees: number;
+  brouillonsValides: number;
+  tempsGagneMinutes: number;
+  tauxHoraire: number;
+}> = {
+  jour: {
+    mailsRecus: 47,
+    mailsOuverts: 38,
+    brouillonsCrees: 32,
+    brouillonsValides: 25,
+    tempsGagneMinutes: 186,
+    tauxHoraire: 350,
+  },
+  semaine: {
+    mailsRecus: 214,
+    mailsOuverts: 189,
+    brouillonsCrees: 156,
+    brouillonsValides: 132,
+    tempsGagneMinutes: 920,
+    tauxHoraire: 350,
+  },
+  mois: {
+    mailsRecus: 843,
+    mailsOuverts: 756,
+    brouillonsCrees: 612,
+    brouillonsValides: 498,
+    tempsGagneMinutes: 3720,
+    tauxHoraire: 350,
+  },
 };
+
+// Keep backward compat
+export const kpiData = kpiByPeriod.jour;
 
 export const computeROI = (data: typeof kpiData) => {
   const heures = Math.floor(data.tempsGagneMinutes / 60);
