@@ -7,8 +7,11 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
-      <nav className="flex items-center justify-between px-8 py-6 max-w-7xl mx-auto">
-        <h2 className="text-2xl font-serif font-bold tracking-tight text-foreground">Donna</h2>
+      <nav className="flex items-center justify-between px-4 sm:px-8 py-5 sm:py-6 max-w-7xl mx-auto">
+        <h2 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground">Donna</h2>
+        <Link to="/tutorial" className="text-sm text-muted-foreground hover:text-foreground transition-colors md:hidden">
+          Se connecter
+        </Link>
         <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
           <span className="hover:text-foreground cursor-pointer transition-colors">Plateforme</span>
           <span className="hover:text-foreground cursor-pointer transition-colors">À propos</span>
