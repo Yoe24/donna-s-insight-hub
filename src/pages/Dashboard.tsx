@@ -270,6 +270,37 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
+
+      {/* Brouillon Dialog — fixe au centre */}
+      <Dialog open={!!viewingBrouillon} onOpenChange={(open) => !open && setViewingBrouillon(null)}>
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md p-0 gap-0">
+          <DialogTitle className="sr-only">Brouillon Donna</DialogTitle>
+          {viewingBrouillon && (
+            <>
+              <div className="p-4 border-b border-border">
+                <p className="text-xs font-sans font-semibold text-foreground">Brouillon Donna</p>
+                <p className="text-[10px] font-sans text-muted-foreground mt-0.5">Re : {viewingBrouillon.objet}</p>
+              </div>
+              <div className="p-4 max-h-60 overflow-auto">
+                <p className="text-sm font-sans text-foreground whitespace-pre-line leading-relaxed">
+                  {viewingBrouillon.brouillon}
+                </p>
+              </div>
+              <div className="p-3 border-t border-border bg-muted/30 flex items-center gap-2">
+                <Button size="sm" variant="outline" className="text-[11px] font-sans flex-1 h-7" onClick={() => handleCopy(viewingBrouillon.brouillon)}>
+                  <Copy className="h-3 w-3 mr-1" /> Copier
+                </Button>
+                <Button size="sm" className="text-[11px] font-sans flex-1 h-7 bg-foreground text-background hover:bg-foreground/90">
+                  <CheckCircle2 className="h-3 w-3 mr-1" /> Valider
+                </Button>
+                <Button size="sm" variant="ghost" className="text-[11px] font-sans h-7 px-3 text-muted-foreground" onClick={() => setViewingBrouillon(null)}>
+                  Fermer
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
