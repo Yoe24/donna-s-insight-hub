@@ -44,6 +44,8 @@ export const computeROI = (data: typeof kpiData) => {
   return { heures, minutes, argentGagne };
 };
 
+export type PipelineStep = "reception" | "extraction" | "classification" | "lecture_pj" | "brouillon" | "controle_juridique" | "log_activite" | "dashboard";
+
 export interface ActivityItem {
   id: string;
   expediteur: string;
@@ -54,6 +56,7 @@ export interface ActivityItem {
   statut: "brouillon_genere" | "en_attente" | "valide";
   brouillon: string;
   dossier: string;
+  pipelineStep: PipelineStep;
 }
 
 export const activityFeed: ActivityItem[] = [
@@ -67,6 +70,7 @@ export const activityFeed: ActivityItem[] = [
     statut: "brouillon_genere",
     brouillon: "Madame Dupont,\n\nJ'ai bien pris connaissance de votre situation concernant la facture contestée de 3 200€. Je vous propose d'engager une procédure de médiation amiable dans un premier temps. Je prépare le courrier de mise en demeure à adresser à l'entreprise.\n\nCordialement,",
     dossier: "Dupont - Litige commercial",
+    pipelineStep: "controle_juridique",
   },
   {
     id: "2",
@@ -78,6 +82,7 @@ export const activityFeed: ActivityItem[] = [
     statut: "brouillon_genere",
     brouillon: "Monsieur Martin,\n\nConcernant votre demande de rupture conventionnelle, voici les étapes à suivre : 1) Demande d'entretien préalable, 2) Négociation des termes, 3) Signature de la convention. Vos indemnités minimales s'élèvent à...\n\nCordialement,",
     dossier: "Martin - Droit du travail",
+    pipelineStep: "brouillon",
   },
   {
     id: "3",
@@ -89,6 +94,7 @@ export const activityFeed: ActivityItem[] = [
     statut: "en_attente",
     brouillon: "",
     dossier: "Lefebvre - Bail commercial",
+    pipelineStep: "lecture_pj",
   },
   {
     id: "4",
@@ -100,6 +106,7 @@ export const activityFeed: ActivityItem[] = [
     statut: "brouillon_genere",
     brouillon: "Cher confrère,\n\nJe vous remercie pour cette proposition de collaboration sur le dossier Roux. Le sujet m'intéresse particulièrement. Je suis disponible pour un échange la semaine prochaine afin de discuter des modalités.\n\nConfraternellement,",
     dossier: "Roux - Immobilier",
+    pipelineStep: "dashboard",
   },
   {
     id: "5",
@@ -111,6 +118,7 @@ export const activityFeed: ActivityItem[] = [
     statut: "valide",
     brouillon: "Madame Dubois,\n\nJe vous informe que l'audience est fixée au 15 avril à 14h00. Merci de me transmettre les dernières pièces justificatives avant le 8 avril afin que je puisse préparer le dossier.\n\nCordialement,",
     dossier: "Dubois - Litige immobilier",
+    pipelineStep: "dashboard",
   },
   {
     id: "6",
@@ -122,6 +130,7 @@ export const activityFeed: ActivityItem[] = [
     statut: "brouillon_genere",
     brouillon: "Madame Bernard,\n\nJe serais ravie de vous accompagner dans votre procédure de divorce par consentement mutuel. Pour notre premier rendez-vous, merci de préparer : livret de famille, justificatifs de revenus, et état du patrimoine.\n\nCordialement,",
     dossier: "Bernard - Droit de la famille",
+    pipelineStep: "extraction",
   },
 ];
 

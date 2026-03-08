@@ -36,6 +36,11 @@
 
     --radius: 0.5rem;
 
+    --roi-time: 200 45% 94%;
+    --roi-time-accent: 200 50% 42%;
+    --roi-money: 145 40% 94%;
+    --roi-money-accent: 145 45% 38%;
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 0 0% 20%;
     --sidebar-primary: 0 0% 8%;
