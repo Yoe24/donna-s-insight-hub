@@ -70,6 +70,7 @@ export const activityFeed: ActivityItem[] = [
     statut: "brouillon_genere",
     brouillon: "Madame Dupont,\n\nJ'ai bien pris connaissance de votre situation concernant la facture contestée de 3 200€. Je vous propose d'engager une procédure de médiation amiable dans un premier temps. Je prépare le courrier de mise en demeure à adresser à l'entreprise.\n\nCordialement,",
     dossier: "Dupont - Litige commercial",
+    pipelineStep: "controle_juridique",
   },
   {
     id: "2",
