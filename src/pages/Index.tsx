@@ -23,9 +23,6 @@ const Index = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <p className="text-sm font-sans uppercase tracking-[0.3em] text-muted-foreground mb-8">
-            Assistant IA pour avocats
-          </p>
           <h1 className="text-5xl md:text-7xl font-serif font-bold leading-tight text-foreground mb-6">
             Votre temps vaut plus que le tri de vos emails
           </h1>
