@@ -82,6 +82,7 @@ export const activityFeed: ActivityItem[] = [
     statut: "brouillon_genere",
     brouillon: "Monsieur Martin,\n\nConcernant votre demande de rupture conventionnelle, voici les étapes à suivre : 1) Demande d'entretien préalable, 2) Négociation des termes, 3) Signature de la convention. Vos indemnités minimales s'élèvent à...\n\nCordialement,",
     dossier: "Martin - Droit du travail",
+    pipelineStep: "brouillon",
   },
   {
     id: "3",
