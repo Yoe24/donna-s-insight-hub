@@ -7,8 +7,11 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
-      <nav className="flex items-center justify-between px-8 py-6 max-w-7xl mx-auto">
-        <h2 className="text-2xl font-serif font-bold tracking-tight text-foreground">Donna</h2>
+      <nav className="flex items-center justify-between px-4 sm:px-8 py-5 sm:py-6 max-w-7xl mx-auto">
+        <h2 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground">Donna</h2>
+        <Link to="/tutorial" className="text-sm text-muted-foreground hover:text-foreground transition-colors md:hidden">
+          Se connecter
+        </Link>
         <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
           <span className="hover:text-foreground cursor-pointer transition-colors">Plateforme</span>
           <span className="hover:text-foreground cursor-pointer transition-colors">À propos</span>
@@ -17,16 +20,16 @@ const Index = () => {
       </nav>
 
       {/* Hero */}
-      <main className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center max-w-4xl mx-auto">
+      <main className="flex flex-col items-center justify-center min-h-[80vh] px-4 sm:px-6 text-center max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <h1 className="text-5xl md:text-7xl font-serif font-bold leading-tight text-foreground mb-6">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-serif font-bold leading-tight text-foreground mb-4 sm:mb-6">
             Votre temps vaut plus que le tri de vos emails
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 font-sans leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-12 font-sans leading-relaxed">
             Donna lit, résume et rédige vos brouillons. Vous gardez le contrôle, elle fait le reste.
           </p>
         </motion.div>

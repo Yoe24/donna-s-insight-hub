@@ -11,7 +11,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <SidebarTrigger className="text-muted-foreground" />
             <span className="ml-4 text-sm font-serif font-semibold text-foreground">Donna</span>
           </header>
-          <main className="flex-1 p-6 md:p-8 overflow-auto bg-muted/30">
+          <main className="flex-1 p-3 sm:p-6 md:p-8 overflow-auto bg-muted/30">
             {children}
           </main>
         </div>
