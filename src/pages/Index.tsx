@@ -14,7 +14,7 @@ const Index = () => {
         </Link>
         <div className="hidden md:flex items-center gap-8 text-sm font-sans text-muted-foreground">
           <Link to="/produit" className="hover:text-foreground transition-colors">
-            Produit
+            Solution
           </Link>
           <Link to="/a-propos" className="hover:text-foreground transition-colors">
             À propos

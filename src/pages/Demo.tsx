@@ -28,7 +28,7 @@ const Demo = () => {
           <h2 className="text-xl sm:text-2xl font-serif font-bold tracking-tight">Donna</h2>
         </Link>
         <div className="flex items-center gap-6 text-sm font-sans text-background/60">
-          <Link to="/produit" className="hidden sm:inline hover:text-background transition-colors">Produit</Link>
+          <Link to="/produit" className="hidden sm:inline hover:text-background transition-colors">Solution</Link>
           <Link to="/login" className="hover:text-background transition-colors">Se connecter</Link>
         </div>
       </nav>
