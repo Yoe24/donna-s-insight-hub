@@ -8,11 +8,28 @@ import { kpiByPeriod, computeROI, activityFeed, type ActivityItem, type Period }
 import { Mail, MailOpen, FileText, CheckCircle2, Clock, DollarSign, Copy, TrendingUp, Eye, Paperclip, User } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 const periodLabels: Record<Period, string> = {
   jour: "Jour",
   semaine: "Semaine",
   mois: "Mois",
+};
+
+const miniChartData: Record<Period, { name: string; value: number }[]> = {
+  jour: [
+    { name: "8h", value: 3 }, { name: "9h", value: 8 }, { name: "10h", value: 12 },
+    { name: "11h", value: 7 }, { name: "12h", value: 4 }, { name: "13h", value: 2 },
+    { name: "14h", value: 6 }, { name: "15h", value: 5 },
+  ],
+  semaine: [
+    { name: "Lun", value: 32 }, { name: "Mar", value: 45 }, { name: "Mer", value: 38 },
+    { name: "Jeu", value: 52 }, { name: "Ven", value: 47 },
+  ],
+  mois: [
+    { name: "S1", value: 180 }, { name: "S2", value: 214 }, { name: "S3", value: 195 },
+    { name: "S4", value: 254 },
+  ],
 };
 
 const statutLabels: Record<ActivityItem["statut"], string> = {
@@ -47,9 +64,8 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Period Toggle */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <h1 className="text-xl sm:text-2xl font-serif font-bold text-foreground">Hey, voici votre journée 👋</h1>
+        {/* Period Toggle — simple, top right */}
+        <div className="flex items-center justify-end">
           <div className="flex items-center bg-card border border-border rounded-lg p-0.5">
             {(["jour", "semaine", "mois"] as Period[]).map((p) => (
               <button
@@ -95,7 +111,37 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* ROI */}
+        {/* Mini chart */}
+        <Card className="border-border">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-sans font-medium text-muted-foreground">
+                Mails traités — {periodLabels[period].toLowerCase()}
+              </p>
+              <TrendingUp className="h-3.5 w-3.5 text-accent" />
+            </div>
+            <div className="h-28">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={miniChartData[period]}>
+                  <defs>
+                    <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(152, 45%, 45%)" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="hsl(152, 45%, 45%)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'hsl(0, 0%, 45%)' }} />
+                  <Tooltip
+                    contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid hsl(0,0%,90%)' }}
+                    labelStyle={{ fontWeight: 600 }}
+                  />
+                  <Area type="monotone" dataKey="value" stroke="hsl(152, 45%, 45%)" strokeWidth={2} fill="url(#chartGrad)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Card className="border-blue-100 bg-gradient-to-br from-blue-50/80 to-background">
             <CardContent className="p-4 flex items-center gap-3">
