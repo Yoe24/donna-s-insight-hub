@@ -8,11 +8,28 @@ import { kpiByPeriod, computeROI, activityFeed, type ActivityItem, type Period }
 import { Mail, MailOpen, FileText, CheckCircle2, Clock, DollarSign, Copy, TrendingUp, Eye, Paperclip, User } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 const periodLabels: Record<Period, string> = {
   jour: "Jour",
   semaine: "Semaine",
   mois: "Mois",
+};
+
+const miniChartData: Record<Period, { name: string; value: number }[]> = {
+  jour: [
+    { name: "8h", value: 3 }, { name: "9h", value: 8 }, { name: "10h", value: 12 },
+    { name: "11h", value: 7 }, { name: "12h", value: 4 }, { name: "13h", value: 2 },
+    { name: "14h", value: 6 }, { name: "15h", value: 5 },
+  ],
+  semaine: [
+    { name: "Lun", value: 32 }, { name: "Mar", value: 45 }, { name: "Mer", value: 38 },
+    { name: "Jeu", value: 52 }, { name: "Ven", value: 47 },
+  ],
+  mois: [
+    { name: "S1", value: 180 }, { name: "S2", value: 214 }, { name: "S3", value: 195 },
+    { name: "S4", value: 254 },
+  ],
 };
 
 const statutLabels: Record<ActivityItem["statut"], string> = {
@@ -47,9 +64,8 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Period Toggle */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <h1 className="text-xl sm:text-2xl font-serif font-bold text-foreground">Hey, voici votre journée 👋</h1>
+        {/* Period Toggle — simple, top right */}
+        <div className="flex items-center justify-end">
           <div className="flex items-center bg-card border border-border rounded-lg p-0.5">
             {(["jour", "semaine", "mois"] as Period[]).map((p) => (
               <button
