@@ -80,6 +80,7 @@ const PipelineIndicator = ({ currentStep }: { currentStep: PipelineStep }) => {
 
 const Dashboard = () => {
   const [period, setPeriod] = useState<Period>("jour");
+  const [viewingBrouillon, setViewingBrouillon] = useState<ActivityItem | null>(null);
   const data = kpiByPeriod[period];
   const roi = computeROI(data);
 
