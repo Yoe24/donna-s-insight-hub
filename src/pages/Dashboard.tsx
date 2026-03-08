@@ -3,7 +3,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { kpiByPeriod, computeROI, activityFeed, type ActivityItem, type PipelineStep, type Period } from "@/lib/mock-data";
 import { Mail, MailOpen, FileText, CheckCircle2, Clock, DollarSign, Copy, Eye, User, X, TrendingUp, Search, FolderOpen, Scale, Activity, LayoutDashboard, Paperclip } from "lucide-react";
 import { toast } from "sonner";
