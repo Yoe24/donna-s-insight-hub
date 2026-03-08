@@ -4,8 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { kpiByPeriod, computeROI, activityFeed, type ActivityItem, type Period } from "@/lib/mock-data";
-import { Mail, MailOpen, FileText, CheckCircle2, Clock, DollarSign, Copy, Eye, User, X, TrendingUp } from "lucide-react";
+import { kpiByPeriod, computeROI, activityFeed, type ActivityItem, type PipelineStep, type Period } from "@/lib/mock-data";
+import { Mail, MailOpen, FileText, CheckCircle2, Clock, DollarSign, Copy, Eye, User, X, TrendingUp, Search, FolderOpen, Scale, Activity, LayoutDashboard, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Line, LineChart, ResponsiveContainer, Tooltip } from "recharts";
@@ -31,6 +31,53 @@ const statutLabels: Record<ActivityItem["statut"], string> = {
   valide: "Validé",
 };
 
+const pipelineSteps: { key: PipelineStep; label: string; shortLabel: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { key: "reception", label: "Réception", shortLabel: "Reçu", icon: Mail },
+  { key: "extraction", label: "Extraction", shortLabel: "Extr.", icon: Search },
+  { key: "classification", label: "Classification", shortLabel: "Class.", icon: FolderOpen },
+  { key: "lecture_pj", label: "Lecture PJ", shortLabel: "PJ", icon: Paperclip },
+  { key: "brouillon", label: "Brouillon", shortLabel: "Brouil.", icon: FileText },
+  { key: "controle_juridique", label: "Contrôle juridique", shortLabel: "Ctrl.", icon: Scale },
+  { key: "log_activite", label: "Log activité", shortLabel: "Log", icon: Activity },
+  { key: "dashboard", label: "Dashboard", shortLabel: "Done", icon: LayoutDashboard },
+];
+
+const getStepIndex = (step: PipelineStep) => pipelineSteps.findIndex((s) => s.key === step);
+
+const PipelineIndicator = ({ currentStep }: { currentStep: PipelineStep }) => {
+  const currentIndex = getStepIndex(currentStep);
+  return (
+    <div className="flex items-center gap-0.5">
+      {pipelineSteps.map((step, i) => {
+        const isCompleted = i <= currentIndex;
+        const isCurrent = i === currentIndex;
+        return (
+          <div key={step.key} className="flex items-center gap-0.5 group relative">
+            <div
+              className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full transition-all ${
+                isCurrent
+                  ? "bg-foreground ring-2 ring-foreground/20"
+                  : isCompleted
+                  ? "bg-foreground/60"
+                  : "bg-border"
+              }`}
+            />
+            {/* Tooltip on hover */}
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block z-20">
+              <span className="text-[8px] font-sans bg-foreground text-background px-1.5 py-0.5 rounded whitespace-nowrap">
+                {step.label}
+              </span>
+            </div>
+            {i < pipelineSteps.length - 1 && (
+              <div className={`h-px w-1 sm:w-1.5 ${i < currentIndex ? "bg-foreground/40" : "bg-border"}`} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const [period, setPeriod] = useState<Period>("jour");
   const data = kpiByPeriod[period];
@@ -50,8 +97,8 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-4">
-        {/* Period Toggle — compact */}
+      <div className="max-w-6xl mx-auto space-y-3 sm:space-y-4">
+        {/* Period Toggle */}
         <div className="flex items-center justify-between">
           <p className="text-xs font-sans text-muted-foreground hidden sm:block">Tableau de bord</p>
           <div className="flex items-center bg-card border border-border rounded-lg p-0.5 ml-auto">
@@ -78,7 +125,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* ROI en évidence — hero cards */}
+        {/* ROI hero cards — subtle accent colors */}
         <AnimatePresence mode="wait">
           <motion.div
             key={period}
@@ -86,39 +133,39 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="grid grid-cols-2 gap-3"
+            className="grid grid-cols-2 gap-2 sm:gap-3"
           >
-            <Card className="border-border bg-card">
-              <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                  <Clock className="h-4 w-4 text-foreground" />
+            <Card className="border-border" style={{ background: `hsl(var(--roi-time))` }}>
+              <CardContent className="p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3">
+                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `hsl(var(--roi-time-accent) / 0.12)` }}>
+                  <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" style={{ color: `hsl(var(--roi-time-accent))` }} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-sans text-muted-foreground leading-tight">Temps gagné</p>
-                  <p className="text-lg sm:text-xl font-sans font-light tracking-tight text-foreground tabular-nums">
+                  <p className="text-[9px] sm:text-[10px] font-sans leading-tight" style={{ color: `hsl(var(--roi-time-accent))` }}>Temps gagné</p>
+                  <p className="text-base sm:text-xl font-sans font-light tracking-tight text-foreground tabular-nums">
                     {roi.heures}h {roi.minutes}min
                   </p>
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-border bg-card">
-              <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                  <DollarSign className="h-4 w-4 text-foreground" />
+            <Card className="border-border" style={{ background: `hsl(var(--roi-money))` }}>
+              <CardContent className="p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3">
+                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `hsl(var(--roi-money-accent) / 0.12)` }}>
+                  <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4" style={{ color: `hsl(var(--roi-money-accent))` }} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-sans text-muted-foreground leading-tight">Économisé</p>
-                  <p className="text-lg sm:text-xl font-sans font-light tracking-tight text-foreground tabular-nums">
+                  <p className="text-[9px] sm:text-[10px] font-sans leading-tight" style={{ color: `hsl(var(--roi-money-accent))` }}>Économisé</p>
+                  <p className="text-base sm:text-xl font-sans font-light tracking-tight text-foreground tabular-nums">
                     {roi.argentGagne.toLocaleString("fr-FR")}€
                   </p>
-                  <p className="text-[9px] text-muted-foreground font-sans">{data.tauxHoraire}€/h</p>
+                  <p className="text-[8px] sm:text-[9px] font-sans" style={{ color: `hsl(var(--roi-money-accent) / 0.7)` }}>{data.tauxHoraire}€/h</p>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         </AnimatePresence>
 
-        {/* KPIs compacts + mini courbe — une seule ligne */}
+        {/* KPIs compacts + mini courbe */}
         <AnimatePresence mode="wait">
           <motion.div
             key={`kpi-${period}`}
@@ -126,22 +173,22 @@ const Dashboard = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="flex items-stretch gap-2 overflow-x-auto"
+            className="flex items-stretch gap-1.5 sm:gap-2 overflow-x-auto pb-1 -mb-1"
           >
             {kpis.map((kpi) => (
               <div
                 key={kpi.label}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card min-w-fit"
+                className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg border border-border bg-card min-w-fit"
               >
                 <kpi.icon className="h-3 w-3 text-muted-foreground shrink-0" />
-                <span className="text-sm font-sans font-light tabular-nums text-foreground">{kpi.value}</span>
-                <span className="text-[10px] font-sans text-muted-foreground whitespace-nowrap">{kpi.label}</span>
+                <span className="text-xs sm:text-sm font-sans font-light tabular-nums text-foreground">{kpi.value}</span>
+                <span className="text-[9px] sm:text-[10px] font-sans text-muted-foreground whitespace-nowrap">{kpi.label}</span>
               </div>
             ))}
             {/* Mini courbe inline */}
-            <div className="flex items-center gap-2 px-3 py-1 rounded-lg border border-border bg-card min-w-[120px]">
+            <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-lg border border-border bg-card min-w-[100px] sm:min-w-[120px]">
               <TrendingUp className="h-3 w-3 text-muted-foreground shrink-0" />
-              <div className="h-8 w-20">
+              <div className="h-7 sm:h-8 w-16 sm:w-20">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={improvementData}>
                     <Line type="monotone" dataKey="crees" stroke="hsl(0, 0%, 75%)" strokeWidth={1} dot={false} />
@@ -156,8 +203,8 @@ const Dashboard = () => {
           </motion.div>
         </AnimatePresence>
 
-        {/* Activity Feed */}
-        <div className="pt-4 border-t border-border">
+        {/* Activity Feed with Pipeline */}
+        <div className="pt-3 sm:pt-4 border-t border-border">
           <h2 className="text-sm font-serif font-semibold text-foreground mb-2">Boîte de réception</h2>
           <Card className="border-border bg-card overflow-hidden divide-y divide-border">
             {activityFeed.map((item, i) => (
@@ -166,77 +213,86 @@ const Dashboard = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.15 + i * 0.03 }}
-                className="flex items-start gap-3 px-3 sm:px-4 py-3 hover:bg-muted/40 transition-colors"
+                className="px-2.5 sm:px-4 py-2.5 sm:py-3 hover:bg-muted/40 transition-colors"
               >
-                <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
-                  <User className="h-3.5 w-3.5 text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                    <span className="font-sans font-semibold text-xs text-foreground truncate">
-                      {item.expediteur}
-                    </span>
-                    <Badge variant="outline" className="text-[9px] font-sans px-1 py-0 border-border text-muted-foreground h-4">
-                      {statutLabels[item.statut]}
-                    </Badge>
-                    <span className="text-[10px] text-muted-foreground font-sans ml-auto shrink-0">
-                      {item.heureReception}
-                    </span>
+                <div className="flex items-start gap-2.5 sm:gap-3">
+                  <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                    <User className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
                   </div>
-                  <p className="text-xs font-sans font-medium text-foreground/80 truncate">{item.objet}</p>
-                  <p className="text-[11px] font-sans text-muted-foreground line-clamp-1 mt-0.5 hidden sm:block">{item.resume}</p>
-                </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                      <span className="font-sans font-semibold text-[11px] sm:text-xs text-foreground truncate">
+                        {item.expediteur}
+                      </span>
+                      <Badge variant="outline" className="text-[8px] sm:text-[9px] font-sans px-1 py-0 border-border text-muted-foreground h-3.5 sm:h-4">
+                        {statutLabels[item.statut]}
+                      </Badge>
+                      <span className="text-[9px] sm:text-[10px] text-muted-foreground font-sans ml-auto shrink-0">
+                        {item.heureReception}
+                      </span>
+                    </div>
+                    <p className="text-[11px] sm:text-xs font-sans font-medium text-foreground/80 truncate">{item.objet}</p>
+                    <p className="text-[10px] sm:text-[11px] font-sans text-muted-foreground line-clamp-1 mt-0.5 hidden sm:block">{item.resume}</p>
+                    {/* Pipeline indicator */}
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <PipelineIndicator currentStep={item.pipelineStep} />
+                      <span className="text-[8px] sm:text-[9px] font-sans text-muted-foreground">
+                        {pipelineSteps[getStepIndex(item.pipelineStep)]?.label}
+                      </span>
+                    </div>
+                  </div>
 
-                {item.brouillon && (
-                  <div className="flex items-center gap-1 shrink-0 self-center">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-[11px] font-sans h-7 px-2"
-                      onClick={() => handleCopy(item.brouillon)}
-                    >
-                      <Copy className="h-3 w-3 sm:mr-1" />
-                      <span className="hidden sm:inline">Copier</span>
-                    </Button>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent align="end" className="w-[calc(100vw-2rem)] sm:w-96 p-0">
-                        <div className="p-3 border-b border-border flex items-center justify-between">
-                          <div>
-                            <p className="text-xs font-sans font-semibold text-foreground">Brouillon Donna</p>
-                            <p className="text-[10px] font-sans text-muted-foreground">Re : {item.objet}</p>
+                  {item.brouillon && (
+                    <div className="flex items-center gap-1 shrink-0 self-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-[10px] sm:text-[11px] font-sans h-6 sm:h-7 px-1.5 sm:px-2"
+                        onClick={() => handleCopy(item.brouillon)}
+                      >
+                        <Copy className="h-3 w-3 sm:mr-1" />
+                        <span className="hidden sm:inline">Copier</span>
+                      </Button>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 sm:h-7 sm:w-7 p-0 text-muted-foreground hover:text-foreground"
+                          >
+                            <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent align="end" className="w-[calc(100vw-2rem)] sm:w-96 p-0">
+                          <div className="p-3 border-b border-border flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-sans font-semibold text-foreground">Brouillon Donna</p>
+                              <p className="text-[10px] font-sans text-muted-foreground">Re : {item.objet}</p>
+                            </div>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground">
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </PopoverTrigger>
                           </div>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground">
-                              <X className="h-3 w-3" />
+                          <div className="p-3 max-h-48 overflow-auto">
+                            <p className="text-sm font-sans text-foreground whitespace-pre-line leading-relaxed">
+                              {item.brouillon}
+                            </p>
+                          </div>
+                          <div className="p-2 border-t border-border bg-muted/30 flex items-center gap-2">
+                            <Button size="sm" variant="outline" className="text-[11px] font-sans flex-1 h-7" onClick={() => handleCopy(item.brouillon)}>
+                              <Copy className="h-3 w-3 mr-1" /> Copier
                             </Button>
-                          </PopoverTrigger>
-                        </div>
-                        <div className="p-3 max-h-48 overflow-auto">
-                          <p className="text-sm font-sans text-foreground whitespace-pre-line leading-relaxed">
-                            {item.brouillon}
-                          </p>
-                        </div>
-                        <div className="p-2 border-t border-border bg-muted/30 flex items-center gap-2">
-                          <Button size="sm" variant="outline" className="text-[11px] font-sans flex-1 h-7" onClick={() => handleCopy(item.brouillon)}>
-                            <Copy className="h-3 w-3 mr-1" /> Copier
-                          </Button>
-                          <Button size="sm" className="text-[11px] font-sans flex-1 h-7 bg-foreground text-background hover:bg-foreground/90">
-                            <CheckCircle2 className="h-3 w-3 mr-1" /> Valider
-                          </Button>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                )}
+                            <Button size="sm" className="text-[11px] font-sans flex-1 h-7 bg-foreground text-background hover:bg-foreground/90">
+                              <CheckCircle2 className="h-3 w-3 mr-1" /> Valider
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  )}
+                </div>
               </motion.div>
             ))}
           </Card>
