@@ -254,43 +254,14 @@ const Dashboard = () => {
                         <Copy className="h-3 w-3 sm:mr-1" />
                         <span className="hidden sm:inline">Copier</span>
                       </Button>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 sm:h-7 sm:w-7 p-0 text-muted-foreground hover:text-foreground"
-                          >
-                            <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent align="end" className="w-[calc(100vw-2rem)] sm:w-96 p-0">
-                          <div className="p-3 border-b border-border flex items-center justify-between">
-                            <div>
-                              <p className="text-xs font-sans font-semibold text-foreground">Brouillon Donna</p>
-                              <p className="text-[10px] font-sans text-muted-foreground">Re : {item.objet}</p>
-                            </div>
-                            <PopoverTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground">
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </PopoverTrigger>
-                          </div>
-                          <div className="p-3 max-h-48 overflow-auto">
-                            <p className="text-sm font-sans text-foreground whitespace-pre-line leading-relaxed">
-                              {item.brouillon}
-                            </p>
-                          </div>
-                          <div className="p-2 border-t border-border bg-muted/30 flex items-center gap-2">
-                            <Button size="sm" variant="outline" className="text-[11px] font-sans flex-1 h-7" onClick={() => handleCopy(item.brouillon)}>
-                              <Copy className="h-3 w-3 mr-1" /> Copier
-                            </Button>
-                            <Button size="sm" className="text-[11px] font-sans flex-1 h-7 bg-foreground text-background hover:bg-foreground/90">
-                              <CheckCircle2 className="h-3 w-3 mr-1" /> Valider
-                            </Button>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                      <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 sm:h-7 sm:w-7 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={() => setViewingBrouillon(item)}
+                        >
+                          <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        </Button>
                     </div>
                   )}
                 </div>
