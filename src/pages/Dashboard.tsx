@@ -68,7 +68,7 @@ const Dashboard = () => {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {kpis.map((kpi, i) => (
             <motion.div
               key={kpi.label}
@@ -76,17 +76,19 @@ const Dashboard = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
             >
-              <Card className="border-border bg-card">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <kpi.icon className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs font-sans text-accent flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" />
+              <Card className={`border ${kpi.color.split(' ')[2]} ${kpi.color.split(' ')[0]}`}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${kpi.color.split(' ')[0]} ${kpi.color.split(' ')[1]}`}>
+                      <kpi.icon className="h-3.5 w-3.5" />
+                    </div>
+                    <span className={`text-[11px] font-sans ${kpi.color.split(' ')[1]} flex items-center gap-0.5`}>
+                      <TrendingUp className="h-2.5 w-2.5" />
                       {kpi.trend}
                     </span>
                   </div>
-                  <p className="text-3xl font-serif font-bold text-foreground">{kpi.value}</p>
-                  <p className="text-xs font-sans text-muted-foreground mt-1">{kpi.label}</p>
+                  <p className="text-2xl font-serif font-bold text-foreground">{kpi.value}</p>
+                  <p className="text-[11px] font-sans text-muted-foreground mt-0.5">{kpi.label}</p>
                 </CardContent>
               </Card>
             </motion.div>
