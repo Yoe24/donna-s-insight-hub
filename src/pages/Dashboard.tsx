@@ -49,7 +49,7 @@ const Dashboard = () => {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Period Toggle */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <h1 className="text-xl sm:text-2xl font-serif font-bold text-foreground">Tableau de bord</h1>
+          <h1 className="text-xl sm:text-2xl font-serif font-bold text-foreground">Hey, voici votre journée 👋</h1>
           <div className="flex items-center bg-card border border-border rounded-lg p-0.5">
             {(["jour", "semaine", "mois"] as Period[]).map((p) => (
               <button
