@@ -111,7 +111,37 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* ROI */}
+        {/* Mini chart */}
+        <Card className="border-border">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-sans font-medium text-muted-foreground">
+                Mails traités — {periodLabels[period].toLowerCase()}
+              </p>
+              <TrendingUp className="h-3.5 w-3.5 text-accent" />
+            </div>
+            <div className="h-28">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={miniChartData[period]}>
+                  <defs>
+                    <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(152, 45%, 45%)" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="hsl(152, 45%, 45%)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'hsl(0, 0%, 45%)' }} />
+                  <Tooltip
+                    contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid hsl(0,0%,90%)' }}
+                    labelStyle={{ fontWeight: 600 }}
+                  />
+                  <Area type="monotone" dataKey="value" stroke="hsl(152, 45%, 45%)" strokeWidth={2} fill="url(#chartGrad)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Card className="border-blue-100 bg-gradient-to-br from-blue-50/80 to-background">
             <CardContent className="p-4 flex items-center gap-3">
