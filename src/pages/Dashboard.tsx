@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { kpiByPeriod, computeROI, activityFeed, type ActivityItem, type Period } from "@/lib/mock-data";
-import { Mail, MailOpen, FileText, CheckCircle2, Clock, DollarSign, Copy, TrendingUp, Eye, Paperclip, User } from "lucide-react";
+import { Mail, MailOpen, FileText, CheckCircle2, Clock, DollarSign, Copy, Eye, Paperclip, User } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
@@ -38,22 +38,16 @@ const statutLabels: Record<ActivityItem["statut"], string> = {
   valide: "Validé",
 };
 
-const statutColors: Record<ActivityItem["statut"], string> = {
-  brouillon_genere: "bg-accent/15 text-accent border-accent/30",
-  en_attente: "bg-muted text-muted-foreground border-border",
-  valide: "bg-primary/10 text-primary border-primary/20",
-};
-
 const Dashboard = () => {
   const [period, setPeriod] = useState<Period>("jour");
   const data = kpiByPeriod[period];
   const roi = computeROI(data);
 
   const kpis = [
-    { label: "Mails reçus", value: data.mailsRecus, icon: Mail, trend: "+12%", color: "bg-blue-50 text-blue-600 border-blue-100" },
-    { label: "Mails ouverts", value: data.mailsOuverts, icon: MailOpen, trend: "+8%", color: "bg-violet-50 text-violet-600 border-violet-100" },
-    { label: "Brouillons créés", value: data.brouillonsCrees, icon: FileText, trend: "+15%", color: "bg-amber-50 text-amber-600 border-amber-100" },
-    { label: "Brouillons validés", value: data.brouillonsValides, icon: CheckCircle2, trend: "+10%", color: "bg-emerald-50 text-emerald-600 border-emerald-100" },
+    { label: "Mails reçus", value: data.mailsRecus, icon: Mail },
+    { label: "Mails ouverts", value: data.mailsOuverts, icon: MailOpen },
+    { label: "Brouillons créés", value: data.brouillonsCrees, icon: FileText },
+    { label: "Brouillons validés", value: data.brouillonsValides, icon: CheckCircle2 },
   ];
 
   const handleCopy = (brouillon: string) => {
@@ -64,7 +58,7 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Period Toggle — simple, top right */}
+        {/* Period Toggle */}
         <div className="flex items-center justify-end">
           <div className="flex items-center bg-card border border-border rounded-lg p-0.5">
             {(["jour", "semaine", "mois"] as Period[]).map((p) => (
@@ -83,7 +77,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* KPIs */}
+        {/* KPIs — monochrome, no trends */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {kpis.map((kpi, i) => (
             <motion.div
@@ -92,16 +86,12 @@ const Dashboard = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
             >
-              <Card className={`border ${kpi.color.split(' ')[2]} ${kpi.color.split(' ')[0]}`}>
+              <Card className="border-border bg-card">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${kpi.color.split(' ')[0]} ${kpi.color.split(' ')[1]}`}>
-                      <kpi.icon className="h-3.5 w-3.5" />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center">
+                      <kpi.icon className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
-                    <span className={`text-[11px] font-sans ${kpi.color.split(' ')[1]} flex items-center gap-0.5`}>
-                      <TrendingUp className="h-2.5 w-2.5" />
-                      {kpi.trend}
-                    </span>
                   </div>
                   <p className="text-2xl font-serif font-bold text-foreground">{kpi.value}</p>
                   <p className="text-[11px] font-sans text-muted-foreground mt-0.5">{kpi.label}</p>
@@ -114,18 +104,15 @@ const Dashboard = () => {
         {/* Mini chart */}
         <Card className="border-border">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-sans font-medium text-muted-foreground">
-                Mails traités — {periodLabels[period].toLowerCase()}
-              </p>
-              <TrendingUp className="h-3.5 w-3.5 text-accent" />
-            </div>
+            <p className="text-xs font-sans font-medium text-muted-foreground mb-3">
+              Mails traités — {periodLabels[period].toLowerCase()}
+            </p>
             <div className="h-28">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={miniChartData[period]}>
                   <defs>
                     <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(0, 0%, 8%)" stopOpacity={0.15} />
+                      <stop offset="0%" stopColor="hsl(0, 0%, 8%)" stopOpacity={0.12} />
                       <stop offset="100%" stopColor="hsl(0, 0%, 8%)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
@@ -134,19 +121,19 @@ const Dashboard = () => {
                     contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid hsl(0,0%,90%)' }}
                     labelStyle={{ fontWeight: 600 }}
                   />
-                  <Area type="monotone" dataKey="value" stroke="hsl(0, 0%, 8%)" strokeWidth={2} fill="url(#chartGrad)" />
+                  <Area type="monotone" dataKey="value" stroke="hsl(0, 0%, 8%)" strokeWidth={1.5} fill="url(#chartGrad)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-
+        {/* ROI — monochrome */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Card className="border-blue-100 bg-gradient-to-br from-blue-50/80 to-background">
+          <Card className="border-border bg-card">
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Clock className="h-4 w-4 text-blue-600" />
+              <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
+                <Clock className="h-4 w-4 text-foreground" />
               </div>
               <div>
                 <p className="text-[11px] font-sans text-muted-foreground">
@@ -158,10 +145,10 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-emerald-100 bg-gradient-to-br from-emerald-50/80 to-background">
+          <Card className="border-border bg-card">
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <DollarSign className="h-4 w-4 text-emerald-600" />
+              <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-foreground" />
               </div>
               <div>
                 <p className="text-[11px] font-sans text-muted-foreground">
@@ -178,9 +165,9 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Activity Feed — Mailbox style */}
+        {/* Activity Feed */}
         <div className="mt-8 pt-6 border-t border-border">
-          <h2 className="text-base font-serif font-semibold text-foreground mb-3">📬 Votre boîte de réception</h2>
+          <h2 className="text-base font-serif font-semibold text-foreground mb-3">Votre boîte de réception</h2>
           <Card className="border-border bg-card overflow-hidden divide-y divide-border">
             {activityFeed.map((item, i) => (
               <motion.div
@@ -191,18 +178,15 @@ const Dashboard = () => {
                 className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 px-4 sm:px-5 py-4 hover:bg-muted/40 transition-colors group"
               >
                 <div className="flex items-start gap-3 w-full sm:w-auto">
-                  {/* Avatar */}
                   <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
                     <User className="h-4 w-4 text-muted-foreground" />
                   </div>
-
-                  {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                       <span className="font-sans font-semibold text-sm text-foreground truncate">
                         {item.expediteur}
                       </span>
-                      <Badge variant="outline" className={`text-[10px] font-sans px-1.5 py-0 ${statutColors[item.statut]}`}>
+                      <Badge variant="outline" className="text-[10px] font-sans px-1.5 py-0 border-border text-muted-foreground">
                         {statutLabels[item.statut]}
                       </Badge>
                       <span className="text-[11px] text-muted-foreground font-sans ml-auto shrink-0">
@@ -212,7 +196,7 @@ const Dashboard = () => {
                     <p className="text-sm font-sans font-medium text-foreground/80 truncate">{item.objet}</p>
                     <p className="text-xs font-sans text-muted-foreground line-clamp-1 mt-0.5">{item.resume}</p>
                     <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                      <span className="text-[11px] font-sans text-muted-foreground">📁 {item.dossier}</span>
+                      <span className="text-[11px] font-sans text-muted-foreground">{item.dossier}</span>
                       {item.brouillon && (
                         <span className="text-[11px] font-sans text-muted-foreground flex items-center gap-1">
                           <Paperclip className="h-3 w-3" /> Brouillon disponible
@@ -222,14 +206,13 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Draft popover */}
                 {item.brouillon && (
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-xs font-sans text-accent hover:text-accent hover:bg-accent/10 w-full sm:w-auto"
+                        className="shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-xs font-sans text-foreground hover:bg-muted w-full sm:w-auto"
                       >
                         <Eye className="h-3.5 w-3.5 mr-1" />
                         Voir le brouillon
@@ -257,10 +240,10 @@ const Dashboard = () => {
                         </Button>
                         <Button
                           size="sm"
-                          className="text-xs font-sans flex-1 bg-accent text-accent-foreground hover:bg-accent/90"
+                          className="text-xs font-sans flex-1 bg-foreground text-background hover:bg-foreground/90"
                         >
                           <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Vérifier & valider
+                          Valider
                         </Button>
                       </div>
                     </PopoverContent>
