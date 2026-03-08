@@ -118,6 +118,7 @@ export const activityFeed: ActivityItem[] = [
     statut: "valide",
     brouillon: "Madame Dubois,\n\nJe vous informe que l'audience est fixée au 15 avril à 14h00. Merci de me transmettre les dernières pièces justificatives avant le 8 avril afin que je puisse préparer le dossier.\n\nCordialement,",
     dossier: "Dubois - Litige immobilier",
+    pipelineStep: "dashboard",
   },
   {
     id: "6",
