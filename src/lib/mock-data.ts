@@ -94,6 +94,7 @@ export const activityFeed: ActivityItem[] = [
     statut: "en_attente",
     brouillon: "",
     dossier: "Lefebvre - Bail commercial",
+    pipelineStep: "lecture_pj",
   },
   {
     id: "4",
