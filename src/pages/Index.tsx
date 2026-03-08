@@ -20,16 +20,16 @@ const Index = () => {
       </nav>
 
       {/* Hero */}
-      <main className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center max-w-4xl mx-auto">
+      <main className="flex flex-col items-center justify-center min-h-[80vh] px-4 sm:px-6 text-center max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <h1 className="text-5xl md:text-7xl font-serif font-bold leading-tight text-foreground mb-6">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-serif font-bold leading-tight text-foreground mb-4 sm:mb-6">
             Votre temps vaut plus que le tri de vos emails
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 font-sans leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-12 font-sans leading-relaxed">
             Donna lit, résume et rédige vos brouillons. Vous gardez le contrôle, elle fait le reste.
           </p>
         </motion.div>

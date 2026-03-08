@@ -140,35 +140,37 @@ const Dashboard = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 + i * 0.04 }}
-                className="flex items-start gap-4 px-5 py-4 hover:bg-muted/40 transition-colors group"
+                className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 px-4 sm:px-5 py-4 hover:bg-muted/40 transition-colors group"
               >
-                {/* Avatar */}
-                <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="font-sans font-semibold text-sm text-foreground truncate">
-                      {item.expediteur}
-                    </span>
-                    <Badge variant="outline" className={`text-[10px] font-sans px-1.5 py-0 ${statutColors[item.statut]}`}>
-                      {statutLabels[item.statut]}
-                    </Badge>
-                    <span className="text-[11px] text-muted-foreground font-sans ml-auto shrink-0">
-                      {item.heureReception}
-                    </span>
+                <div className="flex items-start gap-3 w-full sm:w-auto">
+                  {/* Avatar */}
+                  <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                    <User className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <p className="text-sm font-sans font-medium text-foreground/80 truncate">{item.objet}</p>
-                  <p className="text-xs font-sans text-muted-foreground line-clamp-1 mt-0.5">{item.resume}</p>
-                  <div className="flex items-center gap-3 mt-1.5">
-                    <span className="text-[11px] font-sans text-muted-foreground">📁 {item.dossier}</span>
-                    {item.brouillon && (
-                      <span className="text-[11px] font-sans text-muted-foreground flex items-center gap-1">
-                        <Paperclip className="h-3 w-3" /> Brouillon disponible
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                      <span className="font-sans font-semibold text-sm text-foreground truncate">
+                        {item.expediteur}
                       </span>
-                    )}
+                      <Badge variant="outline" className={`text-[10px] font-sans px-1.5 py-0 ${statutColors[item.statut]}`}>
+                        {statutLabels[item.statut]}
+                      </Badge>
+                      <span className="text-[11px] text-muted-foreground font-sans ml-auto shrink-0">
+                        {item.heureReception}
+                      </span>
+                    </div>
+                    <p className="text-sm font-sans font-medium text-foreground/80 truncate">{item.objet}</p>
+                    <p className="text-xs font-sans text-muted-foreground line-clamp-1 mt-0.5">{item.resume}</p>
+                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                      <span className="text-[11px] font-sans text-muted-foreground">📁 {item.dossier}</span>
+                      {item.brouillon && (
+                        <span className="text-[11px] font-sans text-muted-foreground flex items-center gap-1">
+                          <Paperclip className="h-3 w-3" /> Brouillon disponible
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -179,13 +181,13 @@ const Dashboard = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-sans text-accent hover:text-accent hover:bg-accent/10 mt-1"
+                        className="shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-xs font-sans text-accent hover:text-accent hover:bg-accent/10 w-full sm:w-auto"
                       >
                         <Eye className="h-3.5 w-3.5 mr-1" />
                         Voir le brouillon
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent align="end" className="w-96 p-0">
+                    <PopoverContent align="end" className="w-[calc(100vw-2rem)] sm:w-96 p-0">
                       <div className="p-4 border-b border-border">
                         <p className="text-xs font-sans font-semibold text-foreground mb-1">Brouillon généré par Donna</p>
                         <p className="text-[11px] font-sans text-muted-foreground">Re : {item.objet}</p>
