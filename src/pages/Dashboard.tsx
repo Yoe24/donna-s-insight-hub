@@ -48,14 +48,14 @@ const Dashboard = () => {
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Period Toggle */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-serif font-bold text-foreground">Tableau de bord</h1>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <h1 className="text-xl sm:text-2xl font-serif font-bold text-foreground">Tableau de bord</h1>
           <div className="flex items-center bg-card border border-border rounded-lg p-0.5">
             {(["jour", "semaine", "mois"] as Period[]).map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`px-4 py-1.5 text-xs font-sans font-medium rounded-md transition-all ${
+                className={`px-3 sm:px-4 py-1.5 text-xs font-sans font-medium rounded-md transition-all ${
                   period === p
                     ? "bg-foreground text-background shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
