@@ -5,28 +5,35 @@ import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-
-const PRECONFIGURED_EMAIL = "avocat@donna-legale.ai";
-const PRECONFIGURED_PASSWORD = "0000";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { signIn } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!email.trim() || !password.trim()) {
       toast.error("Veuillez remplir tous les champs.");
       return;
     }
-    if (email !== PRECONFIGURED_EMAIL || password !== PRECONFIGURED_PASSWORD) {
-      toast.error("Identifiants incorrects.");
-      return;
+
+    setIsLoading(true);
+    
+    try {
+      await signIn(email, password);
+      toast.success("Connexion réussie.");
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast.error(error.message || "Identifiants incorrects.");
+    } finally {
+      setIsLoading(false);
     }
-    toast.success("Connexion réussie.");
-    navigate("/dashboard");
   };
 
   return (
@@ -51,7 +58,7 @@ const Login = () => {
               Connexion
             </h1>
             <p className="text-sm font-sans text-muted-foreground">
-              Accédez à votre tableau de bord.
+              Accédez à votre tableau de bord Donna.
             </p>
           </div>
 
@@ -63,11 +70,12 @@ const Login = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="avocat@donna-legale.ai"
+                placeholder="avocat@cabinet.fr"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="font-sans h-11"
                 autoComplete="email"
+                disabled={isLoading}
               />
             </div>
 
@@ -79,16 +87,18 @@ const Login = () => {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="font-sans pr-10 h-11"
                   autoComplete="current-password"
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  disabled={isLoading}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -97,19 +107,31 @@ const Login = () => {
 
             <button
               type="submit"
-              className="w-full bg-foreground text-background h-11 rounded-md text-sm font-sans font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 mt-2"
+              disabled={isLoading}
+              className="w-full bg-foreground text-background h-11 rounded-md text-sm font-sans font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
             >
-              Se connecter
-              <ArrowRight className="h-4 w-4" />
+              {isLoading ? (
+                "Connexion..."
+              ) : (
+                <>
+                  Se connecter
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </button>
           </form>
 
-          <p className="text-xs text-muted-foreground font-sans mt-8">
-            Pas encore de compte ?{" "}
-            <Link to="/demo" className="text-foreground font-medium hover:underline">
-              Demander une démo
-            </Link>
-          </p>
+          <div className="mt-8 space-y-2">
+            <p className="text-xs text-muted-foreground font-sans">
+              Pas encore de compte ?{" "}
+              <Link to="/demo" className="text-foreground font-medium hover:underline">
+                Demander une démo
+              </Link>
+            </p>
+            <p className="text-xs text-muted-foreground font-sans">
+              🔧 Mode développement - Auth Supabase activée
+            </p>
+          </div>
         </motion.div>
       </main>
     </div>
