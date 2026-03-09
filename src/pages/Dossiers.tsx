@@ -60,6 +60,7 @@ const Dossiers = () => {
                   </div>
                 </CardContent>
               </Card>
+              </Link>
             </motion.div>
           ))}
         </div>

@@ -66,6 +66,14 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/dossiers/:id" 
+              element={
+                <ProtectedRoute>
+                  <DossierDetail />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/produit" element={<Produit />} />
             <Route path="/a-propos" element={<APropos />} />
             <Route path="/demo" element={<Demo />} />
