@@ -115,7 +115,11 @@ function FeedbackButtons({ emailId, brouillon }: { emailId: string; brouillon: s
 
 const Dashboard = () => {
   const [viewingBrouillon, setViewingBrouillon] = useState<Email | null>(null);
+  const [period, setPeriod] = useState<Period>("jour");
   const { emails, loading } = useEmails();
+
+  const kpi = kpiByPeriod[period];
+  const roi = computeROI(kpi);
 
   // Stats calculées depuis les vraies données
   const stats = {
