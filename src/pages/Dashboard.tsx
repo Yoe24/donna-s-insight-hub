@@ -148,7 +148,59 @@ const Dashboard = () => {
           <p className="text-xs font-sans text-muted-foreground">
             {emails.length} email{emails.length > 1 ? "s" : ""}
           </p>
+         </div>
+
+        {/* Sélecteur de période */}
+        <div className="flex items-center gap-1 bg-muted rounded-lg p-1 w-fit">
+          {(["jour", "semaine", "mois"] as Period[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                period === p
+                  ? "bg-background text-foreground shadow-sm font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {p.charAt(0).toUpperCase() + p.slice(1)}
+            </button>
+          ))}
         </div>
+
+        {/* ROI Cards */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={period}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2 }}
+            className="grid grid-cols-2 gap-2"
+          >
+            <Card className="border-border bg-card">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Clock className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-lg font-light">{roi.heures}h {roi.minutes}min</p>
+                  <p className="text-[10px] text-muted-foreground">Temps gagné</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-border bg-card">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-lg font-light">{roi.argentGagne.toLocaleString()} €</p>
+                  <p className="text-[10px] text-muted-foreground">Économisés</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </AnimatePresence>
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-2">
