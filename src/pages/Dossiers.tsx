@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { dossiers } from "@/lib/mock-data";
 import { FolderOpen, Mail, Clock } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 const Dossiers = () => {
   return (
