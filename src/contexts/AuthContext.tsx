@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // MODE DEV BYPASS: Auto-login pour tests
     const devUser = {
-      id: 'test-user-123',
+      id: '00000000-0000-0000-0000-000000000001',
       email: 'test@donna-legale.ai',
       user_metadata: { name: 'Test User' }
     } as User;
