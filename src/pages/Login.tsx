@@ -7,9 +7,15 @@ import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
+// MODE DEV: Hardcode temporaire pour tests
+const DEV_CREDENTIALS = {
+  email: 'test@donna-legale.ai',
+  password: 'Test1234!'
+};
+
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(DEV_CREDENTIALS.email);
+  const [password, setPassword] = useState(DEV_CREDENTIALS.password);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
