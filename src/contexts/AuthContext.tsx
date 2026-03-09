@@ -28,21 +28,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(devUser);
     setLoading(false);
     console.log('🔓 DEV MODE: Auto-logged in as', devUser.email);
-    return;
-
-    // (Le vrai code Supabase est commenté temporairement)
-    /*
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-      }
-    );
-    return () => subscription.unsubscribe();
-    */
   }, []);
 
   const signIn = async (email: string, password: string) => {
