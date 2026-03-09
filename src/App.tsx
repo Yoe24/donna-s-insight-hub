@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Configuration from "./pages/Configuration";
 import Dossiers from "./pages/Dossiers";
+import DossierDetail from "./pages/DossierDetail";
 import Produit from "./pages/Produit";
 import APropos from "./pages/APropos";
 import Demo from "./pages/Demo";
@@ -62,6 +63,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Dossiers />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dossiers/:id" 
+              element={
+                <ProtectedRoute>
+                  <DossierDetail />
                 </ProtectedRoute>
               } 
             />

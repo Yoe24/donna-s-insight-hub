@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { dossiers } from "@/lib/mock-data";
 import { FolderOpen, Mail, Clock } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 const Dossiers = () => {
   return (
@@ -24,7 +25,8 @@ const Dossiers = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-              <Card className="border-border bg-card hover:shadow-md transition-shadow">
+              <Link to={`/dossiers/${dossier.id}`} className="block">
+              <Card className="border-border bg-card hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -58,6 +60,7 @@ const Dossiers = () => {
                   </div>
                 </CardContent>
               </Card>
+              </Link>
             </motion.div>
           ))}
         </div>
