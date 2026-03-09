@@ -17,30 +17,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // MODE DEV BYPASS: Auto-login pour tests
-    const devUser = {
-      id: '00000000-0000-0000-0000-000000000001',
-      email: 'test@donna-legale.ai',
-      user_metadata: { name: 'Test User' }
-    } as User;
-    
-    // Auto-connecte en DEV mode
-    setUser(devUser);
-    setLoading(false);
-    console.log('🔓 DEV MODE: Auto-logged in as', devUser.email);
+    // Vérifier session active au chargement
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Écouter changements auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    // MODE DEV TEMPORAIRE : hardcode pour test rapide
-    if (email === 'test@donna-legale.ai' && password === 'Test1234!') {
-      setUser({
-        id: 'test-user-123',
-        email: 'test@donna-legale.ai',
-        user_metadata: { name: 'Test User' }
-      } as User);
-      return;
-    }
-    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
