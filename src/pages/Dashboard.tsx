@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEmails, useUpdateEmailStatus } from "@/hooks/useEmails";
 import type { Email, PipelineStep } from "@/hooks/useEmails";
+import { kpiByPeriod, computeROI, type Period } from "@/lib/mock-data";
 
 const statutLabels: Record<Email["statut"], string> = {
   en_attente: "En attente",
