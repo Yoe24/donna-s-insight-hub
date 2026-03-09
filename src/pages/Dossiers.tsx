@@ -25,7 +25,8 @@ const Dossiers = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-              <Card className="border-border bg-card hover:shadow-md transition-shadow">
+              <Link to={`/dossiers/${dossier.id}`} className="block">
+              <Card className="border-border bg-card hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
