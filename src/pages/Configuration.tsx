@@ -484,7 +484,7 @@ const Configuration = () => {
           {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
           Sauvegarder et Entraîner Donna
         </Button>
-      </div>
+        </div>
       </DashboardLayout>
     </ErrorBoundary>
   );
