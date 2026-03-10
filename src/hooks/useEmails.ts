@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
 
 export type PipelineStep = 
   | "en_attente"
@@ -17,9 +18,16 @@ export interface Email {
   brouillon: string | null;
   pipeline_step: PipelineStep;
   contexte_choisi: string;
-  statut: "en_attente" | "approuvé" | "modifié" | "rejeté";
+  statut: "en_attente" | "traite" | "valide" | "erreur" | "archive";
   created_at: string;
   updated_at: string;
+}
+
+export interface EmailStats {
+  recus: number;
+  traites: number;
+  valides: number;
+  en_attente: number;
 }
 
 export function useEmails() {
@@ -30,24 +38,19 @@ export function useEmails() {
   useEffect(() => {
     if (!user) return;
 
-    // Chargement initial
     const fetchEmails = async () => {
-      const { data, error } = await supabase
-        .from('emails')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching emails:', error);
-      } else {
+      try {
+        const data = await api.get<Email[]>('/api/emails');
         setEmails(data || []);
+      } catch (error) {
+        console.error('Error fetching emails:', error);
       }
       setLoading(false);
     };
 
     fetchEmails();
 
-    // Abonnement Realtime
+    // Realtime Supabase pour mises à jour en temps réel
     const subscription = supabase
       .channel('emails_changes')
       .on(
@@ -80,28 +83,38 @@ export function useEmails() {
   return { emails, loading };
 }
 
-// Hook pour mettre à jour le statut (feedback)
+export function useEmailStats() {
+  const { user } = useAuth();
+  const [stats, setStats] = useState<EmailStats>({ recus: 0, traites: 0, valides: 0, en_attente: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchStats = async () => {
+      try {
+        const data = await api.get<EmailStats>('/api/emails/stats');
+        setStats(data);
+      } catch (error) {
+        console.error('Error fetching email stats:', error);
+      }
+      setLoading(false);
+    };
+
+    fetchStats();
+  }, [user]);
+
+  return { stats, loading };
+}
+
+// Endpoint: POST /api/emails/:id/feedback
+// Body: { type: "parfait" | "modifier" | "erreur" }
 export function useUpdateEmailStatus() {
   const updateStatus = async (
     emailId: string,
-    statut: "approuvé" | "modifié" | "rejeté",
-    brouillonModifie?: string
+    type: "parfait" | "modifier" | "erreur"
   ) => {
-    const updateData: any = { statut };
-    
-    if (brouillonModifie && statut === "modifié") {
-      updateData.brouillon = brouillonModifie;
-    }
-
-    const { error } = await supabase
-      .from('emails')
-      .update(updateData)
-      .eq('id', emailId);
-
-    if (error) {
-      console.error('Error updating email:', error);
-      throw error;
-    }
+    await api.post(`/api/emails/${emailId}/feedback`, { type });
   };
 
   return { updateStatus };

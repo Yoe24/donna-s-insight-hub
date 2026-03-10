@@ -1,5 +1,4 @@
-// Dashboard.tsx - Version avec Supabase Realtime
-// Remplace mock-data par useEmails hook
+// Dashboard.tsx — Endpoints: GET /api/emails, GET /api/emails/stats, POST /api/emails/:id/feedback
 
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -7,18 +6,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Mail, MailOpen, FileText, CheckCircle2, Clock, DollarSign, Copy, Eye, User, X, UserCheck, UserX } from "lucide-react";
+import { Mail, MailOpen, CheckCircle2, Clock, Copy, Eye, User, X, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEmails, useUpdateEmailStatus } from "@/hooks/useEmails";
+import { useEmails, useEmailStats, useUpdateEmailStatus } from "@/hooks/useEmails";
 import type { Email, PipelineStep } from "@/hooks/useEmails";
-import { kpiByPeriod, computeROI, type Period } from "@/lib/mock-data";
 
 const statutLabels: Record<Email["statut"], string> = {
   en_attente: "En attente",
-  approuvé: "Validé",
-  modifié: "Modifié",
-  rejeté: "Rejeté",
+  traite: "Traité",
+  valide: "Validé",
+  erreur: "Erreur",
+  archive: "Archivé",
 };
 
 const pipelineSteps: { key: PipelineStep; label: string }[] = [
@@ -55,18 +54,18 @@ const PipelineIndicator = ({ currentStep }: { currentStep: PipelineStep }) => {
   );
 };
 
-// Composant pour les boutons de feedback
+// Endpoint: POST /api/emails/:id/feedback { type: "parfait" | "modifier" | "erreur" }
 function FeedbackButtons({ emailId, brouillon }: { emailId: string; brouillon: string }) {
   const { updateStatus } = useUpdateEmailStatus();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleFeedback = async (statut: "approuvé" | "modifié" | "rejeté") => {
+  const handleFeedback = async (type: "parfait" | "modifier" | "erreur") => {
     setIsLoading(true);
     try {
-      await updateStatus(emailId, statut);
-      toast.success(`Statut mis à jour : ${statut}`);
+      await updateStatus(emailId, type);
+      toast.success(`Feedback envoyé : ${type}`);
     } catch (error) {
-      toast.error("Erreur lors de la mise à jour");
+      toast.error("Erreur lors de l'envoi du feedback");
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +81,7 @@ function FeedbackButtons({ emailId, brouillon }: { emailId: string; brouillon: s
       <Button
         size="sm"
         variant="outline"
-        onClick={() => { handleCopy(); handleFeedback("approuvé"); }}
+        onClick={() => { handleCopy(); handleFeedback("parfait"); }}
         disabled={isLoading}
         className="text-xs"
       >
@@ -92,7 +91,7 @@ function FeedbackButtons({ emailId, brouillon }: { emailId: string; brouillon: s
       <Button
         size="sm"
         variant="outline"
-        onClick={() => handleFeedback("modifié")}
+        onClick={() => handleFeedback("modifier")}
         disabled={isLoading}
         className="text-xs"
       >
@@ -102,7 +101,7 @@ function FeedbackButtons({ emailId, brouillon }: { emailId: string; brouillon: s
       <Button
         size="sm"
         variant="outline"
-        onClick={() => handleFeedback("rejeté")}
+        onClick={() => handleFeedback("erreur")}
         disabled={isLoading}
         className="text-xs text-destructive"
       >
@@ -115,19 +114,8 @@ function FeedbackButtons({ emailId, brouillon }: { emailId: string; brouillon: s
 
 const Dashboard = () => {
   const [viewingBrouillon, setViewingBrouillon] = useState<Email | null>(null);
-  const [period, setPeriod] = useState<Period>("jour");
   const { emails, loading } = useEmails();
-
-  const kpi = kpiByPeriod[period];
-  const roi = computeROI(kpi);
-
-  // Stats calculées depuis les vraies données
-  const stats = {
-    recus: emails.length,
-    traites: emails.filter(e => e.statut !== "en_attente").length,
-    valides: emails.filter(e => e.statut === "approuvé").length,
-    enAttente: emails.filter(e => e.statut === "en_attente").length,
-  };
+  const { stats } = useEmailStats();
 
   if (loading) {
     return (
@@ -148,67 +136,15 @@ const Dashboard = () => {
           <p className="text-xs font-sans text-muted-foreground">
             {emails.length} email{emails.length > 1 ? "s" : ""}
           </p>
-         </div>
-
-        {/* Sélecteur de période */}
-        <div className="flex items-center gap-1 bg-muted rounded-lg p-1 w-fit">
-          {(["jour", "semaine", "mois"] as Period[]).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                period === p
-                  ? "bg-background text-foreground shadow-sm font-medium"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {p.charAt(0).toUpperCase() + p.slice(1)}
-            </button>
-          ))}
         </div>
 
-        {/* ROI Cards */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={period}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.2 }}
-            className="grid grid-cols-2 gap-2"
-          >
-            <Card className="border-border bg-card">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Clock className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-lg font-light">{roi.heures}h {roi.minutes}min</p>
-                  <p className="text-[10px] text-muted-foreground">Temps gagné</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border bg-card">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                  <DollarSign className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-lg font-light">{roi.argentGagne.toLocaleString()} €</p>
-                  <p className="text-[10px] text-muted-foreground">Économisés</p>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Stats */}
+        {/* Stats — Endpoint: GET /api/emails/stats */}
         <div className="grid grid-cols-4 gap-2">
           {[
             { label: "Reçus", value: stats.recus, icon: Mail },
             { label: "Traités", value: stats.traites, icon: MailOpen },
             { label: "Validés", value: stats.valides, icon: CheckCircle2 },
-            { label: "En attente", value: stats.enAttente, icon: Clock },
+            { label: "En attente", value: stats.en_attente, icon: Clock },
           ].map((stat) => (
             <Card key={stat.label} className="border-border bg-card">
               <CardContent className="p-3 flex items-center gap-2">
@@ -222,7 +158,7 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Liste emails */}
+        {/* Liste emails — Endpoint: GET /api/emails */}
         <div className="pt-4 border-t border-border">
           <h2 className="text-sm font-serif font-semibold mb-3">Boîte de réception</h2>
           
