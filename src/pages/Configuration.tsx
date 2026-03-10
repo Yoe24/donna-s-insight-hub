@@ -485,7 +485,7 @@ const Configuration = () => {
         </Button>
       </div>
     </DashboardLayout>
-  );
+    </ErrorBoundary>
 };
 
 export default Configuration;
