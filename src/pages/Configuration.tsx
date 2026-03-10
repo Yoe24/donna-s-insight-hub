@@ -282,11 +282,11 @@ const Configuration = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="font-sans text-sm">Formule d'appel par défaut</Label>
-                <Select value={formule_appel} onValueChange={setFormuleAppel}>
+                <Select value={formule_appel} onValueChange={(val) => { if (val) setFormuleAppel(val); }}>
                   <SelectTrigger className="font-sans">
-                    <SelectValue />
+                    <SelectValue placeholder="Choisir..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="item-aligned">
                     <SelectItem value="cher_maitre">Cher Maître</SelectItem>
                     <SelectItem value="madame_monsieur">Madame, Monsieur</SelectItem>
                     <SelectItem value="prenom">Prénom</SelectItem>
@@ -295,11 +295,11 @@ const Configuration = () => {
               </div>
               <div className="space-y-2">
                 <Label className="font-sans text-sm">Formule de politesse par défaut</Label>
-                <Select value={formule_politesse} onValueChange={setFormulePolitesse}>
+                <Select value={formule_politesse} onValueChange={(val) => { if (val) setFormulePolitesse(val); }}>
                   <SelectTrigger className="font-sans">
-                    <SelectValue />
+                    <SelectValue placeholder="Choisir..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="item-aligned">
                     <SelectItem value="bien_a_vous">Bien à vous</SelectItem>
                     <SelectItem value="cordialement">Cordialement</SelectItem>
                     <SelectItem value="veuillez_agreer">Veuillez agréer l'expression de mes salutations distinguées</SelectItem>
