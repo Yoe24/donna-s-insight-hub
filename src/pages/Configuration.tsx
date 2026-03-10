@@ -5,6 +5,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -225,8 +226,9 @@ const Configuration = () => {
   }
 
   return (
-    <DashboardLayout>
-      <div className="max-w-3xl mx-auto space-y-8 pb-12">
+    <ErrorBoundary>
+      <DashboardLayout>
+        <div className="max-w-3xl mx-auto space-y-8 pb-12">
         <div>
           <h1 className="text-3xl font-serif font-bold text-foreground">Configuration</h1>
           <p className="text-muted-foreground font-sans text-sm mt-1">
@@ -281,11 +283,11 @@ const Configuration = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="font-sans text-sm">Formule d'appel par défaut</Label>
-                <Select value={formule_appel} onValueChange={setFormuleAppel}>
+                <Select value={formule_appel} onValueChange={(val) => { if (val) setFormuleAppel(val); }}>
                   <SelectTrigger className="font-sans">
-                    <SelectValue />
+                    <SelectValue placeholder="Choisir..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="item-aligned">
                     <SelectItem value="cher_maitre">Cher Maître</SelectItem>
                     <SelectItem value="madame_monsieur">Madame, Monsieur</SelectItem>
                     <SelectItem value="prenom">Prénom</SelectItem>
@@ -294,11 +296,11 @@ const Configuration = () => {
               </div>
               <div className="space-y-2">
                 <Label className="font-sans text-sm">Formule de politesse par défaut</Label>
-                <Select value={formule_politesse} onValueChange={setFormulePolitesse}>
+                <Select value={formule_politesse} onValueChange={(val) => { if (val) setFormulePolitesse(val); }}>
                   <SelectTrigger className="font-sans">
-                    <SelectValue />
+                    <SelectValue placeholder="Choisir..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="item-aligned">
                     <SelectItem value="bien_a_vous">Bien à vous</SelectItem>
                     <SelectItem value="cordialement">Cordialement</SelectItem>
                     <SelectItem value="veuillez_agreer">Veuillez agréer l'expression de mes salutations distinguées</SelectItem>
@@ -482,8 +484,9 @@ const Configuration = () => {
           {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
           Sauvegarder et Entraîner Donna
         </Button>
-      </div>
-    </DashboardLayout>
+        </div>
+      </DashboardLayout>
+    </ErrorBoundary>
   );
 };
 
