@@ -484,8 +484,9 @@ const Configuration = () => {
           Sauvegarder et Entraîner Donna
         </Button>
       </div>
-    </DashboardLayout>
+      </DashboardLayout>
     </ErrorBoundary>
+  );
 };
 
 export default Configuration;
