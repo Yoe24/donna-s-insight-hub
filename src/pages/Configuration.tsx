@@ -227,7 +227,7 @@ const Configuration = () => {
 
   return (
     <ErrorBoundary>
-    <DashboardLayout>
+      <DashboardLayout>
         <div>
           <h1 className="text-3xl font-serif font-bold text-foreground">Configuration</h1>
           <p className="text-muted-foreground font-sans text-sm mt-1">
