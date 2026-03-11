@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FolderOpen, Loader2, Mail } from "lucide-react";
+import { FolderOpen, Loader2, Mail, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
@@ -62,6 +62,10 @@ const Dossiers = () => {
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto space-y-6">
+        <Link to="/dashboard" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="h-3 w-3" />
+          Tableau de bord
+        </Link>
         <div>
           <h1 className="text-3xl font-serif font-bold text-foreground">Dossiers</h1>
           <p className="text-muted-foreground font-sans text-sm mt-1">

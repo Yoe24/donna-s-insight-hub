@@ -1,6 +1,7 @@
 import { LayoutDashboard, Settings, FolderOpen, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
   SidebarContent,
@@ -12,7 +13,6 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-
 const items = [
   { title: "Tableau de bord", url: "/dashboard", icon: LayoutDashboard },
   { title: "Configuration", url: "/configuration", icon: Settings },
@@ -22,11 +22,18 @@ const items = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
       <div className="px-4 py-6">
-        <Link to="/">
+        <Link to="/dashboard">
           <h2 className="text-xl font-serif font-bold text-sidebar-foreground">
             {collapsed ? "D" : "Donna"}
           </h2>
@@ -56,10 +63,10 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-4">
-        <Link to="/" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors font-sans">
+        <button onClick={handleLogout} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors font-sans">
           <LogOut className="h-4 w-4" />
           {!collapsed && <span>Déconnexion</span>}
-        </Link>
+        </button>
       </SidebarFooter>
     </Sidebar>
   );

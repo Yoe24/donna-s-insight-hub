@@ -4,11 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Mail, MailOpen, CheckCircle2, Clock, Copy, Eye, User, X, UserCheck, UserX } from "lucide-react";
+import { Mail, MailOpen, CheckCircle2, Clock, Copy, Eye, User, X, UserCheck, UserX, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useEmails, useEmailStats, useUpdateEmailStatus } from "@/hooks/useEmails";
 import type { Email, PipelineStep } from "@/hooks/useEmails";
+import { kpiByPeriod, computeROI, type Period } from "@/lib/mock-data";
 
 const statutLabels: Record<string, string> = {
   en_attente: "En attente",
@@ -126,8 +127,12 @@ function BrouillonContent({ brouillon }: { brouillon: string }) {
 
 const Dashboard = () => {
   const [viewingBrouillon, setViewingBrouillon] = useState<Email | null>(null);
+  const [period, setPeriod] = useState<Period>("jour");
   const { emails, loading } = useEmails();
   const { stats } = useEmailStats();
+
+  const roi = computeROI(kpiByPeriod[period]);
+  const periodLabels: Record<Period, string> = { jour: "Jour", semaine: "Semaine", mois: "Mois" };
 
   if (loading) {
     return (
@@ -148,6 +153,50 @@ const Dashboard = () => {
             {emails.length} email{emails.length > 1 ? "s" : ""}
           </p>
         </div>
+
+        {/* ROI Widget */}
+        <Card className="border-border bg-card">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-serif font-semibold text-foreground">Rentabilité Donna</h2>
+              <div className="flex gap-1 bg-muted rounded-full p-0.5">
+                {(["jour", "semaine", "mois"] as Period[]).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPeriod(p)}
+                    className={`text-[11px] px-3 py-1 rounded-full font-sans transition-colors ${
+                      period === p
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {periodLabels[p]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Clock className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-lg font-light text-foreground">{roi.heures}h {roi.minutes.toString().padStart(2, '0')}min</p>
+                  <p className="text-[10px] text-muted-foreground">Temps gagné</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-lg font-light text-foreground">{roi.argentGagne.toLocaleString("fr-FR")} €</p>
+                  <p className="text-[10px] text-muted-foreground">Économisé</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-2">
