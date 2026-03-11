@@ -22,11 +22,18 @@ const items = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
       <div className="px-4 py-6">
-        <Link to="/">
+        <Link to="/dashboard">
           <h2 className="text-xl font-serif font-bold text-sidebar-foreground">
             {collapsed ? "D" : "Donna"}
           </h2>
