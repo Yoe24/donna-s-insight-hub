@@ -8,7 +8,8 @@ export type PipelineStep =
   | "extraction_en_cours" 
   | "recherche_contexte"
   | "redaction_brouillon"
-  | "pret_a_reviser";
+  | "pret_a_reviser"
+  | "filtre_rejete";
 
 export interface Email {
   id: string;
@@ -18,7 +19,8 @@ export interface Email {
   brouillon: string | null;
   pipeline_step: PipelineStep;
   contexte_choisi: string;
-  statut: "en_attente" | "traite" | "valide" | "erreur" | "archive";
+  statut: "en_attente" | "traite" | "valide" | "erreur" | "archive" | "ignore";
+  metadata?: { filtre?: { categorie?: string } };
   created_at: string;
   updated_at: string;
 }
@@ -50,7 +52,6 @@ export function useEmails() {
 
     fetchEmails();
 
-    // Realtime Supabase pour mises à jour en temps réel
     const subscription = supabase
       .channel('emails_changes')
       .on(
@@ -108,13 +109,13 @@ export function useEmailStats() {
 }
 
 // Endpoint: POST /api/emails/:id/feedback
-// Body: { type: "parfait" | "modifier" | "erreur" }
+// Body: { action: "parfait" | "modifier" | "erreur" }
 export function useUpdateEmailStatus() {
   const updateStatus = async (
     emailId: string,
-    type: "parfait" | "modifier" | "erreur"
+    action: "parfait" | "modifier" | "erreur"
   ) => {
-    await api.post(`/api/emails/${emailId}/feedback`, { type });
+    await api.post(`/api/emails/${emailId}/feedback`, { action });
   };
 
   return { updateStatus };

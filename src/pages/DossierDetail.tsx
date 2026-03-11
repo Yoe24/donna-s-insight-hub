@@ -1,50 +1,69 @@
-// DossierDetail.tsx — Endpoint: GET /api/dossiers/:id
-
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, Loader2 } from "lucide-react";
+import { ArrowLeft, User, Loader2, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Email } from "@/hooks/useEmails";
 import { api } from "@/lib/api";
 
 interface DossierDetailData {
   id: string;
-  nom: string;
-  client: string;
-  type_droit: string;
-  nb_emails: number;
-  created_at: string;
+  nom_client: string;
+  email_client: string;
   statut: string;
+  domaine: string;
+  resume_situation: string;
+  dernier_echange_date: string;
 }
 
-interface DossierResponse {
-  dossier: DossierDetailData;
-  emails: Email[];
+interface DossierDocument {
+  id: string;
+  nom: string;
+  type: string;
+  created_at: string;
 }
+
+const statutBadge = (statut: string) => {
+  switch (statut) {
+    case "actif":
+      return <span className="inline-flex items-center rounded-full bg-green-100 text-green-800 text-xs px-2 py-0.5 font-medium">Actif</span>;
+    case "en_attente":
+      return <span className="inline-flex items-center rounded-full bg-orange-100 text-orange-800 text-xs px-2 py-0.5 font-medium">En attente</span>;
+    case "archive":
+      return <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground text-xs px-2 py-0.5 font-medium">Archivé</span>;
+    default:
+      return <Badge variant="outline" className="text-xs">{statut}</Badge>;
+  }
+};
 
 const DossierDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const [dossier, setDossier] = useState<DossierDetailData | null>(null);
   const [emails, setEmails] = useState<Email[]>([]);
+  const [documents, setDocuments] = useState<DossierDocument[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
 
-    const fetchDossier = async () => {
+    const fetchAll = async () => {
       try {
-        const data = await api.get<DossierResponse>(`/api/dossiers/${id}`);
-        setDossier(data.dossier);
-        setEmails(data.emails || []);
+        const [dossierData, emailsData, docsData] = await Promise.all([
+          api.get<DossierDetailData>(`/api/dossiers/${id}`),
+          api.get<Email[]>(`/api/dossiers/${id}/emails`).catch(() => []),
+          api.get<DossierDocument[]>(`/api/dossiers/${id}/documents`).catch(() => []),
+        ]);
+        setDossier(dossierData);
+        setEmails(emailsData || []);
+        setDocuments(docsData || []);
       } catch (error) {
         console.error('Error fetching dossier:', error);
       }
       setLoading(false);
     };
-    fetchDossier();
+    fetchAll();
   }, [id]);
 
   if (loading) {
@@ -81,19 +100,40 @@ const DossierDetailPage = () => {
           </Link>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-serif font-bold text-foreground">{dossier.nom || dossier.client}</h1>
-              <p className="text-sm text-muted-foreground font-sans mt-1">{dossier.type_droit} • {dossier.client}</p>
+              <h1 className="text-2xl font-serif font-bold text-foreground">{dossier.nom_client}</h1>
+              <p className="text-sm text-muted-foreground font-sans mt-1">
+                {dossier.email_client} • {dossier.domaine}
+              </p>
             </div>
-            <Badge
-              variant="outline"
-              className={`text-xs font-sans ${dossier.statut === "actif" ? "border-accent/30 text-accent" : "border-muted-foreground/30 text-muted-foreground"}`}
-            >
-              {dossier.statut}
-            </Badge>
+            {statutBadge(dossier.statut)}
           </div>
+          {dossier.resume_situation && (
+            <p className="text-sm text-muted-foreground mt-3">{dossier.resume_situation}</p>
+          )}
         </div>
 
-        {/* Emails du dossier */}
+        {/* Documents */}
+        {documents.length > 0 && (
+          <div>
+            <h2 className="text-sm font-serif font-semibold mb-3">Documents ({documents.length})</h2>
+            <Card className="border-border bg-card divide-y divide-border">
+              {documents.map((doc) => (
+                <div key={doc.id} className="px-4 py-3 flex items-center gap-3">
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-sans font-medium truncate">{doc.nom}</p>
+                    <p className="text-[11px] text-muted-foreground">{doc.type}</p>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                    {new Date(doc.created_at).toLocaleDateString('fr-FR')}
+                  </span>
+                </div>
+              ))}
+            </Card>
+          </div>
+        )}
+
+        {/* Emails */}
         <div>
           <h2 className="text-sm font-serif font-semibold mb-3">Emails associés ({emails.length})</h2>
           
