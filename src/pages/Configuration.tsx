@@ -263,7 +263,7 @@ const Configuration = () => {
                 <Label className="font-sans text-sm">Nom du cabinet</Label>
                 <Input
                   className="font-sans text-sm"
-                  placeholder="Cabinet Dupont & Associés"
+                  placeholder="Nom de votre cabinet"
                   value={nom_cabinet}
                   onChange={(e) => setNomCabinet(e.target.value)}
                 />
