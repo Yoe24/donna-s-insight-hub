@@ -14,7 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Upload, Plus, X, FileText, Brain, Shield, Workflow, Loader2 } from "lucide-react";
+import { Upload, Plus, X, FileText, Brain, Shield, Workflow, Loader2, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
 
 interface ConfigDocument {

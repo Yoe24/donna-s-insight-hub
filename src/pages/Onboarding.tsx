@@ -44,8 +44,13 @@ function ConnectGmail() {
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="max-w-md w-full mb-4">
+          <Link to="/dashboard" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-3 w-3" />
+            Tableau de bord
+          </Link>
+        </div>
           <Card className="border-border bg-card text-center">
             <CardContent className="p-10 space-y-6">
               <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
