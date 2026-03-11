@@ -154,6 +154,50 @@ const Dashboard = () => {
           </p>
         </div>
 
+        {/* ROI Widget */}
+        <Card className="border-border bg-card">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-serif font-semibold text-foreground">Rentabilité Donna</h2>
+              <div className="flex gap-1 bg-muted rounded-full p-0.5">
+                {(["jour", "semaine", "mois"] as Period[]).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPeriod(p)}
+                    className={`text-[11px] px-3 py-1 rounded-full font-sans transition-colors ${
+                      period === p
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {periodLabels[p]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Clock className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-lg font-light text-foreground">{roi.heures}h {roi.minutes.toString().padStart(2, '0')}min</p>
+                  <p className="text-[10px] text-muted-foreground">Temps gagné</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-lg font-light text-foreground">{roi.argentGagne.toLocaleString("fr-FR")} €</p>
+                  <p className="text-[10px] text-muted-foreground">Économisé</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Stats */}
         <div className="grid grid-cols-4 gap-2">
           {[
