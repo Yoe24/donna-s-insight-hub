@@ -51,6 +51,7 @@ function ConnectGmail() {
             Tableau de bord
           </Link>
         </div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
           <Card className="border-border bg-card text-center">
             <CardContent className="p-10 space-y-6">
               <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
