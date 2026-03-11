@@ -127,8 +127,12 @@ function BrouillonContent({ brouillon }: { brouillon: string }) {
 
 const Dashboard = () => {
   const [viewingBrouillon, setViewingBrouillon] = useState<Email | null>(null);
+  const [period, setPeriod] = useState<Period>("jour");
   const { emails, loading } = useEmails();
   const { stats } = useEmailStats();
+
+  const roi = computeROI(kpiByPeriod[period]);
+  const periodLabels: Record<Period, string> = { jour: "Jour", semaine: "Semaine", mois: "Mois" };
 
   if (loading) {
     return (
