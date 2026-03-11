@@ -4,7 +4,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Mail, CheckCircle2, AlertCircle, Loader2, FolderOpen } from "lucide-react";
+import { Mail, CheckCircle2, AlertCircle, Loader2, FolderOpen, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { api } from "@/lib/api";
 

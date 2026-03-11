@@ -229,6 +229,10 @@ const Configuration = () => {
     <ErrorBoundary>
       <DashboardLayout>
         <div className="max-w-3xl mx-auto space-y-8 pb-12">
+        <Link to="/dashboard" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2">
+          <ArrowLeft className="h-3 w-3" />
+          Tableau de bord
+        </Link>
         <div>
           <h1 className="text-3xl font-serif font-bold text-foreground">Configuration</h1>
           <p className="text-muted-foreground font-sans text-sm mt-1">

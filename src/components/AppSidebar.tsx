@@ -63,10 +63,10 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-4">
-        <Link to="/" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors font-sans">
+        <button onClick={handleLogout} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors font-sans">
           <LogOut className="h-4 w-4" />
           {!collapsed && <span>Déconnexion</span>}
-        </Link>
+        </button>
       </SidebarFooter>
     </Sidebar>
   );
