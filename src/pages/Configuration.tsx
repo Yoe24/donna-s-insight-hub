@@ -234,11 +234,19 @@ const Configuration = () => {
           <ArrowLeft className="h-3 w-3" />
           Tableau de bord
         </Link>
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-foreground">Configuration</h1>
-          <p className="text-muted-foreground font-sans text-sm mt-1">
-            Paramétrez Donna pour qu'elle s'adapte parfaitement à votre pratique.
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-foreground">Configuration</h1>
+            <p className="text-muted-foreground font-sans text-sm mt-1">
+              Paramétrez Donna pour qu'elle s'adapte parfaitement à votre pratique.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" asChild className="shrink-0">
+            <Link to="/onboarding">
+              <Mail className="h-4 w-4 mr-2" />
+              Importer ma boîte mail
+            </Link>
+          </Button>
         </div>
 
         {/* Carte 1 — L'ADN et la Voix du Cabinet */}

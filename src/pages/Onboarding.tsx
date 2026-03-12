@@ -1,12 +1,14 @@
-import { useState, useEffect, useRef } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useState } from "react";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Mail, CheckCircle2, AlertCircle, Loader2, FolderOpen, ArrowLeft } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Mail, CheckCircle2, AlertCircle, Loader2, FolderOpen, ArrowLeft, Zap, PenLine, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { api } from "@/lib/api";
+import { useEffect, useRef } from "react";
 
 interface ImportStatus {
   processed: number;
@@ -23,13 +25,14 @@ const Onboarding = () => {
     return <ImportProgress />;
   }
 
-  return <ConnectGmail />;
+  return <ChooseMode />;
 };
 
-function ConnectGmail() {
+function ChooseMode() {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleConnect = async () => {
+  const handleConnectGmail = async () => {
     setLoading(true);
     try {
       const data = await api.get<{ auth_url: string }>('/api/import/gmail/auth');
@@ -45,34 +48,83 @@ function ConnectGmail() {
   return (
     <DashboardLayout>
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="max-w-md w-full mb-4">
+        <div className="max-w-2xl w-full mb-4">
           <Link to="/dashboard" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-3 w-3" />
             Tableau de bord
           </Link>
         </div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
-          <Card className="border-border bg-card text-center">
-            <CardContent className="p-10 space-y-6">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-                <Mail className="h-8 w-8 text-primary" />
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl w-full space-y-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-serif font-bold text-foreground">Comment souhaitez-vous configurer Donna ?</h1>
+            <p className="text-muted-foreground text-sm mt-2">
+              Choisissez la méthode qui vous convient le mieux.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Card 1 — Automatic */}
+            <Card className="relative border-primary/30 bg-primary/[0.02] hover:border-primary/50 transition-colors">
+              <div className="absolute top-3 right-3">
+                <Badge className="text-[10px] bg-primary text-primary-foreground">Recommandé</Badge>
               </div>
-              <div>
-                <h1 className="text-2xl font-serif font-bold text-foreground">Bienvenue sur Donna</h1>
-                <p className="text-muted-foreground text-sm mt-2">
-                  Connectez votre boîte Gmail pour que Donna analyse votre cabinet.
-                </p>
-              </div>
-              <Button onClick={handleConnect} disabled={loading} size="lg" className="w-full">
-                {loading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Mail className="h-4 w-4 mr-2" />
-                )}
-                Connecter ma boîte Gmail
-              </Button>
-            </CardContent>
-          </Card>
+              <CardContent className="p-6 space-y-4">
+                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Zap className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-serif font-semibold text-foreground">Connexion Gmail</h2>
+                  <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
+                    Donna analyse votre boîte mail et configure tout automatiquement
+                  </p>
+                </div>
+                <ul className="space-y-1.5">
+                  {["Dossiers clients créés", "Configuration pré-remplie", "Style de rédaction appris"].map((item) => (
+                    <li key={item} className="flex items-center gap-2 text-xs text-foreground">
+                      <Check className="h-3.5 w-3.5 text-primary shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <Button onClick={handleConnectGmail} disabled={loading} className="w-full">
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Mail className="h-4 w-4 mr-2" />
+                  )}
+                  Connecter ma boîte Gmail
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Card 2 — Manual */}
+            <Card className="border-border hover:border-muted-foreground/30 transition-colors">
+              <CardContent className="p-6 space-y-4">
+                <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center">
+                  <PenLine className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-serif font-semibold text-foreground">Configuration manuelle</h2>
+                  <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
+                    Remplissez vous-même les informations de votre cabinet
+                  </p>
+                </div>
+                <ul className="space-y-1.5">
+                  {["Contrôle total", "Pas d'accès Gmail requis", "~10 minutes"].map((item) => (
+                    <li key={item} className="flex items-center gap-2 text-xs text-foreground">
+                      <Check className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <Button variant="outline" onClick={() => navigate("/configuration")} className="w-full">
+                  <PenLine className="h-4 w-4 mr-2" />
+                  Configurer manuellement
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </motion.div>
       </div>
     </DashboardLayout>
@@ -108,7 +160,6 @@ function ImportProgress() {
     ? Math.round((status.processed / status.total) * 100)
     : 0;
 
-  // Done state
   if (status?.status === "done") {
     return (
       <DashboardLayout>
@@ -139,7 +190,6 @@ function ImportProgress() {
     );
   }
 
-  // Error state
   if (status?.status === "error") {
     return (
       <DashboardLayout>
@@ -167,7 +217,6 @@ function ImportProgress() {
     );
   }
 
-  // Loading / in-progress state
   return (
     <DashboardLayout>
       <div className="flex items-center justify-center min-h-[60vh]">
