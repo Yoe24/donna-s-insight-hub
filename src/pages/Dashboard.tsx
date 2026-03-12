@@ -4,12 +4,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Mail, MailOpen, CheckCircle2, Clock, Copy, Eye, User, X, UserCheck, UserX, TrendingUp } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Mail, MailOpen, CheckCircle2, Clock, Copy, Eye, User, X, UserCheck, UserX, TrendingUp, Lightbulb, ChevronDown, Archive } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useEmails, useEmailStats, useUpdateEmailStatus } from "@/hooks/useEmails";
 import type { Email, PipelineStep } from "@/hooks/useEmails";
 import { kpiByPeriod, computeROI, type Period } from "@/lib/mock-data";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 const statutLabels: Record<string, string> = {
   en_attente: "En attente",
@@ -125,6 +128,76 @@ function BrouillonContent({ brouillon }: { brouillon: string }) {
   return <p className="text-sm whitespace-pre-wrap">{brouillon}</p>;
 }
 
+function formatEmailTime(created_at: string) {
+  try {
+    const date = new Date(created_at);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    if (isToday) {
+      return format(date, "HH'h'mm", { locale: fr });
+    }
+    return format(date, "'Le' d MMM 'à' HH'h'mm", { locale: fr });
+  } catch {
+    return "";
+  }
+}
+
+function DonnaRecommendation({ resume }: { resume: string }) {
+  return (
+    <div className="mt-2 rounded-lg bg-primary/5 border border-primary/10 p-3 flex gap-2">
+      <Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+      <p className="text-xs italic text-foreground/80 leading-relaxed">{resume}</p>
+    </div>
+  );
+}
+
+function ImportArchives({ emails }: { emails: Email[] }) {
+  // Compute sender stats from imported emails
+  const importedEmails = emails.filter(e => e.pipeline_step === "filtre_rejete" || e.statut === "ignore");
+  const allEmails = emails;
+  
+  const senderCounts: Record<string, number> = {};
+  allEmails.forEach(e => {
+    senderCounts[e.expediteur] = (senderCounts[e.expediteur] || 0) + 1;
+  });
+
+  const sortedSenders = Object.entries(senderCounts).sort((a, b) => b[1] - a[1]);
+  const uniqueDossiers = new Set(allEmails.map(e => e.metadata?.filtre?.categorie)).size;
+
+  return (
+    <Collapsible>
+      <CollapsibleTrigger asChild>
+        <button className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors group">
+          <Archive className="h-3.5 w-3.5" />
+          <span>Voir les archives d'import</span>
+          <ChevronDown className="h-3 w-3 transition-transform group-data-[state=open]:rotate-180" />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <Card className="mt-3 border-border bg-card">
+          <CardContent className="p-4 space-y-3">
+            <p className="text-sm text-foreground">
+              <span className="font-medium">{allEmails.length} emails importés</span>, répartis sur{" "}
+              <span className="font-medium">{uniqueDossiers} catégories</span>
+            </p>
+            <div className="space-y-1.5">
+              {sortedSenders.slice(0, 10).map(([sender, count]) => (
+                <div key={sender} className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground truncate mr-4">{sender}</span>
+                  <span className="text-foreground font-medium tabular-nums">{count} email{count > 1 ? "s" : ""}</span>
+                </div>
+              ))}
+              {sortedSenders.length > 10 && (
+                <p className="text-xs text-muted-foreground">… et {sortedSenders.length - 10} autres expéditeurs</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 const Dashboard = () => {
   const [viewingBrouillon, setViewingBrouillon] = useState<Email | null>(null);
   const [period, setPeriod] = useState<Period>("jour");
@@ -133,6 +206,10 @@ const Dashboard = () => {
 
   const roi = computeROI(kpiByPeriod[period]);
   const periodLabels: Record<Period, string> = { jour: "Jour", semaine: "Semaine", mois: "Mois" };
+
+  // Active emails = not just imported
+  const activeEmails = emails.filter(e => e.pipeline_step !== "filtre_rejete" && e.statut !== "ignore");
+  const isInboxEmpty = activeEmails.length === 0;
 
   if (loading) {
     return (
@@ -148,9 +225,9 @@ const Dashboard = () => {
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-sans text-muted-foreground">Tableau de bord</p>
+          <p className="text-xs font-sans text-muted-foreground">Rapport de Donna</p>
           <p className="text-xs font-sans text-muted-foreground">
-            {emails.length} email{emails.length > 1 ? "s" : ""}
+            {activeEmails.length} email{activeEmails.length > 1 ? "s" : ""} actif{activeEmails.length > 1 ? "s" : ""}
           </p>
         </div>
 
@@ -175,7 +252,7 @@ const Dashboard = () => {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="flex items-center gap-3">
                 <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Clock className="h-4 w-4 text-primary" />
@@ -194,44 +271,55 @@ const Dashboard = () => {
                   <p className="text-[10px] text-muted-foreground">Économisé</p>
                 </div>
               </div>
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <MailOpen className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-lg font-light text-foreground">{stats.traites}</p>
+                  <p className="text-[10px] text-muted-foreground">Emails traités aujourd'hui</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-lg font-light text-foreground">{stats.en_attente}</p>
+                  <p className="text-[10px] text-muted-foreground">Actions requises</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { label: "Reçus", value: stats.recus, icon: Mail },
-            { label: "Traités", value: stats.traites, icon: MailOpen },
-            { label: "Validés", value: stats.valides, icon: CheckCircle2 },
-            { label: "En attente", value: stats.en_attente, icon: Clock },
-          ].map((stat) => (
-            <Card key={stat.label} className="border-border bg-card">
-              <CardContent className="p-3 flex items-center gap-2">
-                <stat.icon className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-lg font-light">{stat.value}</p>
-                  <p className="text-[10px] text-muted-foreground">{stat.label}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
 
         {/* Email list */}
         <div className="pt-4 border-t border-border">
           <h2 className="text-sm font-serif font-semibold mb-3">Boîte de réception</h2>
           
-          {emails.length === 0 ? (
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground text-sm">Aucun email pour le moment</p>
-              <p className="text-muted-foreground text-xs mt-1">
-                Les emails apparaîtront ici automatiquement quand ils arriveront
-              </p>
-            </Card>
+          {isInboxEmpty ? (
+            <div className="space-y-4">
+              {/* Donna's calm message */}
+              <Card className="border-border bg-card">
+                <CardContent className="p-8 text-center space-y-3">
+                  <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+                    <Lightbulb className="h-6 w-6 text-primary" />
+                  </div>
+                  <p className="text-sm text-foreground font-medium">
+                    Tout est calme pour le moment.
+                  </p>
+                  <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+                    Je surveille votre boîte mail et vous préviendrai dès qu'un email nécessite votre attention.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Import archives */}
+              {emails.length > 0 && <ImportArchives emails={emails} />}
+            </div>
           ) : (
             <Card className="border-border bg-card overflow-hidden divide-y divide-border">
-              {emails.map((item, i) => {
+              {activeEmails.map((item, i) => {
                 const isRejected = item.pipeline_step === "filtre_rejete";
 
                 return (
@@ -249,18 +337,31 @@ const Dashboard = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="font-sans font-semibold text-xs truncate">{item.expediteur}</span>
-                          <Badge variant="outline" className="text-[9px]">
-                            {statutLabels[item.statut] || item.statut}
-                          </Badge>
+                          <span className="text-[10px] text-muted-foreground">{formatEmailTime(item.created_at)}</span>
                           <CategorieBadge email={item} />
                           {isRejected && (
                             <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground text-xs px-2 py-0.5">Ignoré</span>
                           )}
                         </div>
                         <p className="text-xs font-medium truncate">{item.objet}</p>
-                        <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
-                          {item.resume || "En cours d'analyse..."}
-                        </p>
+                        
+                        {/* Donna recommendation instead of raw resume */}
+                        {item.resume && item.pipeline_step === "pret_a_reviser" && (
+                          <DonnaRecommendation resume={item.resume} />
+                        )}
+                        
+                        {/* For non-ready emails, show basic resume */}
+                        {item.resume && item.pipeline_step !== "pret_a_reviser" && (
+                          <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
+                            {item.resume}
+                          </p>
+                        )}
+                        
+                        {!item.resume && (
+                          <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
+                            En cours d'analyse...
+                          </p>
+                        )}
                         
                         {!isRejected && (
                           <div className="mt-2 flex items-center gap-2">

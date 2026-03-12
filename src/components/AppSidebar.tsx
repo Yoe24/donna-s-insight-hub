@@ -14,7 +14,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 const items = [
-  { title: "Tableau de bord", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Accueil", url: "/dashboard", icon: LayoutDashboard },
   { title: "Configurez-moi", url: "/configuration", icon: Settings },
   { title: "Mes dossiers", url: "/dossiers", icon: FolderOpen },
 ];
