@@ -3,12 +3,13 @@ import { useParams, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, Loader2, FileText, ArrowDownLeft, ArrowUpRight, ChevronDown, ChevronUp, File } from "lucide-react";
+import { ArrowLeft, User, Loader2, FileText, ArrowDownLeft, ArrowUpRight, ChevronDown, ChevronUp, File, Lightbulb, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Email } from "@/hooks/useEmails";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { parseDonnaAnalysis } from "@/lib/parseDonnaAnalysis";
 
 interface DossierDetailData {
   id: string;
