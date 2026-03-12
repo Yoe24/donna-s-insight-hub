@@ -18,6 +18,8 @@ interface DossierDetailData {
   domaine: string;
   resume_situation: string;
   dernier_echange_date: string;
+  emails?: DossierEmail[];
+  dossier_documents?: DossierDocument[];
 }
 
 interface DossierDocument {
@@ -109,14 +111,10 @@ const DossierDetailPage = () => {
 
     const fetchAll = async () => {
       try {
-        const [dossierData, emailsData, docsData] = await Promise.all([
-          api.get<DossierDetailData>(`/api/dossiers/${id}`),
-          api.get<DossierEmail[]>(`/api/dossiers/${id}/emails`).catch(() => []),
-          api.get<DossierDocument[]>(`/api/dossiers/${id}/documents`).catch(() => []),
-        ]);
+        const dossierData = await api.get<DossierDetailData>(`/api/dossiers/${id}`);
         setDossier(dossierData);
-        setEmails(emailsData || []);
-        setDocuments(docsData || []);
+        setEmails(dossierData.emails || []);
+        setDocuments(dossierData.dossier_documents || []);
       } catch (error) {
         console.error('Error fetching dossier:', error);
       }
