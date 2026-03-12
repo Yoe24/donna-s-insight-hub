@@ -78,16 +78,11 @@ export function useEmails() {
           if (payload.eventType === 'INSERT') {
             setEmails((prev) => [newEmail, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
-            if (newEmail.pipeline_step === 'importe') {
-              // Remove if it became imported
-              setEmails((prev) => prev.filter((e) => e.id !== newEmail.id));
-            } else {
-              setEmails((prev) =>
-                prev.map((email) =>
-                  email.id === newEmail.id ? newEmail : email
-                )
-              );
-            }
+            setEmails((prev) =>
+              prev.map((email) =>
+                email.id === newEmail.id ? newEmail : email
+              )
+            );
           }
         }
       )
