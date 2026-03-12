@@ -18,6 +18,8 @@ interface DossierDetailData {
   domaine: string;
   resume_situation: string;
   dernier_echange_date: string;
+  emails?: DossierEmail[];
+  dossier_documents?: DossierDocument[];
 }
 
 interface DossierDocument {
