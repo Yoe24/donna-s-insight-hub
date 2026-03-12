@@ -242,13 +242,48 @@ const DossierDetailPage = () => {
                                 <p className="text-sm text-muted-foreground italic">En cours d'analyse…</p>
                               )}
 
-                              {/* Draft */}
-                              {email.brouillon && (
-                                <div className="mt-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-3">
-                                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">Brouillon Donna</p>
-                                  <p className="text-sm text-blue-900 dark:text-blue-100 whitespace-pre-line">{email.brouillon}</p>
-                                </div>
-                              )}
+                              {/* Parsed brouillon sections */}
+                              {email.brouillon && (() => {
+                                const analysis = parseDonnaAnalysis(email.brouillon);
+                                const hasAnalysis = analysis.resume || analysis.recommandation;
+                                if (hasAnalysis) {
+                                  return (
+                                    <>
+                                      {analysis.resume && (
+                                        <div className="mt-3 rounded-lg bg-muted/60 border border-border p-3">
+                                          <p className="text-xs font-semibold text-foreground mb-1">📋 Résumé Donna</p>
+                                          <p className="text-sm text-foreground/80 whitespace-pre-line">{analysis.resume}</p>
+                                        </div>
+                                      )}
+                                      {analysis.recommandation && (
+                                        <div className="mt-2 rounded-lg bg-primary/5 border border-primary/10 p-3 flex gap-2">
+                                          <Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                                          <div>
+                                            <p className="text-xs font-semibold text-primary mb-1">🎯 Recommandation</p>
+                                            <p className="text-sm text-foreground/80 whitespace-pre-line">{analysis.recommandation}</p>
+                                          </div>
+                                        </div>
+                                      )}
+                                      {analysis.attention && (
+                                        <div className="mt-2 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800/30 p-3 flex gap-2">
+                                          <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />
+                                          <div>
+                                            <p className="text-xs font-semibold text-orange-600 dark:text-orange-400 mb-1">💡 Points d'attention</p>
+                                            <p className="text-sm text-foreground/80 whitespace-pre-line">{analysis.attention}</p>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </>
+                                  );
+                                }
+                                // Fallback: raw brouillon
+                                return (
+                                  <div className="mt-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-3">
+                                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">Brouillon Donna</p>
+                                    <p className="text-sm text-blue-900 dark:text-blue-100 whitespace-pre-line">{email.brouillon}</p>
+                                  </div>
+                                );
+                              })()}
                             </CardContent>
                           </Card>
                         </motion.div>

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Mail, MailOpen, CheckCircle2, Clock, Copy, Eye, User, X, UserCheck, UserX, TrendingUp, Lightbulb, ChevronDown, Archive } from "lucide-react";
+import { Mail, MailOpen, CheckCircle2, Clock, Copy, Eye, User, X, UserCheck, UserX, TrendingUp, Lightbulb, ChevronDown, Archive, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useEmails, useEmailStats, useUpdateEmailStatus } from "@/hooks/useEmails";
@@ -13,15 +13,7 @@ import type { Email, PipelineStep } from "@/hooks/useEmails";
 import { kpiByPeriod, computeROI, type Period } from "@/lib/mock-data";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-
-const statutLabels: Record<string, string> = {
-  en_attente: "En attente",
-  traite: "Traité",
-  valide: "Validé",
-  erreur: "Erreur",
-  archive: "Archivé",
-  ignore: "Ignoré",
-};
+import { parseDonnaAnalysis } from "@/lib/parseDonnaAnalysis";
 
 const pipelineSteps: { key: PipelineStep; label: string }[] = [
   { key: "en_attente", label: "En attente" },
@@ -105,64 +97,57 @@ function FeedbackButtons({ emailId, brouillon }: { emailId: string; brouillon: s
   );
 }
 
-function BrouillonContent({ brouillon }: { brouillon: string }) {
-  if (brouillon.startsWith("📎")) {
-    const lines = brouillon.split("\n");
-    const sourcesEnd = lines.findIndex((l, i) => i > 0 && l.trim() === "");
-    const sourcesLines = sourcesEnd > 0 ? lines.slice(0, sourcesEnd) : [lines[0]];
-    const bodyLines = sourcesEnd > 0 ? lines.slice(sourcesEnd + 1) : lines.slice(1);
-
-    return (
-      <div className="space-y-3">
-        <div className="bg-accent/10 border border-accent/20 rounded-md p-3">
-          <p className="text-xs font-semibold text-accent mb-1">Sources</p>
-          {sourcesLines.map((line, i) => (
-            <p key={i} className="text-xs text-muted-foreground">{line}</p>
-          ))}
-        </div>
-        <p className="text-sm whitespace-pre-wrap">{bodyLines.join("\n")}</p>
-      </div>
-    );
-  }
-
-  return <p className="text-sm whitespace-pre-wrap">{brouillon}</p>;
-}
-
 function formatEmailTime(created_at: string) {
   try {
     const date = new Date(created_at);
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
     if (isToday) {
-      return format(date, "HH'h'mm", { locale: fr });
+      return `Aujourd'hui à ${format(date, "HH'h'mm", { locale: fr })}`;
     }
-    return format(date, "'Le' d MMM 'à' HH'h'mm", { locale: fr });
+    return format(date, "d MMM 'à' HH'h'mm", { locale: fr });
   } catch {
     return "";
   }
 }
 
-function DonnaRecommendation({ resume }: { resume: string }) {
+function DonnaResume({ text }: { text: string }) {
+  if (!text) return null;
+  return (
+    <div className="mt-2 rounded-lg bg-muted/60 border border-border p-3">
+      <p className="text-xs text-foreground/80 leading-relaxed">{text}</p>
+    </div>
+  );
+}
+
+function DonnaRecommendation({ text }: { text: string }) {
+  if (!text) return null;
   return (
     <div className="mt-2 rounded-lg bg-primary/5 border border-primary/10 p-3 flex gap-2">
       <Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-      <p className="text-xs italic text-foreground/80 leading-relaxed">{resume}</p>
+      <p className="text-xs italic text-foreground/80 leading-relaxed">{text}</p>
+    </div>
+  );
+}
+
+function DonnaAttention({ text }: { text: string }) {
+  if (!text) return null;
+  return (
+    <div className="mt-2 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800/30 p-3 flex gap-2">
+      <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />
+      <p className="text-xs text-foreground/80 leading-relaxed">{text}</p>
     </div>
   );
 }
 
 function ImportArchives({ emails }: { emails: Email[] }) {
-  // Compute sender stats from imported emails
-  const importedEmails = emails.filter(e => e.pipeline_step === "filtre_rejete" || e.statut === "ignore");
-  const allEmails = emails;
-  
   const senderCounts: Record<string, number> = {};
-  allEmails.forEach(e => {
+  emails.forEach(e => {
     senderCounts[e.expediteur] = (senderCounts[e.expediteur] || 0) + 1;
   });
 
   const sortedSenders = Object.entries(senderCounts).sort((a, b) => b[1] - a[1]);
-  const uniqueDossiers = new Set(allEmails.map(e => e.metadata?.filtre?.categorie)).size;
+  const uniqueDossiers = new Set(emails.map(e => e.metadata?.filtre?.categorie)).size;
 
   return (
     <Collapsible>
@@ -177,7 +162,7 @@ function ImportArchives({ emails }: { emails: Email[] }) {
         <Card className="mt-3 border-border bg-card">
           <CardContent className="p-4 space-y-3">
             <p className="text-sm text-foreground">
-              <span className="font-medium">{allEmails.length} emails importés</span>, répartis sur{" "}
+              <span className="font-medium">{emails.length} emails importés</span>, répartis sur{" "}
               <span className="font-medium">{uniqueDossiers} catégories</span>
             </p>
             <div className="space-y-1.5">
@@ -200,6 +185,7 @@ function ImportArchives({ emails }: { emails: Email[] }) {
 
 const Dashboard = () => {
   const [viewingBrouillon, setViewingBrouillon] = useState<Email | null>(null);
+  const [expandedAttention, setExpandedAttention] = useState<Set<string>>(new Set());
   const [period, setPeriod] = useState<Period>("jour");
   const { emails, loading } = useEmails();
   const { stats } = useEmailStats();
@@ -207,9 +193,18 @@ const Dashboard = () => {
   const roi = computeROI(kpiByPeriod[period]);
   const periodLabels: Record<Period, string> = { jour: "Jour", semaine: "Semaine", mois: "Mois" };
 
-  // Active emails = not just imported
-  const activeEmails = emails.filter(e => e.pipeline_step !== "filtre_rejete" && e.statut !== "ignore");
+  // Active emails = not archived, not ignored
+  const activeEmails = emails.filter(e => e.statut !== "archive" && e.statut !== "ignore");
   const isInboxEmpty = activeEmails.length === 0;
+
+  const toggleAttention = (id: string) => {
+    setExpandedAttention(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   if (loading) {
     return (
@@ -299,7 +294,6 @@ const Dashboard = () => {
           
           {isInboxEmpty ? (
             <div className="space-y-4">
-              {/* Donna's calm message */}
               <Card className="border-border bg-card">
                 <CardContent className="p-8 text-center space-y-3">
                   <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
@@ -313,14 +307,14 @@ const Dashboard = () => {
                   </p>
                 </CardContent>
               </Card>
-
-              {/* Import archives */}
               {emails.length > 0 && <ImportArchives emails={emails} />}
             </div>
           ) : (
             <Card className="border-border bg-card overflow-hidden divide-y divide-border">
               {activeEmails.map((item, i) => {
                 const isRejected = item.pipeline_step === "filtre_rejete";
+                const analysis = parseDonnaAnalysis(item.brouillon);
+                const hasAnalysis = analysis.resume || analysis.recommandation;
 
                 return (
                   <motion.div
@@ -345,22 +339,38 @@ const Dashboard = () => {
                         </div>
                         <p className="text-xs font-medium truncate">{item.objet}</p>
                         
-                        {/* Donna recommendation instead of raw resume */}
-                        {item.resume && item.pipeline_step === "pret_a_reviser" && (
-                          <DonnaRecommendation resume={item.resume} />
-                        )}
-                        
-                        {/* For non-ready emails, show basic resume */}
-                        {item.resume && item.pipeline_step !== "pret_a_reviser" && (
-                          <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
-                            {item.resume}
-                          </p>
-                        )}
-                        
-                        {!item.resume && (
-                          <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
-                            En cours d'analyse...
-                          </p>
+                        {/* Parsed brouillon sections */}
+                        {hasAnalysis ? (
+                          <>
+                            <DonnaResume text={analysis.resume} />
+                            <DonnaRecommendation text={analysis.recommandation} />
+                            {analysis.attention && (
+                              <>
+                                <button
+                                  onClick={() => toggleAttention(item.id)}
+                                  className="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                                >
+                                  <ChevronDown className={`h-3 w-3 transition-transform ${expandedAttention.has(item.id) ? "rotate-180" : ""}`} />
+                                  Voir le détail
+                                </button>
+                                {expandedAttention.has(item.id) && (
+                                  <DonnaAttention text={analysis.attention} />
+                                )}
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {item.resume && item.pipeline_step === "pret_a_reviser" && (
+                              <DonnaRecommendation text={item.resume} />
+                            )}
+                            {item.resume && item.pipeline_step !== "pret_a_reviser" && (
+                              <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">{item.resume}</p>
+                            )}
+                            {!item.resume && (
+                              <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">En cours d'analyse...</p>
+                            )}
+                          </>
                         )}
                         
                         {!isRejected && (
@@ -394,29 +404,52 @@ const Dashboard = () => {
       {/* Brouillon modal */}
       <Dialog open={!!viewingBrouillon} onOpenChange={() => setViewingBrouillon(null)}>
         <DialogContent className="max-w-lg">
-          <DialogTitle className="text-sm font-serif">Brouillon généré</DialogTitle>
-          {viewingBrouillon && (
-            <div className="space-y-4">
-              <div className="bg-muted p-4 rounded-lg">
-                <p className="text-xs text-muted-foreground mb-2">Sujet : {viewingBrouillon.objet}</p>
-                <BrouillonContent brouillon={viewingBrouillon.brouillon || ""} />
+          <DialogTitle className="text-sm font-serif">Analyse Donna</DialogTitle>
+          {viewingBrouillon && (() => {
+            const analysis = parseDonnaAnalysis(viewingBrouillon.brouillon);
+            return (
+              <div className="space-y-4">
+                <p className="text-xs text-muted-foreground">Sujet : {viewingBrouillon.objet}</p>
+                {analysis.resume && (
+                  <div className="bg-muted/60 border border-border rounded-lg p-4">
+                    <p className="text-xs font-semibold text-foreground mb-1">📋 Résumé de la situation</p>
+                    <p className="text-sm text-foreground/80 whitespace-pre-line">{analysis.resume}</p>
+                  </div>
+                )}
+                {analysis.recommandation && (
+                  <div className="bg-primary/5 border border-primary/10 rounded-lg p-4">
+                    <p className="text-xs font-semibold text-primary mb-1">🎯 Recommandation Donna</p>
+                    <p className="text-sm text-foreground/80 whitespace-pre-line">{analysis.recommandation}</p>
+                  </div>
+                )}
+                {analysis.attention && (
+                  <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800/30 rounded-lg p-4">
+                    <p className="text-xs font-semibold text-orange-600 dark:text-orange-400 mb-1">💡 Points d'attention</p>
+                    <p className="text-sm text-foreground/80 whitespace-pre-line">{analysis.attention}</p>
+                  </div>
+                )}
+                {!analysis.resume && !analysis.recommandation && (
+                  <div className="bg-muted p-4 rounded-lg">
+                    <p className="text-sm whitespace-pre-wrap">{viewingBrouillon.brouillon}</p>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      navigator.clipboard.writeText(viewingBrouillon.brouillon || "");
+                      toast.success("Copié !");
+                    }}
+                    className="flex-1"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />Copier
+                  </Button>
+                  <Button variant="outline" onClick={() => setViewingBrouillon(null)}>
+                    <X className="h-4 w-4 mr-2" />Fermer
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => {
-                    navigator.clipboard.writeText(viewingBrouillon.brouillon || "");
-                    toast.success("Copié !");
-                  }}
-                  className="flex-1"
-                >
-                  <Copy className="h-4 w-4 mr-2" />Copier
-                </Button>
-                <Button variant="outline" onClick={() => setViewingBrouillon(null)}>
-                  <X className="h-4 w-4 mr-2" />Fermer
-                </Button>
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </DashboardLayout>
