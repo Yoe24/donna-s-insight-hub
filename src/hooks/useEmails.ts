@@ -9,7 +9,8 @@ export type PipelineStep =
   | "recherche_contexte"
   | "redaction_brouillon"
   | "pret_a_reviser"
-  | "filtre_rejete";
+  | "filtre_rejete"
+  | "importe";
 
 export interface Email {
   id: string;
@@ -42,8 +43,15 @@ export function useEmails() {
 
     const fetchEmails = async () => {
       try {
-        const data = await api.get<Email[]>('/api/emails');
-        setEmails(data || []);
+        const { data, error } = await supabase
+          .from('emails')
+          .select('*')
+          .eq('user_id', user.id)
+          .neq('pipeline_step', 'importe')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setEmails((data as Email[]) || []);
       } catch (error) {
         console.error('Error fetching emails:', error);
       }
@@ -63,12 +71,16 @@ export function useEmails() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
+          const newEmail = payload.new as Email;
+          // Skip imported emails
+          if (newEmail.pipeline_step === 'importe') return;
+
           if (payload.eventType === 'INSERT') {
-            setEmails((prev) => [payload.new as Email, ...prev]);
+            setEmails((prev) => [newEmail, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
             setEmails((prev) =>
               prev.map((email) =>
-                email.id === payload.new.id ? (payload.new as Email) : email
+                email.id === newEmail.id ? newEmail : email
               )
             );
           }
