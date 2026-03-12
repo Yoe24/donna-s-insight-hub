@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/sidebar";
 const items = [
   { title: "Tableau de bord", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Configuration", url: "/configuration", icon: Settings },
-  { title: "Dossiers", url: "/dossiers", icon: FolderOpen },
+  { title: "Configurez-moi", url: "/configuration", icon: Settings },
+  { title: "Mes dossiers", url: "/dossiers", icon: FolderOpen },
 ];
 
 export function AppSidebar() {
