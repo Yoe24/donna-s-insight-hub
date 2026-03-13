@@ -459,6 +459,7 @@ const Dashboard = () => {
                         ))}
                       </div>
                     </div>
+                  )}
 
                   {/* Pièces jointes */}
                   {dossierDocs.length > 0 && (
