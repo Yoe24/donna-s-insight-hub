@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Coffee, Eye, Copy, ChevronDown, Archive, Check, Pencil, X, FileText, PenLine, Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Coffee, Eye, Copy, ChevronDown, Archive, X, FileText, PenLine, Loader2, Mail, Clock, TrendingUp, AlertCircle, CheckCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEmails, useEmailStats, useUpdateEmailStatus } from "@/hooks/useEmails";
@@ -27,6 +28,67 @@ function formatEmailTime(created_at: string) {
   }
 }
 
+// ── Animated Counter Hook ──
+function useAnimatedCounter(target: number, duration = 1000) {
+  const [count, setCount] = useState(0);
+  const prevTarget = useRef(0);
+
+  useEffect(() => {
+    if (target === prevTarget.current) return;
+    prevTarget.current = target;
+    const start = 0;
+    const startTime = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+      setCount(Math.round(start + (target - start) * eased));
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+
+    requestAnimationFrame(tick);
+  }, [target, duration]);
+
+  return count;
+}
+
+// ── Sender Avatar ──
+function senderInitial(expediteur: string): string {
+  // Extract name before email if format is "Name <email>"
+  const match = expediteur.match(/^([^<]+)/);
+  const name = match ? match[1].trim() : expediteur;
+  // Get first letter, handle email-only case
+  const firstChar = name.replace(/[^a-zA-ZÀ-ÿ]/g, "")[0] || name[0] || "?";
+  return firstChar.toUpperCase();
+}
+
+function senderColor(expediteur: string): string {
+  let hash = 0;
+  for (let i = 0; i < expediteur.length; i++) {
+    hash = expediteur.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 60%, 45%)`;
+}
+
+function SenderAvatar({ expediteur, size = 40 }: { expediteur: string; size?: number }) {
+  return (
+    <div
+      className="rounded-full flex items-center justify-center shrink-0 text-white font-bold"
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: senderColor(expediteur),
+        fontSize: size * 0.4,
+      }}
+    >
+      {senderInitial(expediteur)}
+    </div>
+  );
+}
+
+// ── Category logic ──
 type EmailCategorie = "client" | "prospect" | "other";
 
 function getCategorie(email: Email): EmailCategorie {
@@ -36,49 +98,21 @@ function getCategorie(email: Email): EmailCategorie {
   return "other";
 }
 
-const categorieConfig: Record<EmailCategorie, { label: string; icon: string; borderClass: string; bgClass: string; textClass: string; avatarBgClass: string; avatarTextClass: string; badgeBgClass: string; badgeTextClass: string }> = {
-  client: {
-    label: "Client",
-    icon: "👤",
-    borderClass: "border-l-client",
-    bgClass: "bg-client-light",
-    textClass: "text-client-foreground",
-    avatarBgClass: "bg-client-light",
-    avatarTextClass: "text-client",
-    badgeBgClass: "bg-client-light",
-    badgeTextClass: "text-client-foreground",
-  },
-  prospect: {
-    label: "Prospect",
-    icon: "🌱",
-    borderClass: "border-l-prospect",
-    bgClass: "bg-prospect-light",
-    textClass: "text-prospect-foreground",
-    avatarBgClass: "bg-prospect-light",
-    avatarTextClass: "text-prospect",
-    badgeBgClass: "bg-prospect-light",
-    badgeTextClass: "text-prospect-foreground",
-  },
-  other: {
-    label: "Autre",
-    icon: "📨",
-    borderClass: "border-l-other",
-    bgClass: "bg-other-light",
-    textClass: "text-other-foreground",
-    avatarBgClass: "bg-other-light",
-    avatarTextClass: "text-other",
-    badgeBgClass: "bg-other-light",
-    badgeTextClass: "text-other-foreground",
-  },
-};
-
+// Only show badge for client/prospect. For "other", return null.
 function CategorieBadge({ email }: { email: Email }) {
   const cat = getCategorie(email);
-  const config = categorieConfig[cat];
+  if (cat === "other") return null;
+
+  if (cat === "client") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-client-light text-client-foreground text-[10px] px-2 py-0.5 font-semibold">
+        👤 Client
+      </span>
+    );
+  }
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full ${config.badgeBgClass} ${config.badgeTextClass} text-[10px] px-2 py-0.5 font-semibold`}>
-      <span>{config.icon}</span>
-      {config.label}
+    <span className="inline-flex items-center gap-1 rounded-full bg-prospect-light text-prospect-foreground text-[10px] px-2 py-0.5 font-semibold">
+      🌱 Prospect
     </span>
   );
 }
@@ -125,6 +159,49 @@ function ImportArchives({ emails }: { emails: Email[] }) {
   );
 }
 
+// ── KPI Card ──
+function KpiCard({
+  label,
+  value,
+  suffix,
+  subtitle,
+  icon: Icon,
+  color,
+  delay = 0,
+}: {
+  label: string;
+  value: number;
+  suffix?: string;
+  subtitle: string;
+  icon: React.ElementType;
+  color: string;
+  delay?: number;
+}) {
+  const animatedValue = useAnimatedCounter(value);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.3 }}
+      className="relative overflow-hidden rounded-2xl border border-[hsl(220,13%,91%)] bg-background p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-default"
+    >
+      <Icon
+        className="absolute top-4 right-4 opacity-[0.12]"
+        style={{ color }}
+        size={40}
+        strokeWidth={1.5}
+      />
+      <p className="text-xs font-medium text-muted-foreground mb-1">{label}</p>
+      <p className="text-[2.5rem] font-bold leading-none tabular-nums" style={{ color }}>
+        {animatedValue}
+        {suffix && <span className="text-2xl ml-0.5">{suffix}</span>}
+      </p>
+      <p className="text-xs text-muted-foreground mt-2">{subtitle}</p>
+    </motion.div>
+  );
+}
+
 // ── Email Detail Overlay ──
 function EmailDetailOverlay({
   email,
@@ -142,8 +219,6 @@ function EmailDetailOverlay({
   const { updateStatus } = useUpdateEmailStatus();
 
   const analysis = parseDonnaAnalysis(email.brouillon);
-  const cat = getCategorie(email);
-  const config = categorieConfig[cat];
 
   useEffect(() => {
     if (!(email as any).dossier_id) {
@@ -170,7 +245,7 @@ function EmailDetailOverlay({
     try {
       await updateStatus(email.id, action);
       setFeedbackGiven(action);
-      toast.success("Merci pour le feedback !");
+      toast.success("Feedback envoyé, merci");
     } catch {
       toast.error("Erreur lors de l'envoi du feedback");
     }
@@ -192,6 +267,15 @@ function EmailDetailOverlay({
     if (!draftText) return;
     navigator.clipboard.writeText(draftText);
     toast.success("Brouillon copié !");
+  };
+
+  const handleFeedbackSelect = (value: string) => {
+    const map: Record<string, "parfait" | "modifier" | "erreur"> = {
+      parfait: "parfait",
+      modifier: "modifier",
+      erreur: "erreur",
+    };
+    if (map[value]) handleFeedback(map[value]);
   };
 
   return (
@@ -229,7 +313,8 @@ function EmailDetailOverlay({
 
           {/* Email meta */}
           <div className="space-y-2 mb-4">
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-3 flex-wrap">
+              <SenderAvatar expediteur={email.expediteur} size={36} />
               <span className="font-semibold text-foreground">{email.expediteur}</span>
               <CategorieBadge email={email} />
               <span className="text-xs text-muted-foreground ml-auto">{formatEmailTime(email.created_at)}</span>
@@ -241,10 +326,16 @@ function EmailDetailOverlay({
 
           {/* Section: Résumé Donna */}
           {analysis.resume && (
-            <div className="rounded-xl bg-[#F9FAFB] p-5 mb-6">
-              <p className="text-sm text-[#374151] whitespace-pre-line" style={{ lineHeight: 1.7 }}>
-                {analysis.resume}
-              </p>
+            <div className="mb-6">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Résumé par Donna</span>
+              </div>
+              <div className="rounded-xl bg-[hsl(210,20%,98%)] p-5">
+                <p className="text-sm text-[hsl(215,25%,27%)] whitespace-pre-line" style={{ lineHeight: 1.7 }}>
+                  {analysis.resume}
+                </p>
+              </div>
             </div>
           )}
 
@@ -271,7 +362,7 @@ function EmailDetailOverlay({
             </Button>
 
             {draftText && (
-              <div className="rounded-xl bg-[#EFF6FF] border border-blue-100 p-5 space-y-3">
+              <div className="rounded-xl bg-[hsl(213,100%,97%)] border border-[hsl(213,90%,90%)] p-5 space-y-3">
                 <p className="text-xs font-semibold text-foreground">✉️ Brouillon de réponse</p>
                 <p className="text-sm font-mono text-foreground/80 whitespace-pre-line leading-relaxed">{draftText}</p>
                 <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyDraft}>
@@ -338,50 +429,25 @@ function EmailDetailOverlay({
             </Collapsible>
           </div>
 
-          {/* Section: Feedback */}
+          {/* Section: Feedback — dropdown select */}
           <div className="border-t border-border pt-5">
-            <p className="text-xs text-muted-foreground mb-3">Cette analyse était...</p>
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={() => handleFeedback("parfait")}
-                disabled={!!feedbackGiven}
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
-                  feedbackGiven === "parfait"
-                    ? "bg-green-100 text-green-700 scale-105"
-                    : feedbackGiven
-                    ? "opacity-40 cursor-not-allowed bg-muted text-muted-foreground"
-                    : "bg-green-50 text-green-700 hover:bg-green-100"
-                }`}
-              >
-                👍 Utile
-              </button>
-              <button
-                onClick={() => handleFeedback("modifier")}
-                disabled={!!feedbackGiven}
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
-                  feedbackGiven === "modifier"
-                    ? "bg-orange-100 text-orange-700 scale-105"
-                    : feedbackGiven
-                    ? "opacity-40 cursor-not-allowed bg-muted text-muted-foreground"
-                    : "bg-orange-50 text-orange-700 hover:bg-orange-100"
-                }`}
-              >
-                👎 À revoir
-              </button>
-              <button
-                onClick={() => handleFeedback("erreur")}
-                disabled={!!feedbackGiven}
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
-                  feedbackGiven === "erreur"
-                    ? "bg-red-100 text-red-700 scale-105"
-                    : feedbackGiven
-                    ? "opacity-40 cursor-not-allowed bg-muted text-muted-foreground"
-                    : "bg-red-50 text-red-700 hover:bg-red-100"
-                }`}
-              >
-                ❌ Faux
-              </button>
-            </div>
+            {feedbackGiven ? (
+              <p className="text-xs text-muted-foreground">✓ Feedback envoyé, merci</p>
+            ) : (
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground">Évaluer cette analyse</label>
+                <Select onValueChange={handleFeedbackSelect}>
+                  <SelectTrigger className="w-56 h-8 text-xs bg-muted/40 border-border">
+                    <SelectValue placeholder="Donner un feedback..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="parfait">Analyse pertinente</SelectItem>
+                    <SelectItem value="modifier">Analyse à améliorer</SelectItem>
+                    <SelectItem value="erreur">Analyse incorrecte</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
         </motion.div>
       </motion.div>
@@ -406,32 +472,30 @@ const Dashboard = () => {
 
   const activeEmails = emails.filter(e => e.statut !== "archive" && e.statut !== "ignore" && e.pipeline_step !== "importe");
   const isInboxEmpty = activeEmails.length === 0;
-  const otherCount = activeEmails.filter(e => getCategorie(e) === "other").length;
 
   const tempsMinutes = stats.traites * 5;
-  const prenom = nomAvocat ? nomAvocat.split(" ")[0] : "";
+  const economise = Math.round(stats.traites * 5 * 75 / 60);
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="max-w-3xl mx-auto space-y-6">
-          <div className="space-y-3 pt-2">
-            <div className="h-8 w-48 bg-muted animate-pulse rounded" />
-            <div className="h-4 w-72 bg-muted animate-pulse rounded" />
-            <div className="flex gap-2 mt-2">
-              <div className="h-7 w-32 bg-muted animate-pulse rounded-full" />
-              <div className="h-7 w-28 bg-muted animate-pulse rounded-full" />
-              <div className="h-7 w-24 bg-muted animate-pulse rounded-full" />
-            </div>
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="rounded-2xl border border-border p-6 space-y-3">
+                <div className="h-3 w-20 bg-muted animate-pulse rounded" />
+                <div className="h-10 w-16 bg-muted animate-pulse rounded" />
+                <div className="h-3 w-24 bg-muted animate-pulse rounded" />
+              </div>
+            ))}
           </div>
           <div className="space-y-2.5 pt-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="rounded-lg border-l-4 border-l-muted border border-border p-4 flex items-start gap-3">
-                <div className="h-9 w-9 rounded-full bg-muted animate-pulse shrink-0" />
+              <div key={i} className="rounded-lg border border-border p-4 flex items-start gap-3">
+                <div className="h-10 w-10 rounded-full bg-muted animate-pulse shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="h-4 w-40 bg-muted animate-pulse rounded" />
                   <div className="h-3 w-full bg-muted animate-pulse rounded" />
-                  <div className="h-3 w-2/3 bg-muted animate-pulse rounded" />
                 </div>
               </div>
             ))}
@@ -443,43 +507,44 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto">
-        {/* Conversational header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-[1.8rem] font-bold text-foreground leading-tight">
-            Bonjour {prenom ? prenom : ""} 👋
-          </h1>
-          <p className="text-muted-foreground mt-1.5 text-base">
-            {isInboxEmpty
-              ? "Rien de nouveau pour le moment. Donna surveille votre boîte mail."
-              : `Donna a traité ${stats.traites} email${stats.traites > 1 ? "s" : ""} pour vous aujourd'hui.`}
-          </p>
-
-          {!isInboxEmpty && (
-            <div className="flex flex-wrap gap-2 mt-4">
-              <span className="inline-flex items-center rounded-full bg-[#F3F4F6] px-3 py-1.5 text-xs font-medium text-foreground/70">
-                ⏱ {tempsMinutes}min gagnées
-              </span>
-              <span className="inline-flex items-center rounded-full bg-[#F3F4F6] px-3 py-1.5 text-xs font-medium text-foreground/70">
-                📧 {stats.traites} analysés
-              </span>
-              {otherCount > 0 && (
-                <span className="inline-flex items-center rounded-full bg-[#F3F4F6] px-3 py-1.5 text-xs font-medium text-foreground/70">
-                  🔕 {otherCount} filtrés
-                </span>
-              )}
-              {stats.en_attente > 0 && (
-                <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-600 px-3 py-1.5 text-xs font-medium">
-                  ⚡ {stats.en_attente} à voir
-                </span>
-              )}
-            </div>
-          )}
-        </motion.div>
+      <div className="max-w-4xl mx-auto">
+        {/* KPI Cards Header */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+          <KpiCard
+            label="Emails traités"
+            value={stats.traites}
+            subtitle="aujourd'hui"
+            icon={Mail}
+            color="hsl(245, 58%, 69%)"
+            delay={0}
+          />
+          <KpiCard
+            label="Temps gagné"
+            value={tempsMinutes}
+            suffix="min"
+            subtitle="estimé aujourd'hui"
+            icon={Clock}
+            color="hsl(142, 71%, 45%)"
+            delay={0.05}
+          />
+          <KpiCard
+            label="Économisé"
+            value={economise}
+            suffix="€"
+            subtitle="estimé aujourd'hui"
+            icon={TrendingUp}
+            color="hsl(142, 71%, 45%)"
+            delay={0.1}
+          />
+          <KpiCard
+            label="À voir"
+            value={stats.en_attente}
+            subtitle="nécessitent votre attention"
+            icon={stats.en_attente > 0 ? AlertCircle : CheckCircle}
+            color={stats.en_attente > 0 ? "hsl(38, 92%, 50%)" : "hsl(142, 71%, 45%)"}
+            delay={0.15}
+          />
+        </div>
 
         {/* Email list */}
         {isInboxEmpty ? (
@@ -496,8 +561,6 @@ const Dashboard = () => {
               {activeEmails.map((email, i) => {
                 const isRejected = email.pipeline_step === "filtre_rejete";
                 const analysis = parseDonnaAnalysis(email.brouillon);
-                const cat = getCategorie(email);
-                const config = categorieConfig[cat];
 
                 return (
                   <motion.div
@@ -508,21 +571,19 @@ const Dashboard = () => {
                     transition={{ delay: i * 0.04 }}
                   >
                     <Card
-                      className={`border-l-4 ${isRejected ? "border-l-other opacity-40" : config.borderClass} bg-card hover:shadow-md transition-all cursor-pointer group`}
+                      className={`bg-card hover:shadow-md transition-all cursor-pointer group ${isRejected ? "opacity-40" : ""}`}
                       onClick={() => {
                         if (!isRejected) setSelectedEmail(email);
                       }}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
-                          <div className={`h-9 w-9 rounded-full ${isRejected ? "bg-other-light" : config.avatarBgClass} flex items-center justify-center shrink-0 mt-0.5 text-base`}>
-                            {isRejected ? "📨" : config.icon}
-                          </div>
+                          <SenderAvatar expediteur={email.expediteur} />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-semibold text-sm text-foreground truncate">{email.expediteur}</span>
                               {isRejected ? (
-                                <span className="inline-flex items-center rounded-full bg-other-light text-other-foreground text-[10px] px-2 py-0.5 font-medium">Ignoré</span>
+                                <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground text-[10px] px-2 py-0.5 font-medium">Filtré</span>
                               ) : (
                                 <CategorieBadge email={email} />
                               )}
