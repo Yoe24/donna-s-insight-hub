@@ -475,6 +475,7 @@ const Dashboard = () => {
 
   const tempsMinutes = stats.traites * 5;
   const economise = Math.round(stats.traites * 5 * 75 / 60);
+  const animatedTraites = useAnimatedCounter(stats.traites, 1500);
 
   if (loading) {
     return (
