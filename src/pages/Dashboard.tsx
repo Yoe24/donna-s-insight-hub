@@ -149,6 +149,8 @@ const Dashboard = () => {
   const [dossierDocs, setDossierDocs] = useState<any[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
+  const [draftText, setDraftText] = useState<string | null>(null);
+  const [draftLoading, setDraftLoading] = useState(false);
   const { emails, loading } = useEmails();
   const { stats } = useEmailStats();
   const { updateStatus } = useUpdateEmailStatus();
