@@ -481,14 +481,9 @@ const Dashboard = () => {
     return (
       <DashboardLayout>
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="rounded-2xl border border-border p-6 space-y-3">
-                <div className="h-3 w-20 bg-muted animate-pulse rounded" />
-                <div className="h-10 w-16 bg-muted animate-pulse rounded" />
-                <div className="h-3 w-24 bg-muted animate-pulse rounded" />
-              </div>
-            ))}
+          <div className="mt-8 mb-10 space-y-3">
+            <div className="h-16 w-48 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-64 bg-muted animate-pulse rounded" />
           </div>
           <div className="space-y-2.5 pt-4">
             {[...Array(4)].map((_, i) => (
