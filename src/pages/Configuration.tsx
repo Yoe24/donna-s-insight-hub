@@ -141,14 +141,14 @@ const Configuration = () => {
             Tableau de bord
           </Link>
 
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-serif font-bold text-foreground">Configurez Donna</h1>
               <p className="text-muted-foreground font-sans text-sm mt-1">
                 Ces informations permettent à Donna de vous connaître et de travailler efficacement pour vous.
               </p>
             </div>
-            <Button variant="outline" size="sm" asChild className="shrink-0">
+            <Button variant="outline" size="sm" asChild className="shrink-0 self-start min-h-[48px] sm:min-h-0">
               <Link to="/onboarding">
                 <Mail className="h-4 w-4 mr-2" />
                 Importer ma boîte mail
