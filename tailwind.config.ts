@@ -61,6 +61,26 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        client: {
+          DEFAULT: "hsl(var(--client))",
+          light: "hsl(var(--client-light))",
+          foreground: "hsl(var(--client-foreground))",
+        },
+        prospect: {
+          DEFAULT: "hsl(var(--prospect))",
+          light: "hsl(var(--prospect-light))",
+          foreground: "hsl(var(--prospect-foreground))",
+        },
+        other: {
+          DEFAULT: "hsl(var(--other))",
+          light: "hsl(var(--other-light))",
+          foreground: "hsl(var(--other-foreground))",
+        },
+        donna: {
+          DEFAULT: "hsl(var(--donna))",
+          light: "hsl(var(--donna-light))",
+          foreground: "hsl(var(--donna-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

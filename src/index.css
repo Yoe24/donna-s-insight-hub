@@ -41,6 +41,19 @@
     --roi-money: 145 40% 94%;
     --roi-money-accent: 145 45% 38%;
 
+    --client: 217 91% 60%;
+    --client-light: 217 91% 95%;
+    --client-foreground: 217 91% 25%;
+    --prospect: 142 71% 45%;
+    --prospect-light: 142 71% 94%;
+    --prospect-foreground: 142 71% 20%;
+    --other: 0 0% 60%;
+    --other-light: 0 0% 96%;
+    --other-foreground: 0 0% 35%;
+    --donna: 250 60% 55%;
+    --donna-light: 250 60% 96%;
+    --donna-foreground: 250 60% 25%;
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 0 0% 20%;
     --sidebar-primary: 0 0% 8%;
