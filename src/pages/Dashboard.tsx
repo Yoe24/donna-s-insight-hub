@@ -493,12 +493,6 @@ const Dashboard = () => {
                     </div>
                   )}
 
-                  {analysis.attention && (
-                    <div className="rounded-lg bg-orange-50 border border-orange-200 p-4">
-                      <p className="text-xs font-semibold text-orange-600 mb-2">💡 Points d'attention</p>
-                      <AttentionText text={analysis.attention} />
-                    </div>
-                  )}
 
                   {!analysis.resume && !analysis.recommandation && !analysis.attention && selectedEmail.brouillon && (
                     <div className="rounded-lg bg-muted p-4">
