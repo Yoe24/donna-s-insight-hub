@@ -148,6 +148,7 @@ const Dashboard = () => {
   const [nomAvocat, setNomAvocat] = useState<string>("");
   const [dossierDocs, setDossierDocs] = useState<any[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
+  const [showCategories, setShowCategories] = useState(false);
   const { emails, loading } = useEmails();
   const { stats } = useEmailStats();
   const { updateStatus } = useUpdateEmailStatus();
