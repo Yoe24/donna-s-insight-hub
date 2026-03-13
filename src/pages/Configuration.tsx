@@ -244,7 +244,7 @@ const Configuration = () => {
           <Button variant="outline" size="sm" asChild className="shrink-0">
             <Link to="/onboarding">
               <Mail className="h-4 w-4 mr-2" />
-              Importer ma boîte mail
+              Configurez-moi à partir de votre boîte mail
             </Link>
           </Button>
         </div>
