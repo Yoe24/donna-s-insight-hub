@@ -224,6 +224,25 @@ const Dashboard = () => {
     toast.success("Résumé copié !");
   };
 
+  const handleGenerateDraft = async () => {
+    if (!selectedEmail) return;
+    setDraftLoading(true);
+    try {
+      const data = await api.post<{ draft: string }>(`/api/emails/${selectedEmail.id}/draft`);
+      setDraftText(data.draft);
+    } catch {
+      toast.error("Erreur lors de la génération du brouillon");
+    } finally {
+      setDraftLoading(false);
+    }
+  };
+
+  const handleCopyDraft = () => {
+    if (!draftText) return;
+    navigator.clipboard.writeText(draftText);
+    toast.success("Brouillon copié !");
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
