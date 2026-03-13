@@ -499,7 +499,6 @@ const Dashboard = () => {
                       })}
                     </div>
                   )}
-                  )}
 
                   {analysis.attention && (
                     <div className="rounded-lg bg-orange-50 border border-orange-200 p-4">
