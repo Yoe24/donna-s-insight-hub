@@ -211,75 +211,130 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto space-y-6">
-        {/* Donna greeting */}
+        {/* Donna Briefing Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl bg-donna-light border border-donna/10 p-5"
+          className="space-y-5"
         >
-          <div className="flex items-start gap-3">
-            <div className="h-9 w-9 rounded-full bg-donna/10 flex items-center justify-center shrink-0">
-              <Sparkles className="h-4 w-4 text-donna" />
-            </div>
-            <div className="space-y-1.5">
-              {prenom && (
-                <p className="text-sm font-semibold text-donna-foreground">Bonjour {prenom} 👋</p>
-              )}
-              <p className="text-sm text-donna-foreground/80 leading-relaxed">
+          {/* Greeting + briefing text */}
+          <div className="rounded-xl border border-donna/15 bg-gradient-to-br from-donna-light to-background p-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🟣</span>
+                <h2 className="font-serif text-lg font-bold text-foreground tracking-tight">
+                  {prenom ? `Bonjour ${prenom}` : "Bonjour"}, voici votre briefing
+                </h2>
+              </div>
+              <p className="text-sm text-foreground/70 leading-relaxed pl-8">
                 {isInboxEmpty ? (
-                  "Tout est calme pour le moment. Je surveille votre boîte mail et vous préviendrai dès qu'un email nécessite votre attention."
+                  "Tout est calme pour le moment. Je surveille votre boîte mail et vous préviendrai dès qu'un email arrive."
                 ) : (
                   <>
-                    J'ai traité <span className="font-semibold text-donna-foreground">{stats.traites} emails</span> pour vous.
+                    Aujourd'hui, vous avez reçu <span className="font-semibold text-foreground">{stats.recus} email{stats.recus > 1 ? "s" : ""}</span>.
+                    {" "}J'en ai analysé <span className="font-semibold text-foreground">{stats.traites}</span>
+                    {stats.valides > 0 && <> et validé <span className="font-semibold text-foreground">{stats.valides}</span></>}.
+                    {otherCount > 0 && (
+                      <> J'ai filtré <span className="font-semibold text-foreground">{otherCount} newsletter{otherCount > 1 ? "s" : ""}/autre{otherCount > 1 ? "s" : ""}</span>.</>
+                    )}
+                    {clientCount > 0 && (
+                      <> <span className="font-semibold text-client">{clientCount} de vos client{clientCount > 1 ? "s" : ""}</span> vous ont écrit.</>
+                    )}
+                    {prospectCount > 0 && (
+                      <> <span className="font-semibold text-prospect">{prospectCount} prospect{prospectCount > 1 ? "s" : ""}</span> à traiter.</>
+                    )}
                     {stats.en_attente > 0 && (
-                      <> <span className="font-semibold text-donna-foreground">{stats.en_attente}</span> nécessitent votre attention.</>
+                      <> <span className="font-semibold text-orange-600">{stats.en_attente} email{stats.en_attente > 1 ? "s" : ""}</span> {stats.en_attente > 1 ? "nécessitent" : "nécessite"} votre attention.</>
                     )}
                   </>
                 )}
               </p>
             </div>
           </div>
-        </motion.div>
 
-        {/* Quick stats pills */}
-        {!isInboxEmpty && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="flex flex-wrap gap-2"
-          >
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs">
-              <Clock className="h-3 w-3 text-muted-foreground" />
-              <span className="text-muted-foreground">Temps gagné :</span>
-              <span className="font-semibold text-foreground">{tempsStr}</span>
-            </div>
-            {clientCount > 0 && (
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-client-light px-3 py-1.5 text-xs">
-                <span>👤</span>
-                <span className="font-semibold text-client-foreground">{clientCount} client{clientCount > 1 ? "s" : ""}</span>
-              </div>
-            )}
-            {prospectCount > 0 && (
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-prospect-light px-3 py-1.5 text-xs">
-                <span>🌱</span>
-                <span className="font-semibold text-prospect-foreground">{prospectCount} prospect{prospectCount > 1 ? "s" : ""}</span>
-              </div>
-            )}
-            {otherCount > 0 && (
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-other-light px-3 py-1.5 text-xs">
-                <span>📨</span>
-                <span className="font-semibold text-other-foreground">{otherCount} autre{otherCount > 1 ? "s" : ""}</span>
-              </div>
-            )}
-            {stats.en_attente > 0 && (
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-3 py-1.5 text-xs">
-                <AlertCircle className="h-3 w-3 text-orange-600" />
-                <span className="font-semibold text-orange-700">{stats.en_attente} action{stats.en_attente > 1 ? "s" : ""} requise{stats.en_attente > 1 ? "s" : ""}</span>
-              </div>
-            )}
-          </motion.div>
-        )}
+          {/* KPI Cards */}
+          {!isInboxEmpty && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+            >
+              <Card className="border-border bg-card shadow-sm">
+                <CardContent className="p-4 text-center space-y-1">
+                  <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span className="text-[11px] font-medium uppercase tracking-wider">Temps gagné</span>
+                  </div>
+                  <p className="text-2xl font-serif font-bold text-foreground">{tempsStr}</p>
+                  <p className="text-[10px] text-muted-foreground">estimé aujourd'hui</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border bg-card shadow-sm">
+                <CardContent className="p-4 text-center space-y-1">
+                  <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    <span className="text-[11px] font-medium uppercase tracking-wider">Économisé</span>
+                  </div>
+                  <p className="text-2xl font-serif font-bold text-foreground">{Math.round(tempsMinutes * 3.33)}€</p>
+                  <p className="text-[10px] text-muted-foreground">basé sur 200€/h</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border bg-card shadow-sm">
+                <CardContent className="p-4 text-center space-y-1">
+                  <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
+                    <span className="text-xs">📬</span>
+                    <span className="text-[11px] font-medium uppercase tracking-wider">Traités</span>
+                  </div>
+                  <p className="text-2xl font-serif font-bold text-foreground">{stats.traites}</p>
+                  <p className="text-[10px] text-muted-foreground">email{stats.traites > 1 ? "s" : ""} analysé{stats.traites > 1 ? "s" : ""}</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border bg-card shadow-sm">
+                <CardContent className="p-4 text-center space-y-1">
+                  <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    <span className="text-[11px] font-medium uppercase tracking-wider">À faire</span>
+                  </div>
+                  <p className={`text-2xl font-serif font-bold ${stats.en_attente > 0 ? "text-orange-600" : "text-foreground"}`}>{stats.en_attente}</p>
+                  <p className="text-[10px] text-muted-foreground">action{stats.en_attente > 1 ? "s" : ""} requise{stats.en_attente > 1 ? "s" : ""}</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Category breakdown pills */}
+          {!isInboxEmpty && (clientCount > 0 || prospectCount > 0 || otherCount > 0) && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.25 }}
+              className="flex flex-wrap gap-2"
+            >
+              {clientCount > 0 && (
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-client-light px-3 py-1.5 text-xs">
+                  <span>👤</span>
+                  <span className="font-semibold text-client-foreground">{clientCount} client{clientCount > 1 ? "s" : ""}</span>
+                </div>
+              )}
+              {prospectCount > 0 && (
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-prospect-light px-3 py-1.5 text-xs">
+                  <span>🌱</span>
+                  <span className="font-semibold text-prospect-foreground">{prospectCount} prospect{prospectCount > 1 ? "s" : ""}</span>
+                </div>
+              )}
+              {otherCount > 0 && (
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-other-light px-3 py-1.5 text-xs">
+                  <span>📨</span>
+                  <span className="font-semibold text-other-foreground">{otherCount} filtré{otherCount > 1 ? "s" : ""}</span>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </motion.div>
 
         {/* Email list */}
         {isInboxEmpty ? (
