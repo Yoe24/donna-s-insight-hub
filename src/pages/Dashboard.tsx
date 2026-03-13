@@ -146,9 +146,34 @@ const Dashboard = () => {
   const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
   const [nomAvocat, setNomAvocat] = useState<string>("");
+  const [dossierDocs, setDossierDocs] = useState<any[]>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
   const { emails, loading } = useEmails();
   const { stats } = useEmailStats();
   const { updateStatus } = useUpdateEmailStatus();
+
+  // Fetch dossier documents when an email with dossier_id is selected
+  useEffect(() => {
+    if (!selectedEmail || !(selectedEmail as any).dossier_id) {
+      setDossierDocs([]);
+      return;
+    }
+    setDocsLoading(true);
+    api.get(`/api/dossiers/${(selectedEmail as any).dossier_id}`)
+      .then((data: any) => {
+        const docs = data?.dossier_documents || [];
+        // Filter docs within ±1 day of the email
+        const emailDate = new Date(selectedEmail.created_at);
+        const filtered = docs.filter((doc: any) => {
+          if (!doc.created_at) return true; // include if no date
+          const docDate = new Date(doc.created_at);
+          return Math.abs(docDate.getTime() - emailDate.getTime()) <= 86400000;
+        });
+        setDossierDocs(filtered);
+      })
+      .catch(() => setDossierDocs([]))
+      .finally(() => setDocsLoading(false));
+  }, [selectedEmail]);
 
   useEffect(() => {
     api.get<{ nom_avocat?: string }>("/api/config")
