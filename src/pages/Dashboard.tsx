@@ -2,9 +2,8 @@ import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Coffee, Eye, User, Copy, ChevronDown, Archive, Check, Pencil, X, Sparkles, TrendingUp, Clock, AlertCircle, FileText, PenLine, Loader2 } from "lucide-react";
+import { Coffee, Eye, Copy, ChevronDown, Archive, Check, Pencil, X, FileText, PenLine, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEmails, useEmailStats, useUpdateEmailStatus } from "@/hooks/useEmails";
@@ -126,52 +125,36 @@ function ImportArchives({ emails }: { emails: Email[] }) {
   );
 }
 
-function AttentionText({ text }: { text: string }) {
-  const parts = text.split(/(\[À VÉRIFIER\])/gi);
-  return (
-    <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">
-      {parts.map((part, i) =>
-        part.match(/\[À VÉRIFIER\]/i) ? (
-          <span key={i} className="text-orange-600 font-semibold bg-orange-100 px-1 rounded">{part}</span>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      )}
-    </p>
-  );
-}
-
-const Dashboard = () => {
-  const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
+// ── Email Detail Overlay ──
+function EmailDetailOverlay({
+  email,
+  onClose,
+}: {
+  email: Email;
+  onClose: () => void;
+}) {
   const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
-  const [nomAvocat, setNomAvocat] = useState<string>("");
-  const [dossierDocs, setDossierDocs] = useState<any[]>([]);
-  const [docsLoading, setDocsLoading] = useState(false);
-  const [showCategories, setShowCategories] = useState(false);
   const [draftText, setDraftText] = useState<string | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
-  const { emails, loading } = useEmails();
-  const { stats } = useEmailStats();
+  const [dossierDocs, setDossierDocs] = useState<any[]>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
   const { updateStatus } = useUpdateEmailStatus();
 
-  // Reset draft state when selected email changes
-  useEffect(() => {
-    setDraftText(null);
-    setDraftLoading(false);
-  }, [selectedEmail?.id]);
+  const analysis = parseDonnaAnalysis(email.brouillon);
+  const cat = getCategorie(email);
+  const config = categorieConfig[cat];
 
-  // Fetch dossier documents when an email with dossier_id is selected
   useEffect(() => {
-    if (!selectedEmail || !(selectedEmail as any).dossier_id) {
+    if (!(email as any).dossier_id) {
       setDossierDocs([]);
       return;
     }
     setDocsLoading(true);
-    api.get(`/api/dossiers/${(selectedEmail as any).dossier_id}`)
+    api.get(`/api/dossiers/${(email as any).dossier_id}`)
       .then((data: any) => {
         const docs = data?.dossier_documents || [];
-        const emailDate = new Date(selectedEmail.created_at);
+        const emailDate = new Date(email.created_at);
         const filtered = docs.filter((doc: any) => {
           if (!doc.created_at) return true;
           const docDate = new Date(doc.created_at);
@@ -181,54 +164,22 @@ const Dashboard = () => {
       })
       .catch(() => setDossierDocs([]))
       .finally(() => setDocsLoading(false));
-  }, [selectedEmail]);
-
-  useEffect(() => {
-    api.get<{ nom_avocat?: string }>("/api/config")
-      .then(data => {
-        if (data?.nom_avocat) setNomAvocat(data.nom_avocat);
-      })
-      .catch(() => {});
-  }, []);
-
-  const activeEmails = emails.filter(e => e.statut !== "archive" && e.statut !== "ignore" && e.pipeline_step !== "importe");
-  const isInboxEmpty = activeEmails.length === 0;
-
-  const clientCount = activeEmails.filter(e => getCategorie(e) === "client").length;
-  const prospectCount = activeEmails.filter(e => getCategorie(e) === "prospect").length;
-  const otherCount = activeEmails.filter(e => getCategorie(e) === "other").length;
-
-  const tempsMinutes = stats.traites * 5;
-  const heures = Math.floor(tempsMinutes / 60);
-  const minutes = tempsMinutes % 60;
-  const tempsStr = heures > 0 ? `${heures}h${minutes.toString().padStart(2, "0")}min` : `${minutes}min`;
-
-  const prenom = nomAvocat ? nomAvocat.split(" ")[0] : "";
+  }, [email]);
 
   const handleFeedback = async (action: "parfait" | "modifier" | "erreur") => {
-    if (!selectedEmail) return;
     try {
-      await updateStatus(selectedEmail.id, action);
+      await updateStatus(email.id, action);
       setFeedbackGiven(action);
-      toast.success("Feedback envoyé, merci !");
+      toast.success("Merci pour le feedback !");
     } catch {
       toast.error("Erreur lors de l'envoi du feedback");
     }
   };
 
-  const handleCopyResume = () => {
-    if (!selectedEmail) return;
-    const analysis = parseDonnaAnalysis(selectedEmail.brouillon);
-    const text = [analysis.resume, analysis.recommandation].filter(Boolean).join("\n\n");
-    navigator.clipboard.writeText(text);
-    toast.success("Résumé copié !");
-  };
-
   const handleGenerateDraft = async () => {
-    if (!selectedEmail) return;
     setDraftLoading(true);
     try {
-      const data = await api.post<{ draft: string }>(`/api/emails/${selectedEmail.id}/draft`);
+      const data = await api.post<{ draft: string }>(`/api/emails/${email.id}/draft`);
       setDraftText(data.draft);
     } catch {
       toast.error("Erreur lors de la génération du brouillon");
@@ -243,35 +194,237 @@ const Dashboard = () => {
     toast.success("Brouillon copié !");
   };
 
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm overflow-y-auto py-8 sm:py-12 px-4"
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 24 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="relative w-full max-w-[700px] bg-background rounded-none sm:rounded-2xl p-6 sm:p-8 shadow-2xl"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <button
+              onClick={onClose}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+            >
+              ← Retour
+            </button>
+            <button
+              onClick={onClose}
+              className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Email meta */}
+          <div className="space-y-2 mb-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-foreground">{email.expediteur}</span>
+              <CategorieBadge email={email} />
+              <span className="text-xs text-muted-foreground ml-auto">{formatEmailTime(email.created_at)}</span>
+            </div>
+            <h2 className="text-xl font-semibold text-foreground leading-tight">{email.objet}</h2>
+          </div>
+
+          <div className="h-px bg-border mb-6" />
+
+          {/* Section: Résumé Donna */}
+          {analysis.resume && (
+            <div className="rounded-xl bg-[#F9FAFB] p-5 mb-6">
+              <p className="text-sm text-[#374151] whitespace-pre-line" style={{ lineHeight: 1.7 }}>
+                {analysis.resume}
+              </p>
+            </div>
+          )}
+
+          {/* Section: Brouillon */}
+          <div className="mb-6 space-y-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs border-border hover:border-primary/50 transition-colors"
+              onClick={handleGenerateDraft}
+              disabled={draftLoading}
+            >
+              {draftLoading ? (
+                <>
+                  <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                  Donna rédige un brouillon...
+                </>
+              ) : (
+                <>
+                  <PenLine className="h-3 w-3 mr-1.5" />
+                  {draftText ? "Regénérer le brouillon" : "✉️ Générer un brouillon de réponse"}
+                </>
+              )}
+            </Button>
+
+            {draftText && (
+              <div className="rounded-xl bg-[#EFF6FF] border border-blue-100 p-5 space-y-3">
+                <p className="text-xs font-semibold text-foreground">✉️ Brouillon de réponse</p>
+                <p className="text-sm font-mono text-foreground/80 whitespace-pre-line leading-relaxed">{draftText}</p>
+                <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyDraft}>
+                  <Copy className="h-3 w-3 mr-1" />Copier le brouillon
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Section: Pièces jointes */}
+          {dossierDocs.length > 0 && (
+            <div className="mb-6 space-y-3">
+              <p className="text-xs font-medium text-muted-foreground">📎 Pièces jointes</p>
+              {dossierDocs.map((doc: any, idx: number) => {
+                const isPdf = doc.type?.toLowerCase()?.includes("pdf") || doc.nom_fichier?.endsWith(".pdf");
+                return (
+                  <Collapsible key={idx}>
+                    <div className="rounded-lg bg-muted/40 border border-border p-3 space-y-2">
+                      <div className="flex items-start gap-2.5">
+                        <FileText className={`h-4 w-4 shrink-0 mt-0.5 ${isPdf ? "text-red-500" : "text-blue-500"}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">{doc.nom_fichier}</p>
+                          {doc.resume && (
+                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-4">{doc.resume}</p>
+                          )}
+                        </div>
+                      </div>
+                      {doc.contenu_extrait && (
+                        <>
+                          <CollapsibleTrigger asChild>
+                            <button className="text-[11px] text-primary font-medium hover:underline">
+                              Voir l'extrait complet
+                            </button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="mt-2 rounded bg-muted/60 p-3 text-xs text-foreground/70 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
+                              {doc.contenu_extrait}
+                            </div>
+                          </CollapsibleContent>
+                        </>
+                      )}
+                    </div>
+                  </Collapsible>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Section: Email original */}
+          <div className="mb-6">
+            <Collapsible open={showOriginal} onOpenChange={setShowOriginal}>
+              <CollapsibleTrigger asChild>
+                <button className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  {showOriginal ? "Masquer" : "Voir"} l'email original ›
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-3 rounded-xl bg-muted/40 border border-border p-4">
+                  <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed">
+                    {(email as any).contenu || "Contenu non disponible."}
+                  </p>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+
+          {/* Section: Feedback */}
+          <div className="border-t border-border pt-5">
+            <p className="text-xs text-muted-foreground mb-3">Cette analyse était...</p>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => handleFeedback("parfait")}
+                disabled={!!feedbackGiven}
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                  feedbackGiven === "parfait"
+                    ? "bg-green-100 text-green-700 scale-105"
+                    : feedbackGiven
+                    ? "opacity-40 cursor-not-allowed bg-muted text-muted-foreground"
+                    : "bg-green-50 text-green-700 hover:bg-green-100"
+                }`}
+              >
+                👍 Utile
+              </button>
+              <button
+                onClick={() => handleFeedback("modifier")}
+                disabled={!!feedbackGiven}
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                  feedbackGiven === "modifier"
+                    ? "bg-orange-100 text-orange-700 scale-105"
+                    : feedbackGiven
+                    ? "opacity-40 cursor-not-allowed bg-muted text-muted-foreground"
+                    : "bg-orange-50 text-orange-700 hover:bg-orange-100"
+                }`}
+              >
+                👎 À revoir
+              </button>
+              <button
+                onClick={() => handleFeedback("erreur")}
+                disabled={!!feedbackGiven}
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                  feedbackGiven === "erreur"
+                    ? "bg-red-100 text-red-700 scale-105"
+                    : feedbackGiven
+                    ? "opacity-40 cursor-not-allowed bg-muted text-muted-foreground"
+                    : "bg-red-50 text-red-700 hover:bg-red-100"
+                }`}
+              >
+                ❌ Faux
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ── Main Dashboard ──
+const Dashboard = () => {
+  const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
+  const [nomAvocat, setNomAvocat] = useState<string>("");
+  const { emails, loading } = useEmails();
+  const { stats } = useEmailStats();
+
+  useEffect(() => {
+    api.get<{ nom_avocat?: string }>("/api/config")
+      .then(data => {
+        if (data?.nom_avocat) setNomAvocat(data.nom_avocat);
+      })
+      .catch(() => {});
+  }, []);
+
+  const activeEmails = emails.filter(e => e.statut !== "archive" && e.statut !== "ignore" && e.pipeline_step !== "importe");
+  const isInboxEmpty = activeEmails.length === 0;
+  const otherCount = activeEmails.filter(e => getCategorie(e) === "other").length;
+
+  const tempsMinutes = stats.traites * 5;
+  const prenom = nomAvocat ? nomAvocat.split(" ")[0] : "";
+
   if (loading) {
     return (
       <DashboardLayout>
         <div className="max-w-3xl mx-auto space-y-6">
-          {/* Skeleton greeting */}
-          <div className="rounded-xl border border-border p-6 space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="h-6 w-6 bg-muted animate-pulse rounded-full" />
-              <div className="h-5 w-64 bg-muted animate-pulse rounded" />
-            </div>
-            <div className="pl-8 space-y-2">
-              <div className="h-3 w-48 bg-muted animate-pulse rounded" />
-              <div className="h-4 w-full bg-muted animate-pulse rounded" />
-              <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+          <div className="space-y-3 pt-2">
+            <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-72 bg-muted animate-pulse rounded" />
+            <div className="flex gap-2 mt-2">
+              <div className="h-7 w-32 bg-muted animate-pulse rounded-full" />
+              <div className="h-7 w-28 bg-muted animate-pulse rounded-full" />
+              <div className="h-7 w-24 bg-muted animate-pulse rounded-full" />
             </div>
           </div>
-          {/* Skeleton KPIs */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-border p-4 space-y-2">
-              <div className="h-3 w-20 bg-muted animate-pulse rounded mx-auto" />
-              <div className="h-8 w-16 bg-muted animate-pulse rounded mx-auto" />
-            </div>
-            <div className="rounded-lg border border-border p-4 space-y-2">
-              <div className="h-3 w-20 bg-muted animate-pulse rounded mx-auto" />
-              <div className="h-8 w-16 bg-muted animate-pulse rounded mx-auto" />
-            </div>
-          </div>
-          {/* Skeleton emails */}
-          <div className="space-y-2.5">
+          <div className="space-y-2.5 pt-4">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="rounded-lg border-l-4 border-l-muted border border-border p-4 flex items-start gap-3">
                 <div className="h-9 w-9 rounded-full bg-muted animate-pulse shrink-0" />
@@ -290,123 +443,41 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto space-y-6">
-        {/* Donna Briefing Header */}
+      <div className="max-w-3xl mx-auto">
+        {/* Conversational header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-5"
+          className="mb-8"
         >
-          {/* Greeting + briefing text */}
-          <div className="rounded-xl border border-donna/15 bg-gradient-to-br from-donna-light to-background p-6">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🟣</span>
-                <h2 className="font-serif text-lg font-bold text-foreground tracking-tight">
-                  {prenom ? `Bonjour ${prenom}` : "Bonjour"}, c'est Donna — votre employée numérique 24/7
-                </h2>
-              </div>
-              <p className="text-xs text-muted-foreground pl-8 italic">
-                Je lis, je trie et je résume tous vos emails pour vous.
-              </p>
-              <p className="text-sm text-foreground/70 leading-relaxed pl-8">
-                {isInboxEmpty ? (
-                  "Tout est calme pour le moment. Je surveille votre boîte mail et vous préviendrai dès qu'un email arrive."
-                ) : (
-                  <>
-                    Voilà ce que j'ai fait aujourd'hui : vous avez reçu <span className="font-semibold text-foreground">{stats.recus} email{stats.recus > 1 ? "s" : ""}</span>.
-                    {" "}J'en ai analysé <span className="font-semibold text-foreground">{stats.traites}</span>
-                    {stats.valides > 0 && <> et validé <span className="font-semibold text-foreground">{stats.valides}</span></>}.
-                    {otherCount > 0 && (
-                      <> J'ai filtré <span className="font-semibold text-foreground">{otherCount} newsletter{otherCount > 1 ? "s" : ""}/autre{otherCount > 1 ? "s" : ""}</span>.</>
-                    )}
-                    {clientCount > 0 && (
-                      <> <span className="font-semibold text-client">{clientCount} de vos client{clientCount > 1 ? "s" : ""}</span> vous ont écrit.</>
-                    )}
-                    {prospectCount > 0 && (
-                      <> <span className="font-semibold text-prospect">{prospectCount} prospect{prospectCount > 1 ? "s" : ""}</span> à traiter.</>
-                    )}
-                    {stats.en_attente > 0 && (
-                      <> <span className="font-semibold text-orange-600">{stats.en_attente} email{stats.en_attente > 1 ? "s" : ""}</span> {stats.en_attente > 1 ? "nécessitent" : "nécessite"} votre attention.</>
-                    )}
-                  </>
-                )}
-              </p>
-            </div>
-          </div>
+          <h1 className="text-[1.8rem] font-bold text-foreground leading-tight">
+            Bonjour {prenom ? prenom : ""} 👋
+          </h1>
+          <p className="text-muted-foreground mt-1.5 text-base">
+            {isInboxEmpty
+              ? "Rien de nouveau pour le moment. Donna surveille votre boîte mail."
+              : `Donna a traité ${stats.traites} email${stats.traites > 1 ? "s" : ""} pour vous aujourd'hui.`}
+          </p>
 
-          {/* KPI Cards */}
           {!isInboxEmpty && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="grid grid-cols-2 gap-3"
-            >
-              <Card className="border-border bg-card shadow-sm">
-                <CardContent className="p-4 text-center space-y-1">
-                  <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span className="text-[11px] font-medium uppercase tracking-wider">Temps gagné</span>
-                  </div>
-                  <p className="text-2xl font-serif font-bold text-foreground">{tempsStr}</p>
-                  <p className="text-[10px] text-muted-foreground">estimé aujourd'hui</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border bg-card shadow-sm">
-                <CardContent className="p-4 text-center space-y-1">
-                  <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
-                    <TrendingUp className="h-3.5 w-3.5" />
-                    <span className="text-[11px] font-medium uppercase tracking-wider">Économisé</span>
-                  </div>
-                  <p className="text-2xl font-serif font-bold text-foreground">{Math.round(tempsMinutes * 1.25)}€</p>
-                  <p className="text-[10px] text-muted-foreground">estimé aujourd'hui</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-
-          {/* Category breakdown pills */}
-          {!isInboxEmpty && activeEmails.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.25 }}
-              className="flex flex-wrap gap-2 items-center"
-            >
-              <button
-                onClick={() => setShowCategories(!showCategories)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs hover:bg-muted/80 transition-colors"
-              >
-                <ChevronDown className={`h-3 w-3 transition-transform ${showCategories ? "rotate-180" : ""}`} />
-                <span className="font-semibold text-muted-foreground">{activeEmails.length} email{activeEmails.length > 1 ? "s" : ""}</span>
-              </button>
-              <AnimatePresence>
-                {showCategories && (
-                  <>
-                    {clientCount > 0 && (
-                      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="inline-flex items-center gap-1.5 rounded-full bg-client-light px-3 py-1.5 text-xs">
-                        <span>👤</span>
-                        <span className="font-semibold text-client-foreground">{clientCount} client{clientCount > 1 ? "s" : ""}</span>
-                      </motion.div>
-                    )}
-                    {prospectCount > 0 && (
-                      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ delay: 0.05 }} className="inline-flex items-center gap-1.5 rounded-full bg-prospect-light px-3 py-1.5 text-xs">
-                        <span>🌱</span>
-                        <span className="font-semibold text-prospect-foreground">{prospectCount} prospect{prospectCount > 1 ? "s" : ""}</span>
-                      </motion.div>
-                    )}
-                    {otherCount > 0 && (
-                      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ delay: 0.1 }} className="inline-flex items-center gap-1.5 rounded-full bg-other-light px-3 py-1.5 text-xs">
-                        <span>📨</span>
-                        <span className="font-semibold text-other-foreground">{otherCount} autre{otherCount > 1 ? "s" : ""}</span>
-                      </motion.div>
-                    )}
-                  </>
-                )}
-              </AnimatePresence>
-            </motion.div>
+            <div className="flex flex-wrap gap-2 mt-4">
+              <span className="inline-flex items-center rounded-full bg-[#F3F4F6] px-3 py-1.5 text-xs font-medium text-foreground/70">
+                ⏱ {tempsMinutes}min gagnées
+              </span>
+              <span className="inline-flex items-center rounded-full bg-[#F3F4F6] px-3 py-1.5 text-xs font-medium text-foreground/70">
+                📧 {stats.traites} analysés
+              </span>
+              {otherCount > 0 && (
+                <span className="inline-flex items-center rounded-full bg-[#F3F4F6] px-3 py-1.5 text-xs font-medium text-foreground/70">
+                  🔕 {otherCount} filtrés
+                </span>
+              )}
+              {stats.en_attente > 0 && (
+                <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-600 px-3 py-1.5 text-xs font-medium">
+                  ⚡ {stats.en_attente} à voir
+                </span>
+              )}
+            </div>
           )}
         </motion.div>
 
@@ -439,11 +510,7 @@ const Dashboard = () => {
                     <Card
                       className={`border-l-4 ${isRejected ? "border-l-other opacity-40" : config.borderClass} bg-card hover:shadow-md transition-all cursor-pointer group`}
                       onClick={() => {
-                        if (!isRejected) {
-                          setSelectedEmail(email);
-                          setFeedbackGiven(null);
-                          setShowOriginal(false);
-                        }
+                        if (!isRejected) setSelectedEmail(email);
                       }}
                     >
                       <CardContent className="p-4">
@@ -474,8 +541,6 @@ const Dashboard = () => {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedEmail(email);
-                                setFeedbackGiven(null);
-                                setShowOriginal(false);
                               }}
                             >
                               <Eye className="h-4 w-4" />
@@ -492,171 +557,13 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Detail slide-over */}
-      <Sheet open={!!selectedEmail} onOpenChange={(open) => { if (!open) setSelectedEmail(null); }}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          {selectedEmail && (() => {
-            const analysis = parseDonnaAnalysis(selectedEmail.brouillon);
-            const cat = getCategorie(selectedEmail);
-            const config = categorieConfig[cat];
-            return (
-              <>
-                <SheetHeader className="pb-4 border-b border-border">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className={`h-7 w-7 rounded-full ${config.avatarBgClass} flex items-center justify-center text-sm`}>
-                      {config.icon}
-                    </div>
-                    <span className="font-semibold text-sm">{selectedEmail.expediteur}</span>
-                    <CategorieBadge email={selectedEmail} />
-                    <span className="text-xs text-muted-foreground ml-auto">{formatEmailTime(selectedEmail.created_at)}</span>
-                  </div>
-                  <SheetTitle className="text-base font-semibold mt-1">{selectedEmail.objet}</SheetTitle>
-                </SheetHeader>
-
-                <div className="space-y-5 py-6">
-                  {analysis.resume && (
-                    <div className="rounded-lg bg-muted/60 border border-border p-4">
-                      <p className="text-xs font-semibold text-foreground mb-2">📋 Résumé</p>
-                      <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">{analysis.resume}</p>
-                    </div>
-                  )}
-
-                  {/* Draft generation */}
-                  <div className="space-y-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs"
-                      onClick={handleGenerateDraft}
-                      disabled={draftLoading}
-                    >
-                      {draftLoading ? (
-                        <>
-                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                          Donna rédige un brouillon...
-                        </>
-                      ) : (
-                        <>
-                          <PenLine className="h-3 w-3 mr-1" />
-                          {draftText ? "Regénérer le brouillon" : "✉️ Générer un brouillon de réponse"}
-                        </>
-                      )}
-                    </Button>
-
-                    {draftText && (
-                      <div className="rounded-lg bg-blue-50 border border-blue-100 p-4 space-y-3">
-                        <p className="text-xs font-semibold text-foreground">✉️ Brouillon de réponse</p>
-                        <p className="text-sm font-mono text-foreground/80 whitespace-pre-line leading-relaxed">{draftText}</p>
-                        <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyDraft}>
-                          <Copy className="h-3 w-3 mr-1" />Copier le brouillon
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-
-
-                  {dossierDocs.length > 0 && (
-                    <div className="rounded-lg bg-muted/40 border border-border p-4 space-y-3">
-                      <p className="text-xs font-semibold text-foreground">📎 Pièces jointes ({dossierDocs.length})</p>
-                      {dossierDocs.map((doc: any, idx: number) => {
-                        const isPdf = doc.type?.toLowerCase()?.includes("pdf") || doc.nom_fichier?.endsWith(".pdf");
-                        return (
-                          <Collapsible key={idx}>
-                            <div className="rounded-md bg-card border border-border p-3 space-y-2">
-                              <div className="flex items-start gap-2.5">
-                                <FileText className={`h-4 w-4 shrink-0 mt-0.5 ${isPdf ? "text-red-500" : "text-blue-500"}`} />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold text-foreground truncate">{doc.nom_fichier}</p>
-                                  {doc.resume && (
-                                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-4">{doc.resume}</p>
-                                  )}
-                                </div>
-                              </div>
-                              {doc.contenu_extrait && (
-                                <>
-                                  <CollapsibleTrigger asChild>
-                                    <button className="text-[11px] text-donna font-medium hover:underline">
-                                      Voir l'extrait complet
-                                    </button>
-                                  </CollapsibleTrigger>
-                                  <CollapsibleContent>
-                                    <div className="mt-2 rounded bg-muted/60 p-3 text-xs text-foreground/70 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
-                                      {doc.contenu_extrait}
-                                    </div>
-                                  </CollapsibleContent>
-                                </>
-                              )}
-                            </div>
-                          </Collapsible>
-                        );
-                      })}
-                    </div>
-                  )}
-
-
-                  {!analysis.resume && selectedEmail.brouillon && (
-                    <div className="rounded-lg bg-muted p-4">
-                      <p className="text-sm whitespace-pre-wrap">{selectedEmail.brouillon}</p>
-                    </div>
-                  )}
-
-                  <Collapsible open={showOriginal} onOpenChange={setShowOriginal}>
-                    <CollapsibleTrigger asChild>
-                      <button className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                        <ChevronDown className={`h-3 w-3 transition-transform ${showOriginal ? "rotate-180" : ""}`} />
-                        Voir l'email original
-                      </button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="mt-3 rounded-lg bg-muted/40 border border-border p-4">
-                        <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed">
-                          {(selectedEmail as any).contenu || "Contenu non disponible."}
-                        </p>
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-
-                  <div className="border-t border-border pt-5 space-y-3">
-                    <p className="text-xs text-muted-foreground">Comment Donna a-t-elle travaillé sur cet email ?</p>
-                    <div className="flex gap-2 flex-wrap">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={`text-xs transition-all ${feedbackGiven === "parfait" ? "border-prospect bg-prospect-light text-prospect-foreground scale-105" : "text-prospect-foreground border-prospect/30 hover:bg-prospect-light"}`}
-                        onClick={() => handleFeedback("parfait")}
-                        disabled={!!feedbackGiven}
-                      >
-                        <Check className="h-3 w-3 mr-1" />Très bien analysé
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={`text-xs transition-all ${feedbackGiven === "modifier" ? "border-amber-500 bg-amber-50 text-amber-700 scale-105" : "text-amber-700 border-amber-200 hover:bg-amber-50"}`}
-                        onClick={() => handleFeedback("modifier")}
-                        disabled={!!feedbackGiven}
-                      >
-                        <Pencil className="h-3 w-3 mr-1" />À améliorer
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={`text-xs transition-all ${feedbackGiven === "erreur" ? "border-destructive bg-destructive/10 text-destructive scale-105" : "text-destructive border-destructive/30 hover:bg-destructive/10"}`}
-                        onClick={() => handleFeedback("erreur")}
-                        disabled={!!feedbackGiven}
-                      >
-                        <X className="h-3 w-3 mr-1" />Incorrecte
-                      </Button>
-                    </div>
-                    <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyResume}>
-                      <Copy className="h-3 w-3 mr-1" />Copier le résumé
-                    </Button>
-                  </div>
-                </div>
-              </>
-            );
-          })()}
-        </SheetContent>
-      </Sheet>
+      {/* Email detail overlay */}
+      {selectedEmail && (
+        <EmailDetailOverlay
+          email={selectedEmail}
+          onClose={() => setSelectedEmail(null)}
+        />
+      )}
     </DashboardLayout>
   );
 };
