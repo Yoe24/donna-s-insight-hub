@@ -518,7 +518,7 @@ const Dashboard = () => {
             className="flex items-baseline gap-3"
           >
             <span className="text-[4rem] font-extrabold leading-none tabular-nums text-foreground">
-              {useAnimatedCounter(stats.traites, 1500)}
+              {animatedTraites}
             </span>
             <span className="text-base font-normal text-muted-foreground">
               emails traités
