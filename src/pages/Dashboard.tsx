@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Coffee, Eye, User, Copy, ChevronDown, Archive, Check, Pencil, X, Sparkles, TrendingUp, Clock, AlertCircle } from "lucide-react";
+import { Coffee, Eye, User, Copy, ChevronDown, Archive, Check, Pencil, X, Sparkles, TrendingUp, Clock, AlertCircle, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEmails, useEmailStats, useUpdateEmailStatus } from "@/hooks/useEmails";
