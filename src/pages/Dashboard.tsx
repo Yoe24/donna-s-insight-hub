@@ -508,42 +508,41 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
-        {/* KPI Cards Header */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <KpiCard
-            label="Emails traités"
-            value={stats.traites}
-            subtitle="aujourd'hui"
-            icon={Mail}
-            color="hsl(245, 58%, 69%)"
-            delay={0}
-          />
-          <KpiCard
-            label="Temps gagné"
-            value={tempsMinutes}
-            suffix="min"
-            subtitle="estimé aujourd'hui"
-            icon={Clock}
-            color="hsl(142, 71%, 45%)"
-            delay={0.05}
-          />
-          <KpiCard
-            label="Économisé"
-            value={economise}
-            suffix="€"
-            subtitle="estimé aujourd'hui"
-            icon={TrendingUp}
-            color="hsl(142, 71%, 45%)"
-            delay={0.1}
-          />
-          <KpiCard
-            label="À voir"
-            value={stats.en_attente}
-            subtitle="nécessitent votre attention"
-            icon={stats.en_attente > 0 ? AlertCircle : CheckCircle}
-            color={stats.en_attente > 0 ? "hsl(38, 92%, 50%)" : "hsl(142, 71%, 45%)"}
-            delay={0.15}
-          />
+        {/* Hero Score Header */}
+        <div className="mt-8 mb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="flex items-baseline gap-3"
+          >
+            <span className="text-[4rem] font-extrabold leading-none tabular-nums text-foreground">
+              {useAnimatedCounter(stats.traites, 1500)}
+            </span>
+            <span className="text-base font-normal text-muted-foreground">
+              emails traités
+            </span>
+          </motion.div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="mt-2 text-[0.9rem] text-[hsl(220,9%,64%)]"
+          >
+            ⏱ {tempsMinutes}min gagnées{" "}
+            <span className="text-[hsl(220,9%,78%)]">·</span>{" "}
+            💰 {economise}€ économisés
+          </motion.p>
+          {stats.en_attente > 0 && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.35, duration: 0.3 }}
+              className="mt-1.5 text-[0.85rem] text-[hsl(38,92%,50%)]"
+            >
+              ⚡ {stats.en_attente} email{stats.en_attente > 1 ? "s" : ""} nécessite{stats.en_attente > 1 ? "nt" : ""} votre attention
+            </motion.p>
+          )}
         </div>
 
         {/* Email list */}
