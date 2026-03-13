@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,9 +7,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Mail } from "lucide-react";
+import { Loader2, ArrowLeft, Mail, Upload, X, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
+
+interface ConfigDocument {
+  id: string;
+  nom: string;
+  type: string;
+  created_at: string;
+}
 
 const Configuration = () => {
   const [nom_avocat, setNomAvocat] = useState("");
@@ -17,15 +24,18 @@ const Configuration = () => {
   const [specialite, setSpecialite] = useState("");
   const [signature, setSignature] = useState("");
   const [examples, setExamples] = useState(["", "", ""]);
+  const [documents, setDocuments] = useState<ConfigDocument[]>([]);
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const loadAll = async () => {
       try {
-        const [config, examplesData] = await Promise.all([
+        const [config, examplesData, docsData] = await Promise.all([
           api.get('/api/config').catch(() => null),
           api.get('/api/config/examples').catch(() => null),
+          api.get('/api/config/documents').catch(() => []),
         ]);
 
         if (config) {
@@ -39,6 +49,10 @@ const Configuration = () => {
           setExamples(examplesData.examples.length >= 3
             ? examplesData.examples
             : [...examplesData.examples, ...Array(3 - examplesData.examples.length).fill("")]);
+        }
+
+        if (Array.isArray(docsData)) {
+          setDocuments(docsData);
         }
       } catch (error) {
         console.error('Error loading config:', error);
@@ -71,6 +85,41 @@ const Configuration = () => {
 
   const updateExample = (index: number, value: string) => {
     setExamples((prev) => prev.map((e, i) => (i === index ? value : e)));
+  };
+
+  const handleFileUpload = async (filesToUpload: File[]) => {
+    for (const file of filesToUpload) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const doc = await api.upload<ConfigDocument>('/api/config/documents', formData);
+        if (doc?.id) {
+          setDocuments((prev) => [...prev, doc]);
+        }
+        toast.success(`${file.name} uploadé`);
+      } catch (error) {
+        toast.error(`Erreur upload : ${file.name}`);
+      }
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) handleFileUpload(Array.from(e.target.files));
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files) handleFileUpload(Array.from(e.dataTransfer.files));
+  };
+
+  const removeDocument = async (docId: string) => {
+    try {
+      await api.delete(`/api/config/documents/${docId}`);
+      setDocuments((prev) => prev.filter((d) => d.id !== docId));
+      toast.success("Document supprimé");
+    } catch (error) {
+      toast.error("Erreur lors de la suppression");
+    }
   };
 
   if (loadingConfig) {
@@ -179,7 +228,56 @@ const Configuration = () => {
             </CardContent>
           </Card>
 
-          {/* Bouton sauvegarder */}
+          {/* Section 3 — Base de connaissances */}
+          <Card className="border-border shadow-sm bg-white">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-muted-foreground" />
+                <CardTitle className="text-lg font-serif">Base de connaissances</CardTitle>
+              </div>
+              <CardDescription className="font-sans">
+                Déposez vos textes de loi, PDF, modèles de contrats… Donna s'appuiera sur ces documents pour ses réponses, pas uniquement sur ses connaissances générales.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div
+                className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-muted-foreground/50 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+              >
+                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
+                <p className="font-sans text-sm text-muted-foreground">
+                  Déposez vos documents ici ou <span className="underline">parcourez</span>
+                </p>
+                <p className="font-sans text-xs text-muted-foreground/70 mt-1">
+                  PDF, textes de loi, conventions collectives, modèles…
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </div>
+
+              {documents.length > 0 && (
+                <div className="space-y-2">
+                  {documents.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                      <span className="font-sans text-sm text-foreground truncate">{doc.nom}</span>
+                      <button onClick={() => removeDocument(doc.id)} className="text-muted-foreground hover:text-foreground ml-2">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+
           <div className="space-y-3">
             <Button
               onClick={handleSave}
