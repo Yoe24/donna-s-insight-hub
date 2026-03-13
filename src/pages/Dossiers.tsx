@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FolderOpen, Loader2, Mail, ArrowLeft } from "lucide-react";
+import { FolderOpen, Mail, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
@@ -52,8 +52,22 @@ const Dossiers = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+          <div className="space-y-2">
+            <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-80 bg-muted animate-pulse rounded" />
+          </div>
+          <div className="rounded-lg border border-border overflow-hidden">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center gap-4 p-4 border-b border-border last:border-0">
+                <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+                <div className="h-4 w-40 bg-muted animate-pulse rounded" />
+                <div className="h-5 w-16 bg-muted animate-pulse rounded-full" />
+                <div className="h-4 w-24 bg-muted animate-pulse rounded ml-auto" />
+              </div>
+            ))}
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -80,7 +94,7 @@ const Dossiers = () => {
             <p className="text-muted-foreground text-sm mb-6">
               Connectez votre boîte Gmail pour importer vos dossiers clients.
             </p>
-            <Button asChild>
+            <Button asChild className="min-h-[48px]">
               <Link to="/onboarding">
                 <Mail className="h-4 w-4 mr-2" />
                 Connecter Gmail
@@ -89,38 +103,68 @@ const Dossiers = () => {
           </Card>
         ) : (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            <Card className="border-border bg-card overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="font-sans text-xs">Client</TableHead>
-                    <TableHead className="font-sans text-xs">Email</TableHead>
-                    <TableHead className="font-sans text-xs">Statut</TableHead>
-                    <TableHead className="font-sans text-xs">Domaine</TableHead>
-                    <TableHead className="font-sans text-xs text-right">Dernier échange</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {dossiers.map((dossier) => (
-                    <TableRow
-                      key={dossier.id}
-                      className="cursor-pointer hover:bg-muted/40 transition-colors"
-                      onClick={() => navigate(`/dossiers/${dossier.id}`)}
-                    >
-                      <TableCell className="font-sans text-sm font-medium">{dossier.nom_client}</TableCell>
-                      <TableCell className="font-sans text-sm text-muted-foreground">{dossier.email_client}</TableCell>
-                      <TableCell>{statutBadge(dossier.statut)}</TableCell>
-                      <TableCell className="font-sans text-sm text-muted-foreground">{dossier.domaine}</TableCell>
-                      <TableCell className="font-sans text-sm text-muted-foreground text-right">
+            {/* Desktop table */}
+            <div className="hidden sm:block">
+              <Card className="border-border bg-card overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="font-sans text-xs">Client</TableHead>
+                      <TableHead className="font-sans text-xs">Email</TableHead>
+                      <TableHead className="font-sans text-xs">Statut</TableHead>
+                      <TableHead className="font-sans text-xs">Domaine</TableHead>
+                      <TableHead className="font-sans text-xs text-right">Dernier échange</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dossiers.map((dossier) => (
+                      <TableRow
+                        key={dossier.id}
+                        className="cursor-pointer hover:bg-muted/40 transition-colors"
+                        onClick={() => navigate(`/dossiers/${dossier.id}`)}
+                      >
+                        <TableCell className="font-sans text-sm font-medium">{dossier.nom_client}</TableCell>
+                        <TableCell className="font-sans text-sm text-muted-foreground">{dossier.email_client}</TableCell>
+                        <TableCell>{statutBadge(dossier.statut)}</TableCell>
+                        <TableCell className="font-sans text-sm text-muted-foreground">{dossier.domaine}</TableCell>
+                        <TableCell className="font-sans text-sm text-muted-foreground text-right">
+                          {dossier.dernier_echange_date
+                            ? new Date(dossier.dernier_echange_date).toLocaleDateString('fr-FR')
+                            : "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="sm:hidden space-y-3">
+              {dossiers.map((dossier) => (
+                <Card
+                  key={dossier.id}
+                  className="cursor-pointer hover:bg-muted/40 transition-colors"
+                  onClick={() => navigate(`/dossiers/${dossier.id}`)}
+                >
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-sans text-sm font-medium text-foreground">{dossier.nom_client}</span>
+                      {statutBadge(dossier.statut)}
+                    </div>
+                    <p className="font-sans text-xs text-muted-foreground">{dossier.email_client}</p>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground font-sans">
+                      <span>{dossier.domaine}</span>
+                      <span>
                         {dossier.dernier_echange_date
                           ? new Date(dossier.dernier_echange_date).toLocaleDateString('fr-FR')
                           : "—"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Card>
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </motion.div>
         )}
       </div>
