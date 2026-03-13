@@ -50,6 +50,10 @@ const Configuration = () => {
             ? examplesData.examples
             : [...examplesData.examples, ...Array(3 - examplesData.examples.length).fill("")]);
         }
+
+        if (Array.isArray(docsData)) {
+          setDocuments(docsData);
+        }
       } catch (error) {
         console.error('Error loading config:', error);
       }
