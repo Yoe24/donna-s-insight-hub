@@ -459,6 +459,45 @@ const Dashboard = () => {
                         ))}
                       </div>
                     </div>
+
+                  {/* Pièces jointes */}
+                  {dossierDocs.length > 0 && (
+                    <div className="rounded-lg bg-muted/40 border border-border p-4 space-y-3">
+                      <p className="text-xs font-semibold text-foreground">📎 Pièces jointes ({dossierDocs.length})</p>
+                      {dossierDocs.map((doc: any, idx: number) => {
+                        const isPdf = doc.type?.toLowerCase()?.includes("pdf") || doc.nom_fichier?.endsWith(".pdf");
+                        return (
+                          <Collapsible key={idx}>
+                            <div className="rounded-md bg-card border border-border p-3 space-y-2">
+                              <div className="flex items-start gap-2.5">
+                                <FileText className={`h-4 w-4 shrink-0 mt-0.5 ${isPdf ? "text-red-500" : "text-blue-500"}`} />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-foreground truncate">{doc.nom_fichier}</p>
+                                  {doc.resume && (
+                                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-4">{doc.resume}</p>
+                                  )}
+                                </div>
+                              </div>
+                              {doc.contenu_extrait && (
+                                <>
+                                  <CollapsibleTrigger asChild>
+                                    <button className="text-[11px] text-donna font-medium hover:underline">
+                                      Voir l'extrait complet
+                                    </button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <div className="mt-2 rounded bg-muted/60 p-3 text-xs text-foreground/70 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
+                                      {doc.contenu_extrait}
+                                    </div>
+                                  </CollapsibleContent>
+                                </>
+                              )}
+                            </div>
+                          </Collapsible>
+                        );
+                      })}
+                    </div>
+                  )}
                   )}
 
                   {analysis.attention && (
