@@ -314,31 +314,44 @@ const Dashboard = () => {
           )}
 
           {/* Category breakdown pills */}
-          {!isInboxEmpty && (clientCount > 0 || prospectCount > 0 || otherCount > 0) && (
+          {!isInboxEmpty && activeEmails.length > 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.25 }}
-              className="flex flex-wrap gap-2"
+              className="flex flex-wrap gap-2 items-center"
             >
-              {clientCount > 0 && (
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-client-light px-3 py-1.5 text-xs">
-                  <span>👤</span>
-                  <span className="font-semibold text-client-foreground">{clientCount} client{clientCount > 1 ? "s" : ""}</span>
-                </div>
-              )}
-              {prospectCount > 0 && (
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-prospect-light px-3 py-1.5 text-xs">
-                  <span>🌱</span>
-                  <span className="font-semibold text-prospect-foreground">{prospectCount} prospect{prospectCount > 1 ? "s" : ""}</span>
-                </div>
-              )}
-              {otherCount > 0 && (
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-other-light px-3 py-1.5 text-xs">
-                  <span>📨</span>
-                  <span className="font-semibold text-other-foreground">{otherCount} filtré{otherCount > 1 ? "s" : ""}</span>
-                </div>
-              )}
+              <button
+                onClick={() => setShowCategories(!showCategories)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs hover:bg-muted/80 transition-colors"
+              >
+                <ChevronDown className={`h-3 w-3 transition-transform ${showCategories ? "rotate-180" : ""}`} />
+                <span className="font-semibold text-muted-foreground">{activeEmails.length} email{activeEmails.length > 1 ? "s" : ""}</span>
+              </button>
+              <AnimatePresence>
+                {showCategories && (
+                  <>
+                    {clientCount > 0 && (
+                      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="inline-flex items-center gap-1.5 rounded-full bg-client-light px-3 py-1.5 text-xs">
+                        <span>👤</span>
+                        <span className="font-semibold text-client-foreground">{clientCount} client{clientCount > 1 ? "s" : ""}</span>
+                      </motion.div>
+                    )}
+                    {prospectCount > 0 && (
+                      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ delay: 0.05 }} className="inline-flex items-center gap-1.5 rounded-full bg-prospect-light px-3 py-1.5 text-xs">
+                        <span>🌱</span>
+                        <span className="font-semibold text-prospect-foreground">{prospectCount} prospect{prospectCount > 1 ? "s" : ""}</span>
+                      </motion.div>
+                    )}
+                    {otherCount > 0 && (
+                      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ delay: 0.1 }} className="inline-flex items-center gap-1.5 rounded-full bg-other-light px-3 py-1.5 text-xs">
+                        <span>📨</span>
+                        <span className="font-semibold text-other-foreground">{otherCount} autre{otherCount > 1 ? "s" : ""}</span>
+                      </motion.div>
+                    )}
+                  </>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
         </motion.div>
