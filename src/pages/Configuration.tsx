@@ -32,9 +32,10 @@ const Configuration = () => {
   useEffect(() => {
     const loadAll = async () => {
       try {
-        const [config, examplesData] = await Promise.all([
+        const [config, examplesData, docsData] = await Promise.all([
           api.get('/api/config').catch(() => null),
           api.get('/api/config/examples').catch(() => null),
+          api.get('/api/config/documents').catch(() => []),
         ]);
 
         if (config) {
