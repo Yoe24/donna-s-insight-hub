@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,9 +7,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Mail } from "lucide-react";
+import { Loader2, ArrowLeft, Mail, Upload, X, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
+
+interface ConfigDocument {
+  id: string;
+  nom: string;
+  type: string;
+  created_at: string;
+}
 
 const Configuration = () => {
   const [nom_avocat, setNomAvocat] = useState("");
@@ -17,8 +24,10 @@ const Configuration = () => {
   const [specialite, setSpecialite] = useState("");
   const [signature, setSignature] = useState("");
   const [examples, setExamples] = useState(["", "", ""]);
+  const [documents, setDocuments] = useState<ConfigDocument[]>([]);
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const loadAll = async () => {
