@@ -521,8 +521,40 @@ const Dashboard = () => {
                     </div>
                   )}
 
+                  {/* Draft generation */}
+                  <div className="space-y-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      onClick={handleGenerateDraft}
+                      disabled={draftLoading}
+                    >
+                      {draftLoading ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Donna rédige un brouillon...
+                        </>
+                      ) : (
+                        <>
+                          <PenLine className="h-3 w-3 mr-1" />
+                          {draftText ? "Regénérer le brouillon" : "✉️ Générer un brouillon de réponse"}
+                        </>
+                      )}
+                    </Button>
 
-                  {/* Pièces jointes */}
+                    {draftText && (
+                      <div className="rounded-lg bg-blue-50 border border-blue-100 p-4 space-y-3">
+                        <p className="text-xs font-semibold text-foreground">✉️ Brouillon de réponse</p>
+                        <p className="text-sm font-mono text-foreground/80 whitespace-pre-line leading-relaxed">{draftText}</p>
+                        <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyDraft}>
+                          <Copy className="h-3 w-3 mr-1" />Copier le brouillon
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+
                   {dossierDocs.length > 0 && (
                     <div className="rounded-lg bg-muted/40 border border-border p-4 space-y-3">
                       <p className="text-xs font-semibold text-foreground">📎 Pièces jointes ({dossierDocs.length})</p>
