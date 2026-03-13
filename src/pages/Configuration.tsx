@@ -228,7 +228,56 @@ const Configuration = () => {
             </CardContent>
           </Card>
 
-          {/* Bouton sauvegarder */}
+          {/* Section 3 — Base de connaissances */}
+          <Card className="border-border shadow-sm bg-white">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-muted-foreground" />
+                <CardTitle className="text-lg font-serif">Base de connaissances</CardTitle>
+              </div>
+              <CardDescription className="font-sans">
+                Déposez vos textes de loi, PDF, modèles de contrats… Donna s'appuiera sur ces documents pour ses réponses, pas uniquement sur ses connaissances générales.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div
+                className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-muted-foreground/50 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+              >
+                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
+                <p className="font-sans text-sm text-muted-foreground">
+                  Déposez vos documents ici ou <span className="underline">parcourez</span>
+                </p>
+                <p className="font-sans text-xs text-muted-foreground/70 mt-1">
+                  PDF, textes de loi, conventions collectives, modèles…
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </div>
+
+              {documents.length > 0 && (
+                <div className="space-y-2">
+                  {documents.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                      <span className="font-sans text-sm text-foreground truncate">{doc.nom}</span>
+                      <button onClick={() => removeDocument(doc.id)} className="text-muted-foreground hover:text-foreground ml-2">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+
           <div className="space-y-3">
             <Button
               onClick={handleSave}
