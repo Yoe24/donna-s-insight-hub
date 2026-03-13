@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Coffee, Eye, Copy, ChevronDown, Archive, X, FileText, PenLine, Loader2, Mail, Clock, TrendingUp, AlertCircle, CheckCircle, Sparkles } from "lucide-react";
+import { Coffee, Eye, Copy, ChevronDown, Archive, X, FileText, PenLine, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEmails, useEmailStats, useUpdateEmailStatus } from "@/hooks/useEmails";
@@ -156,49 +156,6 @@ function ImportArchives({ emails }: { emails: Email[] }) {
         </Card>
       </CollapsibleContent>
     </Collapsible>
-  );
-}
-
-// ── KPI Card ──
-function KpiCard({
-  label,
-  value,
-  suffix,
-  subtitle,
-  icon: Icon,
-  color,
-  delay = 0,
-}: {
-  label: string;
-  value: number;
-  suffix?: string;
-  subtitle: string;
-  icon: React.ElementType;
-  color: string;
-  delay?: number;
-}) {
-  const animatedValue = useAnimatedCounter(value);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.3 }}
-      className="relative overflow-hidden rounded-2xl border border-[hsl(220,13%,91%)] bg-background p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-default"
-    >
-      <Icon
-        className="absolute top-4 right-4 opacity-[0.12]"
-        style={{ color }}
-        size={40}
-        strokeWidth={1.5}
-      />
-      <p className="text-xs font-medium text-muted-foreground mb-1">{label}</p>
-      <p className="text-[2.5rem] font-bold leading-none tabular-nums" style={{ color }}>
-        {animatedValue}
-        {suffix && <span className="text-2xl ml-0.5">{suffix}</span>}
-      </p>
-      <p className="text-xs text-muted-foreground mt-2">{subtitle}</p>
-    </motion.div>
   );
 }
 
@@ -475,19 +432,15 @@ const Dashboard = () => {
 
   const tempsMinutes = stats.traites * 5;
   const economise = Math.round(stats.traites * 5 * 75 / 60);
+  const animatedTraites = useAnimatedCounter(stats.traites, 1500);
 
   if (loading) {
     return (
       <DashboardLayout>
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="rounded-2xl border border-border p-6 space-y-3">
-                <div className="h-3 w-20 bg-muted animate-pulse rounded" />
-                <div className="h-10 w-16 bg-muted animate-pulse rounded" />
-                <div className="h-3 w-24 bg-muted animate-pulse rounded" />
-              </div>
-            ))}
+          <div className="mt-8 mb-10 space-y-3">
+            <div className="h-16 w-48 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-64 bg-muted animate-pulse rounded" />
           </div>
           <div className="space-y-2.5 pt-4">
             {[...Array(4)].map((_, i) => (
@@ -508,42 +461,41 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
-        {/* KPI Cards Header */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <KpiCard
-            label="Emails traités"
-            value={stats.traites}
-            subtitle="aujourd'hui"
-            icon={Mail}
-            color="hsl(245, 58%, 69%)"
-            delay={0}
-          />
-          <KpiCard
-            label="Temps gagné"
-            value={tempsMinutes}
-            suffix="min"
-            subtitle="estimé aujourd'hui"
-            icon={Clock}
-            color="hsl(142, 71%, 45%)"
-            delay={0.05}
-          />
-          <KpiCard
-            label="Économisé"
-            value={economise}
-            suffix="€"
-            subtitle="estimé aujourd'hui"
-            icon={TrendingUp}
-            color="hsl(142, 71%, 45%)"
-            delay={0.1}
-          />
-          <KpiCard
-            label="À voir"
-            value={stats.en_attente}
-            subtitle="nécessitent votre attention"
-            icon={stats.en_attente > 0 ? AlertCircle : CheckCircle}
-            color={stats.en_attente > 0 ? "hsl(38, 92%, 50%)" : "hsl(142, 71%, 45%)"}
-            delay={0.15}
-          />
+        {/* Hero Score Header */}
+        <div className="mt-8 mb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="flex items-baseline gap-3"
+          >
+            <span className="text-[4rem] font-extrabold leading-none tabular-nums text-foreground">
+              {animatedTraites}
+            </span>
+            <span className="text-base font-normal text-muted-foreground">
+              emails traités
+            </span>
+          </motion.div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="mt-2 text-[0.9rem] text-[hsl(220,9%,64%)]"
+          >
+            ⏱ {tempsMinutes}min gagnées{" "}
+            <span className="text-[hsl(220,9%,78%)]">·</span>{" "}
+            💰 {economise}€ économisés
+          </motion.p>
+          {stats.en_attente > 0 && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.35, duration: 0.3 }}
+              className="mt-1.5 text-[0.85rem] text-[hsl(38,92%,50%)]"
+            >
+              ⚡ {stats.en_attente} email{stats.en_attente > 1 ? "s" : ""} nécessite{stats.en_attente > 1 ? "nt" : ""} votre attention
+            </motion.p>
+          )}
         </div>
 
         {/* Email list */}
