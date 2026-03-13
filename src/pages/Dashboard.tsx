@@ -159,49 +159,6 @@ function ImportArchives({ emails }: { emails: Email[] }) {
   );
 }
 
-// ── KPI Card ──
-function KpiCard({
-  label,
-  value,
-  suffix,
-  subtitle,
-  icon: Icon,
-  color,
-  delay = 0,
-}: {
-  label: string;
-  value: number;
-  suffix?: string;
-  subtitle: string;
-  icon: React.ElementType;
-  color: string;
-  delay?: number;
-}) {
-  const animatedValue = useAnimatedCounter(value);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.3 }}
-      className="relative overflow-hidden rounded-2xl border border-[hsl(220,13%,91%)] bg-background p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-default"
-    >
-      <Icon
-        className="absolute top-4 right-4 opacity-[0.12]"
-        style={{ color }}
-        size={40}
-        strokeWidth={1.5}
-      />
-      <p className="text-xs font-medium text-muted-foreground mb-1">{label}</p>
-      <p className="text-[2.5rem] font-bold leading-none tabular-nums" style={{ color }}>
-        {animatedValue}
-        {suffix && <span className="text-2xl ml-0.5">{suffix}</span>}
-      </p>
-      <p className="text-xs text-muted-foreground mt-2">{subtitle}</p>
-    </motion.div>
-  );
-}
-
 // ── Email Detail Overlay ──
 function EmailDetailOverlay({
   email,
