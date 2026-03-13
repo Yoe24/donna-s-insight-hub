@@ -220,15 +220,43 @@ const Dashboard = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center gap-3"
-          >
-            <Sparkles className="h-6 w-6 text-donna animate-pulse" />
-            <p className="text-sm text-muted-foreground">Donna prépare votre briefing…</p>
-          </motion.div>
+        <div className="max-w-3xl mx-auto space-y-6">
+          {/* Skeleton greeting */}
+          <div className="rounded-xl border border-border p-6 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 bg-muted animate-pulse rounded-full" />
+              <div className="h-5 w-64 bg-muted animate-pulse rounded" />
+            </div>
+            <div className="pl-8 space-y-2">
+              <div className="h-3 w-48 bg-muted animate-pulse rounded" />
+              <div className="h-4 w-full bg-muted animate-pulse rounded" />
+              <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+            </div>
+          </div>
+          {/* Skeleton KPIs */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg border border-border p-4 space-y-2">
+              <div className="h-3 w-20 bg-muted animate-pulse rounded mx-auto" />
+              <div className="h-8 w-16 bg-muted animate-pulse rounded mx-auto" />
+            </div>
+            <div className="rounded-lg border border-border p-4 space-y-2">
+              <div className="h-3 w-20 bg-muted animate-pulse rounded mx-auto" />
+              <div className="h-8 w-16 bg-muted animate-pulse rounded mx-auto" />
+            </div>
+          </div>
+          {/* Skeleton emails */}
+          <div className="space-y-2.5">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="rounded-lg border-l-4 border-l-muted border border-border p-4 flex items-start gap-3">
+                <div className="h-9 w-9 rounded-full bg-muted animate-pulse shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-40 bg-muted animate-pulse rounded" />
+                  <div className="h-3 w-full bg-muted animate-pulse rounded" />
+                  <div className="h-3 w-2/3 bg-muted animate-pulse rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </DashboardLayout>
     );
