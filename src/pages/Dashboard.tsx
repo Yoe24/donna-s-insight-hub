@@ -248,15 +248,18 @@ const Dashboard = () => {
               <div className="flex items-center gap-2">
                 <span className="text-lg">🟣</span>
                 <h2 className="font-serif text-lg font-bold text-foreground tracking-tight">
-                  {prenom ? `Bonjour ${prenom}` : "Bonjour"}, voici votre briefing
+                  {prenom ? `Bonjour ${prenom}` : "Bonjour"}, c'est Donna — votre employée numérique 24/7
                 </h2>
               </div>
+              <p className="text-xs text-muted-foreground pl-8 italic">
+                Je lis, je trie et je résume tous vos emails pour vous.
+              </p>
               <p className="text-sm text-foreground/70 leading-relaxed pl-8">
                 {isInboxEmpty ? (
                   "Tout est calme pour le moment. Je surveille votre boîte mail et vous préviendrai dès qu'un email arrive."
                 ) : (
                   <>
-                    Aujourd'hui, vous avez reçu <span className="font-semibold text-foreground">{stats.recus} email{stats.recus > 1 ? "s" : ""}</span>.
+                    Voilà ce que j'ai fait aujourd'hui : vous avez reçu <span className="font-semibold text-foreground">{stats.recus} email{stats.recus > 1 ? "s" : ""}</span>.
                     {" "}J'en ai analysé <span className="font-semibold text-foreground">{stats.traites}</span>
                     {stats.valides > 0 && <> et validé <span className="font-semibold text-foreground">{stats.valides}</span></>}.
                     {otherCount > 0 && (
