@@ -87,6 +87,41 @@ const Configuration = () => {
     setExamples((prev) => prev.map((e, i) => (i === index ? value : e)));
   };
 
+  const handleFileUpload = async (filesToUpload: File[]) => {
+    for (const file of filesToUpload) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const doc = await api.upload<ConfigDocument>('/api/config/documents', formData);
+        if (doc?.id) {
+          setDocuments((prev) => [...prev, doc]);
+        }
+        toast.success(`${file.name} uploadé`);
+      } catch (error) {
+        toast.error(`Erreur upload : ${file.name}`);
+      }
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) handleFileUpload(Array.from(e.target.files));
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files) handleFileUpload(Array.from(e.dataTransfer.files));
+  };
+
+  const removeDocument = async (docId: string) => {
+    try {
+      await api.delete(`/api/config/documents/${docId}`);
+      setDocuments((prev) => prev.filter((d) => d.id !== docId));
+      toast.success("Document supprimé");
+    } catch (error) {
+      toast.error("Erreur lors de la suppression");
+    }
+  };
+
   if (loadingConfig) {
     return (
       <DashboardLayout>
