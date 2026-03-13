@@ -453,16 +453,6 @@ const Dashboard = () => {
                     </div>
                   )}
 
-                  {analysis.recommandation && (
-                    <div className="rounded-lg bg-donna-light border border-donna/10 p-4">
-                      <p className="text-xs font-semibold text-donna-foreground mb-2">🎯 Recommandation</p>
-                      <div className="text-sm text-donna-foreground/80 whitespace-pre-line leading-relaxed">
-                        {analysis.recommandation.split("\n").map((line, i) => (
-                          <p key={i} className={line.startsWith("- ") ? "pl-3" : ""}>{line}</p>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Pièces jointes */}
                   {dossierDocs.length > 0 && (
