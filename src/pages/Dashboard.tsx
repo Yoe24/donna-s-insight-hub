@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Coffee, Eye, User, Copy, ChevronDown, Archive, Check, Pencil, X, Sparkles, TrendingUp, Clock, AlertCircle, FileText } from "lucide-react";
+import { Coffee, Eye, User, Copy, ChevronDown, Archive, Check, Pencil, X, Sparkles, TrendingUp, Clock, AlertCircle, FileText, PenLine, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEmails, useEmailStats, useUpdateEmailStatus } from "@/hooks/useEmails";
@@ -149,9 +149,17 @@ const Dashboard = () => {
   const [dossierDocs, setDossierDocs] = useState<any[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
+  const [draftText, setDraftText] = useState<string | null>(null);
+  const [draftLoading, setDraftLoading] = useState(false);
   const { emails, loading } = useEmails();
   const { stats } = useEmailStats();
   const { updateStatus } = useUpdateEmailStatus();
+
+  // Reset draft state when selected email changes
+  useEffect(() => {
+    setDraftText(null);
+    setDraftLoading(false);
+  }, [selectedEmail?.id]);
 
   // Fetch dossier documents when an email with dossier_id is selected
   useEffect(() => {
@@ -163,10 +171,9 @@ const Dashboard = () => {
     api.get(`/api/dossiers/${(selectedEmail as any).dossier_id}`)
       .then((data: any) => {
         const docs = data?.dossier_documents || [];
-        // Filter docs within ±1 day of the email
         const emailDate = new Date(selectedEmail.created_at);
         const filtered = docs.filter((doc: any) => {
-          if (!doc.created_at) return true; // include if no date
+          if (!doc.created_at) return true;
           const docDate = new Date(doc.created_at);
           return Math.abs(docDate.getTime() - emailDate.getTime()) <= 86400000;
         });
@@ -215,6 +222,25 @@ const Dashboard = () => {
     const text = [analysis.resume, analysis.recommandation].filter(Boolean).join("\n\n");
     navigator.clipboard.writeText(text);
     toast.success("Résumé copié !");
+  };
+
+  const handleGenerateDraft = async () => {
+    if (!selectedEmail) return;
+    setDraftLoading(true);
+    try {
+      const data = await api.post<{ draft: string }>(`/api/emails/${selectedEmail.id}/draft`);
+      setDraftText(data.draft);
+    } catch {
+      toast.error("Erreur lors de la génération du brouillon");
+    } finally {
+      setDraftLoading(false);
+    }
+  };
+
+  const handleCopyDraft = () => {
+    if (!draftText) return;
+    navigator.clipboard.writeText(draftText);
+    toast.success("Brouillon copié !");
   };
 
   if (loading) {
@@ -495,8 +521,40 @@ const Dashboard = () => {
                     </div>
                   )}
 
+                  {/* Draft generation */}
+                  <div className="space-y-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      onClick={handleGenerateDraft}
+                      disabled={draftLoading}
+                    >
+                      {draftLoading ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Donna rédige un brouillon...
+                        </>
+                      ) : (
+                        <>
+                          <PenLine className="h-3 w-3 mr-1" />
+                          {draftText ? "Regénérer le brouillon" : "✉️ Générer un brouillon de réponse"}
+                        </>
+                      )}
+                    </Button>
 
-                  {/* Pièces jointes */}
+                    {draftText && (
+                      <div className="rounded-lg bg-blue-50 border border-blue-100 p-4 space-y-3">
+                        <p className="text-xs font-semibold text-foreground">✉️ Brouillon de réponse</p>
+                        <p className="text-sm font-mono text-foreground/80 whitespace-pre-line leading-relaxed">{draftText}</p>
+                        <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyDraft}>
+                          <Copy className="h-3 w-3 mr-1" />Copier le brouillon
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+
                   {dossierDocs.length > 0 && (
                     <div className="rounded-lg bg-muted/40 border border-border p-4 space-y-3">
                       <p className="text-xs font-semibold text-foreground">📎 Pièces jointes ({dossierDocs.length})</p>
