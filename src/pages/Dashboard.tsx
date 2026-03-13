@@ -258,7 +258,7 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+              className="grid grid-cols-2 gap-3"
             >
               <Card className="border-border bg-card shadow-sm">
                 <CardContent className="p-4 text-center space-y-1">
@@ -277,30 +277,8 @@ const Dashboard = () => {
                     <TrendingUp className="h-3.5 w-3.5" />
                     <span className="text-[11px] font-medium uppercase tracking-wider">Économisé</span>
                   </div>
-                  <p className="text-2xl font-serif font-bold text-foreground">{Math.round(tempsMinutes * 3.33)}€</p>
-                  <p className="text-[10px] text-muted-foreground">basé sur 200€/h</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border bg-card shadow-sm">
-                <CardContent className="p-4 text-center space-y-1">
-                  <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
-                    <span className="text-xs">📬</span>
-                    <span className="text-[11px] font-medium uppercase tracking-wider">Traités</span>
-                  </div>
-                  <p className="text-2xl font-serif font-bold text-foreground">{stats.traites}</p>
-                  <p className="text-[10px] text-muted-foreground">email{stats.traites > 1 ? "s" : ""} analysé{stats.traites > 1 ? "s" : ""}</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border bg-card shadow-sm">
-                <CardContent className="p-4 text-center space-y-1">
-                  <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    <span className="text-[11px] font-medium uppercase tracking-wider">À faire</span>
-                  </div>
-                  <p className={`text-2xl font-serif font-bold ${stats.en_attente > 0 ? "text-orange-600" : "text-foreground"}`}>{stats.en_attente}</p>
-                  <p className="text-[10px] text-muted-foreground">action{stats.en_attente > 1 ? "s" : ""} requise{stats.en_attente > 1 ? "s" : ""}</p>
+                  <p className="text-2xl font-serif font-bold text-foreground">{Math.round(tempsMinutes * 1.25)}€</p>
+                  <p className="text-[10px] text-muted-foreground">estimé aujourd'hui</p>
                 </CardContent>
               </Card>
             </motion.div>
