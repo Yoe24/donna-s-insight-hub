@@ -155,6 +155,12 @@ const Dashboard = () => {
   const { stats } = useEmailStats();
   const { updateStatus } = useUpdateEmailStatus();
 
+  // Reset draft state when selected email changes
+  useEffect(() => {
+    setDraftText(null);
+    setDraftLoading(false);
+  }, [selectedEmail?.id]);
+
   // Fetch dossier documents when an email with dossier_id is selected
   useEffect(() => {
     if (!selectedEmail || !(selectedEmail as any).dossier_id) {
@@ -165,10 +171,9 @@ const Dashboard = () => {
     api.get(`/api/dossiers/${(selectedEmail as any).dossier_id}`)
       .then((data: any) => {
         const docs = data?.dossier_documents || [];
-        // Filter docs within ±1 day of the email
         const emailDate = new Date(selectedEmail.created_at);
         const filtered = docs.filter((doc: any) => {
-          if (!doc.created_at) return true; // include if no date
+          if (!doc.created_at) return true;
           const docDate = new Date(doc.created_at);
           return Math.abs(docDate.getTime() - emailDate.getTime()) <= 86400000;
         });
