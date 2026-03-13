@@ -1,6 +1,10 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, FileText, CheckCircle2, ArrowRight, Clock, Shield } from "lucide-react";
+import { PublicNavbar } from "@/components/PublicNavbar";
+import { PublicFooter } from "@/components/PublicFooter";
+import { ScrollToTop } from "@/components/ScrollToTop";
+import { PageTransition } from "@/components/PageTransition";
 
 const features = [
   {
@@ -32,74 +36,70 @@ const features = [
 
 const Produit = () => {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Nav */}
-      <nav className="flex items-center justify-between px-6 sm:px-10 py-6 max-w-7xl mx-auto">
-        <Link to="/">
-          <h2 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-foreground">Donna</h2>
-        </Link>
-        <div className="flex items-center gap-6 text-sm font-sans text-muted-foreground">
-          <Link to="/a-propos" className="hidden sm:inline hover:text-foreground transition-colors">À propos</Link>
-          <Link to="/login" className="hover:text-foreground transition-colors">Se connecter</Link>
-        </div>
-      </nav>
+    <PageTransition>
+      <div className="min-h-screen bg-background flex flex-col">
+        <PublicNavbar />
 
-      {/* Hero */}
-      <section className="max-w-3xl mx-auto px-6 pt-16 pb-20 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <p className="text-xs font-sans font-medium uppercase tracking-widest text-muted-foreground mb-4">
-            Solution
-          </p>
-          <h1 className="text-3xl sm:text-5xl font-serif font-bold text-foreground leading-tight mb-5">
-            Votre premier employé
-            <br />
-            numérique juridique
-          </h1>
-          <p className="text-base sm:text-lg font-sans text-muted-foreground max-w-lg mx-auto leading-relaxed">
-            Donna traite votre boîte mail 24/7. Elle lit, trie, résume et rédige — vous validez.
-          </p>
-        </motion.div>
-      </section>
+        {/* Hero */}
+        <section className="max-w-3xl mx-auto px-6 pt-16 pb-20 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <p className="text-xs font-sans font-medium uppercase tracking-widest text-muted-foreground mb-4">
+              Solution
+            </p>
+            <h1 className="text-3xl sm:text-5xl font-serif font-bold text-foreground leading-tight mb-5">
+              Votre premier employé
+              <br />
+              numérique juridique
+            </h1>
+            <p className="text-base sm:text-lg font-sans text-muted-foreground max-w-lg mx-auto leading-relaxed">
+              Donna traite votre boîte mail 24/7. Elle lit, trie, résume et rédige — vous validez.
+            </p>
+          </motion.div>
+        </section>
 
-      {/* Features */}
-      <section className="max-w-4xl mx-auto px-6 pb-24">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-border border border-border rounded-2xl overflow-hidden">
-          {features.map((f, i) => (
-            <motion.div
-              key={f.title}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.08, duration: 0.4 }}
-              className={`bg-background p-8 ${i === features.length - 1 && features.length % 2 !== 0 ? "sm:col-span-2" : ""}`}
-            >
-              <f.icon className="h-5 w-5 text-foreground mb-4" strokeWidth={1.5} />
-              <h3 className="text-base font-serif font-bold text-foreground mb-2">{f.title}</h3>
-              <p className="text-sm font-sans text-muted-foreground leading-relaxed">{f.description}</p>
-            </motion.div>
-          ))}
-        </div>
+        {/* Features */}
+        <section className="max-w-4xl mx-auto px-6 pb-24">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-border border border-border rounded-2xl overflow-hidden">
+            {features.map((f, i) => (
+              <motion.div
+                key={f.title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08, duration: 0.4 }}
+                className={`bg-background p-8 ${i === features.length - 1 && features.length % 2 !== 0 ? "sm:col-span-2" : ""}`}
+              >
+                <f.icon className="h-5 w-5 text-foreground mb-4" strokeWidth={1.5} />
+                <h3 className="text-base font-serif font-bold text-foreground mb-2">{f.title}</h3>
+                <p className="text-sm font-sans text-muted-foreground leading-relaxed">{f.description}</p>
+              </motion.div>
+            ))}
+          </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-          className="text-center mt-14"
-        >
-          <Link to="/demo">
-            <button className="bg-foreground text-background px-8 py-3 rounded-full text-sm font-sans font-medium hover:opacity-90 transition-opacity inline-flex items-center gap-2">
-              Demander une démo
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </Link>
-        </motion.div>
-      </section>
-    </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+            className="text-center mt-14"
+          >
+            <Link to="/demo">
+              <button className="bg-foreground text-background px-8 py-3 rounded-full text-sm font-sans font-medium hover:opacity-90 transition-opacity inline-flex items-center gap-2 min-h-[48px]">
+                Demander une démo
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </Link>
+          </motion.div>
+        </section>
+
+        <PublicFooter />
+        <ScrollToTop />
+      </div>
+    </PageTransition>
   );
 };
 

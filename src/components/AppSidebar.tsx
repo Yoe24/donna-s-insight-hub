@@ -1,6 +1,6 @@
 import { LayoutDashboard, Settings, FolderOpen, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
@@ -13,6 +13,7 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+
 const items = [
   { title: "Accueil", url: "/dashboard", icon: LayoutDashboard },
   { title: "Configurez-moi", url: "/configuration", icon: Settings },
@@ -27,7 +28,7 @@ export function AppSidebar() {
 
   const handleLogout = async () => {
     await signOut();
-    navigate("/login");
+    navigate("/");
   };
 
   return (
