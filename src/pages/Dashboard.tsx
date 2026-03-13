@@ -494,7 +494,7 @@ const Dashboard = () => {
                   )}
 
 
-                  {!analysis.resume && !analysis.recommandation && !analysis.attention && selectedEmail.brouillon && (
+                  {!analysis.resume && selectedEmail.brouillon && (
                     <div className="rounded-lg bg-muted p-4">
                       <p className="text-sm whitespace-pre-wrap">{selectedEmail.brouillon}</p>
                     </div>
