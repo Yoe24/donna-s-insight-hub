@@ -24,6 +24,7 @@ const Configuration = () => {
   const [nom_cabinet, setNomCabinet] = useState("");
   const [specialite, setSpecialite] = useState("");
   const [signature, setSignature] = useState("");
+  const [profil_style, setProfilStyle] = useState("");
   const [examples, setExamples] = useState(["", "", ""]);
   const [documents, setDocuments] = useState<ConfigDocument[]>([]);
   const [loadingConfig, setLoadingConfig] = useState(true);
