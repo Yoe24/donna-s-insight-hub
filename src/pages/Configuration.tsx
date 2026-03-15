@@ -138,7 +138,7 @@ const Configuration = () => {
           </section>
 
           {/* Section 2 — Signature */}
-          <section className="space-y-3">
+          <section className="rounded-xl border border-border bg-card p-6 space-y-4">
             <div>
               <h2 className="text-lg font-semibold text-foreground">Signature email</h2>
               <p className="text-sm text-muted-foreground mt-0.5">
@@ -163,49 +163,43 @@ const Configuration = () => {
           </section>
 
           {/* Section 3 — Profil de personnalité */}
-          <section>
+          <section className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Profil de personnalité</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Collez le profil généré par ChatGPT pour que Donna adopte votre style de travail.
+              </p>
+            </div>
+
             <Collapsible>
-              <CollapsibleTrigger className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors group cursor-pointer">
-                <Sparkles className="h-4 w-4" />
-                Personnaliser le style de Donna (optionnel)
-                <ChevronDown className="h-3.5 w-3.5 transition-transform group-data-[state=open]:rotate-180" />
+              <CollapsibleTrigger className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 cursor-pointer">
+                Comment obtenir mon profil ?
               </CollapsibleTrigger>
-              <CollapsibleContent className="mt-5 space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Collez ici le profil généré par ChatGPT pour que Donna adopte votre style.
-                </p>
-
-                <Collapsible>
-                  <CollapsibleTrigger className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 cursor-pointer">
-                    Comment obtenir mon profil ?
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-3 space-y-2 text-sm text-muted-foreground rounded-lg bg-muted/50 p-4">
-                    <p>1. Ouvrez ChatGPT</p>
-                    <p>2. Collez ce prompt :</p>
-                    <div className="bg-muted rounded p-3 font-mono text-xs leading-relaxed">
-                      Analyse l'ensemble de nos conversations passées et produis un document structuré qui décrit : mon style d'écriture, mes réflexes juridiques, mes préférences de format, et mon ton professionnel. Base-toi uniquement sur nos échanges.
-                    </div>
-                    <p>3. Copiez la réponse de ChatGPT</p>
-                    <p>4. Collez-la dans le champ ci-dessous</p>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <Textarea
-                  className="text-sm resize-y min-h-[160px]"
-                  placeholder="Collez le profil généré par ChatGPT ici..."
-                  value={profil_style}
-                  onChange={(e) => setProfilStyle(e.target.value)}
-                />
-                <Button
-                  onClick={saveProfil}
-                  disabled={savingProfil}
-                  size="sm"
-                >
-                  {savingProfil && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
-                  Sauvegarder
-                </Button>
+              <CollapsibleContent className="mt-3 space-y-2 text-sm text-muted-foreground rounded-lg bg-muted/50 p-4">
+                <p>1. Ouvrez ChatGPT</p>
+                <p>2. Collez ce prompt :</p>
+                <div className="bg-muted rounded p-3 font-mono text-xs leading-relaxed">
+                  Analyse l'ensemble de nos conversations passées et produis un document structuré qui décrit : mon style d'écriture, mes réflexes juridiques, mes préférences de format, et mon ton professionnel. Base-toi uniquement sur nos échanges.
+                </div>
+                <p>3. Copiez la réponse de ChatGPT</p>
+                <p>4. Collez-la dans le champ ci-dessous</p>
               </CollapsibleContent>
             </Collapsible>
+
+            <Textarea
+              className="text-sm resize-y min-h-[160px]"
+              placeholder="Collez ici le profil généré par ChatGPT..."
+              value={profil_style}
+              onChange={(e) => setProfilStyle(e.target.value)}
+            />
+            <Button
+              onClick={saveProfil}
+              disabled={savingProfil}
+              size="sm"
+            >
+              {savingProfil && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+              Sauvegarder
+            </Button>
           </section>
         </div>
       </DashboardLayout>
