@@ -16,6 +16,7 @@ import APropos from "./pages/APropos";
 import Demo from "./pages/Demo";
 import MentionsLegales from "./pages/MentionsLegales";
 import NotFound from "./pages/NotFound";
+import DonnaChat from "./components/DonnaChat";
 
 const queryClient = new QueryClient();
 
