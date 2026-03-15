@@ -46,6 +46,7 @@ const Configuration = () => {
           setSpecialite(config.specialite || "");
           setSignature(config.signature || "");
           setProfilStyle(config.profil_style || "");
+        }
 
         if (examplesData?.examples) {
           setExamples(examplesData.examples.length >= 3
