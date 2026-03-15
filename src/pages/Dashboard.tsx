@@ -427,7 +427,13 @@ const Dashboard = () => {
       .catch(() => {});
   }, []);
 
-  const activeEmails = emails.filter(e => e.statut !== "archive" && e.statut !== "ignore" && e.pipeline_step !== "importe");
+  const activeEmails = emails
+    .filter(e => e.statut !== "archive" && e.statut !== "ignore" && e.pipeline_step !== "importe")
+    .sort((a, b) => {
+      const aRejected = a.pipeline_step === "filtre_rejete" ? 1 : 0;
+      const bRejected = b.pipeline_step === "filtre_rejete" ? 1 : 0;
+      return aRejected - bRejected;
+    });
   const isInboxEmpty = activeEmails.length === 0;
 
   const tempsMinutes = stats.traites * 5;

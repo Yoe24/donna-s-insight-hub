@@ -47,7 +47,7 @@ export function useEmails() {
           .from('emails')
           .select('*')
           .eq('user_id', user.id)
-          .neq('pipeline_step', 'importe')
+          .not('pipeline_step', 'eq', 'importe')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
