@@ -186,13 +186,7 @@ function EmailDetailOverlay({
     api.get(`/api/dossiers/${(email as any).dossier_id}`)
       .then((data: any) => {
         const docs = data?.dossier_documents || [];
-        const filtered = docs.filter((doc: any) => {
-          if (doc.email_id) return doc.email_id === email.id;
-          if (!doc.created_at) return true;
-          const docDate = new Date(doc.created_at);
-          const emailDate = new Date(email.created_at);
-          return Math.abs(docDate.getTime() - emailDate.getTime()) <= 86400000;
-        });
+        const filtered = docs.filter((doc: any) => doc.email_id === email.id);
         setDossierDocs(filtered);
       })
       .catch(() => setDossierDocs([]))
