@@ -117,15 +117,15 @@ const Dossiers = () => {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             {/* Desktop table */}
             <div className="hidden sm:block">
-              <Card className="border-border bg-card overflow-hidden">
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="font-sans text-xs">Client</TableHead>
-                      <TableHead className="font-sans text-xs">Email</TableHead>
-                      <TableHead className="font-sans text-xs">Statut</TableHead>
-                      <TableHead className="font-sans text-xs">Domaine</TableHead>
-                      <TableHead className="font-sans text-xs text-right">Dernier échange</TableHead>
+                      <TableHead className="text-xs">Client</TableHead>
+                      <TableHead className="text-xs">Email</TableHead>
+                      <TableHead className="text-xs">Statut</TableHead>
+                      <TableHead className="text-xs">Domaine</TableHead>
+                      <TableHead className="text-xs text-right">Dernier échange</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -135,11 +135,11 @@ const Dossiers = () => {
                         className="cursor-pointer hover:bg-muted/40 transition-colors"
                         onClick={() => navigate(`/dossiers/${dossier.id}`)}
                       >
-                        <TableCell className="font-sans text-sm font-medium">{dossier.nom_client}</TableCell>
-                        <TableCell className="font-sans text-sm text-muted-foreground">{dossier.email_client}</TableCell>
+                        <TableCell className="text-sm font-medium">{dossier.nom_client}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{dossier.email_client}</TableCell>
                         <TableCell>{statutBadge(dossier.statut)}</TableCell>
-                        <TableCell className="font-sans text-sm text-muted-foreground">{dossier.domaine}</TableCell>
-                        <TableCell className="font-sans text-sm text-muted-foreground text-right">
+                        <TableCell className="text-sm text-muted-foreground">{dossier.domaine}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground text-right">
                           {dossier.dernier_echange_date
                             ? new Date(dossier.dernier_echange_date).toLocaleDateString('fr-FR')
                             : "—"}
@@ -148,7 +148,7 @@ const Dossiers = () => {
                     ))}
                   </TableBody>
                 </Table>
-              </Card>
+              </div>
             </div>
 
             {/* Mobile cards */}
