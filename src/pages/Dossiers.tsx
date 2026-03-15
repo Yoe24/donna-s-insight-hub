@@ -35,7 +35,18 @@ const statutBadge = (statut: string) => {
 const Dossiers = () => {
   const [dossiers, setDossiers] = useState<Dossier[]>([]);
   const [loading, setLoading] = useState(true);
+  const [connectingGmail, setConnectingGmail] = useState(false);
   const navigate = useNavigate();
+
+  const handleConnectGmail = async () => {
+    setConnectingGmail(true);
+    try {
+      const res = await apiClient.get<{ auth_url: string }>("/api/import/gmail/auth");
+      if (res.auth_url) window.location.href = res.auth_url;
+    } catch {
+      setConnectingGmail(false);
+    }
+  };
 
   useEffect(() => {
     const fetchDossiers = async () => {
