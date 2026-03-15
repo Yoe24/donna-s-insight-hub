@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Mail, Upload, X, Shield } from "lucide-react";
+import { Loader2, ArrowLeft, Mail, Upload, X, Shield, Sparkles, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
 
@@ -23,6 +24,7 @@ const Configuration = () => {
   const [nom_cabinet, setNomCabinet] = useState("");
   const [specialite, setSpecialite] = useState("");
   const [signature, setSignature] = useState("");
+  const [profil_style, setProfilStyle] = useState("");
   const [examples, setExamples] = useState(["", "", ""]);
   const [documents, setDocuments] = useState<ConfigDocument[]>([]);
   const [loadingConfig, setLoadingConfig] = useState(true);
@@ -43,6 +45,7 @@ const Configuration = () => {
           setNomCabinet(config.nom_cabinet || "");
           setSpecialite(config.specialite || "");
           setSignature(config.signature || "");
+          setProfilStyle(config.profil_style || "");
         }
 
         if (examplesData?.examples) {
@@ -72,6 +75,7 @@ const Configuration = () => {
           nom_cabinet,
           specialite,
           signature,
+          profil_style,
         }),
         api.put('/api/config/examples', { examples }),
       ]);
@@ -247,7 +251,43 @@ const Configuration = () => {
             </CardContent>
           </Card>
 
-          {/* Section 3 — Base de connaissances */}
+          {/* Section — Profil de personnalité */}
+          <Card className="border-border shadow-sm bg-white">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-muted-foreground" />
+                <CardTitle className="text-lg font-serif">Profil de personnalité</CardTitle>
+              </div>
+              <CardDescription className="font-sans">
+                Collez ici le profil généré par ChatGPT pour que Donna adopte votre style de travail.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors font-sans group">
+                  <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+                  Comment obtenir mon profil ?
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3 space-y-2 text-sm text-muted-foreground font-sans">
+                  <p>1. Ouvrez ChatGPT</p>
+                  <p>2. Collez ce prompt :</p>
+                  <div className="bg-muted rounded p-3 font-mono text-xs">
+                    Analyse l'ensemble de nos conversations passées et produis un document structuré qui décrit : mon style d'écriture, mes réflexes juridiques, mes préférences de format, et mon ton professionnel. Base-toi uniquement sur nos échanges.
+                  </div>
+                  <p>3. Copiez la réponse de ChatGPT</p>
+                  <p>4. Collez-la dans le champ ci-dessous</p>
+                </CollapsibleContent>
+              </Collapsible>
+
+              <Textarea
+                className="font-sans text-sm resize-y min-h-[200px]"
+                placeholder="Collez le profil généré par ChatGPT ici..."
+                value={profil_style}
+                onChange={(e) => setProfilStyle(e.target.value)}
+              />
+            </CardContent>
+          </Card>
+
           <Card className="border-border shadow-sm bg-white">
             <CardHeader>
               <div className="flex items-center gap-2">
