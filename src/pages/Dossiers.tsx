@@ -4,8 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FolderOpen, Mail, ArrowLeft } from "lucide-react";
+import { FolderOpen, Mail, ArrowLeft, ChevronRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { api as apiClient } from "@/lib/api";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 
