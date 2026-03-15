@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Coffee, Eye, Copy, ChevronDown, Archive, X, FileText, PenLine, Loader2, Sparkles } from "lucide-react";
+import { Coffee, Eye, Copy, ChevronDown, Archive, X, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEmails, useEmailStats, useUpdateEmailStatus } from "@/hooks/useEmails";
@@ -186,10 +186,11 @@ function EmailDetailOverlay({
     api.get(`/api/dossiers/${(email as any).dossier_id}`)
       .then((data: any) => {
         const docs = data?.dossier_documents || [];
-        const emailDate = new Date(email.created_at);
         const filtered = docs.filter((doc: any) => {
+          if (doc.email_id) return doc.email_id === email.id;
           if (!doc.created_at) return true;
           const docDate = new Date(doc.created_at);
+          const emailDate = new Date(email.created_at);
           return Math.abs(docDate.getTime() - emailDate.getTime()) <= 86400000;
         });
         setDossierDocs(filtered);
@@ -223,7 +224,7 @@ function EmailDetailOverlay({
   const handleCopyDraft = () => {
     if (!draftText) return;
     navigator.clipboard.writeText(draftText);
-    toast.success("Brouillon copié !");
+    toast.success("Réponse copiée !");
   };
 
   const handleFeedbackSelect = (value: string) => {
@@ -252,7 +253,7 @@ function EmailDetailOverlay({
           transition={{ duration: 0.2, ease: "easeOut" }}
           className="relative w-full max-w-[700px] bg-background rounded-none sm:rounded-2xl p-6 sm:p-8 shadow-2xl"
         >
-          {/* Header */}
+          {/* SECTION 1 — En-tête */}
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={onClose}
@@ -268,7 +269,6 @@ function EmailDetailOverlay({
             </button>
           </div>
 
-          {/* Email meta */}
           <div className="space-y-2 mb-4">
             <div className="flex items-center gap-3 flex-wrap">
               <SenderAvatar expediteur={email.expediteur} size={36} />
@@ -281,94 +281,103 @@ function EmailDetailOverlay({
 
           <div className="h-px bg-border mb-6" />
 
-          {/* Section: Résumé Donna */}
+          {/* SECTION 2 — Résumé du mail */}
           {analysis.resume && (
             <div className="mb-6">
               <div className="flex items-center gap-1.5 mb-2">
-                <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs font-medium text-muted-foreground">Résumé par Donna</span>
+                <span className="text-xs">📋</span>
+                <span className="text-xs font-medium text-muted-foreground">Résumé du mail</span>
               </div>
               <div className="rounded-xl bg-[hsl(210,20%,98%)] p-5">
-                <p className="text-sm text-[hsl(215,25%,27%)] whitespace-pre-line" style={{ lineHeight: 1.7 }}>
+                <p className="text-sm text-foreground/85 whitespace-pre-line" style={{ lineHeight: 1.7 }}>
                   {analysis.resume}
                 </p>
               </div>
             </div>
           )}
 
-          {/* Section: Brouillon */}
+          {/* SECTION 3 — Pièces jointes analysées */}
+          {dossierDocs.length > 0 && (
+            <div className="mb-6">
+              <div className="flex items-center gap-1.5 mb-3">
+                <span className="text-xs">📎</span>
+                <span className="text-xs font-medium text-muted-foreground">Pièces jointes analysées par Donna</span>
+              </div>
+              <div className="rounded-xl bg-[hsl(210,20%,98%)] p-5 space-y-4">
+                {dossierDocs.map((doc: any, idx: number) => {
+                  const isPdf = doc.type?.toLowerCase()?.includes("pdf") || doc.nom_fichier?.endsWith(".pdf");
+                  const isWord = doc.type?.toLowerCase()?.includes("word") || doc.nom_fichier?.endsWith(".docx") || doc.nom_fichier?.endsWith(".doc");
+                  const preview = !doc.resume && doc.contenu_extrait
+                    ? doc.contenu_extrait.slice(0, 200) + (doc.contenu_extrait.length > 200 ? "…" : "")
+                    : null;
+
+                  return (
+                    <Collapsible key={idx}>
+                      <div className="space-y-1.5">
+                        <div className="flex items-start gap-2.5">
+                          <FileText className={`h-4 w-4 shrink-0 mt-0.5 ${isPdf ? "text-red-500" : isWord ? "text-blue-500" : "text-muted-foreground"}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">{doc.nom_fichier}</p>
+                            {doc.resume && (
+                              <p className="text-sm text-foreground/70 mt-1 leading-relaxed">{doc.resume}</p>
+                            )}
+                            {preview && (
+                              <p className="text-sm text-foreground/70 mt-1 leading-relaxed">{preview}</p>
+                            )}
+                          </div>
+                        </div>
+                        {doc.contenu_extrait && (
+                          <>
+                            <CollapsibleTrigger asChild>
+                              <button className="text-[11px] text-primary font-medium hover:underline ml-6">
+                                Voir l'extrait complet ›
+                              </button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="mt-2 ml-6 rounded-lg bg-background border border-border p-3 text-xs text-foreground/70 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
+                                {doc.contenu_extrait}
+                              </div>
+                            </CollapsibleContent>
+                          </>
+                        )}
+                      </div>
+                      {idx < dossierDocs.length - 1 && <div className="h-px bg-border/50 mt-4" />}
+                    </Collapsible>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* SECTION 4 — Générer une réponse */}
           <div className="mb-6 space-y-3">
             <Button
               variant="outline"
-              size="sm"
-              className="text-xs border-border hover:border-primary/50 transition-colors"
+              className="text-sm border-border hover:border-primary/50 transition-colors"
               onClick={handleGenerateDraft}
               disabled={draftLoading}
             >
               {draftLoading ? (
                 <>
-                  <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
-                  Donna rédige un brouillon...
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  Donna rédige une réponse...
                 </>
               ) : (
-                <>
-                  <PenLine className="h-3 w-3 mr-1.5" />
-                  {draftText ? "Regénérer le brouillon" : "✉️ Générer un brouillon de réponse"}
-                </>
+                draftText ? "✉️ Regénérer la réponse" : "✉️ Générer une réponse"
               )}
             </Button>
 
             {draftText && (
               <div className="rounded-xl bg-[hsl(213,100%,97%)] border border-[hsl(213,90%,90%)] p-5 space-y-3">
-                <p className="text-xs font-semibold text-foreground">✉️ Brouillon de réponse</p>
                 <p className="text-sm font-mono text-foreground/80 whitespace-pre-line leading-relaxed">{draftText}</p>
                 <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyDraft}>
-                  <Copy className="h-3 w-3 mr-1" />Copier le brouillon
+                  <Copy className="h-3 w-3 mr-1" />Copier la réponse
                 </Button>
               </div>
             )}
           </div>
 
-          {/* Section: Pièces jointes */}
-          {dossierDocs.length > 0 && (
-            <div className="mb-6 space-y-3">
-              <p className="text-xs font-medium text-muted-foreground">📎 Pièces jointes</p>
-              {dossierDocs.map((doc: any, idx: number) => {
-                const isPdf = doc.type?.toLowerCase()?.includes("pdf") || doc.nom_fichier?.endsWith(".pdf");
-                return (
-                  <Collapsible key={idx}>
-                    <div className="rounded-lg bg-muted/40 border border-border p-3 space-y-2">
-                      <div className="flex items-start gap-2.5">
-                        <FileText className={`h-4 w-4 shrink-0 mt-0.5 ${isPdf ? "text-red-500" : "text-blue-500"}`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-foreground truncate">{doc.nom_fichier}</p>
-                          {doc.resume && (
-                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-4">{doc.resume}</p>
-                          )}
-                        </div>
-                      </div>
-                      {doc.contenu_extrait && (
-                        <>
-                          <CollapsibleTrigger asChild>
-                            <button className="text-[11px] text-primary font-medium hover:underline">
-                              Voir l'extrait complet
-                            </button>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <div className="mt-2 rounded bg-muted/60 p-3 text-xs text-foreground/70 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
-                              {doc.contenu_extrait}
-                            </div>
-                          </CollapsibleContent>
-                        </>
-                      )}
-                    </div>
-                  </Collapsible>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Section: Email original */}
+          {/* SECTION 5 — Email original (replié) */}
           <div className="mb-6">
             <Collapsible open={showOriginal} onOpenChange={setShowOriginal}>
               <CollapsibleTrigger asChild>
@@ -386,24 +395,21 @@ function EmailDetailOverlay({
             </Collapsible>
           </div>
 
-          {/* Section: Feedback — dropdown select */}
+          {/* SECTION 6 — Feedback */}
           <div className="border-t border-border pt-5">
             {feedbackGiven ? (
               <p className="text-xs text-muted-foreground">✓ Feedback envoyé, merci</p>
             ) : (
-              <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground">Évaluer cette analyse</label>
-                <Select onValueChange={handleFeedbackSelect}>
-                  <SelectTrigger className="w-56 h-8 text-xs bg-muted/40 border-border">
-                    <SelectValue placeholder="Donner un feedback..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="parfait">Analyse pertinente</SelectItem>
-                    <SelectItem value="modifier">Analyse à améliorer</SelectItem>
-                    <SelectItem value="erreur">Analyse incorrecte</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select onValueChange={handleFeedbackSelect}>
+                <SelectTrigger className="w-56 h-8 text-xs bg-muted/40 border-border">
+                  <SelectValue placeholder="Donner un feedback..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="parfait">Analyse pertinente</SelectItem>
+                  <SelectItem value="modifier">Analyse à améliorer</SelectItem>
+                  <SelectItem value="erreur">Analyse incorrecte</SelectItem>
+                </SelectContent>
+              </Select>
             )}
           </div>
         </motion.div>
