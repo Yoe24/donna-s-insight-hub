@@ -75,6 +75,7 @@ const Configuration = () => {
           nom_cabinet,
           specialite,
           signature,
+          profil_style,
         }),
         api.put('/api/config/examples', { examples }),
       ]);
