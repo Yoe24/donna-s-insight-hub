@@ -92,7 +92,7 @@ const Configuration = () => {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Paramètres</h1>
 
           {/* Section 1 — Gmail */}
-          <section className="space-y-2">
+          <section>
             {gmailConnected ? (
               <div className="rounded-xl border border-green-200 bg-green-50 p-6 space-y-3">
                 <div className="flex items-center gap-3">

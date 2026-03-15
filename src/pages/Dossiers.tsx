@@ -154,27 +154,25 @@ const Dossiers = () => {
             {/* Mobile cards */}
             <div className="sm:hidden space-y-3">
               {dossiers.map((dossier) => (
-                <Card
+                <div
                   key={dossier.id}
-                  className="cursor-pointer hover:bg-muted/40 transition-colors"
+                  className="rounded-xl border border-border bg-card p-4 space-y-2 cursor-pointer hover:bg-muted/40 transition-colors"
                   onClick={() => navigate(`/dossiers/${dossier.id}`)}
                 >
-                  <CardContent className="p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-sans text-sm font-medium text-foreground">{dossier.nom_client}</span>
-                      {statutBadge(dossier.statut)}
-                    </div>
-                    <p className="font-sans text-xs text-muted-foreground">{dossier.email_client}</p>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground font-sans">
-                      <span>{dossier.domaine}</span>
-                      <span>
-                        {dossier.dernier_echange_date
-                          ? new Date(dossier.dernier_echange_date).toLocaleDateString('fr-FR')
-                          : "—"}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">{dossier.nom_client}</span>
+                    {statutBadge(dossier.statut)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{dossier.email_client}</p>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{dossier.domaine}</span>
+                    <span>
+                      {dossier.dernier_echange_date
+                        ? new Date(dossier.dernier_echange_date).toLocaleDateString('fr-FR')
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
               ))}
             </div>
           </motion.div>
