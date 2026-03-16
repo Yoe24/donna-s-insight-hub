@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2, Mail, CheckCircle, ChevronRight, Sparkles, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-import { api } from "@/lib/api";
+import { apiGet, apiPut } from "@/lib/api";
 
 const Configuration = () => {
   const [signature, setSignature] = useState("");
