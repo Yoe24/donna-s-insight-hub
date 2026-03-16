@@ -106,7 +106,7 @@ export function useEmailStats() {
 
     const fetchStats = async () => {
       try {
-        const data = await api.get<EmailStats>('/api/emails/stats');
+        const data = await apiGet<EmailStats>('/api/emails/stats');
         setStats(data);
       } catch (error) {
         console.error('Error fetching email stats:', error);
