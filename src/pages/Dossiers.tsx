@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { FolderOpen, ArrowLeft, ChevronRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "@/lib/api";
+import { apiGet, apiPublicGet } from "@/lib/api";
 
 interface Dossier {
   id: string;
@@ -39,7 +39,7 @@ const Dossiers = () => {
   const handleConnectGmail = async () => {
     setConnectingGmail(true);
     try {
-      const res = await api.get<{ auth_url: string }>("/api/import/gmail/auth");
+      const res = await apiPublicGet<{ auth_url: string }>("/api/import/gmail/auth");
       if (res.auth_url) window.location.href = res.auth_url;
     } catch {
       setConnectingGmail(false);
@@ -49,7 +49,7 @@ const Dossiers = () => {
   useEffect(() => {
     const fetchDossiers = async () => {
       try {
-        const data = await api.get<Dossier[]>('/api/dossiers');
+        const data = await apiGet<Dossier[]>('/api/dossiers');
         setDossiers(data || []);
       } catch (error) {
         console.error('Error fetching dossiers:', error);

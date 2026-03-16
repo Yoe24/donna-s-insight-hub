@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2, Mail, CheckCircle, ChevronRight, Sparkles, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-import { api } from "@/lib/api";
+import { apiGet, apiPut, apiPublicGet } from "@/lib/api";
 
 const Configuration = () => {
   const [signature, setSignature] = useState("");
@@ -20,7 +20,7 @@ const Configuration = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const config = await api.get("/api/config").catch(() => null);
+        const config = await apiGet("/api/config").catch(() => null);
         if (config) {
           setSignature(config.signature || "");
           setProfilStyle(config.profil_style || "");
@@ -37,7 +37,7 @@ const Configuration = () => {
   const handleConnectGmail = async () => {
     setConnectingGmail(true);
     try {
-      const res = await api.get<{ auth_url: string }>("/api/import/gmail/auth");
+      const res = await apiPublicGet<{ auth_url: string }>("/api/import/gmail/auth");
       if (res.auth_url) {
         window.location.href = res.auth_url;
       }
@@ -50,7 +50,7 @@ const Configuration = () => {
   const saveSignature = async () => {
     setSavingSignature(true);
     try {
-      await api.put("/api/config", { signature });
+      await apiPut("/api/config", { signature });
       toast.success("✓ Signature sauvegardée");
     } catch {
       toast.error("Erreur lors de la sauvegarde");
@@ -61,7 +61,7 @@ const Configuration = () => {
   const saveProfil = async () => {
     setSavingProfil(true);
     try {
-      await api.put("/api/config", { profil_style });
+      await apiPut("/api/config", { profil_style });
       toast.success("✓ Profil sauvegardé");
     } catch {
       toast.error("Erreur lors de la sauvegarde");

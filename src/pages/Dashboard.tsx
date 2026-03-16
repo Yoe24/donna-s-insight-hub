@@ -13,7 +13,7 @@ import type { Email } from "@/hooks/useEmails";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { parseDonnaAnalysis } from "@/lib/parseDonnaAnalysis";
-import { api } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
 
 function formatEmailTime(created_at: string) {
   try {
@@ -184,7 +184,7 @@ function EmailDetailOverlay({
       return;
     }
     setDocsLoading(true);
-    api.get(`/api/dossiers/${(email as any).dossier_id}`)
+    apiGet(`/api/dossiers/${(email as any).dossier_id}`)
       .then((data: any) => {
         const docs = data?.dossier_documents || [];
         const filtered = docs.filter((doc: any) => doc.email_id === email.id);
@@ -207,7 +207,7 @@ function EmailDetailOverlay({
   const handleGenerateDraft = async () => {
     setDraftLoading(true);
     try {
-      const data = await api.post<{ draft: string }>(`/api/emails/${email.id}/draft`);
+      const data = await apiPost<{ draft: string }>(`/api/emails/${email.id}/draft`);
       setDraftText(data.draft);
     } catch {
       toast.error("Erreur lors de la génération du brouillon");
@@ -431,7 +431,7 @@ const Dashboard = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    api.get<{ nom_avocat?: string }>("/api/config")
+    apiGet<{ nom_avocat?: string }>("/api/config")
       .then(data => {
         if (data?.nom_avocat) setNomAvocat(data.nom_avocat);
       })

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { MessageCircle, X, ArrowUp } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
-import { api } from "@/lib/api";
+import { apiPost } from "@/lib/api";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -104,7 +104,7 @@ export default function DonnaChat() {
 
     try {
       const history = newMessages.slice(-MAX_HISTORY).map(({ role, content }) => ({ role, content }));
-      const res = await api.post<{ response: string }>("/api/chat", { message: text, history });
+      const res = await apiPost<{ response: string }>("/api/chat", { message: text, history });
       const assistantMsg: ChatMessage = { role: "assistant", content: res.response, timestamp: Date.now() };
       setMessages(prev => [...prev, assistantMsg]);
     } catch {

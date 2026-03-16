@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { api } from '@/lib/api';
+import { apiGet, apiPost } from '@/lib/api';
 
 export type PipelineStep = 
   | "en_attente"
@@ -106,7 +106,7 @@ export function useEmailStats() {
 
     const fetchStats = async () => {
       try {
-        const data = await api.get<EmailStats>('/api/emails/stats');
+        const data = await apiGet<EmailStats>('/api/emails/stats');
         setStats(data);
       } catch (error) {
         console.error('Error fetching email stats:', error);
@@ -127,7 +127,7 @@ export function useUpdateEmailStatus() {
     emailId: string,
     action: "parfait" | "modifier" | "erreur"
   ) => {
-    await api.post(`/api/emails/${emailId}/feedback`, { action });
+    await apiPost(`/api/emails/${emailId}/feedback`, { action });
   };
 
   return { updateStatus };

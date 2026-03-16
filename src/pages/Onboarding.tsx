@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Mail, CheckCircle2, AlertCircle, Loader2, FolderOpen, ArrowLeft, Zap, PenLine, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { api } from "@/lib/api";
+import { apiGet, apiPublicGet } from "@/lib/api";
 import { DashboardLayout } from "@/components/DashboardLayout";
 
 interface ImportStatus {
@@ -43,7 +43,7 @@ const Onboarding = () => {
     }
 
     if (isImporting) {
-      api.get<ImportStatus>("/api/import/status")
+      apiGet<ImportStatus>("/api/import/status")
         .then((data) => {
           if (data?.status === "idle" || data?.status === "completed" || data?.status === "done") {
             navigate("/dashboard", { replace: true });
@@ -88,7 +88,7 @@ function ChooseMode() {
   const handleConnectGmail = async () => {
     setLoading(true);
     try {
-      const data = await api.get<{ auth_url: string }>('/api/import/gmail/auth');
+      const data = await apiPublicGet<{ auth_url: string }>('/api/import/gmail/auth');
       if (data?.auth_url) {
         window.location.href = data.auth_url;
       }
@@ -200,7 +200,7 @@ function ImportProgress() {
   useEffect(() => {
     const poll = async () => {
       try {
-        const data = await api.get<ImportStatus>('/api/import/status');
+        const data = await apiGet<ImportStatus>('/api/import/status');
         setStatus(data);
         if (data.status === "completed" || data.status === "done" || data.status === "idle" || data.status === "error") {
           if (intervalRef.current) clearInterval(intervalRef.current);
