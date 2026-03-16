@@ -25,12 +25,21 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+
+  // Capturer le user_id depuis l'URL (retour OAuth) AVANT de vérifier localStorage
+  const params = new URLSearchParams(window.location.search);
+  const urlUserId = params.get("user_id");
+  if (urlUserId) {
+    localStorage.setItem("donna_user_id", urlUserId);
+    window.history.replaceState({}, "", window.location.pathname);
+  }
+
   const hasLocalUserId = !!localStorage.getItem("donna_user_id");
-  
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Chargement...</div>;
   }
-  
+
   if (!user && !hasLocalUserId) {
     window.location.replace("/login");
     return null;
