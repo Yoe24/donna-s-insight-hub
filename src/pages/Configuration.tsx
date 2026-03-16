@@ -20,7 +20,7 @@ const Configuration = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const config = await api.get("/api/config").catch(() => null);
+        const config = await apiGet("/api/config").catch(() => null);
         if (config) {
           setSignature(config.signature || "");
           setProfilStyle(config.profil_style || "");
