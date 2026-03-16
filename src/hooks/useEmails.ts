@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { api } from '@/lib/api';
+import { apiGet, apiPost } from '@/lib/api';
 
 export type PipelineStep = 
   | "en_attente"
