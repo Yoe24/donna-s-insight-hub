@@ -184,7 +184,7 @@ function EmailDetailOverlay({
       return;
     }
     setDocsLoading(true);
-    api.get(`/api/dossiers/${(email as any).dossier_id}`)
+    apiGet(`/api/dossiers/${(email as any).dossier_id}`)
       .then((data: any) => {
         const docs = data?.dossier_documents || [];
         const filtered = docs.filter((doc: any) => doc.email_id === email.id);
