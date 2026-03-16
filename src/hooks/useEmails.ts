@@ -61,12 +61,12 @@ export function useEmails() {
 }
 
 export function useEmailStats() {
-  const { user } = useAuth();
   const [stats, setStats] = useState<EmailStats>({ recus: 0, traites: 0, valides: 0, en_attente: 0 });
   const [loading, setLoading] = useState(true);
+  const userId = localStorage.getItem('donna_user_id');
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
 
     const fetchStats = async () => {
       try {
