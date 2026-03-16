@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2, Mail, Zap, PenLine } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, Zap, PenLine, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { PageTransition } from "@/components/PageTransition";
@@ -142,10 +142,21 @@ const Login = () => {
         {/* Right panel — OAuth buttons */}
         <div className="flex-1 flex flex-col bg-background">
           <nav className="lg:hidden flex items-center justify-between px-6 py-6">
+            <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="text-sm font-sans">Retour</span>
+            </Link>
             <Link to="/">
               <h2 className="text-xl font-serif font-bold tracking-tight text-foreground">Donna</h2>
             </Link>
           </nav>
+
+          <div className="hidden lg:flex items-center px-6 pt-6">
+            <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="text-sm font-sans">Retour à l'accueil</span>
+            </Link>
+          </div>
 
           <main className="flex-1 flex items-center justify-center px-6 pb-16 lg:pb-0">
             <motion.div
