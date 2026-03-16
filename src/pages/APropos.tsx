@@ -1,8 +1,33 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { Shield, Users, Lightbulb } from "lucide-react";
 import { PublicNavbar } from "@/components/PublicNavbar";
 import { PublicFooter } from "@/components/PublicFooter";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { PageTransition } from "@/components/PageTransition";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+};
+
+const values = [
+  {
+    icon: Shield,
+    title: "La confiance avant tout",
+    text: "Le secret professionnel n'est pas négociable. Chaque décision technique que nous prenons est guidée par la protection de vos données.",
+  },
+  {
+    icon: Users,
+    title: "Construit avec les avocats",
+    text: "Donna n'est pas conçue en chambre. Chaque fonctionnalité est testée et validée par des avocats en exercice avant d'être déployée.",
+  },
+  {
+    icon: Lightbulb,
+    title: "La simplicité comme exigence",
+    text: "Pas de formation nécessaire, pas de paramétrage complexe. Vous connectez votre boîte mail, Donna fait le reste.",
+  },
+];
 
 const APropos = () => {
   return (
@@ -10,56 +35,157 @@ const APropos = () => {
       <div className="min-h-screen bg-background flex flex-col">
         <PublicNavbar />
 
-        <section className="max-w-2xl mx-auto px-6 pt-16 pb-24 flex-1">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <p className="text-xs font-sans font-medium uppercase tracking-widest text-muted-foreground mb-4">
-              À propos
-            </p>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground leading-tight mb-8">
-              Construire l'avenir du droit,
-              <br />
-              un email à la fois.
-            </h1>
-          </motion.div>
+        {/* Section 1 — Hero */}
+        <section className="py-20 sm:py-28 px-6">
+          <div className="max-w-3xl mx-auto">
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+              <p className="text-xs font-sans font-medium uppercase tracking-[0.2em] text-muted-foreground mb-5">
+                Notre histoire
+              </p>
+              <h1 className="text-3xl sm:text-[3rem] font-serif font-bold text-foreground leading-[1.15] mb-6">
+                Donna est née d'une conversation avec une avocate.
+              </h1>
+              <p className="text-lg font-sans leading-relaxed max-w-[600px]" style={{ color: "#374151" }}>
+                En échangeant avec Me Alexandra Fernandez, avocate en droit des affaires à Paris, nous avons compris que le quotidien des avocats indépendants était noyé sous les emails. Donna est la réponse à ce problème.
+              </p>
+            </motion.div>
+          </div>
+        </section>
 
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="space-y-6 text-base font-sans text-muted-foreground leading-relaxed"
-          >
-            <p>
-              Donna est née d'un constat simple : les avocats passent plus de temps à gérer leurs emails
-              qu'à exercer leur métier. 66% du temps d'un avocat est consacré au traitement de sa messagerie.
-            </p>
-            <p>
-              Nous avons créé le premier employé numérique dédié aux professionnels du droit.
-              Donna lit, trie, résume et rédige — l'avocat garde le contrôle et valide chaque décision.
-            </p>
-            <p>
-              Notre mission : redonner aux avocats le temps de faire ce qu'ils font de mieux —
-              conseiller, plaider, défendre.
-            </p>
+        {/* Section 2 — Le Constat */}
+        <section className="py-20 sm:py-24 px-6" style={{ backgroundColor: "#F9FAFB" }}>
+          <div className="max-w-[700px] mx-auto text-center">
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-8">Le constat</h2>
+              <div className="font-sans text-left sm:text-center space-y-6" style={{ color: "#374151", fontSize: "1.1rem", lineHeight: 1.8 }}>
+                <p>
+                  Un avocat indépendant reçoit en moyenne 30 à 50 emails par jour. Chaque email doit être lu, compris, classé, et souvent suivi d'une réponse. C'est un travail invisible qui prend 2 à 3 heures par jour — du temps qui n'est ni facturé, ni consacré aux dossiers.
+                </p>
+                <p>
+                  Les grands cabinets ont des assistantes, des secrétariats juridiques, des outils sur mesure. Les avocats indépendants, eux, font tout seuls.
+                </p>
+                <p className="font-semibold text-foreground">Donna change ça.</p>
+              </div>
+            </motion.div>
+          </div>
+        </section>
 
-            <div className="pt-8 border-t border-border">
-              <h2 className="text-lg font-serif font-bold text-foreground mb-4">Nos principes</h2>
-              <ul className="space-y-3">
-                {[
-                  "Confidentialité absolue — vos données ne quittent jamais la France.",
-                  "Supervision humaine — rien ne part sans votre validation.",
-                  "Simplicité radicale — pas de configuration complexe, pas de formation requise.",
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-foreground mt-2 shrink-0" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
+        {/* Section 3 — Notre Vision */}
+        <section className="py-20 sm:py-24 px-6">
+          <div className="max-w-[700px] mx-auto">
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-8 text-center">Notre vision</h2>
+              <div className="font-sans space-y-6" style={{ color: "#374151", fontSize: "1.1rem", lineHeight: 1.8 }}>
+                <p>Donna n'est pas un logiciel de plus. C'est votre première employée numérique.</p>
+                <p>
+                  Elle arrive le matin avant vous. Elle a lu tous vos emails. Elle a trié les urgences, filtré les newsletters, classé les pièces jointes dans les bons dossiers. Elle vous a préparé un brief clair et des brouillons de réponse dans votre style.
+                </p>
+                <p>Vous ouvrez Donna, vous lisez, vous validez. C'est tout.</p>
+                <p className="font-semibold text-foreground">
+                  Notre mission est simple : rendre aux avocats le temps qu'ils méritent de consacrer à leurs clients.
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Section 4 — Le Fondateur */}
+        <section className="py-20 sm:py-24 px-6" style={{ backgroundColor: "#F9FAFB" }}>
+          <div className="max-w-5xl mx-auto">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center"
+            >
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-6">
+                  Qui est derrière Donna ?
+                </h2>
+                <div className="font-sans space-y-5" style={{ color: "#374151", fontSize: "1.1rem", lineHeight: 1.8 }}>
+                  <p>
+                    Donna a été créée par Yoel Tchata, entrepreneur passionné par l'intelligence artificielle appliquée aux métiers du droit.
+                  </p>
+                  <p>
+                    Convaincu que l'IA peut transformer le quotidien des professionnels du droit sans compromettre le secret professionnel, Yoel a conçu Donna en collaboration étroite avec des avocats en exercice pour garantir que chaque fonctionnalité répond à un vrai besoin du terrain.
+                  </p>
+                  <p className="font-semibold text-foreground">
+                    Donna n'est pas née dans un laboratoire. Elle est née dans un cabinet d'avocats.
+                  </p>
+                </div>
+                <a
+                  href="mailto:contact@donna-legal.ai"
+                  className="inline-block mt-6 text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  contact@donna-legal.ai
+                </a>
+              </div>
+
+              <div className="flex justify-center">
+                <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-muted flex items-center justify-center">
+                  <span className="text-4xl sm:text-5xl font-serif font-bold text-muted-foreground">YT</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Section 5 — Nos Valeurs */}
+        <section className="py-20 sm:py-24 px-6">
+          <div className="max-w-5xl mx-auto">
+            <motion.h2
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              className="text-2xl sm:text-3xl font-serif font-bold text-foreground text-center mb-14"
+            >
+              Ce en quoi nous croyons
+            </motion.h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12">
+              {values.map((v, i) => (
+                <motion.div
+                  key={i}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  variants={{
+                    hidden: { opacity: 0, y: 30 },
+                    visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: i * 0.15 } },
+                  }}
+                  className="text-center"
+                >
+                  <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-5">
+                    <v.icon className="w-6 h-6 text-foreground" />
+                  </div>
+                  <h3 className="text-lg font-serif font-bold text-foreground mb-3">{v.title}</h3>
+                  <p className="font-sans text-muted-foreground leading-relaxed text-sm">{v.text}</p>
+                </motion.div>
+              ))}
             </div>
+          </div>
+        </section>
+
+        {/* Section 6 — CTA */}
+        <section className="py-20 sm:py-24 px-6" style={{ backgroundColor: "#111111" }}>
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            className="max-w-2xl mx-auto text-center"
+          >
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-white mb-8">
+              Envie de rencontrer Donna ?
+            </h2>
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 bg-white text-foreground font-sans font-medium text-sm px-8 py-3.5 rounded-lg hover:bg-white/90 transition-colors"
+            >
+              Demander une démo →
+            </Link>
           </motion.div>
         </section>
 
