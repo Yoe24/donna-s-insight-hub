@@ -200,7 +200,7 @@ function ImportProgress() {
   useEffect(() => {
     const poll = async () => {
       try {
-        const data = await api.get<ImportStatus>('/api/import/status');
+        const data = await apiGet<ImportStatus>('/api/import/status');
         setStatus(data);
         if (data.status === "completed" || data.status === "done" || data.status === "idle" || data.status === "error") {
           if (intervalRef.current) clearInterval(intervalRef.current);

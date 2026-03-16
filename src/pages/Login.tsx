@@ -55,7 +55,7 @@ const Login = () => {
   const handleConnectGmail = async () => {
     setGmailLoading(true);
     try {
-      const data = await api.get<{ auth_url: string }>("/api/import/gmail/auth");
+      const data = await apiGet<{ auth_url: string }>("/api/import/gmail/auth");
       if (data?.auth_url) {
         window.location.href = data.auth_url;
       }

@@ -49,7 +49,7 @@ const Dossiers = () => {
   useEffect(() => {
     const fetchDossiers = async () => {
       try {
-        const data = await api.get<Dossier[]>('/api/dossiers');
+        const data = await apiGet<Dossier[]>('/api/dossiers');
         setDossiers(data || []);
       } catch (error) {
         console.error('Error fetching dossiers:', error);

@@ -110,7 +110,7 @@ const DossierDetailPage = () => {
     if (!id) return;
     const fetchAll = async () => {
       try {
-        const data = await api.get<DossierDetailData>(`/api/dossiers/${id}`);
+        const data = await apiGet<DossierDetailData>(`/api/dossiers/${id}`);
         setDossier(data);
         setEmails(data.emails || []);
         setDocuments(data.dossier_documents || []);

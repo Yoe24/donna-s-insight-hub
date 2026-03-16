@@ -127,7 +127,7 @@ export function useUpdateEmailStatus() {
     emailId: string,
     action: "parfait" | "modifier" | "erreur"
   ) => {
-    await api.post(`/api/emails/${emailId}/feedback`, { action });
+    await apiPost(`/api/emails/${emailId}/feedback`, { action });
   };
 
   return { updateStatus };

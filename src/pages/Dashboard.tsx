@@ -431,7 +431,7 @@ const Dashboard = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    api.get<{ nom_avocat?: string }>("/api/config")
+    apiGet<{ nom_avocat?: string }>("/api/config")
       .then(data => {
         if (data?.nom_avocat) setNomAvocat(data.nom_avocat);
       })

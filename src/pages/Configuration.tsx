@@ -61,7 +61,7 @@ const Configuration = () => {
   const saveProfil = async () => {
     setSavingProfil(true);
     try {
-      await api.put("/api/config", { profil_style });
+      await apiPut("/api/config", { profil_style });
       toast.success("✓ Profil sauvegardé");
     } catch {
       toast.error("Erreur lors de la sauvegarde");
