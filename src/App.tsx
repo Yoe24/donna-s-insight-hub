@@ -25,12 +25,13 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const hasLocalUserId = !!localStorage.getItem("donna_user_id");
   
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Chargement...</div>;
   }
   
-  if (!user) {
+  if (!user && !hasLocalUserId) {
     return <Navigate to="/login" replace />;
   }
   
@@ -63,7 +64,7 @@ const App = () => (
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="/dossiers" element={<ProtectedRoute><Dossiers /></ProtectedRoute>} />
             <Route path="/dossiers/:id" element={<ProtectedRoute><DossierDetail /></ProtectedRoute>} />
-            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

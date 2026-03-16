@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2, Shield, Clock, Lock, Mail, Zap, PenLine } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, Zap, PenLine } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { PageTransition } from "@/components/PageTransition";
@@ -39,6 +39,14 @@ const Login = () => {
   const navigate = useNavigate();
   const { signIn } = useAuth();
   const emailRef = useRef<HTMLInputElement>(null);
+
+  // Redirect if already logged in via localStorage
+  useEffect(() => {
+    const userId = localStorage.getItem("donna_user_id");
+    if (userId) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
 
   useEffect(() => {
     if (showFallback) emailRef.current?.focus();
@@ -133,7 +141,6 @@ const Login = () => {
 
         {/* Right panel — OAuth buttons */}
         <div className="flex-1 flex flex-col bg-background">
-          {/* Mobile nav */}
           <nav className="lg:hidden flex items-center justify-between px-6 py-6">
             <Link to="/">
               <h2 className="text-xl font-serif font-bold tracking-tight text-foreground">Donna</h2>
@@ -147,7 +154,6 @@ const Login = () => {
               transition={{ duration: 0.5 }}
               className="w-full max-w-sm space-y-8"
             >
-              {/* Header */}
               <div>
                 <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-2">
                   Commencez avec Donna

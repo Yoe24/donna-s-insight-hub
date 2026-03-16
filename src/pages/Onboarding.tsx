@@ -1,14 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Mail, CheckCircle2, AlertCircle, Loader2, FolderOpen, ArrowLeft, Zap, PenLine, Check } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/lib/api";
-import { useEffect, useRef } from "react";
+import { DashboardLayout } from "@/components/DashboardLayout";
 
 interface ImportStatus {
   processed: number;
@@ -17,9 +15,36 @@ interface ImportStatus {
   status: string;
 }
 
+const ROTATING_SUBTITLES = [
+  "Analyse de votre boîte mail en cours...",
+  "Création de vos dossiers clients...",
+  "Détection de votre signature...",
+  "Préparation de votre tableau de bord...",
+];
+
 const Onboarding = () => {
   const [searchParams] = useSearchParams();
   const isImporting = searchParams.get("import") === "started";
+
+  // Store user_id from OAuth redirect
+  useEffect(() => {
+    const userId = searchParams.get("user_id");
+    if (userId) {
+      localStorage.setItem("donna_user_id", userId);
+    }
+  }, [searchParams]);
+
+  // Handle token verification from OAuth redirect
+  useEffect(() => {
+    const token = searchParams.get("token");
+    if (token) {
+      import("@/lib/supabase").then(({ supabase }) => {
+        supabase.auth.verifyOtp({ token_hash: token, type: "magiclink" }).catch((err) => {
+          console.warn("Token verification failed (continuing in degraded mode):", err);
+        });
+      });
+    }
+  }, [searchParams]);
 
   if (isImporting) {
     return <ImportProgress />;
@@ -64,7 +89,6 @@ function ChooseMode() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Card 1 — Automatic */}
             <Card className="relative border-primary/30 bg-primary/[0.02] hover:border-primary/50 transition-colors">
               <div className="absolute top-3 right-3">
                 <Badge className="text-[10px] bg-primary text-primary-foreground">Recommandé</Badge>
@@ -98,7 +122,6 @@ function ChooseMode() {
               </CardContent>
             </Card>
 
-            {/* Card 2 — Manual */}
             <Card className="border-border hover:border-muted-foreground/30 transition-colors">
               <CardContent className="p-6 space-y-4">
                 <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center">
@@ -133,27 +156,25 @@ function ChooseMode() {
 
 function ImportProgress() {
   const [status, setStatus] = useState<ImportStatus | null>(null);
+  const [subtitleIndex, setSubtitleIndex] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  // Handle token verification from OAuth redirect
+  // Rotate subtitles every 5 seconds
   useEffect(() => {
-    const token = searchParams.get("token");
-    if (token) {
-      import("@/lib/supabase").then(({ supabase }) => {
-        supabase.auth.verifyOtp({ token_hash: token, type: "magiclink" }).catch((err) => {
-          console.warn("Token verification failed (continuing in degraded mode):", err);
-        });
-      });
-    }
-  }, [searchParams]);
+    const timer = setInterval(() => {
+      setSubtitleIndex((prev) => (prev + 1) % ROTATING_SUBTITLES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
+  // Poll import status every 3 seconds
   useEffect(() => {
     const poll = async () => {
       try {
         const data = await api.get<ImportStatus>('/api/import/status');
         setStatus(data);
-        if (data.status === "done" || data.status === "error") {
+        if (data.status === "completed" || data.status === "done" || data.status === "idle" || data.status === "error") {
           if (intervalRef.current) clearInterval(intervalRef.current);
         }
       } catch (error) {
@@ -162,7 +183,7 @@ function ImportProgress() {
     };
 
     poll();
-    intervalRef.current = setInterval(poll, 2000);
+    intervalRef.current = setInterval(poll, 3000);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -173,84 +194,142 @@ function ImportProgress() {
     ? Math.round((status.processed / status.total) * 100)
     : 0;
 
-  if (status?.status === "done") {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md w-full">
-            <Card className="border-border bg-card text-center">
-              <CardContent className="p-10 space-y-6">
-                <div className="h-16 w-16 rounded-2xl bg-green-100 flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="h-8 w-8 text-green-600" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-serif font-bold text-foreground">Import terminé !</h1>
-                  <p className="text-muted-foreground text-sm mt-2">
-                    {status.dossiers_created} dossier{status.dossiers_created > 1 ? "s" : ""} créé{status.dossiers_created > 1 ? "s" : ""}
-                  </p>
-                </div>
-                <Button asChild size="lg" className="w-full">
-                  <Link to="/dossiers">
-                    <FolderOpen className="h-4 w-4 mr-2" />
-                    Voir mes dossiers
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const isDone = status?.status === "completed" || status?.status === "done" || status?.status === "idle";
+  const isError = status?.status === "error";
 
-  if (status?.status === "error") {
+  // Done state
+  if (isDone && status) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-md w-full">
-            <Card className="border-border bg-card text-center">
-              <CardContent className="p-10 space-y-6">
-                <div className="h-16 w-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto">
-                  <AlertCircle className="h-8 w-8 text-destructive" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-serif font-bold text-foreground">Erreur d'import</h1>
-                  <p className="text-muted-foreground text-sm mt-2">
-                    Une erreur est survenue lors de l'import. Veuillez réessayer.
-                  </p>
-                </div>
-                <Button asChild size="lg" variant="outline" className="w-full">
-                  <Link to="/onboarding">Réessayer</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-md w-full text-center space-y-8"
+        >
+          <h2 className="text-2xl font-serif font-bold tracking-tight text-foreground">Donna</h2>
 
-  return (
-    <DashboardLayout>
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
-          <Card className="border-border bg-card text-center">
-            <CardContent className="p-10 space-y-6">
-              <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-              <div>
-                <h1 className="text-xl font-serif font-bold text-foreground">Donna analyse votre cabinet...</h1>
-                <p className="text-muted-foreground text-sm mt-2">
-                  {status
-                    ? `${status.processed} / ${status.total} emails traités • ${status.dossiers_created} dossiers créés`
-                    : "Connexion en cours..."}
-                </p>
-              </div>
-              <Progress value={progressPercent} className="h-2" />
-            </CardContent>
-          </Card>
+          <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+            <CheckCircle2 className="h-8 w-8 text-green-600" />
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-xl font-serif font-bold text-foreground">C'est prêt !</h1>
+            <p className="text-sm text-muted-foreground">
+              Donna a analysé {status.processed} email{status.processed > 1 ? "s" : ""} et créé {status.dossiers_created} dossier{status.dossiers_created > 1 ? "s" : ""}.
+            </p>
+          </div>
+
+          <Button
+            size="lg"
+            className="w-full min-h-[56px] rounded-xl"
+            onClick={() => navigate("/dashboard")}
+          >
+            Accéder à mon tableau de bord →
+          </Button>
         </motion.div>
       </div>
-    </DashboardLayout>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="max-w-md w-full text-center space-y-8"
+        >
+          <h2 className="text-2xl font-serif font-bold tracking-tight text-foreground">Donna</h2>
+
+          <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-xl font-serif font-bold text-foreground">Erreur d'import</h1>
+            <p className="text-sm text-muted-foreground">
+              Une erreur est survenue lors de l'import. Veuillez réessayer.
+            </p>
+          </div>
+
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full min-h-[56px] rounded-xl"
+            onClick={() => navigate("/onboarding")}
+          >
+            Réessayer
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Loading/progress state
+  return (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-md w-full text-center space-y-10"
+      >
+        {/* Logo */}
+        <h2 className="text-2xl font-serif font-bold tracking-tight text-foreground">Donna</h2>
+
+        {/* Pulse animation */}
+        <div className="flex justify-center">
+          <div className="relative">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+            </div>
+            <div className="absolute inset-0 rounded-full bg-primary/5 animate-ping" />
+          </div>
+        </div>
+
+        {/* Title */}
+        <div className="space-y-3">
+          <h1 className="text-xl font-serif font-bold text-foreground">Donna se met au travail...</h1>
+          
+          {/* Rotating subtitle */}
+          <div className="h-6 relative overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={subtitleIndex}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.4 }}
+                className="text-sm text-muted-foreground absolute inset-x-0"
+              >
+                {ROTATING_SUBTITLES[subtitleIndex]}
+              </motion.p>
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="space-y-3">
+          <div className="w-full h-2 bg-muted rounded-lg overflow-hidden">
+            <div
+              className="h-full rounded-lg"
+              style={{
+                width: `${progressPercent}%`,
+                backgroundColor: "#6C63FF",
+                transition: "width 0.5s ease",
+              }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {status
+              ? `${status.processed} email${status.processed > 1 ? "s" : ""} analysé${status.processed > 1 ? "s" : ""}`
+              : "Connexion en cours..."}
+          </p>
+        </div>
+      </motion.div>
+    </div>
   );
 }
 
