@@ -142,6 +142,10 @@ const Login = () => {
         {/* Right panel — OAuth buttons */}
         <div className="flex-1 flex flex-col bg-background">
           <nav className="lg:hidden flex items-center justify-between px-6 py-6">
+            <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="text-sm font-sans">Retour</span>
+            </Link>
             <Link to="/">
               <h2 className="text-xl font-serif font-bold tracking-tight text-foreground">Donna</h2>
             </Link>
