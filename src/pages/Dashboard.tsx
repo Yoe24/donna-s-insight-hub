@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -414,10 +415,20 @@ function EmailDetailOverlay({
 
 // ── Main Dashboard ──
 const Dashboard = () => {
+  const [searchParams] = useSearchParams();
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [nomAvocat, setNomAvocat] = useState<string>("");
   const { emails, loading } = useEmails();
   const { stats } = useEmailStats();
+
+  // Capture user_id from OAuth callback redirect (existing user scenario)
+  useEffect(() => {
+    const userId = searchParams.get("user_id");
+    if (userId) {
+      localStorage.setItem("donna_user_id", userId);
+      window.history.replaceState({}, "", "/dashboard");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     api.get<{ nom_avocat?: string }>("/api/config")

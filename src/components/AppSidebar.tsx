@@ -1,6 +1,6 @@
 import { LayoutDashboard, Settings, FolderOpen, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
@@ -24,13 +24,12 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
-  const navigate = useNavigate();
 
   const handleLogout = async () => {
     localStorage.removeItem("donna_user_id");
     localStorage.removeItem("donna_chat_history");
     await signOut();
-    navigate("/login");
+    window.location.replace("/login");
   };
 
   return (
