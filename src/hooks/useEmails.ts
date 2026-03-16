@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPost } from '@/lib/api';
 
 export type PipelineStep = 
@@ -34,24 +32,18 @@ export interface EmailStats {
 }
 
 export function useEmails() {
-  const { user } = useAuth();
   const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const userId = localStorage.getItem('donna_user_id');
+
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
 
     const fetchEmails = async () => {
       try {
-        const { data, error } = await supabase
-          .from('emails')
-          .select('*')
-          .eq('user_id', user.id)
-          .not('pipeline_step', 'eq', 'importe')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setEmails((data as Email[]) || []);
+        const data = await apiGet<Email[]>('/api/emails');
+        setEmails(data || []);
       } catch (error) {
         console.error('Error fetching emails:', error);
       }
@@ -60,38 +52,10 @@ export function useEmails() {
 
     fetchEmails();
 
-    const subscription = supabase
-      .channel('emails_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'emails',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const newEmail = payload.new as Email;
-          // Skip imported emails
-          if (newEmail.pipeline_step === 'importe') return;
-
-          if (payload.eventType === 'INSERT') {
-            setEmails((prev) => [newEmail, ...prev]);
-          } else if (payload.eventType === 'UPDATE') {
-            setEmails((prev) =>
-              prev.map((email) =>
-                email.id === newEmail.id ? newEmail : email
-              )
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [user]);
+    // Poll every 30s as a simple alternative to Supabase Realtime
+    const interval = setInterval(fetchEmails, 30000);
+    return () => clearInterval(interval);
+  }, [userId]);
 
   return { emails, loading };
 }
