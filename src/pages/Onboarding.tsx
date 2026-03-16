@@ -88,7 +88,7 @@ function ChooseMode() {
   const handleConnectGmail = async () => {
     setLoading(true);
     try {
-      const data = await apiGet<{ auth_url: string }>('/api/import/gmail/auth');
+      const data = await apiPublicGet<{ auth_url: string }>('/api/import/gmail/auth');
       if (data?.auth_url) {
         window.location.href = data.auth_url;
       }
