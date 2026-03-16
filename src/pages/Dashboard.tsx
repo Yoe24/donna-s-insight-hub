@@ -13,7 +13,7 @@ import type { Email } from "@/hooks/useEmails";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { parseDonnaAnalysis } from "@/lib/parseDonnaAnalysis";
-import { api } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
 
 function formatEmailTime(created_at: string) {
   try {
