@@ -24,7 +24,9 @@ const ROTATING_SUBTITLES = [
 
 const Onboarding = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const isImporting = searchParams.get("import") === "started";
+  const [ready, setReady] = useState(false);
 
   // Store user_id from OAuth redirect
   useEffect(() => {
@@ -45,6 +47,25 @@ const Onboarding = () => {
       });
     }
   }, [searchParams]);
+
+  // If import=started but user already connected, check if import is already done
+  useEffect(() => {
+    if (isImporting && localStorage.getItem("donna_user_id")) {
+      api.get<ImportStatus>('/api/import/status').then((data) => {
+        if (data?.status === "idle" || data?.status === "completed" || data?.status === "done") {
+          navigate("/dashboard", { replace: true });
+        } else {
+          setReady(true);
+        }
+      }).catch(() => {
+        setReady(true);
+      });
+    } else {
+      setReady(true);
+    }
+  }, [isImporting, navigate]);
+
+  if (!ready) return null;
 
   if (isImporting) {
     return <ImportProgress />;
