@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Mail, CheckCircle2, AlertCircle, Loader2, FolderOpen, ArrowLeft, Zap, PenLine, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { apiGet } from "@/lib/api";
+import { apiGet, apiPublicGet } from "@/lib/api";
 import { DashboardLayout } from "@/components/DashboardLayout";
 
 interface ImportStatus {
