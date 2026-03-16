@@ -207,7 +207,7 @@ function EmailDetailOverlay({
   const handleGenerateDraft = async () => {
     setDraftLoading(true);
     try {
-      const data = await api.post<{ draft: string }>(`/api/emails/${email.id}/draft`);
+      const data = await apiPost<{ draft: string }>(`/api/emails/${email.id}/draft`);
       setDraftText(data.draft);
     } catch {
       toast.error("Erreur lors de la génération du brouillon");
