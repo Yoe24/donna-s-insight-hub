@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { MessageCircle, X, ArrowUp } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
-import { api } from "@/lib/api";
+import { apiPost } from "@/lib/api";
 
 interface ChatMessage {
   role: "user" | "assistant";
