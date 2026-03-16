@@ -151,6 +151,13 @@ const Login = () => {
             </Link>
           </nav>
 
+          <div className="hidden lg:flex items-center px-6 pt-6">
+            <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="text-sm font-sans">Retour à l'accueil</span>
+            </Link>
+          </div>
+
           <main className="flex-1 flex items-center justify-center px-6 pb-16 lg:pb-0">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
