@@ -22,8 +22,7 @@ export function PublicNavbar({ invertColors = false }: { invertColors?: boolean 
         {/* Desktop */}
         <div className={`hidden md:flex items-center gap-8 text-sm font-sans ${mutedClass}`}>
           <Link to="/securite" className={`${hoverClass} transition-colors`}>Sécurité</Link>
-          <Link to="/tarifs" className={`${hoverClass} transition-colors`}>Tarifs</Link>
-          <Link to="/contact" className={`${hoverClass} transition-colors`}>Nous contacter</Link>
+          <Link to="/a-propos" className={`${hoverClass} transition-colors`}>À propos</Link>
           <Link to="/login" className={`${textClass} font-medium hover:opacity-70 transition-opacity`}>Se connecter</Link>
         </div>
 
