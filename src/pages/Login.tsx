@@ -2,14 +2,36 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ArrowRight, Eye, EyeOff, Loader2, Shield, Clock, Lock } from "lucide-react";
+import { Eye, EyeOff, Loader2, Shield, Clock, Lock, Mail, Zap, PenLine } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { PageTransition } from "@/components/PageTransition";
+import { api } from "@/lib/api";
 import heroBg from "@/assets/hero-bg.jpg";
 
+const GoogleIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 48 48" className="shrink-0">
+    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+    <path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.01 24.01 0 0 0 0 21.56l7.98-6.19z"/>
+    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+  </svg>
+);
+
+const MicrosoftIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 21 21" className="shrink-0">
+    <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+    <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
+    <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
+    <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+  </svg>
+);
+
 const Login = () => {
+  const [gmailLoading, setGmailLoading] = useState(false);
+  const [showFallback, setShowFallback] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -19,19 +41,30 @@ const Login = () => {
   const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    emailRef.current?.focus();
-  }, []);
+    if (showFallback) emailRef.current?.focus();
+  }, [showFallback]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleConnectGmail = async () => {
+    setGmailLoading(true);
+    try {
+      const data = await api.get<{ auth_url: string }>("/api/import/gmail/auth");
+      if (data?.auth_url) {
+        window.location.href = data.auth_url;
+      }
+    } catch (error) {
+      console.error("Error getting auth URL:", error);
+      toast.error("Impossible de se connecter à Gmail. Réessayez.");
+      setGmailLoading(false);
+    }
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!email.trim() || !password.trim()) {
       toast.error("Veuillez remplir tous les champs.");
       return;
     }
-
     setIsLoading(true);
-    
     try {
       await signIn(email, password);
       toast.success("Connexion réussie.");
@@ -44,24 +77,15 @@ const Login = () => {
   };
 
   const benefits = [
-    {
-      icon: Clock,
-      text: "2 à 3 heures économisées chaque jour sur le traitement de vos emails",
-    },
-    {
-      icon: Shield,
-      text: "Données chiffrées, hébergées en France, conformes RGPD",
-    },
-    {
-      icon: Lock,
-      text: "Vos emails ne sont jamais utilisés pour entraîner des modèles IA",
-    },
+    { icon: Mail, text: "Emails triés automatiquement à mesure qu'ils arrivent" },
+    { icon: Zap, text: "Résumés intelligents, prêts à lire" },
+    { icon: PenLine, text: "Brouillons de réponse en un clic" },
   ];
 
   return (
     <PageTransition>
       <div className="min-h-screen flex flex-col lg:flex-row">
-        {/* Left panel — benefits */}
+        {/* Left panel — testimonial + benefits */}
         <div
           className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 xl:p-16"
           style={{
@@ -81,7 +105,7 @@ const Login = () => {
           <div className="relative z-10 space-y-10">
             <div>
               <p className="text-white/90 text-xl sm:text-2xl font-serif font-semibold leading-snug max-w-md">
-                « Donna lit mes mails, rédige mes réponses. Je valide en un clic. »
+                « Donna a analysé 500 emails en 5 minutes. Je gagne 2h par jour. »
               </p>
               <p className="text-white/50 text-sm font-sans mt-3">
                 — Avocate, droit des affaires
@@ -93,8 +117,10 @@ const Login = () => {
             <div className="space-y-5">
               {benefits.map((b, i) => (
                 <div key={i} className="flex items-start gap-3">
-                  <b.icon className="h-4 w-4 text-white/70 mt-0.5 shrink-0" strokeWidth={1.5} />
-                  <p className="text-sm text-white/70 font-sans leading-relaxed">{b.text}</p>
+                  <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                    <b.icon className="h-4 w-4 text-white/80" strokeWidth={1.5} />
+                  </div>
+                  <p className="text-sm text-white/70 font-sans leading-relaxed mt-1">{b.text}</p>
                 </div>
               ))}
             </div>
@@ -105,7 +131,7 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Right panel — login form */}
+        {/* Right panel — OAuth buttons */}
         <div className="flex-1 flex flex-col bg-background">
           {/* Mobile nav */}
           <nav className="lg:hidden flex items-center justify-between px-6 py-6">
@@ -119,97 +145,120 @@ const Login = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="w-full max-w-sm"
+              className="w-full max-w-sm space-y-8"
             >
-              <div className="mb-10">
+              {/* Header */}
+              <div>
                 <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-2">
-                  Connexion
+                  Commencez avec Donna
                 </h1>
                 <p className="text-sm font-sans text-muted-foreground">
-                  Accédez à votre tableau de bord Donna.
+                  Connectez votre boîte mail pour que Donna commence à travailler.
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-sans font-medium text-foreground">
-                    Adresse email
-                  </Label>
-                  <Input
-                    ref={emailRef}
-                    id="email"
-                    type="email"
-                    placeholder="avocat@cabinet.fr"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="font-sans h-11"
-                    autoComplete="email"
-                    disabled={isLoading}
-                  />
-                </div>
+              {/* Gmail button */}
+              <button
+                onClick={handleConnectGmail}
+                disabled={gmailLoading}
+                className="w-full min-h-[56px] rounded-xl border border-border bg-background text-foreground font-medium text-sm font-sans flex items-center justify-center gap-3 hover:border-primary transition-colors disabled:opacity-60"
+              >
+                {gmailLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <GoogleIcon />
+                )}
+                Commencer avec Gmail →
+              </button>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-sans font-medium text-foreground">
-                    Mot de passe
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="font-sans pr-10 h-11"
-                      autoComplete="current-password"
-                      disabled={isLoading}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      disabled={isLoading}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-
+              {/* Outlook button */}
+              <div className="space-y-1.5">
                 <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-foreground text-background h-11 rounded-md text-sm font-sans font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 mt-2 disabled:opacity-50 min-h-[48px]"
+                  disabled
+                  className="w-full min-h-[56px] rounded-xl border border-border bg-background text-foreground font-medium text-sm font-sans flex items-center justify-center gap-3 opacity-50 cursor-not-allowed"
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Connexion...
-                    </>
-                  ) : (
-                    <>
-                      Se connecter
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
+                  <MicrosoftIcon />
+                  Commencer avec Outlook
                 </button>
-              </form>
-
-              <div className="mt-8 space-y-2">
-                <p className="text-xs text-muted-foreground font-sans">
-                  Pas encore de compte ?{" "}
-                  <Link to="/contact" className="text-foreground font-medium hover:underline">
-                    Nous contacter
-                  </Link>
-                </p>
-                <p className="text-xs text-muted-foreground font-sans">
-                  <Link to="/contact" className="hover:underline">
-                    Mot de passe oublié ?
-                  </Link>
-                </p>
+                <p className="text-xs text-muted-foreground text-center italic font-sans">Bientôt disponible</p>
               </div>
 
-              <p className="mt-10 text-[11px] text-muted-foreground/60 font-sans text-center">
-                Connexion sécurisée · Données hébergées en France
-              </p>
+              {/* Separator + fallback login */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-xs text-muted-foreground font-sans">ou</span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+
+                {!showFallback ? (
+                  <button
+                    onClick={() => setShowFallback(true)}
+                    className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors font-sans"
+                  >
+                    Se connecter avec email/mot de passe
+                  </button>
+                ) : (
+                  <motion.form
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    transition={{ duration: 0.3 }}
+                    onSubmit={handleEmailLogin}
+                    className="space-y-4"
+                  >
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-xs font-sans">Email</Label>
+                      <Input
+                        id="email"
+                        ref={emailRef}
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="avocat@cabinet.fr"
+                        className="font-sans h-11"
+                        autoComplete="email"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="text-xs font-sans">Mot de passe</Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="font-sans pr-10 h-11"
+                          autoComplete="current-password"
+                          disabled={isLoading}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <Button type="submit" disabled={isLoading} className="w-full h-11">
+                      {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      Se connecter
+                    </Button>
+                  </motion.form>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="text-center space-y-2 pt-4">
+                <p className="text-[11px] text-muted-foreground/60 font-sans">
+                  Connexion OAuth sécurisée · Données hébergées en France
+                </p>
+                <Link to="/mentions-legales" className="text-[11px] text-muted-foreground/60 hover:text-foreground underline transition-colors font-sans">
+                  Politique de confidentialité
+                </Link>
+              </div>
             </motion.div>
           </main>
         </div>
