@@ -43,7 +43,7 @@ const Onboarding = () => {
     }
 
     if (isImporting) {
-      api.get<ImportStatus>("/api/import/status")
+      apiGet<ImportStatus>("/api/import/status")
         .then((data) => {
           if (data?.status === "idle" || data?.status === "completed" || data?.status === "done") {
             navigate("/dashboard", { replace: true });
