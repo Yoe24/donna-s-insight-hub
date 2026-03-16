@@ -22,8 +22,7 @@ export function PublicNavbar({ invertColors = false }: { invertColors?: boolean 
         {/* Desktop */}
         <div className={`hidden md:flex items-center gap-8 text-sm font-sans ${mutedClass}`}>
           <Link to="/securite" className={`${hoverClass} transition-colors`}>Sécurité</Link>
-          <Link to="/tarifs" className={`${hoverClass} transition-colors`}>Tarifs</Link>
-          <Link to="/contact" className={`${hoverClass} transition-colors`}>Nous contacter</Link>
+          <Link to="/a-propos" className={`${hoverClass} transition-colors`}>À propos</Link>
           <Link to="/login" className={`${textClass} font-medium hover:opacity-70 transition-opacity`}>Se connecter</Link>
         </div>
 
@@ -37,8 +36,7 @@ export function PublicNavbar({ invertColors = false }: { invertColors?: boolean 
           <SheetContent side="right" className="w-72 pt-12">
             <nav className="flex flex-col gap-6 text-base font-sans">
               <Link to="/securite" className="text-foreground hover:text-muted-foreground transition-colors" onClick={() => setOpen(false)}>Sécurité</Link>
-              <Link to="/tarifs" className="text-foreground hover:text-muted-foreground transition-colors" onClick={() => setOpen(false)}>Tarifs</Link>
-              <Link to="/contact" className="text-foreground hover:text-muted-foreground transition-colors" onClick={() => setOpen(false)}>Nous contacter</Link>
+              <Link to="/a-propos" className="text-foreground hover:text-muted-foreground transition-colors" onClick={() => setOpen(false)}>À propos</Link>
               <Link to="/login" className="text-foreground font-medium hover:text-muted-foreground transition-colors" onClick={() => setOpen(false)}>Se connecter</Link>
             </nav>
           </SheetContent>
