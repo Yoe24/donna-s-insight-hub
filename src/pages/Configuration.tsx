@@ -50,7 +50,7 @@ const Configuration = () => {
   const saveSignature = async () => {
     setSavingSignature(true);
     try {
-      await api.put("/api/config", { signature });
+      await apiPut("/api/config", { signature });
       toast.success("✓ Signature sauvegardée");
     } catch {
       toast.error("Erreur lors de la sauvegarde");
