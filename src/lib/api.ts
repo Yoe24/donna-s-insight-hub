@@ -4,6 +4,18 @@ function getUserId(): string | null {
   return localStorage.getItem('donna_user_id');
 }
 
+// Public GET — no user_id required (e.g. Gmail OAuth URL)
+export async function apiPublicGet<T = any>(endpoint: string): Promise<T> {
+  const res = await fetch(`${BASE_URL}${endpoint}`);
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => 'Unknown error');
+    throw new Error(`API GET ${endpoint} failed (${res.status}): ${errorText}`);
+  }
+  const contentType = res.headers.get('content-type');
+  if (contentType?.includes('application/json')) return res.json();
+  return {} as T;
+}
+
 function buildUrl(endpoint: string): string {
   const userId = getUserId();
   if (!userId) {
