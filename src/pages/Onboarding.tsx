@@ -28,13 +28,37 @@ const Onboarding = () => {
   const isImporting = searchParams.get("import") === "started";
   const [ready, setReady] = useState(false);
 
-  // Store user_id from OAuth redirect
+  // Handle onboarding entry and avoid replaying import for the same user
   useEffect(() => {
-    const userId = searchParams.get("user_id");
-    if (userId) {
-      localStorage.setItem("donna_user_id", userId);
+    const incomingUserId = searchParams.get("user_id");
+    const existingUserId = localStorage.getItem("donna_user_id");
+
+    if (isImporting && incomingUserId && existingUserId === incomingUserId) {
+      navigate("/dashboard", { replace: true });
+      return;
     }
-  }, [searchParams]);
+
+    if (incomingUserId) {
+      localStorage.setItem("donna_user_id", incomingUserId);
+    }
+
+    if (isImporting) {
+      api.get<ImportStatus>("/api/import/status")
+        .then((data) => {
+          if (data?.status === "idle" || data?.status === "completed" || data?.status === "done") {
+            navigate("/dashboard", { replace: true });
+          } else {
+            setReady(true);
+          }
+        })
+        .catch(() => {
+          setReady(true);
+        });
+      return;
+    }
+
+    setReady(true);
+  }, [isImporting, navigate, searchParams]);
 
   // Handle token verification from OAuth redirect
   useEffect(() => {
@@ -47,23 +71,6 @@ const Onboarding = () => {
       });
     }
   }, [searchParams]);
-
-  // If import=started but user already connected, check if import is already done
-  useEffect(() => {
-    if (isImporting && localStorage.getItem("donna_user_id")) {
-      api.get<ImportStatus>('/api/import/status').then((data) => {
-        if (data?.status === "idle" || data?.status === "completed" || data?.status === "done") {
-          navigate("/dashboard", { replace: true });
-        } else {
-          setReady(true);
-        }
-      }).catch(() => {
-        setReady(true);
-      });
-    } else {
-      setReady(true);
-    }
-  }, [isImporting, navigate]);
 
   if (!ready) return null;
 
