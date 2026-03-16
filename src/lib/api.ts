@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const BASE_URL = 'https://187-77-173-221.nip.io';
+const BASE_URL = 'https://api.donna-legal.com';
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const { data: { session } } = await supabase.auth.getSession();
