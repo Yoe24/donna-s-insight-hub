@@ -37,7 +37,7 @@ const Configuration = () => {
   const handleConnectGmail = async () => {
     setConnectingGmail(true);
     try {
-      const res = await apiGet<{ auth_url: string }>("/api/import/gmail/auth");
+      const res = await apiPublicGet<{ auth_url: string }>("/api/import/gmail/auth");
       if (res.auth_url) {
         window.location.href = res.auth_url;
       }
