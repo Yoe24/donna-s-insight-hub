@@ -79,7 +79,7 @@ export function useEmailStats() {
     };
 
     fetchStats();
-  }, [user]);
+  }, [userId]);
 
   return { stats, loading };
 }
