@@ -30,7 +30,7 @@ export function AppSidebar() {
     localStorage.removeItem("donna_user_id");
     localStorage.removeItem("donna_chat_history");
     await signOut();
-    navigate("/login");
+    window.location.replace("/login");
   };
 
   return (

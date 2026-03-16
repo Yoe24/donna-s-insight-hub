@@ -32,7 +32,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
   
   if (!user && !hasLocalUserId) {
-    return <Navigate to="/login" replace />;
+    window.location.replace("/login");
+    return null;
   }
   
   return (
