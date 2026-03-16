@@ -8,7 +8,7 @@ import { Eye, EyeOff, Loader2, Mail, Zap, PenLine, ArrowLeft } from "lucide-reac
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { PageTransition } from "@/components/PageTransition";
-import { apiGet } from "@/lib/api";
+import { apiPublicGet } from "@/lib/api";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const GoogleIcon = () => (
