@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { FolderOpen, ArrowLeft, ChevronRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "@/lib/api";
+import { apiGet } from "@/lib/api";
 
 interface Dossier {
   id: string;
