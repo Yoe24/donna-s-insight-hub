@@ -10,9 +10,9 @@ export function PublicFooter() {
             <p className="text-xs text-muted-foreground mt-1">Votre employé numérique juridique</p>
           </div>
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-sans text-muted-foreground">
-            <Link to="/produit" className="hover:text-foreground transition-colors">Solution</Link>
-            <Link to="/a-propos" className="hover:text-foreground transition-colors">À propos</Link>
-            <Link to="/demo" className="hover:text-foreground transition-colors">Demander une démo</Link>
+            <Link to="/securite" className="hover:text-foreground transition-colors">Sécurité</Link>
+            <Link to="/tarifs" className="hover:text-foreground transition-colors">Tarifs</Link>
+            <Link to="/contact" className="hover:text-foreground transition-colors">Nous contacter</Link>
             <Link to="/mentions-legales" className="hover:text-foreground transition-colors">Mentions légales</Link>
           </div>
         </div>
