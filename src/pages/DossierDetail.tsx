@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Loader2, FileText, File, ChevronDown, Sparkles, Paperclip, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Email } from "@/hooks/useEmails";
-import { api } from "@/lib/api";
+import { apiGet } from "@/lib/api";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface DossierDetailData {
