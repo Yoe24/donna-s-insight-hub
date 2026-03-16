@@ -134,6 +134,19 @@ function ChooseMode() {
 function ImportProgress() {
   const [status, setStatus] = useState<ImportStatus | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [searchParams] = useSearchParams();
+
+  // Handle token verification from OAuth redirect
+  useEffect(() => {
+    const token = searchParams.get("token");
+    if (token) {
+      import("@/lib/supabase").then(({ supabase }) => {
+        supabase.auth.verifyOtp({ token_hash: token, type: "magiclink" }).catch((err) => {
+          console.warn("Token verification failed (continuing in degraded mode):", err);
+        });
+      });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const poll = async () => {
