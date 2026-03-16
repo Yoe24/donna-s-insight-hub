@@ -13,15 +13,32 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 
 async function request<T = any>(method: string, path: string, body?: any, isFormData = false): Promise<T> {
   const headers = await getAuthHeaders();
-  
+  const userId = localStorage.getItem('donna_user_id');
+
+  // Add user_id as query param for all methods
+  let url = `${BASE_URL}${path}`;
+  if (userId) {
+    url += (url.includes('?') ? '&' : '?') + `user_id=${encodeURIComponent(userId)}`;
+  }
+
   if (!isFormData) {
     headers['Content-Type'] = 'application/json';
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  // For POST/PUT with JSON body, also inject user_id into the body
+  let finalBody: any;
+  if (isFormData) {
+    finalBody = body;
+  } else if (body) {
+    finalBody = JSON.stringify(userId ? { ...body, user_id: userId } : body);
+  } else if (method === 'POST' || method === 'PUT') {
+    finalBody = userId ? JSON.stringify({ user_id: userId }) : undefined;
+  }
+
+  const res = await fetch(url, {
     method,
     headers,
-    body: isFormData ? body : body ? JSON.stringify(body) : undefined,
+    body: finalBody,
   });
 
   if (!res.ok) {
