@@ -67,6 +67,7 @@ export function AppSidebar() {
   const handleLogout = async () => {
     localStorage.removeItem("donna_user_id");
     localStorage.removeItem("donna_chat_history");
+    localStorage.removeItem("donna_demo_mode");
     await signOut();
     window.location.replace("/login");
   };

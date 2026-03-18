@@ -1,6 +1,8 @@
 const BASE_URL = 'https://api.donna-legal.com';
 
 function getUserId(): string | null {
+  const isDemoMode = localStorage.getItem('donna_demo_mode') === 'true';
+  if (isDemoMode) return '1e72eba3-ded0-4fb7-b158-cb32890075aa';
   return localStorage.getItem('donna_user_id');
 }
 
