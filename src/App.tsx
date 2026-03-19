@@ -19,6 +19,7 @@ import Tarifs from "./pages/Tarifs";
 import Contact from "./pages/Contact";
 import MentionsLegales from "./pages/MentionsLegales";
 import NotFound from "./pages/NotFound";
+import FilActualite from "./pages/FilActualite";
 import DonnaChat from "./components/DonnaChat";
 
 const queryClient = new QueryClient();
