@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { title: "Accueil", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Fil d'actualité", url: "/fil", icon: Mail },
   { title: "Configurez-moi", url: "/configuration", icon: Settings },
 ];
 
