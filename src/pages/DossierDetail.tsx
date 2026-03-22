@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, FileText, File, ChevronDown, Sparkles, Paperclip, MessageSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Loader2, FileText, File, ChevronDown, Sparkles, Paperclip, MessageSquare, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import type { Email } from "@/hooks/useEmails";
 import { apiGet } from "@/lib/api";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
