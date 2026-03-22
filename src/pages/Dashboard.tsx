@@ -523,9 +523,13 @@ const Dashboard = () => {
   const ignoreEmails = emails.filter(e => e.statut !== "archive" && e.statut !== "ignore" && isIgnore(e));
 
   const tempsMinutes = stats.traites * 5;
+  const tempsHeures = Math.floor(tempsMinutes / 60);
+  const tempsMinutesRestantes = tempsMinutes % 60;
+  const isHours = tempsMinutes >= 60;
   const economise = Math.round(stats.traites * 5 * 75 / 60);
   const animatedTraites = useAnimatedCounter(stats.traites, 1500);
-  const animatedMinutes = useAnimatedCounter(tempsMinutes, 1500);
+  const animatedHeures = useAnimatedCounter(tempsHeures, 1500);
+  const animatedMinutesRestantes = useAnimatedCounter(isHours ? tempsMinutesRestantes : tempsMinutes, 1500);
   const animatedEco = useAnimatedCounter(economise, 1500);
 
   // Group emails by time slot for the feed
