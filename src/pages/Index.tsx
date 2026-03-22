@@ -163,10 +163,7 @@ const Index = () => {
             {/* Left text */}
             <div className="flex-1 max-w-xl">
 
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.1 }}
+              <h1
                 className="text-3xl sm:text-4xl lg:text-[3.5rem] font-serif font-bold leading-[1.1] text-foreground mb-6"
               >
                 Une employée qui{" "}
@@ -182,21 +179,15 @@ const Index = () => {
                     {rotatingPhrases[phraseIndex]}
                   </motion.span>
                 </AnimatePresence>
-              </motion.h1>
+              </h1>
 
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.25 }}
+              <p
                 className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-md mb-10"
               >
                 Pendant que vous plaidez, Donna organise votre cabinet. 24&nbsp;heures sur 24, 7&nbsp;jours sur 7.
-              </motion.p>
+              </p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
+              <div
                 className="flex flex-col sm:flex-row items-start gap-4"
               >
                 <Link to="/login">
@@ -211,14 +202,11 @@ const Index = () => {
                 >
                   Demander une démo
                 </button>
-              </motion.div>
+              </div>
             </div>
 
             {/* Right image */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
+            <div
               className="flex-1 w-full max-w-lg"
             >
               <img
@@ -226,7 +214,7 @@ const Index = () => {
                 alt="Avocate travaillant dans son cabinet"
                 className="w-full h-auto rounded-2xl object-cover shadow-lg aspect-[4/3]"
               />
-            </motion.div>
+            </div>
           </div>
         </section>
 
@@ -343,7 +331,7 @@ const Index = () => {
                   variants={fadeUp}
                 >
                   <p className="text-5xl sm:text-6xl lg:text-7xl font-serif font-bold text-white mb-3">{stat.big}</p>
-                  <p className="text-sm sm:text-base" style={{ color: "#999" }}>{stat.sub}</p>
+                  <p className="text-sm sm:text-base" style={{ color: "#aaa" }}>{stat.sub}</p>
                 </motion.div>
               ))}
             </div>
@@ -464,7 +452,7 @@ const Index = () => {
               <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white mb-6">
                 Prêt à recruter Donna&nbsp;?
               </h2>
-              <p className="text-sm sm:text-base leading-relaxed" style={{ color: "#999" }}>
+              <p className="text-sm sm:text-base leading-relaxed" style={{ color: "#aaa" }}>
                 Laissez-nous vos coordonnées et nous vous recontactons sous 24h pour une démonstration personnalisée.
               </p>
             </div>
@@ -541,9 +529,9 @@ const Index = () => {
           <div className="max-w-7xl mx-auto px-6 sm:px-10 py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div>
               <p className="font-serif font-bold text-white text-sm">Donna</p>
-              <p className="text-xs mt-1" style={{ color: "#777" }}>Votre employé numérique juridique</p>
+              <p className="text-xs mt-1" style={{ color: "#aaa" }}>Votre employé numérique juridique</p>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-sans" style={{ color: "#999" }}>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-sans" style={{ color: "#aaa" }}>
               <Link to="/securite" className="hover:text-white transition-colors">Sécurité</Link>
               <Link to="/mentions-legales" className="hover:text-white transition-colors">Mentions légales</Link>
               <button onClick={scrollToDemo} className="hover:text-white transition-colors">Demander une démo</button>
