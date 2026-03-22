@@ -574,11 +574,13 @@ const Dashboard = () => {
         )}
       </div>
 
-      <EmailDrawer
-        email={selectedEmail!}
-        onClose={() => setSelectedEmail(null)}
-        showDossierLink={true}
-      />
+      {selectedEmail && (
+        <EmailDrawer
+          email={selectedEmail}
+          onClose={() => setSelectedEmail(null)}
+          showDossierLink={true}
+        />
+      )}
     </DashboardLayout>
   );
 };
