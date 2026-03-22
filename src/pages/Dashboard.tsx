@@ -331,12 +331,17 @@ const Dashboard = () => {
   const pourInfoEmails = emails.filter(e => e.statut !== "archive" && e.statut !== "ignore" && isPourInfo(e));
   const ignoreEmails = emails.filter(e => e.statut !== "archive" && e.statut !== "ignore" && isIgnore(e));
 
-  const tempsMinutes = stats.traites * 5;
+  // Compute metrics from emails
+  const traites = emails.filter(e => e.pipeline_step === "pret_a_reviser").length;
+  const enAttenteCount = emails.filter(e => e.pipeline_step === "en_attente").length;
+  const filtresCount = emails.filter(e => e.pipeline_step === "filtre_rejete").length;
+
+  const tempsMinutes = traites * 5;
   const tempsHeures = Math.floor(tempsMinutes / 60);
   const tempsMinutesRestantes = tempsMinutes % 60;
   const isHours = tempsMinutes >= 60;
-  const economise = Math.round(stats.traites * 5 * 75 / 60);
-  const animatedTraites = useAnimatedCounter(stats.traites, 1500);
+  const economise = Math.round(traites * 5 * 75 / 60);
+  const animatedTraites = useAnimatedCounter(traites, 1500);
   const animatedHeures = useAnimatedCounter(tempsHeures, 1500);
   const animatedMinutesRestantes = useAnimatedCounter(isHours ? tempsMinutesRestantes : tempsMinutes, 1500);
   const animatedEco = useAnimatedCounter(economise, 1500);
