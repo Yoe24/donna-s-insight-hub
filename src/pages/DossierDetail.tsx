@@ -153,6 +153,20 @@ const DossierDetailPage = () => {
     );
   }
 
+  if (error && !dossier) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-4xl mx-auto py-12 text-center">
+          <p className="text-lg font-serif text-foreground mb-2">Connexion impossible</p>
+          <p className="text-sm text-muted-foreground mb-4">Impossible de charger ce dossier.</p>
+          <Button variant="outline" onClick={fetchDossier} className="gap-2">
+            <RefreshCw className="h-4 w-4" /> Réessayer
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   if (!dossier) {
     return (
       <DashboardLayout>
