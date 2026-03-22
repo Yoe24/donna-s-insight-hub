@@ -344,6 +344,16 @@ const DossierDetailPage = () => {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {selectedEmail && (
+          <EmailDrawer
+            email={selectedEmail}
+            onClose={() => setSelectedEmail(null)}
+            showDossierLink={false}
+          />
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 };
