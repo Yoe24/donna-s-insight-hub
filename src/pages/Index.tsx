@@ -436,7 +436,7 @@ const Index = () => {
 
             <Link
               to="/securite"
-              className="text-sm font-sans text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+              className="text-sm font-sans text-gray-600 hover:text-foreground transition-colors inline-flex items-center gap-1"
             >
               En savoir plus sur notre politique de sécurité
               <ArrowRight className="h-3.5 w-3.5" />
