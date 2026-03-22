@@ -506,7 +506,7 @@ const Dashboard = () => {
         </div>
 
         {/* Evening Recap */}
-        {showEveningRecap && stats.traites > 0 && (
+        {showEveningRecap && traites > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
