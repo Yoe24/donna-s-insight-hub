@@ -371,6 +371,12 @@ const DossierDetailPage = () => {
                 <CardTitle className="text-base">Informations</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {(dossier.client_name || dossier.nom_client) && (
+                  <InfoRow label="Client" value={dossier.client_name || dossier.nom_client} />
+                )}
+                {dossier.reference && (
+                  <InfoRow label="Référence" value={dossier.reference} />
+                )}
                 <InfoRow label="Domaine" value={dossier.domaine} />
                 <InfoRow label="Dernier échange" value={dossier.dernier_echange_date ? formatDateFr(dossier.dernier_echange_date) : "—"} />
                 <InfoRow label="Emails" value={`${emails.length}`} />
