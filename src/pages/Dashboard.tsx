@@ -12,7 +12,7 @@ import { useUpdateEmailStatus } from "@/hooks/useEmails";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { apiGet, apiPost } from "@/lib/api";
-import EmailDrawer from "@/components/EmailDrawer";
+import { EmailDrawer } from "@/components/EmailDrawer";
 
 // ── Helpers ──
 
