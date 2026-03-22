@@ -588,8 +588,8 @@ const FilActualite = () => {
                               <span className="text-[11px] text-muted-foreground ml-auto shrink-0">{formatEmailTime(email.created_at)}</span>
                             </div>
                             <p className="text-sm text-foreground/80 mt-1 truncate">{email.objet}</p>
-                            {!isRejected && analysis.resume && (
-                              <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">{analysis.resume}</p>
+                            {!isRejected && email.resume && (
+                              <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">{email.resume}</p>
                             )}
                           </div>
                           {!isRejected && (
