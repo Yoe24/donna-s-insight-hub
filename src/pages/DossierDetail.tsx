@@ -106,6 +106,7 @@ const DossierDetailPage = () => {
   const [emails, setEmails] = useState<DossierEmail[]>([]);
   const [documents, setDocuments] = useState<DossierDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedEmail, setSelectedEmail] = useState<DossierEmail | null>(null);
 
   useEffect(() => {
     if (!id) return;
