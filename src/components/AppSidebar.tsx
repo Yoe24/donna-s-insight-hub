@@ -116,7 +116,7 @@ export function AppSidebar() {
               </SidebarGroupLabel>
             )}
             <SidebarGroupContent>
-              <ScrollArea className="flex-1"  style={{ maxHeight: 'calc(100vh - 320px)', overflow: 'auto' }}>
+              <ScrollArea className="flex-1 overflow-y-auto">
                 <SidebarMenu>
                   {loading ? (
                     /* Skeletons */
