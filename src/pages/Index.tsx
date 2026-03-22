@@ -510,7 +510,7 @@ const Index = () => {
                   </div>
                   <button
                     type="submit"
-                    className="w-full bg-foreground text-background py-3.5 rounded-lg text-sm font-sans font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                    className="w-full bg-foreground text-background py-3.5 rounded-lg text-sm font-sans font-medium hover:opacity-90 hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2"
                   >
                     Demander une démo
                     <ArrowRight className="h-4 w-4" />
