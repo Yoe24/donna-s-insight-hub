@@ -520,7 +520,7 @@ const Dashboard = () => {
                   <span className="text-sm font-semibold text-foreground">Récap de la journée</span>
                 </div>
                 <p className="text-sm text-foreground/80 leading-relaxed">
-                  Donna a traité <span className="font-semibold">{stats.traites} emails</span> aujourd'hui.{" "}
+                  Donna a traité <span className="font-semibold">{traites} emails</span> aujourd'hui.{" "}
                   {responsesEnvoyees > 0 && (
                     <><span className="font-semibold">{responsesEnvoyees} réponse{responsesEnvoyees > 1 ? "s" : ""}</span> envoyée{responsesEnvoyees > 1 ? "s" : ""} (avec votre validation). </>
                   )}
