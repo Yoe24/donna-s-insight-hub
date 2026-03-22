@@ -13,7 +13,7 @@ import DossierDetail from "./pages/DossierDetail";
 import Onboarding from "./pages/Onboarding";
 import Produit from "./pages/Produit";
 import APropos from "./pages/APropos";
-import Demo from "./pages/Demo";
+
 import Securite from "./pages/Securite";
 import Tarifs from "./pages/Tarifs";
 import Contact from "./pages/Contact";
