@@ -271,7 +271,7 @@ const Index = () => {
               <h2 className="text-3xl sm:text-4xl font-serif font-bold text-foreground mb-4">
                 Une employée qui ne dort jamais
               </h2>
-              <p className="text-muted-foreground text-base sm:text-lg max-w-lg mx-auto">
+              <p className="text-gray-600 text-base sm:text-lg max-w-lg mx-auto">
                 Voici ce que Donna fait automatiquement, sans que vous ayez à lever le petit doigt.
               </p>
             </motion.div>
