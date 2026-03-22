@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -117,9 +118,25 @@ const securityPoints = [
   { icon: Trash2, label: "Suppression immédiate" },
 ];
 
+const rotatingPhrases = [
+  "ne dort jamais.",
+  "trie vos mails.",
+  "rédige vos réponses.",
+  "classe vos dossiers.",
+  "ne prend jamais de vacances.",
+];
+
 const Index = () => {
   const [form, setForm] = useState({ nom: "", email: "", cabinet: "", volume: "" });
   const [sent, setSent] = useState(false);
+  const [phraseIndex, setPhraseIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPhraseIndex((prev) => (prev + 1) % rotatingPhrases.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleDemo = (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,7 +169,19 @@ const Index = () => {
                 transition={{ duration: 0.7, delay: 0.1 }}
                 className="text-3xl sm:text-4xl lg:text-[3.5rem] font-serif font-bold leading-[1.1] text-foreground mb-6"
               >
-                Une employée qui ne dort jamais.
+                Une employée qui{" "}
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={rotatingPhrases[phraseIndex]}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-primary inline-block"
+                  >
+                    {rotatingPhrases[phraseIndex]}
+                  </motion.span>
+                </AnimatePresence>
               </motion.h1>
 
               <motion.p
