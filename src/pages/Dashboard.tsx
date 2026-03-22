@@ -195,7 +195,7 @@ function BriefingSection({ title, icon, count, emails, variant, defaultOpen = tr
         <CollapsibleContent>
           <div className="px-4 pb-4 space-y-2">
             {emails.map((email) => {
-              const analysis = parseDonnaAnalysis(email.brouillon);
+              const resumeText = email.resume || "";
               const hasDraft = !!email.brouillon;
 
               if (variant === "info") {
