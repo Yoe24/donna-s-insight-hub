@@ -118,9 +118,25 @@ const securityPoints = [
   { icon: Trash2, label: "Suppression immédiate" },
 ];
 
+const rotatingPhrases = [
+  "ne dort jamais.",
+  "trie vos mails.",
+  "rédige vos réponses.",
+  "classe vos dossiers.",
+  "ne prend jamais de vacances.",
+];
+
 const Index = () => {
   const [form, setForm] = useState({ nom: "", email: "", cabinet: "", volume: "" });
   const [sent, setSent] = useState(false);
+  const [phraseIndex, setPhraseIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPhraseIndex((prev) => (prev + 1) % rotatingPhrases.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleDemo = (e: React.FormEvent) => {
     e.preventDefault();
