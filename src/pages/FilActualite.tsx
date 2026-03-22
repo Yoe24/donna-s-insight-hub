@@ -451,14 +451,8 @@ const FilActualite = () => {
     );
   }
 
-  const isDemoMode = localStorage.getItem("donna_demo_mode") === "true";
 
-  const handleQuitDemo = () => {
-    localStorage.removeItem("donna_user_id");
-    localStorage.removeItem("donna_demo_mode");
-    localStorage.removeItem("donna_chat_history");
-    window.location.replace("/login");
-  };
+
 
   return (
     <DashboardLayout>
