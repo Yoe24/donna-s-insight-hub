@@ -251,7 +251,7 @@ const Index = () => {
                     <card.icon className="h-5 w-5 text-foreground" />
                   </div>
                   <h3 className="text-lg font-sans font-semibold text-foreground mb-3">{card.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{card.text}</p>
+                  <p className="text-gray-600 text-sm leading-relaxed">{card.text}</p>
                 </motion.div>
               ))}
             </div>
