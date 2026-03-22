@@ -1,19 +1,18 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Eye, Copy, ChevronDown, X, FileText, Loader2, AlertTriangle, Clock, Mail, EyeOff } from "lucide-react";
+import { Eye, ChevronDown, X, FileText, Loader2, AlertTriangle, Clock, Mail, EyeOff, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEmails, useEmailStats, useUpdateEmailStatus } from "@/hooks/useEmails";
 import type { Email } from "@/hooks/useEmails";
+import { useUpdateEmailStatus } from "@/hooks/useEmails";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { parseDonnaAnalysis } from "@/lib/parseDonnaAnalysis";
 import { apiGet, apiPost } from "@/lib/api";
+import EmailDrawer from "@/components/EmailDrawer";
 
 // ── Helpers ──
 
