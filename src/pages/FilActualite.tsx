@@ -324,7 +324,7 @@ const FilActualite = () => {
 
       <AnimatePresence>
         {selectedEmail && (
-          <EmailDetailDrawer
+          <EmailDrawer
             email={selectedEmail}
             onClose={() => setSelectedEmail(null)}
           />
