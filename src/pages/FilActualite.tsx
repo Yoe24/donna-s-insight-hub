@@ -559,7 +559,6 @@ const FilActualite = () => {
             <AnimatePresence>
               {activeEmails.map((email, i) => {
                 const isRejected = email.pipeline_step === "filtre_rejete";
-                const analysis = parseDonnaAnalysis(email.brouillon);
 
                 return (
                   <motion.div
