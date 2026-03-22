@@ -137,7 +137,7 @@ const DossierDetailPage = () => {
       <DashboardLayout>
         <div className="max-w-4xl mx-auto py-12 text-center">
           <p className="text-muted-foreground">Dossier introuvable.</p>
-          <Link to="/dossiers" className="text-primary underline text-sm mt-2 inline-block">← Retour aux dossiers</Link>
+          <Link to="/dashboard" className="text-primary underline text-sm mt-2 inline-block">← Retour</Link>
         </div>
       </DashboardLayout>
     );
