@@ -617,12 +617,14 @@ const FilActualite = () => {
         )}
       </div>
 
-      {selectedEmail && (
-        <EmailDetailOverlay
-          email={selectedEmail}
-          onClose={() => setSelectedEmail(null)}
-        />
-      )}
+      <AnimatePresence>
+        {selectedEmail && (
+          <EmailDetailDrawer
+            email={selectedEmail}
+            onClose={() => setSelectedEmail(null)}
+          />
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 };
