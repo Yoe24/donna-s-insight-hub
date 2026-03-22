@@ -398,7 +398,7 @@ const Index = () => {
               viewport={{ once: true }}
               custom={1}
               variants={fadeUp}
-              className="text-muted-foreground text-sm font-sans"
+              className="text-gray-600 text-sm font-sans"
             >
               — Avocate en droit des affaires, Paris
             </motion.p>
