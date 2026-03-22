@@ -531,7 +531,7 @@ const Index = () => {
               <p className="font-serif font-bold text-white text-sm">Donna</p>
               <p className="text-xs mt-1" style={{ color: "#aaa" }}>Votre employé numérique juridique</p>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-sans" style={{ color: "#999" }}>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-sans" style={{ color: "#aaa" }}>
               <Link to="/securite" className="hover:text-white transition-colors">Sécurité</Link>
               <Link to="/mentions-legales" className="hover:text-white transition-colors">Mentions légales</Link>
               <button onClick={scrollToDemo} className="hover:text-white transition-colors">Demander une démo</button>
