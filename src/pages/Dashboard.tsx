@@ -4,14 +4,13 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Eye, ChevronDown, X, FileText, Loader2, AlertTriangle, Clock, Mail, EyeOff, RefreshCw } from "lucide-react";
+import { Eye, ChevronDown, Loader2, AlertTriangle, Clock, Mail, EyeOff, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import type { Email } from "@/hooks/useEmails";
-import { useUpdateEmailStatus } from "@/hooks/useEmails";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet } from "@/lib/api";
 import { EmailDrawer } from "@/components/EmailDrawer";
 
 // ── Helpers ──
