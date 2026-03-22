@@ -520,12 +520,12 @@ const Dashboard = () => {
         )}
       </div>
 
-      {selectedEmail && (
-        <EmailDetailOverlay
-          email={selectedEmail}
-          onClose={() => setSelectedEmail(null)}
-        />
-      )}
+      <EmailDrawer
+        email={selectedEmail}
+        isOpen={!!selectedEmail}
+        onClose={() => setSelectedEmail(null)}
+        showDossierLink={true}
+      />
     </DashboardLayout>
   );
 };
