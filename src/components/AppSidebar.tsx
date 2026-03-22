@@ -230,17 +230,6 @@ export function AppSidebar() {
                 </SidebarMenu>
               </ScrollArea>
 
-              {/* Voir tous */}
-              {!collapsed && dossiers.length > 0 && (
-                <div className="px-3 pt-1 pb-2">
-                  <Link
-                    to="/dossiers"
-                    className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Voir tous les dossiers →
-                  </Link>
-                </div>
-              )}
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
