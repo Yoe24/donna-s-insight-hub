@@ -191,14 +191,14 @@ const Index = () => {
                 className="flex flex-col sm:flex-row items-start gap-4"
               >
                 <Link to="/login">
-                  <button className="bg-foreground text-background px-7 py-3.5 rounded-lg text-sm font-sans font-medium hover:opacity-90 transition-opacity flex items-center gap-2">
+                  <button className="bg-foreground text-background px-7 py-3.5 rounded-lg text-sm font-sans font-medium hover:opacity-90 hover:scale-105 transition-all duration-200 flex items-center gap-2">
                     Recruter Donna
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </Link>
                 <button
                   onClick={scrollToDemo}
-                  className="border border-border text-foreground px-7 py-3.5 rounded-lg text-sm font-sans font-medium hover:bg-muted transition-colors"
+                  className="border border-border text-foreground px-7 py-3.5 rounded-lg text-sm font-sans font-medium hover:bg-muted hover:scale-105 transition-all duration-200"
                 >
                   Demander une démo
                 </button>
@@ -510,7 +510,7 @@ const Index = () => {
                   </div>
                   <button
                     type="submit"
-                    className="w-full bg-foreground text-background py-3.5 rounded-lg text-sm font-sans font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                    className="w-full bg-foreground text-background py-3.5 rounded-lg text-sm font-sans font-medium hover:opacity-90 hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2"
                   >
                     Demander une démo
                     <ArrowRight className="h-4 w-4" />

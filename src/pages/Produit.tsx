@@ -87,8 +87,8 @@ const Produit = () => {
             transition={{ delay: 0.3 }}
             className="text-center mt-14"
           >
-            <Link to="/demo">
-              <button className="bg-foreground text-background px-8 py-3 rounded-full text-sm font-sans font-medium hover:opacity-90 transition-opacity inline-flex items-center gap-2 min-h-[48px]">
+            <Link to="/login">
+              <button className="bg-foreground text-background px-8 py-3 rounded-full text-sm font-sans font-medium hover:opacity-90 hover:scale-105 transition-all duration-200 inline-flex items-center gap-2 min-h-[48px]">
                 Demander une démo
                 <ArrowRight className="h-4 w-4" />
               </button>
