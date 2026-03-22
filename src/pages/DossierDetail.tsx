@@ -109,22 +109,39 @@ const DossierDetailPage = () => {
   const [documents, setDocuments] = useState<DossierDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEmail, setSelectedEmail] = useState<DossierEmail | null>(null);
+  const [error, setError] = useState(false);
+
+  const fetchDossier = useCallback(async () => {
+    if (!id) return;
+    try {
+      const data = await apiGet<DossierDetailData>(`/api/dossiers/${id}`);
+      setDossier(data);
+      setDocuments(data.dossier_documents || []);
+
+      // Use emails from dossier response, or fetch separately
+      if (data.emails && data.emails.length > 0) {
+        setEmails(data.emails);
+      } else {
+        try {
+          const emailData = await apiGet<DossierEmail[]>(`/api/emails?dossier_id=${id}`);
+          setEmails(emailData || []);
+        } catch {
+          setEmails([]);
+        }
+      }
+      setError(false);
+    } catch (e) {
+      console.error("Error fetching dossier:", e);
+      setError(true);
+      toast.error("Erreur lors du chargement du dossier");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
-    if (!id) return;
-    const fetchAll = async () => {
-      try {
-        const data = await apiGet<DossierDetailData>(`/api/dossiers/${id}`);
-        setDossier(data);
-        setEmails(data.emails || []);
-        setDocuments(data.dossier_documents || []);
-      } catch (error) {
-        console.error('Error fetching dossier:', error);
-      }
-      setLoading(false);
-    };
-    fetchAll();
-  }, [id]);
+    fetchDossier();
+  }, [fetchDossier]);
 
   if (loading) {
     return (
