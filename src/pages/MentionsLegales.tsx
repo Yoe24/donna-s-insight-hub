@@ -13,17 +13,19 @@ const MentionsLegales = () => {
           <div className="space-y-8 text-sm text-muted-foreground leading-relaxed">
             <section>
               <h2 className="text-lg font-serif font-bold text-foreground mb-2">Éditeur</h2>
-              <p>Donna-Legal.ai — [Adresse à compléter]</p>
+              <p>Donna-Legal.ai — Adresse : Sur demande — contact@donna-legal.ai</p>
             </section>
 
             <section>
               <h2 className="text-lg font-serif font-bold text-foreground mb-2">Hébergeur</h2>
-              <p>Vercel Inc. — 340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis</p>
+              <p>
+                Le frontend est servi via Vercel Inc. (CDN mondial). Les données utilisateurs sont hébergées en Europe (infrastructure conforme RGPD).
+              </p>
             </section>
 
             <section>
               <h2 className="text-lg font-serif font-bold text-foreground mb-2">Contact</h2>
-              <p>contact@donna-legale.ai</p>
+              <p>contact@donna-legal.ai</p>
             </section>
 
             <section>
@@ -32,7 +34,7 @@ const MentionsLegales = () => {
                 Conformément au Règlement Général sur la Protection des Données (RGPD), vous disposez d'un droit d'accès, de rectification, de suppression et de portabilité de vos données personnelles.
               </p>
               <p className="mt-2">
-                Pour exercer ces droits, vous pouvez nous contacter à l'adresse : contact@donna-legale.ai
+                Pour exercer ces droits, vous pouvez nous contacter à l'adresse : contact@donna-legal.ai
               </p>
               <p className="mt-2">
                 Les données collectées via la plateforme sont utilisées exclusivement pour le fonctionnement du service Donna et ne sont jamais partagées avec des tiers.
