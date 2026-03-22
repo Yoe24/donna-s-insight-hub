@@ -294,7 +294,7 @@ const Index = () => {
                     </div>
                     <div className={`${isEven ? "md:text-left" : "md:text-right"} text-center`}>
                       <h3 className="text-xl font-sans font-semibold text-foreground mb-2">{feat.title}</h3>
-                      <p className="text-muted-foreground text-sm sm:text-base leading-relaxed max-w-md">{feat.text}</p>
+                      <p className="text-gray-600 text-sm sm:text-base leading-relaxed max-w-md">{feat.text}</p>
                     </div>
                   </motion.div>
                 );
