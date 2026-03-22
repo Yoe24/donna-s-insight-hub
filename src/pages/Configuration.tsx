@@ -167,7 +167,7 @@ const Configuration = () => {
             <div>
               <h2 className="text-lg font-semibold text-foreground">Profil de personnalité</h2>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Collez le profil généré par ChatGPT pour que Donna adopte votre style de travail.
+                Collez votre profil de personnalité pour que Donna adopte votre style de travail.
               </p>
             </div>
 
@@ -176,19 +176,19 @@ const Configuration = () => {
                 Comment obtenir mon profil ?
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-3 space-y-2 text-sm text-muted-foreground rounded-lg bg-muted/50 p-4">
-                <p>1. Ouvrez ChatGPT</p>
+                <p>1. Ouvrez votre assistant IA préféré (ChatGPT, Claude, etc.)</p>
                 <p>2. Collez ce prompt :</p>
                 <div className="bg-muted rounded p-3 font-mono text-xs leading-relaxed">
                   Analyse l'ensemble de nos conversations passées et produis un document structuré qui décrit : mon style d'écriture, mes réflexes juridiques, mes préférences de format, et mon ton professionnel. Base-toi uniquement sur nos échanges.
                 </div>
-                <p>3. Copiez la réponse de ChatGPT</p>
+                <p>3. Copiez la réponse générée</p>
                 <p>4. Collez-la dans le champ ci-dessous</p>
               </CollapsibleContent>
             </Collapsible>
 
             <Textarea
               className="text-sm resize-y min-h-[160px]"
-              placeholder="Collez ici le profil généré par ChatGPT..."
+              placeholder="Collez ici votre profil de personnalité..."
               value={profil_style}
               onChange={(e) => setProfilStyle(e.target.value)}
             />
