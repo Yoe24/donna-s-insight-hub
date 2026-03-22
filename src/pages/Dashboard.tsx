@@ -282,6 +282,22 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  const fetchEmails = useCallback(async () => {
+    try {
+      const userId = localStorage.getItem("donna_user_id");
+      if (!userId) return;
+      const data = await apiGet<Email[]>("/api/emails");
+      setEmails(data || []);
+      setError(false);
+    } catch (e) {
+      console.error("Error fetching emails:", e);
+      setError(true);
+      toast.error("Erreur de connexion — les données n'ont pas pu être chargées");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const userId = searchParams.get("user_id");
     if (userId) {
@@ -289,6 +305,12 @@ const Dashboard = () => {
       window.history.replaceState({}, "", "/dashboard");
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    fetchEmails();
+    const interval = setInterval(fetchEmails, 60000);
+    return () => clearInterval(interval);
+  }, [fetchEmails]);
 
   useEffect(() => {
     apiGet<{ nom_avocat?: string }>("/api/config")
