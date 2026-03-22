@@ -200,21 +200,8 @@ const Login = () => {
                 <p className="text-xs text-muted-foreground text-center italic font-sans">Bientôt disponible</p>
               </div>
 
-              {/* Demo button */}
-              <button
-                onClick={() => {
-                  localStorage.setItem("donna_user_id", "demo-arnaud-durand");
-                  localStorage.setItem("donna_demo_mode", "true");
-                  window.location.replace("/dashboard");
-                }}
-                className="w-full min-h-[56px] rounded-xl border-2 border-dashed border-border bg-transparent text-muted-foreground font-medium text-sm font-sans flex items-center justify-center gap-3 hover:border-foreground/40 hover:text-foreground transition-colors"
-              >
-                <Eye className="h-5 w-5" />
-                <span className="text-left">
-                  <span className="block">Essayer la démo</span>
-                  <span className="block text-xs font-normal opacity-70">Découvrir Donna avec un cabinet fictif</span>
-                </span>
-              </button>
+
+
 
               {/* Separator + fallback login */}
               <div className="space-y-4">
