@@ -116,7 +116,7 @@ export function AppSidebar() {
               </SidebarGroupLabel>
             )}
             <SidebarGroupContent>
-              <ScrollArea className="max-h-[calc(100vh-320px)]">
+              <ScrollArea className="flex-1 overflow-y-auto">
                 <SidebarMenu>
                   {loading ? (
                     /* Skeletons */
@@ -138,7 +138,7 @@ export function AppSidebar() {
                       <div className="px-3 py-4 text-center">
                         <p className="text-xs text-muted-foreground">Aucun dossier</p>
                         <Link
-                          to="/dossiers"
+                          to="/configuration"
                           className="text-xs text-primary hover:underline mt-1 inline-block"
                         >
                           Connecter Gmail
@@ -230,17 +230,6 @@ export function AppSidebar() {
                 </SidebarMenu>
               </ScrollArea>
 
-              {/* Voir tous */}
-              {!collapsed && dossiers.length > 0 && (
-                <div className="px-3 pt-1 pb-2">
-                  <Link
-                    to="/dossiers"
-                    className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Voir tous les dossiers →
-                  </Link>
-                </div>
-              )}
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>

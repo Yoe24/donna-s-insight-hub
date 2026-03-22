@@ -8,7 +8,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Configuration from "./pages/Configuration";
-import Dossiers from "./pages/Dossiers";
+
 import DossierDetail from "./pages/DossierDetail";
 import Onboarding from "./pages/Onboarding";
 import Produit from "./pages/Produit";
@@ -74,7 +74,7 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="/fil" element={<ProtectedRoute><FilActualite /></ProtectedRoute>} />
-            <Route path="/dossiers" element={<ProtectedRoute><Dossiers /></ProtectedRoute>} />
+            
             <Route path="/dossiers/:id" element={<ProtectedRoute><DossierDetail /></ProtectedRoute>} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="*" element={<NotFound />} />
