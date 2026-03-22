@@ -138,7 +138,7 @@ export function AppSidebar() {
                       <div className="px-3 py-4 text-center">
                         <p className="text-xs text-muted-foreground">Aucun dossier</p>
                         <Link
-                          to="/dossiers"
+                          to="/configuration"
                           className="text-xs text-primary hover:underline mt-1 inline-block"
                         >
                           Connecter Gmail
