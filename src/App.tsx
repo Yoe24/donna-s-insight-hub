@@ -13,7 +13,7 @@ import DossierDetail from "./pages/DossierDetail";
 import Onboarding from "./pages/Onboarding";
 import Produit from "./pages/Produit";
 import APropos from "./pages/APropos";
-import Demo from "./pages/Demo";
+
 import Securite from "./pages/Securite";
 import Tarifs from "./pages/Tarifs";
 import Contact from "./pages/Contact";
@@ -66,7 +66,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/produit" element={<Produit />} />
             <Route path="/a-propos" element={<APropos />} />
-            <Route path="/demo" element={<Demo />} />
+            
             <Route path="/securite" element={<Securite />} />
             <Route path="/tarifs" element={<Tarifs />} />
             <Route path="/contact" element={<Contact />} />
