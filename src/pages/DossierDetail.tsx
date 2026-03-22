@@ -15,6 +15,10 @@ import { EmailDrawer } from "@/components/EmailDrawer";
 interface DossierDetailData {
   id: string;
   nom_client: string;
+  nom?: string;
+  name?: string;
+  client_name?: string;
+  reference?: string;
   email_client: string;
   statut: string;
   domaine: string;
