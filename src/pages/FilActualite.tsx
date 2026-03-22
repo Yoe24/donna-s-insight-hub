@@ -1,19 +1,20 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Coffee, Eye, Copy, ChevronDown, Archive, X, FileText, Loader2 } from "lucide-react";
+import { Coffee, Eye, ChevronDown, Archive, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEmails, useEmailStats, useUpdateEmailStatus } from "@/hooks/useEmails";
 import type { Email } from "@/hooks/useEmails";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet } from "@/lib/api";
 import { EmailDrawer } from "@/components/EmailDrawer";
+
+// ── Helpers ──
 
 function formatEmailTime(created_at: string) {
   try {
@@ -36,14 +37,13 @@ function useAnimatedCounter(target: number, duration = 1000) {
   useEffect(() => {
     if (target === prevTarget.current) return;
     prevTarget.current = target;
-    const start = 0;
     const startTime = performance.now();
 
     const tick = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.round(start + (target - start) * eased));
+      setCount(Math.round(target * eased));
       if (progress < 1) requestAnimationFrame(tick);
     };
 
@@ -154,13 +154,52 @@ function ImportArchives({ emails }: { emails: Email[] }) {
   );
 }
 
-// EmailDrawer is now in src/components/EmailDrawer.tsx
+// ── Constants ──
+
+const PAGE_SIZE = 20;
+
+const PIPELINE_LABELS: Record<string, string> = {
+  all: "Tous",
+  pret_a_reviser: "Prêt à réviser",
+  en_attente: "En attente",
+  filtre_rejete: "Filtrés",
+};
+
+// ── Main Component ──
 
 const FilActualite = () => {
   const [searchParams] = useSearchParams();
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
-  const { emails, loading } = useEmails();
-  const { stats } = useEmailStats();
+  const [allEmails, setAllEmails] = useState<Email[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  // Filters
+  const [filterPipeline, setFilterPipeline] = useState("all");
+  const [filterDossier, setFilterDossier] = useState("all");
+
+  // Client-side pagination
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  const fetchEmails = useCallback(async () => {
+    try {
+      const userId = localStorage.getItem("donna_user_id");
+      if (!userId) return;
+      const data = await apiGet<Email[]>("/api/emails");
+      setAllEmails(
+        (data || []).sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+      );
+      setError(false);
+    } catch (e) {
+      console.error("Error fetching emails:", e);
+      setError(true);
+      toast.error("Erreur de connexion — impossible de charger les emails");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const userId = searchParams.get("user_id");
@@ -170,18 +209,49 @@ const FilActualite = () => {
     }
   }, [searchParams]);
 
-  const activeEmails = emails
-    .filter(e => e.statut !== "archive" && e.statut !== "ignore" && e.pipeline_step !== "importe")
-    .sort((a, b) => {
-      const aRejected = a.pipeline_step === "filtre_rejete" ? 1 : 0;
-      const bRejected = b.pipeline_step === "filtre_rejete" ? 1 : 0;
-      return aRejected - bRejected;
-    });
-  const isInboxEmpty = activeEmails.length === 0;
+  useEffect(() => {
+    fetchEmails();
+    const interval = setInterval(fetchEmails, 60000);
+    return () => clearInterval(interval);
+  }, [fetchEmails]);
 
-  const tempsMinutes = stats.traites * 5;
-  const economise = Math.round(stats.traites * 5 * 75 / 60);
-  const animatedTraites = useAnimatedCounter(stats.traites, 1500);
+  // Compute metrics from emails
+  const traites = allEmails.filter(e => e.pipeline_step === "pret_a_reviser").length;
+  const enAttenteCount = allEmails.filter(e => e.pipeline_step === "en_attente").length;
+  const tempsMinutes = traites * 5;
+  const economise = Math.round(traites * 5 * 75 / 60);
+  const animatedTraites = useAnimatedCounter(traites, 1500);
+
+  // Extract unique dossier IDs for filter
+  const dossierIds = Array.from(
+    new Set(allEmails.map(e => (e as any).dossier_id).filter(Boolean))
+  ) as string[];
+
+  // Apply filters
+  const filteredEmails = allEmails
+    .filter(e => {
+      if (filterPipeline !== "all" && e.pipeline_step !== filterPipeline) return false;
+      if (filterDossier !== "all" && (e as any).dossier_id !== filterDossier) return false;
+      return true;
+    })
+    .filter(e => e.statut !== "archive" && e.pipeline_step !== "importe");
+
+  // Sort: non-rejected first
+  const sortedEmails = [...filteredEmails].sort((a, b) => {
+    const aRej = a.pipeline_step === "filtre_rejete" ? 1 : 0;
+    const bRej = b.pipeline_step === "filtre_rejete" ? 1 : 0;
+    return aRej - bRej;
+  });
+
+  const visibleEmails = sortedEmails.slice(0, visibleCount);
+  const hasMore = visibleCount < sortedEmails.length;
+  const isInboxEmpty = sortedEmails.length === 0;
+  const importedEmails = allEmails.filter(e => e.pipeline_step === "importe");
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [filterPipeline, filterDossier]);
 
   if (loading) {
     return (
@@ -207,16 +277,26 @@ const FilActualite = () => {
     );
   }
 
-
-
+  if (error && allEmails.length === 0) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-4xl mx-auto text-center py-20">
+          <p className="text-lg font-serif text-foreground mb-2">Connexion impossible</p>
+          <p className="text-sm text-muted-foreground mb-4">Impossible de charger vos emails. Vérifiez votre connexion.</p>
+          <Button variant="outline" onClick={fetchEmails} className="gap-2">
+            <RefreshCw className="h-4 w-4" /> Réessayer
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
 
-
-
-        <div className="mt-8 mb-10">
+        {/* Header metrics */}
+        <div className="mt-8 mb-6">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -240,30 +320,69 @@ const FilActualite = () => {
             <span className="text-muted-foreground/50">·</span>{" "}
             💰 {economise}€ économisés
           </motion.p>
-          {stats.en_attente > 0 && (
+          {enAttenteCount > 0 && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.35, duration: 0.3 }}
               className="mt-1.5 text-[0.85rem] text-destructive"
             >
-              ⚡ {stats.en_attente} email{stats.en_attente > 1 ? "s" : ""} nécessite{stats.en_attente > 1 ? "nt" : ""} votre attention
+              ⚡ {enAttenteCount} email{enAttenteCount > 1 ? "s" : ""} nécessite{enAttenteCount > 1 ? "nt" : ""} votre attention
             </motion.p>
           )}
         </div>
 
-        {isInboxEmpty ? (
+        {/* Filters */}
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
+          <Select value={filterPipeline} onValueChange={setFilterPipeline}>
+            <SelectTrigger className="w-44 h-8 text-xs bg-card border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(PIPELINE_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {dossierIds.length > 0 && (
+            <Select value={filterDossier} onValueChange={setFilterDossier}>
+              <SelectTrigger className="w-44 h-8 text-xs bg-card border-border">
+                <SelectValue placeholder="Tous les dossiers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les dossiers</SelectItem>
+                {dossierIds.map(id => (
+                  <SelectItem key={id} value={id}>{id}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          <span className="text-xs text-muted-foreground ml-auto">
+            {sortedEmails.length} email{sortedEmails.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        {/* Empty state */}
+        {allEmails.length === 0 ? (
+          <div className="text-center py-16">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" />
+            <p className="text-lg font-serif text-foreground mb-1">Donna analyse vos emails...</p>
+            <p className="text-sm text-muted-foreground">Revenez dans quelques minutes.</p>
+          </div>
+        ) : isInboxEmpty ? (
           <div className="space-y-6">
             <div className="text-center py-12">
               <Coffee className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-xs text-muted-foreground">Rien de nouveau pour l'instant</p>
             </div>
-            {emails.length > 0 && <ImportArchives emails={emails} />}
+            {importedEmails.length > 0 && <ImportArchives emails={importedEmails} />}
           </div>
         ) : (
           <div className="space-y-2.5">
             <AnimatePresence>
-              {activeEmails.map((email, i) => {
+              {visibleEmails.map((email, i) => {
                 const isRejected = email.pipeline_step === "filtre_rejete";
 
                 return (
@@ -318,6 +437,20 @@ const FilActualite = () => {
                 );
               })}
             </AnimatePresence>
+
+            {/* Load more */}
+            {hasMore && (
+              <div className="text-center pt-4 pb-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
+                  className="text-xs"
+                >
+                  Charger plus ({sortedEmails.length - visibleCount} restants)
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
