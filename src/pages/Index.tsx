@@ -331,7 +331,7 @@ const Index = () => {
                   variants={fadeUp}
                 >
                   <p className="text-5xl sm:text-6xl lg:text-7xl font-serif font-bold text-white mb-3">{stat.big}</p>
-                  <p className="text-sm sm:text-base" style={{ color: "#999" }}>{stat.sub}</p>
+                  <p className="text-sm sm:text-base" style={{ color: "#aaa" }}>{stat.sub}</p>
                 </motion.div>
               ))}
             </div>
