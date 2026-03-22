@@ -452,7 +452,7 @@ const Index = () => {
               <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white mb-6">
                 Prêt à recruter Donna&nbsp;?
               </h2>
-              <p className="text-sm sm:text-base leading-relaxed" style={{ color: "#999" }}>
+              <p className="text-sm sm:text-base leading-relaxed" style={{ color: "#aaa" }}>
                 Laissez-nous vos coordonnées et nous vous recontactons sous 24h pour une démonstration personnalisée.
               </p>
             </div>
