@@ -206,10 +206,7 @@ const Index = () => {
             </div>
 
             {/* Right image */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
+            <div
               className="flex-1 w-full max-w-lg"
             >
               <img
@@ -217,7 +214,7 @@ const Index = () => {
                 alt="Avocate travaillant dans son cabinet"
                 className="w-full h-auto rounded-2xl object-cover shadow-lg aspect-[4/3]"
               />
-            </motion.div>
+            </div>
           </div>
         </section>
 
