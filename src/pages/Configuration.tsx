@@ -176,7 +176,7 @@ const Configuration = () => {
                 Comment obtenir mon profil ?
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-3 space-y-2 text-sm text-muted-foreground rounded-lg bg-muted/50 p-4">
-                <p>1. Ouvrez votre assistant IA préféré (ChatGPT, Claude, etc.)</p>
+                <p>1. Ouvrez votre assistant IA préféré</p>
                 <p>2. Collez ce prompt :</p>
                 <div className="bg-muted rounded p-3 font-mono text-xs leading-relaxed">
                   Analyse l'ensemble de nos conversations passées et produis un document structuré qui décrit : mon style d'écriture, mes réflexes juridiques, mes préférences de format, et mon ton professionnel. Base-toi uniquement sur nos échanges.
