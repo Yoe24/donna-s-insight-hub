@@ -182,7 +182,7 @@ const Index = () => {
               </h1>
 
               <p
-                className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-md mb-10"
+                className="text-gray-600 text-base sm:text-lg leading-relaxed max-w-md mb-10"
               >
                 Pendant que vous plaidez, Donna organise votre cabinet. 24&nbsp;heures sur 24, 7&nbsp;jours sur 7.
               </p>
