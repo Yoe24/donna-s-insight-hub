@@ -239,8 +239,8 @@ function BriefingSection({ title, icon, count, emails, variant, defaultOpen = tr
                           <span className="text-[11px] text-muted-foreground ml-auto shrink-0">{formatEmailTime(email.created_at)}</span>
                         </div>
                         <p className="text-sm text-foreground/80 mt-0.5 truncate">{email.objet}</p>
-                        {analysis.resume && (
-                          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">{analysis.resume}</p>
+                        {resumeText && (
+                          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">{resumeText}</p>
                         )}
                         {hasDraft && variant === "atraiter" && (
                           <p className="text-xs text-primary mt-1.5 font-medium">✉️ Brouillon prêt — Cliquer pour réviser</p>
