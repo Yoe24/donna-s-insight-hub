@@ -1,19 +1,17 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Eye, Copy, ChevronDown, X, FileText, Loader2, AlertTriangle, Clock, Mail, EyeOff } from "lucide-react";
+import { Eye, ChevronDown, Loader2, AlertTriangle, Clock, Mail, EyeOff, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
-import { useEmails, useEmailStats, useUpdateEmailStatus } from "@/hooks/useEmails";
+import { motion } from "framer-motion";
 import type { Email } from "@/hooks/useEmails";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { parseDonnaAnalysis } from "@/lib/parseDonnaAnalysis";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet } from "@/lib/api";
+import { EmailDrawer } from "@/components/EmailDrawer";
 
 // ── Helpers ──
 
@@ -113,220 +111,7 @@ function CategorieBadge({ email }: { email: Email }) {
   );
 }
 
-// ── Email Detail Overlay (same as FilActualite) ──
-
-function EmailDetailOverlay({
-  email,
-  onClose,
-}: {
-  email: Email;
-  onClose: () => void;
-}) {
-  const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
-  const [showOriginal, setShowOriginal] = useState(false);
-  const [draftText, setDraftText] = useState<string | null>(null);
-  const [draftLoading, setDraftLoading] = useState(false);
-  const [dossierDocs, setDossierDocs] = useState<any[]>([]);
-  const { updateStatus } = useUpdateEmailStatus();
-
-  const analysis = parseDonnaAnalysis(email.brouillon);
-
-  useEffect(() => {
-    if (!(email as any).dossier_id) {
-      setDossierDocs([]);
-      return;
-    }
-    apiGet(`/api/dossiers/${(email as any).dossier_id}`)
-      .then((data: any) => {
-        const docs = data?.dossier_documents || [];
-        setDossierDocs(docs.filter((doc: any) => doc.email_id === email.id));
-      })
-      .catch(() => setDossierDocs([]));
-  }, [email]);
-
-  const handleFeedback = async (action: "parfait" | "modifier" | "erreur") => {
-    try {
-      await updateStatus(email.id, action);
-      setFeedbackGiven(action);
-      toast.success("Feedback envoyé, merci");
-    } catch {
-      toast.error("Erreur lors de l'envoi du feedback");
-    }
-  };
-
-  const handleGenerateDraft = async () => {
-    setDraftLoading(true);
-    try {
-      const data = await apiPost<{ draft: string }>(`/api/emails/${email.id}/draft`);
-      setDraftText(data.draft);
-    } catch {
-      toast.error("Erreur lors de la génération du brouillon");
-    } finally {
-      setDraftLoading(false);
-    }
-  };
-
-  const handleCopyDraft = () => {
-    if (!draftText) return;
-    navigator.clipboard.writeText(draftText);
-    toast.success("Réponse copiée !");
-  };
-
-  const handleFeedbackSelect = (value: string) => {
-    const map: Record<string, "parfait" | "modifier" | "erreur"> = {
-      parfait: "parfait",
-      modifier: "modifier",
-      erreur: "erreur",
-    };
-    if (map[value]) handleFeedback(map[value]);
-  };
-
-  return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm overflow-y-auto py-8 sm:py-12 px-4"
-        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 24 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className="relative w-full max-w-[700px] bg-background rounded-none sm:rounded-2xl p-6 sm:p-8 shadow-2xl"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <button onClick={onClose} className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-              ← Retour
-            </button>
-            <button onClick={onClose} className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center gap-3 flex-wrap">
-              <SenderAvatar expediteur={email.expediteur} size={36} />
-              <span className="font-semibold text-foreground">{email.expediteur}</span>
-              <CategorieBadge email={email} />
-              <span className="text-xs text-muted-foreground ml-auto">{formatEmailTime(email.created_at)}</span>
-            </div>
-            <h2 className="text-xl font-semibold text-foreground leading-tight">{email.objet}</h2>
-          </div>
-
-          <div className="h-px bg-border mb-6" />
-
-          {analysis.resume && (
-            <div className="mb-6">
-              <div className="flex items-center gap-1.5 mb-2">
-                <span className="text-xs">📋</span>
-                <span className="text-xs font-medium text-muted-foreground">Résumé du mail</span>
-              </div>
-              <div className="rounded-xl bg-secondary p-5">
-                <p className="text-sm text-foreground/85 whitespace-pre-line" style={{ lineHeight: 1.7 }}>{analysis.resume}</p>
-              </div>
-            </div>
-          )}
-
-          {dossierDocs.length > 0 && (
-            <div className="mb-6">
-              <div className="flex items-center gap-1.5 mb-3">
-                <span className="text-xs">📎</span>
-                <span className="text-xs font-medium text-muted-foreground">Pièces jointes analysées</span>
-              </div>
-              <div className="rounded-xl bg-secondary p-5 space-y-4">
-                {dossierDocs.map((doc: any, idx: number) => {
-                  const isPdf = doc.type?.toLowerCase()?.includes("pdf") || doc.nom_fichier?.endsWith(".pdf");
-                  const isWord = doc.type?.toLowerCase()?.includes("word") || doc.nom_fichier?.endsWith(".docx") || doc.nom_fichier?.endsWith(".doc");
-                  const preview = !doc.resume && doc.contenu_extrait
-                    ? doc.contenu_extrait.slice(0, 200) + (doc.contenu_extrait.length > 200 ? "…" : "")
-                    : null;
-
-                  return (
-                    <Collapsible key={idx}>
-                      <div className="space-y-1.5">
-                        <div className="flex items-start gap-2.5">
-                          <FileText className={`h-4 w-4 shrink-0 mt-0.5 ${isPdf ? "text-red-500" : isWord ? "text-blue-500" : "text-muted-foreground"}`} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground">{doc.nom_fichier}</p>
-                            {doc.resume && <p className="text-sm text-foreground/70 mt-1 leading-relaxed">{doc.resume}</p>}
-                            {preview && <p className="text-sm text-foreground/70 mt-1 leading-relaxed">{preview}</p>}
-                          </div>
-                        </div>
-                        {doc.contenu_extrait && (
-                          <>
-                            <CollapsibleTrigger asChild>
-                              <button className="text-[11px] text-primary font-medium hover:underline ml-6">Voir l'extrait complet ›</button>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <div className="mt-2 ml-6 rounded-lg bg-background border border-border p-3 text-xs text-foreground/70 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
-                                {doc.contenu_extrait}
-                              </div>
-                            </CollapsibleContent>
-                          </>
-                        )}
-                      </div>
-                      {idx < dossierDocs.length - 1 && <div className="h-px bg-border/50 mt-4" />}
-                    </Collapsible>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className="mb-6 space-y-3">
-            <Button variant="outline" className="text-sm border-border hover:border-primary/50 transition-colors" onClick={handleGenerateDraft} disabled={draftLoading}>
-              {draftLoading ? (<><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Donna rédige une réponse...</>) : (draftText ? "✉️ Regénérer la réponse" : "✉️ Générer une réponse")}
-            </Button>
-            {draftText && (
-              <div className="rounded-xl bg-[hsl(213,100%,97%)] border border-[hsl(213,90%,90%)] p-5 space-y-3">
-                <p className="text-sm font-mono text-foreground/80 whitespace-pre-line leading-relaxed">{draftText}</p>
-                <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyDraft}>
-                  <Copy className="h-3 w-3 mr-1" />Copier la réponse
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <div className="mb-6">
-            <Collapsible open={showOriginal} onOpenChange={setShowOriginal}>
-              <CollapsibleTrigger asChild>
-                <button className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  {showOriginal ? "Masquer" : "Voir"} l'email original ›
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="mt-3 rounded-xl bg-muted/40 border border-border p-4">
-                  <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed">{(email as any).contenu || "Contenu non disponible."}</p>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-
-          <div className="border-t border-border pt-5">
-            {feedbackGiven ? (
-              <p className="text-xs text-muted-foreground">✓ Feedback envoyé, merci</p>
-            ) : (
-              <Select onValueChange={handleFeedbackSelect}>
-                <SelectTrigger className="w-56 h-8 text-xs bg-muted/40 border-border">
-                  <SelectValue placeholder="Donner un feedback..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="parfait">Analyse pertinente</SelectItem>
-                  <SelectItem value="modifier">Analyse à améliorer</SelectItem>
-                  <SelectItem value="erreur">Analyse incorrecte</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  );
-}
+// EmailDetailOverlay removed — using shared EmailDrawer component
 
 // ── Briefing Sections ──
 
@@ -409,7 +194,7 @@ function BriefingSection({ title, icon, count, emails, variant, defaultOpen = tr
         <CollapsibleContent>
           <div className="px-4 pb-4 space-y-2">
             {emails.map((email) => {
-              const analysis = parseDonnaAnalysis(email.brouillon);
+              const resumeText = email.resume || "";
               const hasDraft = !!email.brouillon;
 
               if (variant === "info") {
@@ -453,8 +238,8 @@ function BriefingSection({ title, icon, count, emails, variant, defaultOpen = tr
                           <span className="text-[11px] text-muted-foreground ml-auto shrink-0">{formatEmailTime(email.created_at)}</span>
                         </div>
                         <p className="text-sm text-foreground/80 mt-0.5 truncate">{email.objet}</p>
-                        {analysis.resume && (
-                          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">{analysis.resume}</p>
+                        {resumeText && (
+                          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">{resumeText}</p>
                         )}
                         {hasDraft && variant === "atraiter" && (
                           <p className="text-xs text-primary mt-1.5 font-medium">✉️ Brouillon prêt — Cliquer pour réviser</p>
@@ -492,8 +277,25 @@ const Dashboard = () => {
   const [searchParams] = useSearchParams();
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [nomAvocat, setNomAvocat] = useState<string>("");
-  const { emails, loading } = useEmails();
-  const { stats } = useEmailStats();
+  const [emails, setEmails] = useState<Email[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const fetchEmails = useCallback(async () => {
+    try {
+      const userId = localStorage.getItem("donna_user_id");
+      if (!userId) return;
+      const data = await apiGet<Email[]>("/api/emails");
+      setEmails(data || []);
+      setError(false);
+    } catch (e) {
+      console.error("Error fetching emails:", e);
+      setError(true);
+      toast.error("Erreur de connexion — les données n'ont pas pu être chargées");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const userId = searchParams.get("user_id");
@@ -502,6 +304,12 @@ const Dashboard = () => {
       window.history.replaceState({}, "", "/dashboard");
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    fetchEmails();
+    const interval = setInterval(fetchEmails, 60000);
+    return () => clearInterval(interval);
+  }, [fetchEmails]);
 
   useEffect(() => {
     apiGet<{ nom_avocat?: string }>("/api/config")
@@ -522,12 +330,17 @@ const Dashboard = () => {
   const pourInfoEmails = emails.filter(e => e.statut !== "archive" && e.statut !== "ignore" && isPourInfo(e));
   const ignoreEmails = emails.filter(e => e.statut !== "archive" && e.statut !== "ignore" && isIgnore(e));
 
-  const tempsMinutes = stats.traites * 5;
+  // Compute metrics from emails
+  const traites = emails.filter(e => e.pipeline_step === "pret_a_reviser").length;
+  const enAttenteCount = emails.filter(e => e.pipeline_step === "en_attente").length;
+  const filtresCount = emails.filter(e => e.pipeline_step === "filtre_rejete").length;
+
+  const tempsMinutes = traites * 5;
   const tempsHeures = Math.floor(tempsMinutes / 60);
   const tempsMinutesRestantes = tempsMinutes % 60;
   const isHours = tempsMinutes >= 60;
-  const economise = Math.round(stats.traites * 5 * 75 / 60);
-  const animatedTraites = useAnimatedCounter(stats.traites, 1500);
+  const economise = Math.round(traites * 5 * 75 / 60);
+  const animatedTraites = useAnimatedCounter(traites, 1500);
   const animatedHeures = useAnimatedCounter(tempsHeures, 1500);
   const animatedMinutesRestantes = useAnimatedCounter(isHours ? tempsMinutesRestantes : tempsMinutes, 1500);
   const animatedEco = useAnimatedCounter(economise, 1500);
@@ -567,6 +380,20 @@ const Dashboard = () => {
               <div className="h-16 w-full bg-muted animate-pulse rounded" />
             </div>
           ))}
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error && emails.length === 0) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-4xl mx-auto text-center py-20">
+          <p className="text-lg font-serif text-foreground mb-2">Connexion impossible</p>
+          <p className="text-sm text-muted-foreground mb-4">Impossible de charger vos emails. Vérifiez votre connexion.</p>
+          <Button variant="outline" onClick={fetchEmails} className="gap-2">
+            <RefreshCw className="h-4 w-4" /> Réessayer
+          </Button>
         </div>
       </DashboardLayout>
     );
@@ -692,7 +519,7 @@ const Dashboard = () => {
         </div>
 
         {/* Evening Recap */}
-        {showEveningRecap && stats.traites > 0 && (
+        {showEveningRecap && traites > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -706,7 +533,7 @@ const Dashboard = () => {
                   <span className="text-sm font-semibold text-foreground">Récap de la journée</span>
                 </div>
                 <p className="text-sm text-foreground/80 leading-relaxed">
-                  Donna a traité <span className="font-semibold">{stats.traites} emails</span> aujourd'hui.{" "}
+                  Donna a traité <span className="font-semibold">{traites} emails</span> aujourd'hui.{" "}
                   {responsesEnvoyees > 0 && (
                     <><span className="font-semibold">{responsesEnvoyees} réponse{responsesEnvoyees > 1 ? "s" : ""}</span> envoyée{responsesEnvoyees > 1 ? "s" : ""} (avec votre validation). </>
                   )}
@@ -721,7 +548,19 @@ const Dashboard = () => {
         )}
 
         {/* Empty state */}
-        {urgentEmails.length === 0 && aTraiterEmails.length === 0 && pourInfoEmails.length === 0 && ignoreEmails.length === 0 && (
+        {emails.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-center py-16"
+          >
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" />
+            <p className="text-lg font-serif text-foreground mb-1">Donna analyse vos emails...</p>
+            <p className="text-sm text-muted-foreground">Revenez dans quelques minutes.</p>
+          </motion.div>
+        )}
+        {emails.length > 0 && urgentEmails.length === 0 && aTraiterEmails.length === 0 && pourInfoEmails.length === 0 && ignoreEmails.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -735,9 +574,10 @@ const Dashboard = () => {
       </div>
 
       {selectedEmail && (
-        <EmailDetailOverlay
+        <EmailDrawer
           email={selectedEmail}
           onClose={() => setSelectedEmail(null)}
+          showDossierLink={true}
         />
       )}
     </DashboardLayout>
