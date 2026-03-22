@@ -182,7 +182,7 @@ const Index = () => {
               </h1>
 
               <p
-                className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-md mb-10"
+                className="text-gray-600 text-base sm:text-lg leading-relaxed max-w-md mb-10"
               >
                 Pendant que vous plaidez, Donna organise votre cabinet. 24&nbsp;heures sur 24, 7&nbsp;jours sur 7.
               </p>
@@ -231,7 +231,7 @@ const Index = () => {
               <h2 className="text-3xl sm:text-4xl font-serif font-bold text-foreground mb-4">
                 Chaque matin, Donna vous fait le brief
               </h2>
-              <p className="text-muted-foreground text-base sm:text-lg max-w-lg mx-auto">
+              <p className="text-gray-600 text-base sm:text-lg max-w-lg mx-auto">
                 Comme une assistante qui aurait lu tous vos emails pendant la nuit.
               </p>
             </motion.div>
@@ -251,7 +251,7 @@ const Index = () => {
                     <card.icon className="h-5 w-5 text-foreground" />
                   </div>
                   <h3 className="text-lg font-sans font-semibold text-foreground mb-3">{card.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{card.text}</p>
+                  <p className="text-gray-600 text-sm leading-relaxed">{card.text}</p>
                 </motion.div>
               ))}
             </div>
@@ -271,7 +271,7 @@ const Index = () => {
               <h2 className="text-3xl sm:text-4xl font-serif font-bold text-foreground mb-4">
                 Une employée qui ne dort jamais
               </h2>
-              <p className="text-muted-foreground text-base sm:text-lg max-w-lg mx-auto">
+              <p className="text-gray-600 text-base sm:text-lg max-w-lg mx-auto">
                 Voici ce que Donna fait automatiquement, sans que vous ayez à lever le petit doigt.
               </p>
             </motion.div>
@@ -294,7 +294,7 @@ const Index = () => {
                     </div>
                     <div className={`${isEven ? "md:text-left" : "md:text-right"} text-center`}>
                       <h3 className="text-xl font-sans font-semibold text-foreground mb-2">{feat.title}</h3>
-                      <p className="text-muted-foreground text-sm sm:text-base leading-relaxed max-w-md">{feat.text}</p>
+                      <p className="text-gray-600 text-sm sm:text-base leading-relaxed max-w-md">{feat.text}</p>
                     </div>
                   </motion.div>
                 );
@@ -371,7 +371,7 @@ const Index = () => {
                     </span>
                     <div>
                       <h3 className="text-lg font-sans font-semibold text-foreground mb-2">{step.title}</h3>
-                      <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">{step.text}</p>
+                      <p className="text-gray-600 text-sm sm:text-base leading-relaxed">{step.text}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -398,7 +398,7 @@ const Index = () => {
               viewport={{ once: true }}
               custom={1}
               variants={fadeUp}
-              className="text-muted-foreground text-sm font-sans"
+              className="text-gray-600 text-sm font-sans"
             >
               — Avocate en droit des affaires, Paris
             </motion.p>
@@ -436,7 +436,7 @@ const Index = () => {
 
             <Link
               to="/securite"
-              className="text-sm font-sans text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+              className="text-sm font-sans text-gray-600 hover:text-foreground transition-colors inline-flex items-center gap-1"
             >
               En savoir plus sur notre politique de sécurité
               <ArrowRight className="h-3.5 w-3.5" />
