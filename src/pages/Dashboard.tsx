@@ -575,17 +575,8 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto pb-12">
-        {/* Demo banner */}
-        {isDemoMode && (
-          <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-3">
-            <p className="text-sm text-foreground font-sans">
-              <span className="font-semibold">Mode démo</span> — Vous explorez le cabinet fictif de Me&nbsp;Arnaud&nbsp;Durand
-            </p>
-            <button onClick={handleQuitDemo} className="shrink-0 text-xs font-medium text-primary hover:underline font-sans">
-              Quitter la démo
-            </button>
-          </div>
-        )}
+
+
 
         {/* Briefing Header */}
         <motion.div
