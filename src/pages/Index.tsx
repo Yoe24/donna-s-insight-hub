@@ -371,7 +371,7 @@ const Index = () => {
                     </span>
                     <div>
                       <h3 className="text-lg font-sans font-semibold text-foreground mb-2">{step.title}</h3>
-                      <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">{step.text}</p>
+                      <p className="text-gray-600 text-sm sm:text-base leading-relaxed">{step.text}</p>
                     </div>
                   </motion.div>
                 ))}
