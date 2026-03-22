@@ -169,7 +169,19 @@ const Index = () => {
                 transition={{ duration: 0.7, delay: 0.1 }}
                 className="text-3xl sm:text-4xl lg:text-[3.5rem] font-serif font-bold leading-[1.1] text-foreground mb-6"
               >
-                Une employée qui ne dort jamais.
+                Une employée qui{" "}
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={rotatingPhrases[phraseIndex]}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-primary inline-block"
+                  >
+                    {rotatingPhrases[phraseIndex]}
+                  </motion.span>
+                </AnimatePresence>
               </motion.h1>
 
               <motion.p
