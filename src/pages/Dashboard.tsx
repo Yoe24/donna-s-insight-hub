@@ -549,7 +549,19 @@ const Dashboard = () => {
         )}
 
         {/* Empty state */}
-        {urgentEmails.length === 0 && aTraiterEmails.length === 0 && pourInfoEmails.length === 0 && ignoreEmails.length === 0 && (
+        {emails.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-center py-16"
+          >
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" />
+            <p className="text-lg font-serif text-foreground mb-1">Donna analyse vos emails...</p>
+            <p className="text-sm text-muted-foreground">Revenez dans quelques minutes.</p>
+          </motion.div>
+        )}
+        {emails.length > 0 && urgentEmails.length === 0 && aTraiterEmails.length === 0 && pourInfoEmails.length === 0 && ignoreEmails.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
