@@ -154,11 +154,11 @@ const DossierDetailPage = () => {
       <div className="max-w-5xl mx-auto">
         {/* Back */}
         <Link
-          to="/dossiers"
+           to="/dashboard"
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-5 transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Retour aux dossiers
+          Retour
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
