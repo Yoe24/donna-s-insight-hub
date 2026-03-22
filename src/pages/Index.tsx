@@ -145,14 +145,6 @@ const Index = () => {
           <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 py-20 md:py-28 flex flex-col md:flex-row items-center gap-12 lg:gap-20">
             {/* Left text */}
             <div className="flex-1 max-w-xl">
-              <motion.span
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="inline-block text-xs font-sans font-medium tracking-widest uppercase text-muted-foreground bg-muted px-3 py-1.5 rounded-full mb-6"
-              >
-                Votre première employée numérique juridique
-              </motion.span>
 
               <motion.h1
                 initial={{ opacity: 0, y: 30 }}
