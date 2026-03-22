@@ -160,7 +160,7 @@ const Index = () => {
                 transition={{ duration: 0.7, delay: 0.1 }}
                 className="text-3xl sm:text-4xl lg:text-[3.5rem] font-serif font-bold leading-[1.1] text-foreground mb-6"
               >
-                Donna lit vos mails, trie vos dossiers et prépare vos réponses.
+                Une employée qui ne dort jamais.
               </motion.h1>
 
               <motion.p
