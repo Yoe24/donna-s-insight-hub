@@ -529,7 +529,7 @@ const Index = () => {
           <div className="max-w-7xl mx-auto px-6 sm:px-10 py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div>
               <p className="font-serif font-bold text-white text-sm">Donna</p>
-              <p className="text-xs mt-1" style={{ color: "#777" }}>Votre employé numérique juridique</p>
+              <p className="text-xs mt-1" style={{ color: "#aaa" }}>Votre employé numérique juridique</p>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-sans" style={{ color: "#999" }}>
               <Link to="/securite" className="hover:text-white transition-colors">Sécurité</Link>
