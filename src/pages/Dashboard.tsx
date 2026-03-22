@@ -623,13 +623,19 @@ const Dashboard = () => {
               </div>
               <div className="h-8 w-px bg-border" />
               <div className="text-center">
-                <span className="text-3xl font-extrabold tabular-nums text-foreground">{animatedMinutes}<span className="text-lg font-bold">min</span></span>
+                <span className="text-3xl font-extrabold tabular-nums text-foreground">
+                  {isHours ? (
+                    <>{animatedHeures}<span className="text-lg font-bold">h</span>{animatedMinutesRestantes > 0 && <>{animatedMinutesRestantes}<span className="text-lg font-bold">min</span></>}</>
+                  ) : (
+                    <>{animatedMinutesRestantes}<span className="text-lg font-bold">min</span></>
+                  )}
+                </span>
                 <p className="text-[11px] text-muted-foreground mt-0.5">gagnées</p>
               </div>
               <div className="h-8 w-px bg-border" />
               <div className="text-center">
                 <span className="text-3xl font-extrabold tabular-nums text-foreground">{animatedEco}<span className="text-lg font-bold">€</span></span>
-                <p className="text-[11px] text-muted-foreground mt-0.5">économisés</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">économisés <span className="text-muted-foreground/70">(taux : 75€/h)</span></p>
               </div>
             </div>
           </div>
