@@ -12,8 +12,8 @@ import { useEmails, useEmailStats, useUpdateEmailStatus } from "@/hooks/useEmail
 import type { Email } from "@/hooks/useEmails";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { parseDonnaAnalysis } from "@/lib/parseDonnaAnalysis";
 import { apiGet, apiPost } from "@/lib/api";
+import { EmailDrawer } from "@/components/EmailDrawer";
 
 function formatEmailTime(created_at: string) {
   try {
