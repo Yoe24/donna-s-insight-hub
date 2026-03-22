@@ -207,7 +207,7 @@ const DossierDetailPage = () => {
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
               <div className="flex items-start justify-between gap-4 mb-1">
                 <div>
-                  <h1 className="text-2xl font-serif font-bold text-foreground">{dossier.nom_client}</h1>
+                  <h1 className="text-2xl font-serif font-bold text-foreground">{dossier.nom || dossier.name || dossier.nom_client}</h1>
                   <p className="text-sm text-muted-foreground font-sans mt-0.5">{dossier.email_client}</p>
                 </div>
                 {statutBadge(dossier.statut)}
