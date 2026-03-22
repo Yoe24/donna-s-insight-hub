@@ -163,10 +163,7 @@ const Index = () => {
             {/* Left text */}
             <div className="flex-1 max-w-xl">
 
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.1 }}
+              <h1
                 className="text-3xl sm:text-4xl lg:text-[3.5rem] font-serif font-bold leading-[1.1] text-foreground mb-6"
               >
                 Une employée qui{" "}
@@ -182,21 +179,15 @@ const Index = () => {
                     {rotatingPhrases[phraseIndex]}
                   </motion.span>
                 </AnimatePresence>
-              </motion.h1>
+              </h1>
 
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.25 }}
+              <p
                 className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-md mb-10"
               >
                 Pendant que vous plaidez, Donna organise votre cabinet. 24&nbsp;heures sur 24, 7&nbsp;jours sur 7.
-              </motion.p>
+              </p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
+              <div
                 className="flex flex-col sm:flex-row items-start gap-4"
               >
                 <Link to="/login">
@@ -211,7 +202,7 @@ const Index = () => {
                 >
                   Demander une démo
                 </button>
-              </motion.div>
+              </div>
             </div>
 
             {/* Right image */}
