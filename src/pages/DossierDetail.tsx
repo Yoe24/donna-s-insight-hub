@@ -303,31 +303,23 @@ const DossierDetailPage = () => {
                 <CollapsibleContent>
                   <div className="mt-3 space-y-1.5">
                     {sortedEmails.map((email) => (
-                      <Collapsible key={email.id}>
-                        <Card className="bg-card">
-                          <CardContent className="p-3">
-                            <CollapsibleTrigger asChild>
-                              <button className="w-full text-left flex items-center gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-foreground truncate">{email.expediteur}</span>
-                                    <span className="text-[11px] text-muted-foreground shrink-0">{formatDateFr(email.created_at)}</span>
-                                  </div>
-                                  <p className="text-xs text-muted-foreground truncate mt-0.5">{email.objet}</p>
-                                </div>
-                                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                              </button>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <div className="mt-3 pt-3 border-t border-border">
-                                <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">
-                                  {email.contenu || email.resume || "Contenu non disponible."}
-                                </p>
+                      <Card
+                        key={email.id}
+                        className="bg-card hover:shadow-md hover:bg-muted/30 transition-all cursor-pointer"
+                        onClick={() => setSelectedEmail(email)}
+                      >
+                        <CardContent className="p-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-foreground truncate">{email.expediteur}</span>
+                                <span className="text-[11px] text-muted-foreground shrink-0">{formatDateFr(email.created_at)}</span>
                               </div>
-                            </CollapsibleContent>
-                          </CardContent>
-                        </Card>
-                      </Collapsible>
+                              <p className="text-xs text-muted-foreground truncate mt-0.5">{email.objet}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
                 </CollapsibleContent>
