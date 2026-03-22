@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, FileText, File, ChevronDown, Sparkles, Paperclip, MessageSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Loader2, FileText, File, ChevronDown, Sparkles, Paperclip, MessageSquare, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import type { Email } from "@/hooks/useEmails";
 import { apiGet } from "@/lib/api";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -13,6 +15,10 @@ import { EmailDrawer } from "@/components/EmailDrawer";
 interface DossierDetailData {
   id: string;
   nom_client: string;
+  nom?: string;
+  name?: string;
+  client_name?: string;
+  reference?: string;
   email_client: string;
   statut: string;
   domaine: string;
@@ -107,28 +113,59 @@ const DossierDetailPage = () => {
   const [documents, setDocuments] = useState<DossierDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEmail, setSelectedEmail] = useState<DossierEmail | null>(null);
+  const [error, setError] = useState(false);
+
+  const fetchDossier = useCallback(async () => {
+    if (!id) return;
+    try {
+      const data = await apiGet<DossierDetailData>(`/api/dossiers/${id}`);
+      setDossier(data);
+      setDocuments(data.dossier_documents || []);
+
+      // Use emails from dossier response, or fetch separately
+      if (data.emails && data.emails.length > 0) {
+        setEmails(data.emails);
+      } else {
+        try {
+          const emailData = await apiGet<DossierEmail[]>(`/api/emails?dossier_id=${id}`);
+          setEmails(emailData || []);
+        } catch {
+          setEmails([]);
+        }
+      }
+      setError(false);
+    } catch (e) {
+      console.error("Error fetching dossier:", e);
+      setError(true);
+      toast.error("Erreur lors du chargement du dossier");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
-    if (!id) return;
-    const fetchAll = async () => {
-      try {
-        const data = await apiGet<DossierDetailData>(`/api/dossiers/${id}`);
-        setDossier(data);
-        setEmails(data.emails || []);
-        setDocuments(data.dossier_documents || []);
-      } catch (error) {
-        console.error('Error fetching dossier:', error);
-      }
-      setLoading(false);
-    };
-    fetchAll();
-  }, [id]);
+    fetchDossier();
+  }, [fetchDossier]);
 
   if (loading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error && !dossier) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-4xl mx-auto py-12 text-center">
+          <p className="text-lg font-serif text-foreground mb-2">Connexion impossible</p>
+          <p className="text-sm text-muted-foreground mb-4">Impossible de charger ce dossier.</p>
+          <Button variant="outline" onClick={fetchDossier} className="gap-2">
+            <RefreshCw className="h-4 w-4" /> Réessayer
+          </Button>
         </div>
       </DashboardLayout>
     );
@@ -170,7 +207,7 @@ const DossierDetailPage = () => {
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
               <div className="flex items-start justify-between gap-4 mb-1">
                 <div>
-                  <h1 className="text-2xl font-serif font-bold text-foreground">{dossier.nom_client}</h1>
+                  <h1 className="text-2xl font-serif font-bold text-foreground">{dossier.nom || dossier.name || dossier.nom_client}</h1>
                   <p className="text-sm text-muted-foreground font-sans mt-0.5">{dossier.email_client}</p>
                 </div>
                 {statutBadge(dossier.statut)}
@@ -334,6 +371,12 @@ const DossierDetailPage = () => {
                 <CardTitle className="text-base">Informations</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {(dossier.client_name || dossier.nom_client) && (
+                  <InfoRow label="Client" value={dossier.client_name || dossier.nom_client} />
+                )}
+                {dossier.reference && (
+                  <InfoRow label="Référence" value={dossier.reference} />
+                )}
                 <InfoRow label="Domaine" value={dossier.domaine} />
                 <InfoRow label="Dernier échange" value={dossier.dernier_echange_date ? formatDateFr(dossier.dernier_echange_date) : "—"} />
                 <InfoRow label="Emails" value={`${emails.length}`} />
