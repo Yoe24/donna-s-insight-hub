@@ -386,6 +386,20 @@ const Dashboard = () => {
     );
   }
 
+  if (error && emails.length === 0) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-4xl mx-auto text-center py-20">
+          <p className="text-lg font-serif text-foreground mb-2">Connexion impossible</p>
+          <p className="text-sm text-muted-foreground mb-4">Impossible de charger vos emails. Vérifiez votre connexion.</p>
+          <Button variant="outline" onClick={fetchEmails} className="gap-2">
+            <RefreshCw className="h-4 w-4" /> Réessayer
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto pb-12">
