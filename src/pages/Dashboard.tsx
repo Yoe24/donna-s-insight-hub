@@ -522,8 +522,7 @@ const Dashboard = () => {
       </div>
 
       <EmailDrawer
-        email={selectedEmail}
-        isOpen={!!selectedEmail}
+        email={selectedEmail!}
         onClose={() => setSelectedEmail(null)}
         showDossierLink={true}
       />
