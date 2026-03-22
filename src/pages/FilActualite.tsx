@@ -154,7 +154,22 @@ function ImportArchives({ emails }: { emails: Email[] }) {
   );
 }
 
-function EmailDetailOverlay({
+function PipelineStepBadge({ step }: { step: string }) {
+  const config: Record<string, { label: string; classes: string }> = {
+    pret_a_reviser: { label: "Prêt à réviser", classes: "bg-green-100 text-green-800" },
+    filtre_rejete: { label: "Filtré", classes: "bg-red-100 text-red-800" },
+    importe: { label: "Importé", classes: "bg-blue-100 text-blue-800" },
+    en_attente: { label: "En attente", classes: "bg-yellow-100 text-yellow-800" },
+  };
+  const c = config[step] || { label: step, classes: "bg-muted text-muted-foreground" };
+  return (
+    <span className={`inline-flex items-center rounded-full text-[10px] px-2.5 py-0.5 font-semibold ${c.classes}`}>
+      {c.label}
+    </span>
+  );
+}
+
+function EmailDetailDrawer({
   email,
   onClose,
 }: {
@@ -166,25 +181,22 @@ function EmailDetailOverlay({
   const [draftText, setDraftText] = useState<string | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
   const [dossierDocs, setDossierDocs] = useState<any[]>([]);
-  const [docsLoading, setDocsLoading] = useState(false);
+  const [dossierName, setDossierName] = useState<string | null>(null);
   const { updateStatus } = useUpdateEmailStatus();
-
-  const analysis = parseDonnaAnalysis(email.brouillon);
 
   useEffect(() => {
     if (!(email as any).dossier_id) {
       setDossierDocs([]);
+      setDossierName(null);
       return;
     }
-    setDocsLoading(true);
     apiGet(`/api/dossiers/${(email as any).dossier_id}`)
       .then((data: any) => {
+        setDossierName(data?.nom || data?.name || null);
         const docs = data?.dossier_documents || [];
-        const filtered = docs.filter((doc: any) => doc.email_id === email.id);
-        setDossierDocs(filtered);
+        setDossierDocs(docs.filter((doc: any) => doc.email_id === email.id));
       })
-      .catch(() => setDossierDocs([]))
-      .finally(() => setDocsLoading(false));
+      .catch(() => { setDossierDocs([]); setDossierName(null); });
   }, [email]);
 
   const handleFeedback = async (action: "parfait" | "modifier" | "erreur") => {
@@ -224,78 +236,104 @@ function EmailDetailOverlay({
     if (map[value]) handleFeedback(map[value]);
   };
 
+  const formattedDate = (() => {
+    try {
+      return format(new Date(email.created_at), "d MMMM yyyy, HH'h'mm", { locale: fr });
+    } catch { return ""; }
+  })();
+
   return (
-    <AnimatePresence>
+    <>
+      {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm overflow-y-auto py-8 sm:py-12 px-4"
-        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Drawer */}
+      <motion.div
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[60%] sm:max-w-[700px] bg-background shadow-2xl overflow-y-auto"
       >
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 24 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className="relative w-full max-w-[700px] bg-background rounded-none sm:rounded-2xl p-6 sm:p-8 shadow-2xl"
-        >
+        <div className="p-6 sm:p-8">
+          {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={onClose}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 sm:hidden"
             >
               ← Retour
             </button>
             <button
               onClick={onClose}
-              className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+              className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground hover:text-foreground ml-auto"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="space-y-2 mb-4">
+          {/* Sender + Subject */}
+          <div className="space-y-3 mb-6">
             <div className="flex items-center gap-3 flex-wrap">
               <SenderAvatar expediteur={email.expediteur} size={36} />
               <span className="font-semibold text-foreground">{email.expediteur}</span>
               <CategorieBadge email={email} />
-              <span className="text-xs text-muted-foreground ml-auto">{formatEmailTime(email.created_at)}</span>
+              <PipelineStepBadge step={email.pipeline_step} />
             </div>
             <h2 className="text-xl font-semibold text-foreground leading-tight">{email.objet}</h2>
+            <p className="text-xs text-muted-foreground">{formattedDate}</p>
           </div>
 
           <div className="h-px bg-border mb-6" />
 
-          {analysis.resume && (
+          {/* Résumé IA */}
+          {email.resume && (
             <div className="mb-6">
               <div className="flex items-center gap-1.5 mb-2">
                 <span className="text-xs">📋</span>
-                <span className="text-xs font-medium text-muted-foreground">Résumé du mail</span>
+                <span className="text-xs font-medium text-muted-foreground">Résumé IA</span>
               </div>
-              <div className="rounded-xl bg-[hsl(210,20%,98%)] p-5">
+              <div className="rounded-xl bg-muted/50 p-5">
                 <p className="text-sm text-foreground/85 whitespace-pre-line" style={{ lineHeight: 1.7 }}>
-                  {analysis.resume}
+                  {email.resume}
                 </p>
               </div>
             </div>
           )}
 
+          {/* Brouillon suggéré */}
+          {email.brouillon && (
+            <div className="mb-6">
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="text-xs">✉️</span>
+                <span className="text-xs font-medium text-muted-foreground">Brouillon suggéré</span>
+              </div>
+              <div className="rounded-xl bg-accent/10 border border-border p-5">
+                <p className="text-sm font-mono text-foreground/80 whitespace-pre-line leading-relaxed">
+                  {email.brouillon}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Pièces jointes */}
           {dossierDocs.length > 0 && (
             <div className="mb-6">
               <div className="flex items-center gap-1.5 mb-3">
                 <span className="text-xs">📎</span>
-                <span className="text-xs font-medium text-muted-foreground">Pièces jointes analysées par Donna</span>
+                <span className="text-xs font-medium text-muted-foreground">Pièces jointes analysées</span>
               </div>
-              <div className="rounded-xl bg-[hsl(210,20%,98%)] p-5 space-y-4">
+              <div className="rounded-xl bg-muted/50 p-5 space-y-4">
                 {dossierDocs.map((doc: any, idx: number) => {
                   const isPdf = doc.type?.toLowerCase()?.includes("pdf") || doc.nom_fichier?.endsWith(".pdf");
                   const isWord = doc.type?.toLowerCase()?.includes("word") || doc.nom_fichier?.endsWith(".docx") || doc.nom_fichier?.endsWith(".doc");
-                  const preview = !doc.resume && doc.contenu_extrait
-                    ? doc.contenu_extrait.slice(0, 200) + (doc.contenu_extrait.length > 200 ? "…" : "")
-                    : null;
-
                   return (
                     <Collapsible key={idx}>
                       <div className="space-y-1.5">
@@ -303,20 +341,13 @@ function EmailDetailOverlay({
                           <FileText className={`h-4 w-4 shrink-0 mt-0.5 ${isPdf ? "text-red-500" : isWord ? "text-blue-500" : "text-muted-foreground"}`} />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-foreground">{doc.nom_fichier}</p>
-                            {doc.resume && (
-                              <p className="text-sm text-foreground/70 mt-1 leading-relaxed">{doc.resume}</p>
-                            )}
-                            {preview && (
-                              <p className="text-sm text-foreground/70 mt-1 leading-relaxed">{preview}</p>
-                            )}
+                            {doc.resume && <p className="text-sm text-foreground/70 mt-1 leading-relaxed">{doc.resume}</p>}
                           </div>
                         </div>
                         {doc.contenu_extrait && (
                           <>
                             <CollapsibleTrigger asChild>
-                              <button className="text-[11px] text-primary font-medium hover:underline ml-6">
-                                Voir l'extrait complet ›
-                              </button>
+                              <button className="text-[11px] text-primary font-medium hover:underline ml-6">Voir l'extrait complet ›</button>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                               <div className="mt-2 ml-6 rounded-lg bg-background border border-border p-3 text-xs text-foreground/70 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
@@ -334,6 +365,23 @@ function EmailDetailOverlay({
             </div>
           )}
 
+          {/* Dossier rattaché */}
+          {(email as any).dossier_id && (
+            <div className="mb-6">
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="text-xs">📁</span>
+                <span className="text-xs font-medium text-muted-foreground">Dossier rattaché</span>
+              </div>
+              <a
+                href={`/dossiers/${(email as any).dossier_id}`}
+                className="text-sm text-primary hover:underline"
+              >
+                {dossierName || `Dossier #${(email as any).dossier_id}`}
+              </a>
+            </div>
+          )}
+
+          {/* Générer une réponse */}
           <div className="mb-6 space-y-3">
             <Button
               variant="outline"
@@ -352,7 +400,7 @@ function EmailDetailOverlay({
             </Button>
 
             {draftText && (
-              <div className="rounded-xl bg-[hsl(213,100%,97%)] border border-[hsl(213,90%,90%)] p-5 space-y-3">
+              <div className="rounded-xl bg-accent/10 border border-border p-5 space-y-3">
                 <p className="text-sm font-mono text-foreground/80 whitespace-pre-line leading-relaxed">{draftText}</p>
                 <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyDraft}>
                   <Copy className="h-3 w-3 mr-1" />Copier la réponse
@@ -361,6 +409,7 @@ function EmailDetailOverlay({
             )}
           </div>
 
+          {/* Email original */}
           <div className="mb-6">
             <Collapsible open={showOriginal} onOpenChange={setShowOriginal}>
               <CollapsibleTrigger asChild>
@@ -378,6 +427,7 @@ function EmailDetailOverlay({
             </Collapsible>
           </div>
 
+          {/* Feedback */}
           <div className="border-t border-border pt-5">
             {feedbackGiven ? (
               <p className="text-xs text-muted-foreground">✓ Feedback envoyé, merci</p>
@@ -394,9 +444,9 @@ function EmailDetailOverlay({
               </Select>
             )}
           </div>
-        </motion.div>
+        </div>
       </motion.div>
-    </AnimatePresence>
+    </>
   );
 }
 
@@ -509,7 +559,6 @@ const FilActualite = () => {
             <AnimatePresence>
               {activeEmails.map((email, i) => {
                 const isRejected = email.pipeline_step === "filtre_rejete";
-                const analysis = parseDonnaAnalysis(email.brouillon);
 
                 return (
                   <motion.div
@@ -539,8 +588,8 @@ const FilActualite = () => {
                               <span className="text-[11px] text-muted-foreground ml-auto shrink-0">{formatEmailTime(email.created_at)}</span>
                             </div>
                             <p className="text-sm text-foreground/80 mt-1 truncate">{email.objet}</p>
-                            {!isRejected && analysis.resume && (
-                              <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">{analysis.resume}</p>
+                            {!isRejected && email.resume && (
+                              <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">{email.resume}</p>
                             )}
                           </div>
                           {!isRejected && (
@@ -567,12 +616,14 @@ const FilActualite = () => {
         )}
       </div>
 
-      {selectedEmail && (
-        <EmailDetailOverlay
-          email={selectedEmail}
-          onClose={() => setSelectedEmail(null)}
-        />
-      )}
+      <AnimatePresence>
+        {selectedEmail && (
+          <EmailDetailDrawer
+            email={selectedEmail}
+            onClose={() => setSelectedEmail(null)}
+          />
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 };
