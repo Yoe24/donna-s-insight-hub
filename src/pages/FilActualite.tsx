@@ -361,6 +361,15 @@ const FilActualite = () => {
             </Select>
           )}
 
+          {filterUnclassified && (
+            <button
+              onClick={() => setFilterUnclassified(false)}
+              className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
+            >
+              Non classés uniquement ✕
+            </button>
+          )}
+
           <span className="text-xs text-muted-foreground ml-auto">
             {sortedEmails.length} email{sortedEmails.length !== 1 ? "s" : ""}
           </span>
