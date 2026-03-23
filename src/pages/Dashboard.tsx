@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Circle, Mail, FolderOpen, AlertTriangle, Reply } from "lucide-react";
+import { Loader2, RefreshCw, Mail, FolderOpen, CalendarDays, Reply } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -15,10 +15,10 @@ import { apiGet, apiPost } from "@/lib/api";
 interface BriefDossier {
   dossier_id: string;
   nom: string;
-  urgency: "high" | "medium" | "low";
   new_emails_count: number;
   summary: string;
-  suggested_actions: string[];
+  dates_cles: string[];
+  emails_recus: string[];
   needs_immediate_attention: boolean;
 }
 
@@ -28,13 +28,11 @@ interface BriefData {
     stats: {
       emails_analyzed: number;
       dossiers_count: number;
-      urgent_count: number;
+      deadline_soon_count: number;
       needs_response_count: number;
     };
     dossiers: BriefDossier[];
   };
-  is_read: boolean;
-  brief_date: string;
 }
 
 // ── Helpers ──
@@ -54,13 +52,6 @@ function useAnimatedCounter(target: number, duration = 1000) {
   }, [target, duration]);
   return count;
 }
-
-const urgencyOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
-const urgencyColor: Record<string, string> = {
-  high: "bg-destructive",
-  medium: "bg-orange-400",
-  low: "bg-green-500",
-};
 
 // ── Main Dashboard ──
 
@@ -129,11 +120,11 @@ const Dashboard = () => {
   const stats = brief?.content.stats;
   const animatedEmails = useAnimatedCounter(stats?.emails_analyzed ?? 0, 1500);
   const animatedDossiers = useAnimatedCounter(stats?.dossiers_count ?? 0, 1500);
-  const animatedUrgent = useAnimatedCounter(stats?.urgent_count ?? 0, 1500);
+  const animatedDeadlines = useAnimatedCounter(stats?.deadline_soon_count ?? 0, 1500);
   const animatedResponses = useAnimatedCounter(stats?.needs_response_count ?? 0, 1500);
 
   const sortedDossiers = brief?.content.dossiers
-    ? [...brief.content.dossiers].sort((a, b) => (urgencyOrder[a.urgency] ?? 2) - (urgencyOrder[b.urgency] ?? 2))
+    ? [...brief.content.dossiers].sort((a, b) => (a.needs_immediate_attention === b.needs_immediate_attention ? 0 : a.needs_immediate_attention ? -1 : 1))
     : [];
 
   const userId = localStorage.getItem("donna_user_id");
@@ -209,10 +200,10 @@ const Dashboard = () => {
           className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10"
         >
           {[
-            { icon: <Mail className="h-4 w-4 text-primary" />, value: animatedEmails, label: "emails analysés" },
+            { icon: <Mail className="h-4 w-4 text-primary" />, value: animatedEmails, label: "emails traités" },
             { icon: <FolderOpen className="h-4 w-4 text-primary" />, value: animatedDossiers, label: "dossiers actifs" },
-            { icon: <AlertTriangle className="h-4 w-4 text-destructive" />, value: animatedUrgent, label: "urgences" },
-            { icon: <Reply className="h-4 w-4 text-primary" />, value: animatedResponses, label: "réponses attendues" },
+            { icon: <CalendarDays className="h-4 w-4 text-destructive" />, value: animatedDeadlines, label: "deadline(s) proche(s)" },
+            { icon: <Reply className="h-4 w-4 text-primary" />, value: animatedResponses, label: "en attente de réponse" },
           ].map((kpi, i) => (
             <Card key={i} className="bg-card border-border">
               <CardContent className="p-4 flex flex-col items-center text-center gap-1">
@@ -248,8 +239,7 @@ const Dashboard = () => {
                     onClick={() => navigate(`/dossiers/${dossier.dossier_id}${userId ? `?user_id=${userId}` : ""}`)}
                   >
                     <div className="flex">
-                      {/* Urgency indicator bar */}
-                      <div className={`w-1.5 shrink-0 ${urgencyColor[dossier.urgency] ?? "bg-muted"}`} />
+                      <div className={`w-1.5 shrink-0 ${dossier.needs_immediate_attention ? "bg-destructive" : "bg-muted"}`} />
 
                       <CardContent className="p-5 flex-1">
                         <div className="flex items-start justify-between gap-3 mb-2">
@@ -257,13 +247,13 @@ const Dashboard = () => {
                             <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                               {dossier.nom}
                             </h3>
-                            <span className="text-xs text-gray-600">
-                              {dossier.new_emails_count} nouveau{dossier.new_emails_count > 1 ? "x" : ""} email{dossier.new_emails_count > 1 ? "s" : ""}
+                            <span className="text-xs text-muted-foreground">
+                              {dossier.new_emails_count} email{dossier.new_emails_count > 1 ? "s" : ""} reçu{dossier.new_emails_count > 1 ? "s" : ""}
                             </span>
                           </div>
                           {dossier.needs_immediate_attention && (
                             <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-destructive/10 text-destructive text-[11px] font-semibold px-2 py-0.5">
-                              ⚡ Urgent
+                              📅 Deadline proche
                             </span>
                           )}
                         </div>
@@ -272,15 +262,32 @@ const Dashboard = () => {
                           {dossier.summary}
                         </p>
 
-                        {dossier.suggested_actions.length > 0 && (
-                          <ul className="space-y-1.5">
-                            {dossier.suggested_actions.map((action, j) => (
-                              <li key={j} className="flex items-start gap-2 text-sm text-gray-600">
-                                <Circle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-                                <span>{action}</span>
-                              </li>
-                            ))}
-                          </ul>
+                        {dossier.dates_cles?.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-xs font-semibold text-foreground mb-1.5">📅 Dates</p>
+                            <ul className="space-y-1">
+                              {dossier.dates_cles.map((date, j) => (
+                                <li key={j} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                  <span>{date}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {dossier.emails_recus?.length > 0 && (
+                          <div>
+                            <p className="text-xs font-semibold text-foreground mb-1.5">📨 Courrier reçu</p>
+                            <ul className="space-y-1">
+                              {dossier.emails_recus.map((email, j) => (
+                                <li key={j} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                  <span>{email}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         )}
                       </CardContent>
                     </div>
