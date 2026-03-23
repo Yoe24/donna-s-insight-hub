@@ -3,7 +3,8 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Mail, FolderOpen, CalendarDays, Reply } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2, RefreshCw, Mail, FolderOpen, CalendarDays, Reply, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -35,25 +36,24 @@ interface BriefData {
   };
 }
 
-// ── Helpers ──
+// ── Animated counter ──
 
-function useAnimatedCounter(target: number, duration = 1000) {
+function useAnimatedCounter(target: number, duration = 1200) {
   const [count, setCount] = useState(0);
   useEffect(() => {
     if (target === 0) { setCount(0); return; }
-    const startTime = performance.now();
+    const start = performance.now();
     const tick = (now: number) => {
-      const progress = Math.min((now - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.round(target * eased));
-      if (progress < 1) requestAnimationFrame(tick);
+      const p = Math.min((now - start) / duration, 1);
+      setCount(Math.round(target * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
   }, [target, duration]);
   return count;
 }
 
-// ── Main Dashboard ──
+// ── Dashboard ──
 
 const Dashboard = () => {
   const [searchParams] = useSearchParams();
@@ -62,9 +62,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [nomAvocat, setNomAvocat] = useState<string>("");
+  const [nomAvocat, setNomAvocat] = useState("");
 
-  // Capture user_id from URL
   useEffect(() => {
     const userId = searchParams.get("user_id");
     if (userId) {
@@ -79,12 +78,8 @@ const Dashboard = () => {
       setBrief(data);
       setNotFound(false);
     } catch (e: any) {
-      if (e?.message?.includes("404")) {
-        setNotFound(true);
-      } else {
-        console.error("Error fetching brief:", e);
-        toast.error("Impossible de charger le brief");
-      }
+      if (e?.message?.includes("404")) setNotFound(true);
+      else { console.error(e); toast.error("Impossible de charger le brief"); }
     } finally {
       setLoading(false);
     }
@@ -93,7 +88,7 @@ const Dashboard = () => {
   useEffect(() => {
     fetchBrief();
     apiGet<{ nom_avocat?: string }>("/api/config")
-      .then(data => { if (data?.nom_avocat) setNomAvocat(data.nom_avocat); })
+      .then((d) => { if (d?.nom_avocat) setNomAvocat(d.nom_avocat); })
       .catch(() => {});
   }, [fetchBrief]);
 
@@ -101,66 +96,56 @@ const Dashboard = () => {
     setGenerating(true);
     try {
       await apiPost("/api/briefs/generate");
-      toast.success("Brief généré avec succès");
+      toast.success("Brief généré");
       setLoading(true);
       setNotFound(false);
       await fetchBrief();
-    } catch {
-      toast.error("Erreur lors de la génération du brief");
-    } finally {
-      setGenerating(false);
-    }
+    } catch { toast.error("Erreur lors de la génération"); }
+    finally { setGenerating(false); }
   };
 
   const now = new Date();
-  const currentHour = now.getHours();
-  const greeting = currentHour < 12 ? "Bonjour" : currentHour < 18 ? "Bon après-midi" : "Bonsoir";
+  const h = now.getHours();
+  const greeting = h < 12 ? "Bonjour" : h < 18 ? "Bon après-midi" : "Bonsoir";
   const dateStr = format(now, "EEEE d MMMM yyyy", { locale: fr });
 
   const stats = brief?.content.stats;
-  const animatedEmails = useAnimatedCounter(stats?.emails_analyzed ?? 0, 1500);
-  const animatedDossiers = useAnimatedCounter(stats?.dossiers_count ?? 0, 1500);
-  const animatedDeadlines = useAnimatedCounter(stats?.deadline_soon_count ?? 0, 1500);
-  const animatedResponses = useAnimatedCounter(stats?.needs_response_count ?? 0, 1500);
-
-  const sortedDossiers = brief?.content.dossiers
-    ? [...brief.content.dossiers].sort((a, b) => (a.needs_immediate_attention === b.needs_immediate_attention ? 0 : a.needs_immediate_attention ? -1 : 1))
-    : [];
+  const aEmails = useAnimatedCounter(stats?.emails_analyzed ?? 0);
+  const aDossiers = useAnimatedCounter(stats?.dossiers_count ?? 0);
+  const aDeadlines = useAnimatedCounter(stats?.deadline_soon_count ?? 0);
+  const aResponses = useAnimatedCounter(stats?.needs_response_count ?? 0);
 
   const userId = localStorage.getItem("donna_user_id");
+  const allDossiers = brief?.content.dossiers ?? [];
+  const urgentDossiers = allDossiers.filter((d) => d.needs_immediate_attention);
+  const visibleDossiers = allDossiers.slice(0, 5);
+  const hasMore = allDossiers.length > 5;
 
-  // ── Loading state ──
+  // ── Loading skeleton ──
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="mt-8 mb-10 space-y-3">
-            <div className="h-8 w-72 bg-muted animate-pulse rounded" />
-            <div className="h-5 w-48 bg-muted animate-pulse rounded" />
-            <div className="h-24 w-full bg-muted animate-pulse rounded-xl mt-4" />
-          </div>
+        <div className="max-w-4xl mx-auto space-y-6 pt-8">
+          <Skeleton className="h-7 w-80" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-20 bg-muted animate-pulse rounded-xl" />
-            ))}
+            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
           </div>
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-32 bg-muted animate-pulse rounded-xl" />
-          ))}
+          <Skeleton className="h-5 w-32 mt-6" />
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
         </div>
       </DashboardLayout>
     );
   }
 
-  // ── 404: No brief yet ──
+  // ── 404 — No brief ──
   if (notFound || !brief) {
     return (
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto text-center py-20">
-          <Loader2 className={`h-8 w-8 mx-auto mb-4 text-muted-foreground ${generating ? "animate-spin" : ""}`} />
-          <p className="text-xl font-serif text-foreground mb-2">Donna prépare votre brief…</p>
-          <p className="text-sm text-gray-600 mb-6">Votre résumé quotidien sera prêt dans quelques instants.</p>
-          <Button onClick={handleGenerate} disabled={generating} className="gap-2">
+        <div className="max-w-4xl mx-auto text-center py-24">
+          <Loader2 className={`h-7 w-7 mx-auto mb-4 text-muted-foreground ${generating ? "animate-spin" : ""}`} />
+          <p className="text-lg font-serif text-foreground mb-1">Donna prépare votre brief…</p>
+          <p className="text-sm text-muted-foreground mb-6">Votre résumé quotidien sera prêt dans quelques instants.</p>
+          <Button onClick={handleGenerate} disabled={generating} variant="outline" className="gap-2">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Générer le brief
           </Button>
@@ -174,127 +159,114 @@ const Dashboard = () => {
     <DashboardLayout>
       <div className="max-w-4xl mx-auto pb-12">
 
-        {/* SECTION 1 — Résumé exécutif */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="mt-8 mb-8 rounded-xl bg-accent/40 border border-accent p-6"
+        {/* 1 — Header line */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="pt-8 pb-6 text-lg font-serif text-foreground"
         >
-          <div className="flex items-baseline justify-between flex-wrap gap-2 mb-3">
-            <h1 className="text-2xl font-serif font-bold text-foreground">
-              {greeting}{nomAvocat ? ` ${nomAvocat}` : ""}
-            </h1>
-            <span className="text-sm text-gray-600 capitalize">{dateStr}</span>
-          </div>
-          <p className="text-base sm:text-lg leading-relaxed text-foreground/90">
-            {brief.content.executive_summary}
-          </p>
-        </motion.div>
+          {greeting}{nomAvocat ? ` ${nomAvocat}` : ""} — <span className="capitalize">{dateStr}</span>
+        </motion.p>
 
-        {/* SECTION 2 — KPI cards */}
+        {/* 2 — KPI cards */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.4 }}
+          transition={{ delay: 0.1, duration: 0.35 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10"
         >
           {[
-            { icon: <Mail className="h-4 w-4 text-primary" />, value: animatedEmails, label: "emails traités" },
-            { icon: <FolderOpen className="h-4 w-4 text-primary" />, value: animatedDossiers, label: "dossiers actifs" },
-            { icon: <CalendarDays className="h-4 w-4 text-destructive" />, value: animatedDeadlines, label: "deadline(s) proche(s)" },
-            { icon: <Reply className="h-4 w-4 text-primary" />, value: animatedResponses, label: "en attente de réponse" },
+            { icon: <Mail className="h-5 w-5 text-muted-foreground" />, value: aEmails, label: "emails traités", alert: false },
+            { icon: <FolderOpen className="h-5 w-5 text-muted-foreground" />, value: aDossiers, label: "dossiers actifs", alert: false },
+            { icon: <CalendarDays className="h-5 w-5 text-muted-foreground" />, value: aDeadlines, label: "deadline(s) proche(s)", alert: (stats?.deadline_soon_count ?? 0) > 0 },
+            { icon: <Reply className="h-5 w-5 text-muted-foreground" />, value: aResponses, label: "en attente de réponse", alert: false },
           ].map((kpi, i) => (
-            <Card key={i} className="bg-card border-border">
-              <CardContent className="p-4 flex flex-col items-center text-center gap-1">
+            <Card key={i} className={`bg-card shadow-sm ${kpi.alert ? "border-destructive/40" : "border-border"}`}>
+              <CardContent className="p-4 flex flex-col gap-1">
                 {kpi.icon}
-                <span className="text-2xl font-extrabold tabular-nums text-foreground">{kpi.value}</span>
-                <span className="text-xs text-gray-600">{kpi.label}</span>
+                <span className="text-2xl font-bold tabular-nums text-foreground">{kpi.value}</span>
+                <span className="text-xs text-muted-foreground">{kpi.label}</span>
               </CardContent>
             </Card>
           ))}
         </motion.div>
 
-        {/* SECTION 3 — Dossiers par priorité */}
+        {/* 3 — À traiter (urgent only) */}
+        {urgentDossiers.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.3 }}
+            className="mb-10"
+          >
+            <h2 className="text-sm font-semibold text-foreground mb-3 tracking-wide uppercase">À traiter</h2>
+            <div className="space-y-2">
+              {urgentDossiers.map((d) => (
+                <div
+                  key={d.dossier_id}
+                  onClick={() => navigate(`/dossiers/${d.dossier_id}${userId ? `?user_id=${userId}` : ""}`)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-card border border-border hover:shadow-sm cursor-pointer transition-shadow group"
+                >
+                  <span className="h-2.5 w-2.5 rounded-full bg-destructive shrink-0" />
+                  <span className="font-medium text-sm text-foreground truncate">{d.nom}</span>
+                  {d.dates_cles?.[0] && (
+                    <span className="hidden sm:inline text-xs text-muted-foreground shrink-0">
+                      {d.dates_cles[0]}
+                    </span>
+                  )}
+                  <span className="text-xs text-muted-foreground truncate flex-1 hidden md:inline">
+                    {d.summary}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* 4 — Vos dossiers */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.3 }}
         >
-          <h2 className="text-lg font-serif font-semibold text-foreground mb-4">Vos dossiers</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-3 tracking-wide uppercase">Vos dossiers</h2>
 
-          {sortedDossiers.length === 0 ? (
-            <p className="text-sm text-gray-600 py-8 text-center">Aucun dossier actif pour aujourd'hui.</p>
+          {allDossiers.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">Aucun dossier actif aujourd'hui.</p>
           ) : (
-            <div className="space-y-4">
-              {sortedDossiers.map((dossier, i) => (
-                <motion.div
-                  key={dossier.dossier_id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35 + i * 0.07, duration: 0.3 }}
-                >
+            <>
+              <div className="space-y-3">
+                {visibleDossiers.map((d, i) => (
                   <Card
-                    className="bg-card border-border hover:shadow-md transition-shadow cursor-pointer group overflow-hidden"
-                    onClick={() => navigate(`/dossiers/${dossier.dossier_id}${userId ? `?user_id=${userId}` : ""}`)}
+                    key={d.dossier_id}
+                    className="bg-card border-border hover:shadow-sm transition-shadow cursor-pointer overflow-hidden"
+                    onClick={() => navigate(`/dossiers/${d.dossier_id}${userId ? `?user_id=${userId}` : ""}`)}
                   >
                     <div className="flex">
-                      <div className={`w-1.5 shrink-0 ${dossier.needs_immediate_attention ? "bg-destructive" : "bg-muted"}`} />
-
-                      <CardContent className="p-5 flex-1">
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                          <div>
-                            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                              {dossier.nom}
-                            </h3>
-                            <span className="text-xs text-muted-foreground">
-                              {dossier.new_emails_count} email{dossier.new_emails_count > 1 ? "s" : ""} reçu{dossier.new_emails_count > 1 ? "s" : ""}
-                            </span>
-                          </div>
-                          {dossier.needs_immediate_attention && (
-                            <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-destructive/10 text-destructive text-[11px] font-semibold px-2 py-0.5">
-                              📅 Deadline proche
-                            </span>
-                          )}
+                      <div className={`w-1 shrink-0 ${d.needs_immediate_attention ? "bg-destructive" : "bg-muted"}`} />
+                      <CardContent className="p-4 flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2 mb-0.5">
+                          <h3 className="font-semibold text-sm text-foreground truncate">{d.nom}</h3>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {d.new_emails_count} email{d.new_emails_count > 1 ? "s" : ""} reçu{d.new_emails_count > 1 ? "s" : ""}
+                          </span>
                         </div>
-
-                        <p className="text-sm text-foreground/80 leading-relaxed line-clamp-3 mb-3">
-                          {dossier.summary}
-                        </p>
-
-                        {dossier.dates_cles?.length > 0 && (
-                          <div className="mb-3">
-                            <p className="text-xs font-semibold text-foreground mb-1.5">📅 Dates</p>
-                            <ul className="space-y-1">
-                              {dossier.dates_cles.map((date, j) => (
-                                <li key={j} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                                  <span>{date}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {dossier.emails_recus?.length > 0 && (
-                          <div>
-                            <p className="text-xs font-semibold text-foreground mb-1.5">📨 Courrier reçu</p>
-                            <ul className="space-y-1">
-                              {dossier.emails_recus.map((email, j) => (
-                                <li key={j} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                                  <span>{email}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                        <p className="text-sm text-muted-foreground line-clamp-1">{d.summary}</p>
                       </CardContent>
                     </div>
                   </Card>
-                </motion.div>
-              ))}
-            </div>
+                ))}
+              </div>
+
+              {hasMore && (
+                <div className="mt-4 text-center">
+                  <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => navigate("/fil")}>
+                    Voir tous les dossiers →
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </motion.div>
       </div>
