@@ -120,11 +120,11 @@ const Dashboard = () => {
   const stats = brief?.content.stats;
   const animatedEmails = useAnimatedCounter(stats?.emails_analyzed ?? 0, 1500);
   const animatedDossiers = useAnimatedCounter(stats?.dossiers_count ?? 0, 1500);
-  const animatedUrgent = useAnimatedCounter(stats?.urgent_count ?? 0, 1500);
+  const animatedDeadlines = useAnimatedCounter(stats?.deadline_soon_count ?? 0, 1500);
   const animatedResponses = useAnimatedCounter(stats?.needs_response_count ?? 0, 1500);
 
   const sortedDossiers = brief?.content.dossiers
-    ? [...brief.content.dossiers].sort((a, b) => (urgencyOrder[a.urgency] ?? 2) - (urgencyOrder[b.urgency] ?? 2))
+    ? [...brief.content.dossiers].sort((a, b) => (a.needs_immediate_attention === b.needs_immediate_attention ? 0 : a.needs_immediate_attention ? -1 : 1))
     : [];
 
   const userId = localStorage.getItem("donna_user_id");
