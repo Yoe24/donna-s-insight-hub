@@ -4,12 +4,11 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, FileText, File, ChevronDown, Sparkles, Paperclip, MessageSquare, RefreshCw } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, File, CalendarDays, Mail, Paperclip, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { Email } from "@/hooks/useEmails";
 import { apiGet } from "@/lib/api";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { EmailDrawer } from "@/components/EmailDrawer";
 
 interface DossierDetailData {
@@ -36,16 +35,23 @@ interface DossierDocument {
   contenu_extrait?: string;
   date_reception?: string;
   created_at: string;
+  email_id?: string;
+  expediteur?: string;
 }
 
 interface DossierEmail extends Email {
   contenu?: string;
+  classification?: {
+    needs_response?: boolean;
+    key_dates?: { date: string; description: string }[];
+    [key: string]: any;
+  };
 }
 
 const statutBadge = (statut: string) => {
   switch (statut) {
     case "actif":
-      return <span className="inline-flex items-center rounded-full bg-prospect-light text-prospect-foreground text-xs px-2.5 py-1 font-medium">Actif</span>;
+      return <span className="inline-flex items-center rounded-full bg-[#10B981]/10 text-[#10B981] text-xs px-2.5 py-1 font-medium">Actif</span>;
     case "en_attente":
       return <span className="inline-flex items-center rounded-full bg-orange-100 text-orange-800 text-xs px-2.5 py-1 font-medium">En attente</span>;
     case "archive":
@@ -69,41 +75,20 @@ const formatDateFr = (dateStr: string) => {
 
 const getDocIcon = (type: string) => {
   const t = type?.toLowerCase() || "";
-  if (t.includes("pdf")) return <FileText className="h-4 w-4 text-red-500 shrink-0" />;
-  if (t.includes("word") || t.includes("doc")) return <File className="h-4 w-4 text-client shrink-0" />;
+  if (t.includes("pdf")) return <FileText className="h-4 w-4 text-destructive shrink-0" />;
+  if (t.includes("word") || t.includes("doc")) return <File className="h-4 w-4 text-primary shrink-0" />;
   return <FileText className="h-4 w-4 text-muted-foreground shrink-0" />;
 };
 
-// Parse the structured resume_situation field
-function parseResumeSituation(text: string) {
-  const sections = {
-    client: '',
-    besoin: '',
-    situation: '',
-    enAttente: '',
-    pieces: '',
-    echanges: '',
-    prochaineAction: '',
-  };
-  if (!text) return sections;
-
-  const clientMatch = text.match(/👤[^\n]*?:\s*([\s\S]*?)(?=📌|📊|⏳|📎|💬|🎯|$)/);
-  const besoinMatch = text.match(/📌[^\n]*?:\s*([\s\S]*?)(?=📊|⏳|📎|💬|🎯|$)/);
-  const situationMatch = text.match(/📊[^\n]*?:\s*([\s\S]*?)(?=⏳|📎|💬|🎯|$)/);
-  const attenteMatch = text.match(/⏳[^\n]*?:\s*([\s\S]*?)(?=📎|💬|🎯|$)/);
-  const piecesMatch = text.match(/📎[^\n]*?:\s*([\s\S]*?)(?=💬|🎯|$)/);
-  const echangesMatch = text.match(/💬[^\n]*?:\s*([\s\S]*?)(?=🎯|$)/);
-  const actionMatch = text.match(/🎯[^\n]*?:\s*([\s\S]*?)$/);
-
-  if (clientMatch) sections.client = clientMatch[1].trim();
-  if (besoinMatch) sections.besoin = besoinMatch[1].trim();
-  if (situationMatch) sections.situation = situationMatch[1].trim();
-  if (attenteMatch) sections.enAttente = attenteMatch[1].trim();
-  if (piecesMatch) sections.pieces = piecesMatch[1].trim();
-  if (echangesMatch) sections.echanges = echangesMatch[1].trim();
-  if (actionMatch) sections.prochaineAction = actionMatch[1].trim();
-
-  return sections;
+function isWithin7Days(dateStr: string): boolean {
+  try {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = date.getTime() - now.getTime();
+    return diff > 0 && diff < 7 * 24 * 60 * 60 * 1000;
+  } catch {
+    return false;
+  }
 }
 
 const DossierDetailPage = () => {
@@ -122,7 +107,6 @@ const DossierDetailPage = () => {
       setDossier(data);
       setDocuments(data.dossier_documents || []);
 
-      // Use emails from dossier response, or fetch separately
       if (data.emails && data.emails.length > 0) {
         setEmails(data.emails);
       } else {
@@ -150,8 +134,12 @@ const DossierDetailPage = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <div className="max-w-5xl mx-auto py-8 space-y-6">
+          <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+          <div className="h-8 w-64 bg-muted animate-pulse rounded" />
+          <div className="h-4 w-48 bg-muted animate-pulse rounded" />
+          <div className="h-32 bg-muted animate-pulse rounded-xl" />
+          <div className="h-48 bg-muted animate-pulse rounded-xl" />
         </div>
       </DashboardLayout>
     );
@@ -182,191 +170,218 @@ const DossierDetailPage = () => {
     );
   }
 
-  const rapport = parseResumeSituation(dossier.resume_situation);
-  const hasRapport = Object.values(rapport).some(v => v.length > 0);
   const sortedEmails = [...emails].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-  const isEnAttenteVide = !rapport.enAttente || rapport.enAttente.toLowerCase().includes("rien") || rapport.enAttente.toLowerCase().includes("aucun");
+  // Extract all key_dates from email classifications
+  const allKeyDates: { date: string; description: string }[] = [];
+  sortedEmails.forEach((email) => {
+    const kd = email.classification?.key_dates;
+    if (kd && Array.isArray(kd)) {
+      kd.forEach((d) => allKeyDates.push(d));
+    }
+  });
+
+  // Build timeline events: emails + documents
+  const timelineEvents = [
+    ...sortedEmails.map((e) => ({
+      type: "email" as const,
+      date: e.created_at,
+      title: e.objet,
+      subtitle: e.expediteur,
+      summary: e.resume || "",
+      email: e,
+    })),
+    ...documents.map((d) => ({
+      type: "document" as const,
+      date: d.date_reception || d.created_at,
+      title: d.nom_fichier || d.nom || "Document",
+      subtitle: d.expediteur || "",
+      summary: d.type || "",
+      email: null as DossierEmail | null,
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto pb-12">
         {/* Back */}
         <Link
-           to="/dashboard"
+          to="/dashboard"
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-5 transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Retour
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main — 2/3 */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-8">
             {/* Header */}
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
               <div className="flex items-start justify-between gap-4 mb-1">
                 <div>
-                  <h1 className="text-2xl font-serif font-bold text-foreground">{dossier.nom || dossier.name || dossier.nom_client}</h1>
-                  <p className="text-sm text-muted-foreground font-sans mt-0.5">{dossier.email_client}</p>
+                  <h1 className="text-2xl font-serif font-bold text-foreground">
+                    {dossier.nom || dossier.name || dossier.nom_client}
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-0.5">{dossier.email_client}</p>
                 </div>
                 {statutBadge(dossier.statut)}
               </div>
-              <div className="inline-flex items-center rounded-md bg-secondary text-secondary-foreground text-xs px-2.5 py-1 font-medium mt-2">
-                {dossier.domaine}
-              </div>
+              {dossier.domaine && (
+                <span className="inline-flex items-center rounded-md bg-secondary text-secondary-foreground text-xs px-2.5 py-1 font-medium mt-2">
+                  {dossier.domaine}
+                </span>
+              )}
             </motion.div>
 
-            {/* Rapport Donna */}
-            {hasRapport ? (
+            {/* Résumé */}
+            {dossier.resume_situation && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="rounded-xl border-l-4 border-l-donna bg-card border border-border shadow-sm overflow-hidden"
               >
-                {/* Donna header */}
-                <div className="flex items-center gap-2.5 px-5 pt-5 pb-3">
-                  <div className="h-7 w-7 rounded-full bg-donna-light flex items-center justify-center">
-                    <Sparkles className="h-3.5 w-3.5 text-donna" />
-                  </div>
-                  <p className="text-sm font-semibold text-foreground">Rapport Donna</p>
-                </div>
-
-                <div className="px-5 pb-5 space-y-4">
-                  {/* Besoin */}
-                  {rapport.besoin && (
-                    <div className="rounded-lg bg-muted/50 p-4">
-                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">📌 Besoin</p>
-                      <p className="text-sm text-foreground leading-relaxed">{rapport.besoin}</p>
-                    </div>
-                  )}
-
-                  {/* Situation actuelle */}
-                  {rapport.situation && (
-                    <div className="p-4">
-                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">📊 Situation actuelle</p>
-                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{rapport.situation}</p>
-                    </div>
-                  )}
-
-                  {/* En attente */}
-                  {rapport.enAttente && (
-                    <div className={`rounded-lg p-4 ${isEnAttenteVide ? "bg-prospect-light" : "bg-orange-50"}`}>
-                      <p className={`text-[11px] font-semibold uppercase tracking-wide mb-1.5 ${isEnAttenteVide ? "text-prospect-foreground" : "text-orange-700"}`}>
-                        ⏳ En attente
-                      </p>
-                      <p className={`text-sm leading-relaxed ${isEnAttenteVide ? "text-prospect-foreground" : "text-orange-800"}`}>
-                        {rapport.enAttente}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Prochaine action */}
-                  {rapport.prochaineAction && (
-                    <div className="rounded-lg bg-client-light p-4">
-                      <p className="text-[11px] font-semibold text-client-foreground uppercase tracking-wide mb-1.5">🎯 Prochaine action recommandée</p>
-                      <p className="text-sm font-medium text-client-foreground leading-relaxed">{rapport.prochaineAction}</p>
-                    </div>
-                  )}
+                <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-3">Résumé</h2>
+                <div className="rounded-xl bg-card border border-border p-5">
+                  <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">
+                    {dossier.resume_situation}
+                  </p>
                 </div>
               </motion.div>
-            ) : dossier.resume_situation ? (
-              <Card>
-                <CardContent className="p-5">
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{dossier.resume_situation}</p>
-                </CardContent>
-              </Card>
-            ) : null}
-
-            {/* Pièces jointes — collapsed */}
-            {documents.length > 0 && (
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group w-full text-left">
-                    <Paperclip className="h-4 w-4" />
-                    <span>📎 Voir les {documents.length} pièce{documents.length > 1 ? "s" : ""} échangée{documents.length > 1 ? "s" : ""}</span>
-                    <ChevronDown className="h-3.5 w-3.5 ml-auto transition-transform group-data-[state=open]:rotate-180" />
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="mt-3 space-y-2">
-                    {documents.map((doc) => (
-                      <Collapsible key={doc.id}>
-                        <Card className="bg-card">
-                          <CardContent className="p-3">
-                            <div className="flex items-center gap-3">
-                              {getDocIcon(doc.type)}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{doc.nom_fichier || doc.nom}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {doc.date_reception ? formatDateFr(doc.date_reception) : formatDateFr(doc.created_at)}
-                                </p>
-                              </div>
-                              {doc.contenu_extrait && (
-                                <CollapsibleTrigger asChild>
-                                  <button className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-                                    Extrait <ChevronDown className="h-3 w-3" />
-                                  </button>
-                                </CollapsibleTrigger>
-                              )}
-                            </div>
-                            {doc.contenu_extrait && (
-                              <CollapsibleContent>
-                                <div className="mt-3 pt-3 border-t border-border">
-                                  <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{doc.contenu_extrait}</p>
-                                </div>
-                              </CollapsibleContent>
-                            )}
-                          </CardContent>
-                        </Card>
-                      </Collapsible>
-                    ))}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
             )}
 
-            {/* Historique emails — collapsed */}
-            {sortedEmails.length > 0 && (
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group w-full text-left">
-                    <MessageSquare className="h-4 w-4" />
-                    <span>💬 Voir les {sortedEmails.length} email{sortedEmails.length > 1 ? "s" : ""} échangé{sortedEmails.length > 1 ? "s" : ""}</span>
-                    <ChevronDown className="h-3.5 w-3.5 ml-auto transition-transform group-data-[state=open]:rotate-180" />
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="mt-3 space-y-1.5">
-                    {sortedEmails.map((email) => (
-                      <Card
-                        key={email.id}
-                        className="bg-card hover:shadow-md hover:bg-muted/30 transition-all cursor-pointer"
-                        onClick={() => setSelectedEmail(email)}
+            {/* Dates clés */}
+            {allKeyDates.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+              >
+                <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-3">Dates clés</h2>
+                <div className="space-y-2">
+                  {allKeyDates.map((kd, i) => {
+                    const urgent = isWithin7Days(kd.date);
+                    return (
+                      <div
+                        key={i}
+                        className={`flex items-center gap-3 rounded-lg px-4 py-3 border ${
+                          urgent
+                            ? "bg-destructive/5 border-destructive/20"
+                            : "bg-card border-border"
+                        }`}
                       >
-                        <CardContent className="p-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-foreground truncate">{email.expediteur}</span>
-                                <span className="text-[11px] text-muted-foreground shrink-0">{formatDateFr(email.created_at)}</span>
-                              </div>
-                              <p className="text-xs text-muted-foreground truncate mt-0.5">{email.objet}</p>
-                            </div>
+                        <CalendarDays className={`h-4 w-4 shrink-0 ${urgent ? "text-destructive" : "text-muted-foreground"}`} />
+                        <span className={`text-sm font-medium ${urgent ? "text-destructive" : "text-foreground"}`}>
+                          {kd.date}
+                        </span>
+                        <span className="text-sm text-muted-foreground">{kd.description}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Chronologie */}
+            {timelineEvents.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-3">Chronologie</h2>
+                <div className="relative">
+                  {/* Vertical line */}
+                  <div className="absolute left-[18px] top-2 bottom-2 w-px bg-border" />
+
+                  <div className="space-y-0">
+                    {timelineEvents.map((event, i) => (
+                      <div
+                        key={i}
+                        className={`relative flex items-start gap-4 py-3 pl-10 pr-4 rounded-lg transition-colors ${
+                          event.type === "email"
+                            ? "hover:bg-muted/50 cursor-pointer"
+                            : ""
+                        }`}
+                        onClick={() => {
+                          if (event.type === "email" && event.email) {
+                            setSelectedEmail(event.email);
+                          }
+                        }}
+                      >
+                        {/* Icon on the line */}
+                        <div className="absolute left-2.5 top-3.5 z-10 h-7 w-7 rounded-full bg-background border border-border flex items-center justify-center">
+                          {event.type === "email" ? (
+                            <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                          ) : (
+                            <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+                          )}
+                        </div>
+
+                        {/* Date */}
+                        <span className="text-[11px] text-muted-foreground w-20 shrink-0 pt-0.5 tabular-nums">
+                          {formatDateFr(event.date)}
+                        </span>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-foreground truncate">{event.subtitle}</span>
                           </div>
-                        </CardContent>
-                      </Card>
+                          <p className="text-sm text-foreground/80 truncate">{event.title}</p>
+                          {event.summary && (
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{event.summary}</p>
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
+                </div>
+              </motion.div>
             )}
+
+            {/* Documents */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+            >
+              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-3">
+                Documents et pièces jointes
+              </h2>
+              {documents.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4">
+                  Aucune pièce jointe détectée pour le moment
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center gap-3 rounded-lg bg-card border border-border px-4 py-3"
+                    >
+                      {getDocIcon(doc.type)}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {doc.nom_fichier || doc.nom}
+                        </p>
+                        {doc.expediteur && (
+                          <p className="text-xs text-muted-foreground">de {doc.expediteur}</p>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {formatDateFr(doc.date_reception || doc.created_at)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
           </div>
 
           {/* Sidebar — 1/3 */}
           <div className="space-y-6">
-            <Card>
+            <Card className="border-border">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Informations</CardTitle>
               </CardHeader>

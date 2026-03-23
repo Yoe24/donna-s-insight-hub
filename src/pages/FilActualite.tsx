@@ -177,6 +177,9 @@ const FilActualite = () => {
   // Filters
   const [filterPipeline, setFilterPipeline] = useState("all");
   const [filterDossier, setFilterDossier] = useState("all");
+  const [filterUnclassified, setFilterUnclassified] = useState(
+    () => searchParams.get("filter") === "unclassified"
+  );
 
   // Client-side pagination
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -230,6 +233,7 @@ const FilActualite = () => {
   // Apply filters
   const filteredEmails = allEmails
     .filter(e => {
+      if (filterUnclassified && (e as any).dossier_id) return false;
       if (filterPipeline !== "all" && e.pipeline_step !== filterPipeline) return false;
       if (filterDossier !== "all" && (e as any).dossier_id !== filterDossier) return false;
       return true;
@@ -251,7 +255,7 @@ const FilActualite = () => {
   // Reset pagination when filters change
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [filterPipeline, filterDossier]);
+  }, [filterPipeline, filterDossier, filterUnclassified]);
 
   if (loading) {
     return (
@@ -355,6 +359,15 @@ const FilActualite = () => {
                 ))}
               </SelectContent>
             </Select>
+          )}
+
+          {filterUnclassified && (
+            <button
+              onClick={() => setFilterUnclassified(false)}
+              className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
+            >
+              Non classés uniquement ✕
+            </button>
           )}
 
           <span className="text-xs text-muted-foreground ml-auto">

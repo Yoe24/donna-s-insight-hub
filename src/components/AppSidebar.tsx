@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { LayoutDashboard, Settings, LogOut, Mail, Paperclip } from "lucide-react";
+import { useState, useEffect } from "react";
+import { LayoutDashboard, Settings, LogOut, Mail, Paperclip, InboxIcon } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,24 +28,13 @@ import {
 } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { apiGet } from "@/lib/api";
 
 const navItems = [
   { title: "Aujourd'hui", url: "/dashboard", icon: LayoutDashboard },
   { title: "Fil d'actualité", url: "/fil", icon: Mail },
   { title: "Configurez-moi", url: "/configuration", icon: Settings },
 ];
-
-const statutColor: Record<string, string> = {
-  actif: "bg-green-500",
-  en_attente: "bg-orange-400",
-  archive: "bg-muted-foreground/40",
-};
-
-function isRecent(dateStr: string | undefined) {
-  if (!dateStr) return false;
-  const diff = Date.now() - new Date(dateStr).getTime();
-  return diff < 24 * 60 * 60 * 1000;
-}
 
 function getInitials(name: string) {
   return name
@@ -56,6 +45,12 @@ function getInitials(name: string) {
     .slice(0, 2);
 }
 
+interface BriefDossier {
+  dossier_id: string;
+  needs_immediate_attention: boolean;
+  new_emails_count: number;
+}
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -64,6 +59,35 @@ export function AppSidebar() {
   const { dossiers, loading } = useDossiers();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Brief data for attention indicators
+  const [briefDossiers, setBriefDossiers] = useState<BriefDossier[]>([]);
+  const [unclassifiedCount, setUnclassifiedCount] = useState(0);
+
+  useEffect(() => {
+    const fetchBriefData = async () => {
+      try {
+        const brief = await apiGet<any>("/api/briefs/today");
+        setBriefDossiers(brief?.content?.dossiers || []);
+      } catch {
+        // silent
+      }
+      try {
+        const emails = await apiGet<any[]>("/api/emails");
+        const unclassified = (emails || []).filter((e) => !e.dossier_id);
+        setUnclassifiedCount(unclassified.length);
+      } catch {
+        // silent
+      }
+    };
+    fetchBriefData();
+    const interval = setInterval(fetchBriefData, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getBriefInfo = (dossierId: string) => {
+    return briefDossiers.find((bd) => bd.dossier_id === dossierId);
+  };
 
   const handleLogout = async () => {
     localStorage.removeItem("donna_user_id");
@@ -119,7 +143,6 @@ export function AppSidebar() {
               <ScrollArea className="flex-1 overflow-y-auto">
                 <SidebarMenu>
                   {loading ? (
-                    /* Skeletons */
                     Array.from({ length: 4 }).map((_, i) => (
                       <SidebarMenuItem key={i}>
                         <div className="flex items-center gap-2 px-3 py-2">
@@ -148,10 +171,9 @@ export function AppSidebar() {
                   ) : (
                     dossiers.map((dossier) => {
                       const active = location.pathname === `/dossiers/${dossier.id}`;
-                      const recent = isRecent(dossier.dernier_echange_date);
-                      const hasNewEmails = (dossier.nouveaux_emails ?? 0) > 0;
-                      const hasNewPieces = (dossier.nouvelles_pieces ?? 0) > 0;
-                      const hasNotif = hasNewEmails || hasNewPieces || recent;
+                      const briefInfo = getBriefInfo(dossier.id);
+                      const needsAttention = briefInfo?.needs_immediate_attention ?? false;
+                      const newEmails = briefInfo?.new_emails_count ?? 0;
 
                       return (
                         <SidebarMenuItem key={dossier.id}>
@@ -178,47 +200,30 @@ export function AppSidebar() {
                                 >
                                   {getInitials(dossier.nom_client)}
                                 </div>
-                                {/* Status dot */}
+                                {/* Status dot: red if needs attention, green otherwise */}
                                 <span
                                   className={cn(
                                     "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-sidebar",
-                                    statutColor[dossier.statut] || "bg-muted-foreground/40"
+                                    needsAttention ? "bg-destructive" : "bg-[#10B981]"
                                   )}
                                 />
                               </div>
 
                               {!collapsed && (
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-1.5">
                                     <span className="truncate text-sm font-medium leading-tight">
                                       {dossier.nom_client}
                                     </span>
-                                    {hasNotif && (
-                                      <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                                    {newEmails > 0 && (
+                                      <span className="inline-flex items-center justify-center h-4 min-w-[16px] rounded-full bg-foreground/10 text-[10px] font-semibold text-foreground px-1">
+                                        {newEmails}
+                                      </span>
                                     )}
                                   </div>
-
-                                  {/* Notification badges */}
-                                  {(hasNewEmails || hasNewPieces) ? (
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                      {hasNewEmails && (
-                                        <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                                          <Mail className="h-2.5 w-2.5" />
-                                          +{dossier.nouveaux_emails}
-                                        </span>
-                                      )}
-                                      {hasNewPieces && (
-                                        <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                                          <Paperclip className="h-2.5 w-2.5" />
-                                          +{dossier.nouvelles_pieces}
-                                        </span>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <span className="text-[10px] text-muted-foreground truncate block">
-                                      {dossier.domaine || "—"}
-                                    </span>
-                                  )}
+                                  <span className="text-[10px] text-muted-foreground truncate block">
+                                    {dossier.domaine || "—"}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -230,6 +235,18 @@ export function AppSidebar() {
                 </SidebarMenu>
               </ScrollArea>
 
+              {/* Emails non classés */}
+              {!collapsed && unclassifiedCount > 0 && (
+                <div className="px-3 pt-2 pb-1">
+                  <button
+                    onClick={() => navigate("/fil?filter=unclassified")}
+                    className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+                  >
+                    <InboxIcon className="h-3.5 w-3.5" />
+                    <span>Emails non classés ({unclassifiedCount})</span>
+                  </button>
+                </div>
+              )}
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
