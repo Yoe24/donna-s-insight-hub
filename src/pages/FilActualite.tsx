@@ -233,6 +233,7 @@ const FilActualite = () => {
   // Apply filters
   const filteredEmails = allEmails
     .filter(e => {
+      if (filterUnclassified && (e as any).dossier_id) return false;
       if (filterPipeline !== "all" && e.pipeline_step !== filterPipeline) return false;
       if (filterDossier !== "all" && (e as any).dossier_id !== filterDossier) return false;
       return true;
