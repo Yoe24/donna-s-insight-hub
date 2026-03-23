@@ -15,10 +15,10 @@ import { apiGet, apiPost } from "@/lib/api";
 interface BriefDossier {
   dossier_id: string;
   nom: string;
-  urgency: "high" | "medium" | "low";
   new_emails_count: number;
   summary: string;
-  suggested_actions: string[];
+  dates_cles: string[];
+  emails_recus: string[];
   needs_immediate_attention: boolean;
 }
 
@@ -28,13 +28,11 @@ interface BriefData {
     stats: {
       emails_analyzed: number;
       dossiers_count: number;
-      urgent_count: number;
+      deadline_soon_count: number;
       needs_response_count: number;
     };
     dossiers: BriefDossier[];
   };
-  is_read: boolean;
-  brief_date: string;
 }
 
 // ── Helpers ──
@@ -54,13 +52,6 @@ function useAnimatedCounter(target: number, duration = 1000) {
   }, [target, duration]);
   return count;
 }
-
-const urgencyOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
-const urgencyColor: Record<string, string> = {
-  high: "bg-destructive",
-  medium: "bg-orange-400",
-  low: "bg-green-500",
-};
 
 // ── Main Dashboard ──
 
