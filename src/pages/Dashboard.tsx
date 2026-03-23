@@ -200,10 +200,10 @@ const Dashboard = () => {
           className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10"
         >
           {[
-            { icon: <Mail className="h-4 w-4 text-primary" />, value: animatedEmails, label: "emails analysés" },
+            { icon: <Mail className="h-4 w-4 text-primary" />, value: animatedEmails, label: "emails traités" },
             { icon: <FolderOpen className="h-4 w-4 text-primary" />, value: animatedDossiers, label: "dossiers actifs" },
-            { icon: <AlertTriangle className="h-4 w-4 text-destructive" />, value: animatedUrgent, label: "urgences" },
-            { icon: <Reply className="h-4 w-4 text-primary" />, value: animatedResponses, label: "réponses attendues" },
+            { icon: <CalendarDays className="h-4 w-4 text-destructive" />, value: animatedDeadlines, label: "deadline(s) proche(s)" },
+            { icon: <Reply className="h-4 w-4 text-primary" />, value: animatedResponses, label: "en attente de réponse" },
           ].map((kpi, i) => (
             <Card key={i} className="bg-card border-border">
               <CardContent className="p-4 flex flex-col items-center text-center gap-1">
