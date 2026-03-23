@@ -177,6 +177,9 @@ const FilActualite = () => {
   // Filters
   const [filterPipeline, setFilterPipeline] = useState("all");
   const [filterDossier, setFilterDossier] = useState("all");
+  const [filterUnclassified, setFilterUnclassified] = useState(
+    () => searchParams.get("filter") === "unclassified"
+  );
 
   // Client-side pagination
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
