@@ -255,7 +255,7 @@ const FilActualite = () => {
   // Reset pagination when filters change
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [filterPipeline, filterDossier]);
+  }, [filterPipeline, filterDossier, filterUnclassified]);
 
   if (loading) {
     return (
