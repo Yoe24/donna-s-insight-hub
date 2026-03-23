@@ -316,9 +316,7 @@ const FilActualite = () => {
             transition={{ delay: 0.2, duration: 0.4 }}
             className="mt-2 text-[0.9rem] text-muted-foreground"
           >
-            ⏱ {tempsMinutes}min gagnées{" "}
-            <span className="text-muted-foreground/50">·</span>{" "}
-            💰 {economise}€ économisés
+            ⏱ {tempsMinutes}min gagnées
           </motion.p>
           {enAttenteCount > 0 && (
             <motion.p
