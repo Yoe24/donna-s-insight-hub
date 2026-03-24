@@ -35,7 +35,7 @@ import { apiGet } from "@/lib/api";
 
 const navItems = [
   { title: "Briefing", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Activité de Donna", url: "/fil", icon: Mail },
+  { title: "Fil d'actualité", url: "/fil", icon: Mail },
   { title: "Configurez-moi", url: "/configuration", icon: Settings },
 ];
 

@@ -309,7 +309,7 @@ const FilActualite = () => {
       <div className="max-w-3xl mx-auto pb-16">
         {/* Header */}
         <div className="pt-8 pb-2">
-          <h1 className="text-lg font-serif font-semibold text-foreground">Activité de Donna</h1>
+          <h1 className="text-lg font-serif font-semibold text-foreground">Fil d'actualité</h1>
           <p className="text-sm text-muted-foreground mt-1">Tout ce que Donna a traité dans vos emails</p>
         </div>
 
