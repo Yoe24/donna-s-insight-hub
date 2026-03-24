@@ -40,13 +40,19 @@ const Login = () => {
   const { signIn } = useAuth();
   const emailRef = useRef<HTMLInputElement>(null);
 
-  // Redirect if already logged in via localStorage
+  // Redirect if already logged in via localStorage or demo mode
   useEffect(() => {
     const userId = localStorage.getItem("donna_user_id");
-    if (userId) {
+    const isDemo = localStorage.getItem("donna_demo_mode") === "true";
+    if (userId || isDemo) {
       navigate("/dashboard", { replace: true });
     }
   }, [navigate]);
+
+  const handleStartDemo = () => {
+    localStorage.setItem("donna_demo_mode", "true");
+    navigate("/onboarding?demo=true");
+  };
 
   useEffect(() => {
     if (showFallback) emailRef.current?.focus();
