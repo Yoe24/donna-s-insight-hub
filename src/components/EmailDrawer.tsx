@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { X, Copy, FileText, Loader2, Mail, Paperclip } from "lucide-react";
+import { X, Copy, FileText, Loader2, Mail, Paperclip, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,50 +14,23 @@ import { apiGet, apiPost } from "@/lib/api";
 function senderInitial(expediteur: string): string {
   const match = expediteur.match(/^([^<]+)/);
   const name = match ? match[1].trim() : expediteur;
-  const firstChar = name.replace(/[^a-zA-ZÀ-ÿ]/g, "")[0] || name[0] || "?";
-  return firstChar.toUpperCase();
+  return (name.replace(/[^a-zA-ZÀ-ÿ]/g, "")[0] || name[0] || "?").toUpperCase();
 }
 
 function senderColor(expediteur: string): string {
   let hash = 0;
-  for (let i = 0; i < expediteur.length; i++) {
-    hash = expediteur.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 60%, 45%)`;
+  for (let i = 0; i < expediteur.length; i++) hash = expediteur.charCodeAt(i) + ((hash << 5) - hash);
+  return `hsl(${Math.abs(hash) % 360}, 55%, 48%)`;
 }
 
-function SenderAvatar({ expediteur, size = 36 }: { expediteur: string; size?: number }) {
+function SenderAvatar({ expediteur, size = 40 }: { expediteur: string; size?: number }) {
   return (
     <div
-      className="rounded-full flex items-center justify-center shrink-0 text-white font-bold"
-      style={{
-        width: size,
-        height: size,
-        backgroundColor: senderColor(expediteur),
-        fontSize: size * 0.4,
-      }}
+      className="rounded-full flex items-center justify-center shrink-0 font-bold"
+      style={{ width: size, height: size, backgroundColor: senderColor(expediteur), color: "white", fontSize: size * 0.4 }}
     >
       {senderInitial(expediteur)}
     </div>
-  );
-}
-
-function StatusBadge({ email }: { email: Email }) {
-  const needsResponse = (email as any).classification?.needs_response === true;
-
-  if (needsResponse) {
-    return (
-      <span className="inline-flex items-center rounded-full text-[10px] px-2.5 py-0.5 font-semibold bg-orange-100 text-orange-800">
-        Action requise
-      </span>
-    );
-  }
-
-  return (
-    <span className="inline-flex items-center rounded-full text-[10px] px-2.5 py-0.5 font-semibold bg-muted text-muted-foreground">
-      Informatif
-    </span>
   );
 }
 
@@ -77,14 +50,15 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
   const { updateStatus } = useUpdateEmailStatus();
 
   useEffect(() => {
-    if (!(email as any).dossier_id) {
+    const dossierId = (email as any).dossier_id;
+    if (!dossierId) {
       setDossierDocs([]);
       setDossierName(null);
       return;
     }
-    apiGet(`/api/dossiers/${(email as any).dossier_id}`)
+    apiGet(`/api/dossiers/${dossierId}`)
       .then((data: any) => {
-        setDossierName(data?.nom || data?.name || null);
+        setDossierName(data?.nom_client || data?.nom || data?.name || null);
         const docs = data?.dossier_documents || [];
         setDossierDocs(docs.filter((doc: any) => doc.email_id === email.id));
       })
@@ -121,18 +95,19 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
 
   const handleFeedbackSelect = (value: string) => {
     const map: Record<string, "parfait" | "modifier" | "erreur"> = {
-      parfait: "parfait",
-      modifier: "modifier",
-      erreur: "erreur",
+      parfait: "parfait", modifier: "modifier", erreur: "erreur",
     };
     if (map[value]) handleFeedback(map[value]);
   };
 
   const formattedDate = (() => {
-    try {
-      return format(new Date(email.created_at), "d MMMM yyyy, HH'h'mm", { locale: fr });
-    } catch { return ""; }
+    try { return format(new Date(email.created_at), "d MMMM yyyy, HH'h'mm", { locale: fr }); }
+    catch { return ""; }
   })();
+
+  // Extract sender email if available
+  const emailMatch = email.expediteur.match(/<([^>]+)>/);
+  const senderEmail = emailMatch ? emailMatch[1] : null;
 
   return (
     <>
@@ -142,7 +117,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
         onClick={onClose}
       />
 
@@ -152,14 +127,14 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[60%] sm:max-w-[700px] bg-background shadow-2xl overflow-y-auto"
+        className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[55%] sm:max-w-[640px] bg-background shadow-2xl overflow-y-auto"
       >
         <div className="p-6 sm:p-8">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          {/* Close */}
+          <div className="flex items-center justify-between mb-8">
             <button
               onClick={onClose}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 sm:hidden"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors sm:hidden"
             >
               ← Retour
             </button>
@@ -172,33 +147,67 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
           </div>
 
           {/* Status Badge */}
-          <div className="mb-4">
-            <StatusBadge email={email} />
+          <div className="mb-5">
+            {(email as any).classification?.needs_response ? (
+              <span className="inline-flex items-center rounded-full text-[10px] px-2.5 py-0.5 font-semibold bg-orange-100 text-orange-800">
+                Action requise
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full text-[10px] px-2.5 py-0.5 font-semibold bg-muted text-muted-foreground">
+                Informatif
+              </span>
+            )}
           </div>
 
-          {/* Sender + Subject */}
-          <div className="space-y-3 mb-6">
-            <div className="flex items-center gap-3">
-              <SenderAvatar expediteur={email.expediteur} size={36} />
-              <span className="font-semibold text-foreground">{email.expediteur}</span>
+          {/* Sender header */}
+          <div className="flex items-start gap-3 mb-2">
+            <SenderAvatar expediteur={email.expediteur} size={44} />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-foreground text-sm">{email.expediteur.replace(/<[^>]+>/, "").trim()}</p>
+              {senderEmail && (
+                <p className="text-xs text-muted-foreground">{senderEmail}</p>
+              )}
             </div>
-            <h2 className="text-xl font-semibold text-foreground leading-tight">{email.objet}</h2>
-            <p className="text-xs text-muted-foreground">{formattedDate}</p>
           </div>
+
+          {/* Subject */}
+          <h2 className="text-lg font-semibold text-foreground leading-snug mt-4 mb-1">{email.objet}</h2>
+          <p className="text-xs text-muted-foreground mb-6">{formattedDate}</p>
 
           <div className="h-px bg-border mb-6" />
 
-          {/* Résumé IA */}
+          {/* Résumé Donna */}
           {email.resume && (
             <div className="mb-6">
-              <div className="flex items-center gap-1.5 mb-2">
-                <span className="text-xs">📋</span>
-                <span className="text-xs font-medium text-muted-foreground">Résumé IA</span>
-              </div>
-              <div className="rounded-xl bg-muted/50 p-5">
-                <p className="text-sm text-foreground/85 whitespace-pre-line" style={{ lineHeight: 1.7 }}>
+              <h3 className="text-xs font-medium text-muted-foreground mb-2">Résumé Donna</h3>
+              <div className="rounded-xl bg-muted/40 p-5">
+                <p className="text-sm text-foreground/85 whitespace-pre-line leading-relaxed">
                   {email.resume}
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* Pièces jointes */}
+          {dossierDocs.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                <Paperclip className="h-3.5 w-3.5" />
+                Pièces jointes
+              </h3>
+              <div className="rounded-xl bg-muted/40 p-4 space-y-2.5">
+                {dossierDocs.map((doc: any, idx: number) => {
+                  const isPdf = doc.type?.toLowerCase()?.includes("pdf") || doc.nom_fichier?.endsWith(".pdf");
+                  return (
+                    <div key={idx} className="flex items-center gap-2.5">
+                      <FileText className={`h-4 w-4 shrink-0 ${isPdf ? "text-destructive/70" : "text-primary/70"}`} />
+                      <span className="text-sm text-foreground">{doc.nom_fichier}</span>
+                      {doc.taille && (
+                        <span className="text-[10px] text-muted-foreground ml-auto">{doc.taille}</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -206,15 +215,13 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
           {/* Dossier rattaché */}
           {showDossierLink && (email as any).dossier_id && (
             <div className="mb-6">
-              <div className="flex items-center gap-1.5 mb-2">
-                <span className="text-xs">📁</span>
-                <span className="text-xs font-medium text-muted-foreground">Dossier rattaché</span>
-              </div>
+              <h3 className="text-xs font-medium text-muted-foreground mb-2">Dossier rattaché</h3>
               <a
                 href={`/dossiers/${(email as any).dossier_id}`}
-                className="text-sm text-primary hover:underline"
+                className="text-sm text-primary hover:underline inline-flex items-center gap-1"
               >
-                {dossierName || `Dossier #${(email as any).dossier_id}`}
+                {dossierName || `Dossier`}
+                <ChevronRight className="h-3 w-3" />
               </a>
             </div>
           )}
@@ -223,12 +230,13 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
           <div className="mb-6">
             <Collapsible open={showOriginal} onOpenChange={setShowOriginal}>
               <CollapsibleTrigger asChild>
-                <button className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  {showOriginal ? "Masquer" : "Voir"} l'email original ›
+                <button className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1">
+                  <ExternalLink className="h-3 w-3" />
+                  {showOriginal ? "Masquer" : "Voir"} l'email original
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="mt-3 rounded-xl bg-muted/40 border border-border p-4">
+                <div className="mt-3 rounded-xl bg-muted/30 border border-border p-4">
                   <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed">
                     {(email as any).contenu || "Contenu non disponible."}
                   </p>
@@ -237,63 +245,39 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
             </Collapsible>
           </div>
 
-          {/* Pièces jointes détectées */}
-          {dossierDocs.length > 0 && (
-            <div className="mb-6">
-              <div className="flex items-center gap-1.5 mb-3">
-                <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs font-medium text-muted-foreground">Pièces jointes détectées</span>
-              </div>
-              <div className="rounded-xl bg-muted/50 p-4 space-y-2.5">
-                {dossierDocs.map((doc: any, idx: number) => {
-                  const isPdf = doc.type?.toLowerCase()?.includes("pdf") || doc.nom_fichier?.endsWith(".pdf");
-                  const isWord = doc.type?.toLowerCase()?.includes("word") || doc.nom_fichier?.endsWith(".docx") || doc.nom_fichier?.endsWith(".doc");
-                  return (
-                    <div key={idx} className="flex items-center gap-2.5">
-                      <FileText className={`h-4 w-4 shrink-0 ${isPdf ? "text-red-500" : isWord ? "text-blue-500" : "text-muted-foreground"}`} />
-                      <span className="text-sm text-foreground">{doc.nom_fichier}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           <div className="h-px bg-border mb-6" />
 
-          {/* Actions */}
+          {/* Actions — bottom */}
           <div className="space-y-4">
-            {/* Générer une réponse — discret */}
-            <div className="space-y-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs text-muted-foreground hover:text-foreground"
-                onClick={handleGenerateDraft}
-                disabled={draftLoading}
-              >
-                {draftLoading ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                    Donna rédige une réponse...
-                  </>
-                ) : (
-                  <>
-                    <Mail className="h-3.5 w-3.5 mr-1.5" />
-                    {draftText ? "Regénérer la réponse" : "Générer une réponse"}
-                  </>
-                )}
-              </Button>
-
-              {draftText && (
-                <div className="rounded-xl bg-muted/40 border border-border p-5 space-y-3">
-                  <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">{draftText}</p>
-                  <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyDraft}>
-                    <Copy className="h-3 w-3 mr-1" />Copier la réponse
-                  </Button>
-                </div>
+            {/* Generate draft — ghost/outline */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs text-muted-foreground border-border hover:text-foreground"
+              onClick={handleGenerateDraft}
+              disabled={draftLoading}
+            >
+              {draftLoading ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  Donna rédige une réponse...
+                </>
+              ) : (
+                <>
+                  <Mail className="h-3.5 w-3.5 mr-1.5" />
+                  {draftText ? "Regénérer la réponse" : "Générer une réponse"}
+                </>
               )}
-            </div>
+            </Button>
+
+            {draftText && (
+              <div className="rounded-xl bg-muted/30 border border-border p-5 space-y-3">
+                <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">{draftText}</p>
+                <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyDraft}>
+                  <Copy className="h-3 w-3 mr-1" /> Copier la réponse
+                </Button>
+              </div>
+            )}
 
             {/* Feedback */}
             <div className="border-t border-border pt-4">
@@ -301,7 +285,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
                 <p className="text-xs text-muted-foreground">✓ Feedback envoyé, merci</p>
               ) : (
                 <Select onValueChange={handleFeedbackSelect}>
-                  <SelectTrigger className="w-56 h-8 text-xs bg-muted/40 border-border">
+                  <SelectTrigger className="w-56 h-8 text-xs bg-muted/30 border-border">
                     <SelectValue placeholder="Donner un feedback..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -316,5 +300,14 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
         </div>
       </motion.div>
     </>
+  );
+}
+
+// Re-export for convenience
+function ChevronRight({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="m9 18 6-6-6-6" />
+    </svg>
   );
 }
