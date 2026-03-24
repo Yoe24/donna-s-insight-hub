@@ -162,8 +162,10 @@ const Dashboard = () => {
     }
     const emailsGeneraux = Math.round(emailsDossiers * 0.32); // approximate ratio
     const total = emailsDossiers + emailsGeneraux;
+    const received = total + Math.round(total * 0.25); // total received includes spam/newsletters filtered out
     return {
       ...briefing.content.stats,
+      emails_received: received,
       emails_analyzed: total,
       emails_dossiers: emailsDossiers,
       emails_generaux: emailsGeneraux,
