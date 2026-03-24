@@ -313,26 +313,27 @@ const DossierDetailPage = () => {
                       const isSent = (email as any)._type === "envoye";
                       const senderName = email.expediteur?.replace(/<[^>]+>/, "").trim() || "Inconnu";
                       return (
-                        <button
-                          key={email.id}
-                          onClick={() => setSelectedEmail(email)}
-                          className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-muted/50 transition-colors"
-                        >
-                          {isSent ? (
-                            <Send className="h-4 w-4 text-primary/60 shrink-0" />
-                          ) : (
-                            <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                          )}
-                          <span className="text-sm font-medium text-foreground shrink-0 max-w-[120px] truncate">
-                            {isSent ? "Vous" : senderName}
-                          </span>
-                          <span className="text-sm text-muted-foreground truncate flex-1 min-w-0">
-                            — {email.objet}
-                          </span>
-                          <span className="text-xs text-muted-foreground shrink-0 ml-2 tabular-nums">
-                            {formatDateShort(email.created_at)}
-                          </span>
-                        </button>
+                         <button
+                           key={email.id}
+                           onClick={() => setSelectedEmail(email)}
+                           className="w-full flex items-center gap-2 px-5 py-3 text-left hover:bg-muted/50 transition-colors overflow-hidden"
+                         >
+                           {isSent ? (
+                             <Send className="h-4 w-4 text-primary/60 shrink-0" />
+                           ) : (
+                             <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                           )}
+                           <span className="text-sm font-medium text-foreground shrink-0 max-w-[120px] truncate">
+                             {isSent ? "Vous" : senderName}
+                           </span>
+                           <span className="text-muted-foreground shrink-0">—</span>
+                           <span className="text-sm text-muted-foreground truncate flex-1 min-w-0">
+                             {email.objet}
+                           </span>
+                           <span className="text-xs text-muted-foreground shrink-0 ml-auto pl-2 tabular-nums whitespace-nowrap">
+                             {formatDateShort(email.created_at)}
+                           </span>
+                         </button>
                       );
                     })
                   )}
