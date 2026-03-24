@@ -1,5 +1,7 @@
 // Mock briefing data for demo mode — matches the API shape of /api/briefs/today
 
+import type { DossierEmail } from "@/components/BriefingDetailPanel";
+
 export interface BriefingDossier {
   dossier_id: string;
   nom: string;
@@ -7,7 +9,6 @@ export interface BriefingDossier {
   needs_immediate_attention: boolean;
   new_emails_count: number;
   summary: string;
-  // One-line narrative for briefing view
   emails_narrative: string;
   pieces_narrative: string | null;
   dates_cles: string[];
@@ -129,6 +130,124 @@ export const mockBriefing: BriefingData = {
       },
     ],
   },
+};
+
+// Mock emails per dossier for the briefing detail panel
+export const mockDossierEmails: Record<string, DossierEmail[]> = {
+  "1": [
+    {
+      id: "e1-1",
+      expediteur: "Marie Dupont",
+      email: "marie.dupont@gmail.com",
+      objet: "Avancement de la procédure ?",
+      date: "23 mars 2026, 14h32",
+      resume: "Mme Dupont demande où en est la mise en demeure envoyée à BTP Pro le 2 mars. Elle souhaite savoir si une réponse a été reçue et quelles sont les prochaines étapes.",
+      pieces_jointes: [
+        {
+          nom: "photos_travaux_complementaires.jpeg",
+          taille: "1.2 MB",
+          resume: "Photos montrant les dégâts supplémentaires constatés sur la façade nord du bâtiment, datées du 20 mars 2026.",
+        },
+      ],
+    },
+    {
+      id: "e1-2",
+      expediteur: "Marie Dupont",
+      email: "marie.dupont@gmail.com",
+      objet: "RE: Mise en demeure BTP Pro",
+      date: "21 mars 2026, 09h15",
+      resume: "Relance sur le statut de la mise en demeure. Mme Dupont s'inquiète du silence de l'entreprise.",
+    },
+    {
+      id: "e1-3",
+      expediteur: "BTP Pro (via avocat)",
+      email: "cabinet.durand@avocat.fr",
+      objet: "Contestation mise en demeure Dupont",
+      date: "19 mars 2026, 16h45",
+      resume: "L'avocat de BTP Pro conteste la non-conformité des travaux et demande un délai supplémentaire pour produire des pièces justificatives.",
+      pieces_jointes: [
+        {
+          nom: "attestation_conformite_BTP.pdf",
+          taille: "340 KB",
+          resume: "Attestation de conformité émise par le chef de chantier de BTP Pro, datée du 15 janvier 2026.",
+        },
+      ],
+    },
+  ],
+  "2": [
+    {
+      id: "e2-1",
+      expediteur: "RH TechCorp",
+      email: "rh@techcorp.fr",
+      objet: "Confirmation 2e entretien - Rupture conventionnelle",
+      date: "23 mars 2026, 10h00",
+      resume: "Le service RH confirme le 2e entretien prévu le 25 mars à 15h. L'ordre du jour portera sur les conditions financières.",
+    },
+    {
+      id: "e2-2",
+      expediteur: "Jean-Pierre Martin",
+      email: "jp.martin@entreprise.fr",
+      objet: "Simulation d'indemnités",
+      date: "22 mars 2026, 17h20",
+      resume: "M. Martin transmet la simulation d'indemnités reçue de son employeur. Il souhaite votre avis sur le montant proposé.",
+      pieces_jointes: [
+        {
+          nom: "simulation_indemnites_martin.pdf",
+          taille: "89 KB",
+          resume: "Simulation chiffrant l'indemnité de rupture à 8 400 € (indemnité légale). Pas de supra-légale proposée.",
+        },
+      ],
+    },
+  ],
+  "4": [
+    {
+      id: "e4-1",
+      expediteur: "Expert judiciaire",
+      email: "expert.bati@experts.fr",
+      objet: "Rapport d'expertise définitif - Affaire Roux",
+      date: "22 mars 2026, 09h00",
+      resume: "Transmission du rapport d'expertise définitif confirmant les vices cachés : fissures structurelles, infiltrations, défaut d'isolation.",
+      pieces_jointes: [
+        {
+          nom: "rapport_expertise_definitif.pdf",
+          taille: "2.4 MB",
+          resume: "Rapport de 42 pages détaillant les désordres structurels du bien acquis par la famille Roux. Conclusion : vices cachés avérés.",
+        },
+        {
+          nom: "annexe_photographique.pdf",
+          taille: "5.1 MB",
+          resume: "67 photos documentant les fissures, infiltrations et défauts d'isolation constatés lors de l'expertise.",
+        },
+      ],
+    },
+  ],
+  "5": [
+    {
+      id: "e5-1",
+      expediteur: "Tribunal de Grande Instance",
+      email: "greffe.tgi@justice.fr",
+      objet: "Convocation audience - 15 avril",
+      date: "20 mars 2026, 14h02",
+      resume: "Convocation pour l'audience du 15 avril à 14h00, salle 3B, concernant l'affaire Dubois c/ SCI Les Tilleuls.",
+      pieces_jointes: [
+        {
+          nom: "convocation_TGI_15avril.pdf",
+          taille: "156 KB",
+          resume: "Convocation officielle du Tribunal de Grande Instance pour l'audience du 15 avril 2026.",
+        },
+      ],
+    },
+  ],
+  "6": [
+    {
+      id: "e6-1",
+      expediteur: "Alice Bernard",
+      email: "alice.b@free.fr",
+      objet: "Divorce par consentement mutuel - Premier contact",
+      date: "23 mars 2026, 15h30",
+      resume: "Nouvelle cliente souhaitant entamer une procédure de divorce par consentement mutuel. Elle demande un premier rendez-vous et les documents nécessaires.",
+    },
+  ],
 };
 
 export const mockConfig = {
