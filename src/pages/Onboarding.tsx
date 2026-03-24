@@ -6,11 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Mail, AlertCircle, Loader2, Zap, PenLine, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiGet, apiPublicGet } from "@/lib/api";
-import { captureUserIdFromUrl } from "@/lib/userSession";
+import { captureUserIdFromUrl, setUserId } from "@/lib/auth";
 import { DashboardLayout } from "@/components/DashboardLayout";
 
 interface ImportStatus {
-  status: "processing" | "done" | "error";
+  status: "processing" | "done" | "completed" | "error";
   progress: number;
   total: number;
   processed: number;
@@ -22,26 +22,27 @@ const Onboarding = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isImporting = searchParams.get("import") === "started";
-  const isDemo = searchParams.get("demo") === "true";
+  const isDemoParam = searchParams.get("demo") === "true";
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     // Capture user_id from OAuth callback URL
-    captureUserIdFromUrl();
-    const incomingUserId = searchParams.get("user_id") || localStorage.getItem("donna_user_id");
-
-    if (isImporting && incomingUserId && localStorage.getItem("donna_user_id") === incomingUserId) {
-      // Already processed this user, check if import is done
+    const urlUserId = searchParams.get("user_id");
+    if (urlUserId) {
+      setUserId(urlUserId);
+      // Disable demo mode for real users
+      localStorage.setItem("donna_demo_mode", "false");
     }
+    captureUserIdFromUrl();
 
-    if (isImporting || isDemo) {
-      if (isDemo) {
+    if (isImporting || isDemoParam) {
+      if (isDemoParam) {
         setReady(true);
         return;
       }
       apiGet<ImportStatus>("/api/import/status")
         .then((data) => {
-          if (data?.status === "done") {
+          if (data?.status === "done" || data?.status === "completed") {
             navigate("/dashboard", { replace: true });
           } else {
             setReady(true);
@@ -52,7 +53,7 @@ const Onboarding = () => {
     }
 
     setReady(true);
-  }, [isImporting, isDemo, navigate, searchParams]);
+  }, [isImporting, isDemoParam, navigate, searchParams]);
 
   useEffect(() => {
     const token = searchParams.get("token");
@@ -66,7 +67,7 @@ const Onboarding = () => {
   }, [searchParams]);
 
   if (!ready) return null;
-  if (isDemo) return <DemoScanScreen />;
+  if (isDemoParam) return <DemoScanScreen />;
   if (isImporting) return <ScanScreen />;
   return <ChooseMode />;
 };
@@ -96,7 +97,7 @@ function ScanScreen() {
     if (status && (status.attachments_count ?? 0) > 0) {
       msgs.push(`${status.attachments_count} pièces jointes extraites`);
     }
-    if (status?.status === "done") {
+    if (status?.status === "done" || status?.status === "completed") {
       msgs.push("Votre briefing est prêt");
     }
     return msgs;
@@ -113,13 +114,13 @@ function ScanScreen() {
     return () => clearInterval(timer);
   }, [dynamicMessages]);
 
-  // Poll every 3s
+  // Poll every 2s
   useEffect(() => {
     const poll = async () => {
       try {
         const data = await apiGet<ImportStatus>("/api/import/status");
         setStatus(data);
-        if (data.status === "done" || data.status === "error") {
+        if (data.status === "done" || data.status === "completed" || data.status === "error") {
           if (intervalRef.current) clearInterval(intervalRef.current);
         }
       } catch (e) {
@@ -127,7 +128,7 @@ function ScanScreen() {
       }
     };
     poll();
-    intervalRef.current = setInterval(poll, 3000);
+    intervalRef.current = setInterval(poll, 2000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
@@ -135,7 +136,7 @@ function ScanScreen() {
 
   // Min 5s display
   useEffect(() => {
-    if (status?.status === "done") {
+    if (status?.status === "done" || status?.status === "completed") {
       const elapsed = Date.now() - startTimeRef.current;
       const remaining = Math.max(0, 5000 - elapsed);
       const timer = setTimeout(() => setCanProceed(true), remaining);
@@ -143,7 +144,7 @@ function ScanScreen() {
     }
   }, [status?.status]);
 
-  const isDone = status?.status === "done";
+  const isDone = status?.status === "done" || status?.status === "completed";
   const isError = status?.status === "error";
   const progress = status?.progress ?? 0;
   const messages = dynamicMessages();
@@ -219,10 +220,7 @@ function ScanScreen() {
               <Button
                 size="lg"
                 className="w-full rounded-xl"
-                onClick={() => {
-                  const uid = localStorage.getItem("donna_user_id");
-                  navigate(uid ? `/dashboard?user_id=${uid}` : "/dashboard");
-                }}
+                onClick={() => navigate("/dashboard")}
               >
                 Voir mon briefing →
               </Button>

@@ -4,7 +4,7 @@ import { NavLink } from "@/components/NavLink";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDossiers } from "@/hooks/useDossiers";
-import { useDemoMode } from "@/hooks/useDemoMode";
+import { isDemo as isDemoCheck, logout as authLogout } from "@/lib/auth";
 import { dossiers as mockDossiersList } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -86,7 +86,7 @@ export function AppSidebar() {
   const { signOut } = useAuth();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const { dossiers: liveDossiers, loading: liveLoading } = useDossiers();
-  const { isDemo } = useDemoMode();
+  const isDemo = isDemoCheck();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -150,11 +150,8 @@ export function AppSidebar() {
   };
 
   const handleLogout = async () => {
-    localStorage.removeItem("donna_user_id");
-    localStorage.removeItem("donna_chat_history");
-    localStorage.removeItem("donna_demo_mode");
-    await signOut();
-    window.location.replace("/login");
+    await signOut().catch(() => {});
+    authLogout();
   };
 
   const handleRenameStart = (id: string, currentName: string) => {

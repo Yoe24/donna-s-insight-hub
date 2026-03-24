@@ -1,17 +1,10 @@
 import { useState, useCallback } from "react";
+import { isDemo as isDemoCheck } from "@/lib/auth";
 
 const STORAGE_KEY = "donna_demo_mode";
-const DEMO_USER_ID = "9082c497-0efe-401f-978a-e43cc149ff57";
 
 export function useDemoMode() {
-  const [isDemo, setIsDemo] = useState(() => {
-    // If a real (non-demo) user_id exists, never be in demo mode
-    const userId = localStorage.getItem("donna_user_id");
-    if (userId && userId !== DEMO_USER_ID) return false;
-    
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === null ? true : stored === "true";
-  });
+  const [isDemo, setIsDemo] = useState(() => isDemoCheck());
 
   const toggleMode = useCallback(() => {
     setIsDemo((prev) => {
@@ -30,9 +23,5 @@ export function useDemoMode() {
 }
 
 export function isDemoMode(): boolean {
-  const userId = localStorage.getItem("donna_user_id");
-  if (userId && userId !== DEMO_USER_ID) return false;
-  
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return stored === null ? true : stored === "true";
+  return isDemoCheck();
 }
