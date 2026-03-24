@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDossiers } from "@/hooks/useDossiers";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import { dossiers as mockDossiersList } from "@/lib/mock-data";
-import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
