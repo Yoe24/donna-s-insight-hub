@@ -12,12 +12,14 @@ import { useUpdateEmailStatus } from "@/hooks/useEmails";
 import { apiGet, apiPost } from "@/lib/api";
 
 function senderInitial(expediteur: string): string {
+  if (!expediteur) return "?";
   const match = expediteur.match(/^([^<]+)/);
   const name = match ? match[1].trim() : expediteur;
   return (name.replace(/[^a-zA-ZÀ-ÿ]/g, "")[0] || name[0] || "?").toUpperCase();
 }
 
 function senderColor(expediteur: string): string {
+  if (!expediteur) return "hsl(0, 55%, 48%)";
   let hash = 0;
   for (let i = 0; i < expediteur.length; i++) hash = expediteur.charCodeAt(i) + ((hash << 5) - hash);
   return `hsl(${Math.abs(hash) % 360}, 55%, 48%)`;
@@ -105,8 +107,8 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
     catch { return ""; }
   })();
 
-  // Extract sender email if available
-  const emailMatch = email.expediteur.match(/<([^>]+)>/);
+   // Extract sender email if available
+  const emailMatch = (email.expediteur || "").match(/<([^>]+)>/);
   const senderEmail = emailMatch ? emailMatch[1] : null;
 
   return (
@@ -163,7 +165,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
           <div className="flex items-start gap-3 mb-2">
             <SenderAvatar expediteur={email.expediteur} size={44} />
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-foreground text-sm">{email.expediteur.replace(/<[^>]+>/, "").trim()}</p>
+              <p className="font-semibold text-foreground text-sm">{(email.expediteur || "Expéditeur inconnu").replace(/<[^>]+>/, "").trim()}</p>
               {senderEmail && (
                 <p className="text-xs text-muted-foreground">{senderEmail}</p>
               )}
@@ -171,7 +173,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
           </div>
 
           {/* Subject */}
-          <h2 className="text-lg font-semibold text-foreground leading-snug mt-4 mb-1">{email.objet}</h2>
+          <h2 className="text-lg font-semibold text-foreground leading-snug mt-4 mb-1">{email.objet || "Sans objet"}</h2>
           <p className="text-xs text-muted-foreground mb-6">{formattedDate}</p>
 
           <div className="h-px bg-border mb-6" />
