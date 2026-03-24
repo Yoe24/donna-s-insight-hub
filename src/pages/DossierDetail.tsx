@@ -219,9 +219,22 @@ const DossierDetailPage = () => {
   const sortedDocs = [...documents].sort((a, b) => new Date(b.date_reception || b.created_at).getTime() - new Date(a.date_reception || a.created_at).getTime());
   const clientName = dossier.nom || dossier.name || dossier.nom_client;
 
+  // Compute last exchange date from emails if dernier_echange_date is not parseable
+  const lastExchangeDate = (() => {
+    if (sortedEmails.length > 0) {
+      return formatDateFr(sortedEmails[0].created_at);
+    }
+    const parsed = formatDateFr(dossier.dernier_echange_date);
+    return parsed;
+  })();
+
+  const [resumeExpanded, setResumeExpanded] = useState(false);
+  const resumeText = dossier.resume_situation || "";
+  const resumeIsLong = resumeText.length > 250;
+
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto pb-16">
+      <div className="max-w-5xl mx-auto pb-16 overflow-hidden">
         {/* Back */}
         <Link
           to="/dashboard"
@@ -233,12 +246,12 @@ const DossierDetailPage = () => {
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <div className="flex items-start justify-between gap-4 mb-1">
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-serif font-bold text-foreground">{clientName}</h1>
+                <h1 className="text-2xl font-serif font-bold text-foreground truncate">{clientName}</h1>
                 {statutBadge(dossier.statut)}
                 {dossier.domaine && (
-                  <span className="inline-flex items-center rounded-md bg-secondary text-secondary-foreground text-xs px-2.5 py-1 font-medium">
+                  <span className="inline-flex items-center rounded-md bg-secondary text-secondary-foreground text-xs px-2.5 py-1 font-medium shrink-0">
                     {dossier.domaine}
                   </span>
                 )}
@@ -249,19 +262,27 @@ const DossierDetailPage = () => {
             </div>
             {/* Info bloc */}
             <div className="text-right text-xs text-muted-foreground space-y-0.5 shrink-0">
-              <p>Dernier échange : {formatDateFr(dossier.dernier_echange_date)}</p>
+              <p>Dernier échange : {lastExchangeDate}</p>
               <p>{emails.length} emails · {documents.length} documents</p>
             </div>
           </div>
         </motion.div>
 
         {/* Résumé */}
-        {dossier.resume_situation && (
+        {resumeText && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6">
             <div className="rounded-xl bg-muted/40 border border-border p-5">
-              <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">
-                {dossier.resume_situation}
+              <p className={`text-sm text-foreground/85 leading-relaxed whitespace-pre-line ${!resumeExpanded && resumeIsLong ? "line-clamp-3" : ""}`}>
+                {resumeText}
               </p>
+              {resumeIsLong && (
+                <button
+                  onClick={() => setResumeExpanded(!resumeExpanded)}
+                  className="text-xs text-primary hover:underline mt-1"
+                >
+                  {resumeExpanded ? "Réduire" : "Lire la suite"}
+                </button>
+              )}
             </div>
           </motion.div>
         )}
