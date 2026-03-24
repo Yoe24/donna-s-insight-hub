@@ -358,17 +358,17 @@ const DossierDetailPage = () => {
                     <p className="text-sm text-muted-foreground p-5">Aucun document</p>
                   ) : (
                     sortedDocs.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="flex items-center gap-3 px-5 py-3 hover:bg-muted/50 transition-colors cursor-default"
-                      >
-                        {getDocIcon(doc.type)}
-                        <span className="text-sm text-foreground truncate flex-1 min-w-0">
-                          {doc.nom_fichier || doc.nom || "Document"}
-                        </span>
-                        <span className="text-xs text-muted-foreground shrink-0 ml-2 tabular-nums">
-                          {formatDateShort(doc.date_reception || doc.created_at)}
-                        </span>
+                       <div
+                         key={doc.id}
+                         className="flex items-center gap-2 px-5 py-3 hover:bg-muted/50 transition-colors cursor-default overflow-hidden"
+                       >
+                         {getDocIcon(doc.type)}
+                         <span className="text-sm text-foreground truncate flex-1 min-w-0">
+                           {doc.nom_fichier || doc.nom || "Document"}
+                         </span>
+                         <span className="text-xs text-muted-foreground shrink-0 ml-auto pl-2 tabular-nums whitespace-nowrap">
+                           {formatDateShort(doc.date_reception || doc.created_at)}
+                         </span>
                       </div>
                     ))
                   )}
