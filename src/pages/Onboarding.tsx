@@ -21,6 +21,7 @@ const Onboarding = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isImporting = searchParams.get("import") === "started";
+  const isDemo = searchParams.get("demo") === "true";
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -36,7 +37,11 @@ const Onboarding = () => {
       localStorage.setItem("donna_user_id", incomingUserId);
     }
 
-    if (isImporting) {
+    if (isImporting || isDemo) {
+      if (isDemo) {
+        setReady(true);
+        return;
+      }
       apiGet<ImportStatus>("/api/import/status")
         .then((data) => {
           if (data?.status === "done") {
@@ -50,7 +55,7 @@ const Onboarding = () => {
     }
 
     setReady(true);
-  }, [isImporting, navigate, searchParams]);
+  }, [isImporting, isDemo, navigate, searchParams]);
 
   useEffect(() => {
     const token = searchParams.get("token");
@@ -64,6 +69,7 @@ const Onboarding = () => {
   }, [searchParams]);
 
   if (!ready) return null;
+  if (isDemo) return <DemoScanScreen />;
   if (isImporting) return <ScanScreen />;
   return <ChooseMode />;
 };
