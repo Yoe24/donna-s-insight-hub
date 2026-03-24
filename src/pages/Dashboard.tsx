@@ -172,7 +172,7 @@ const Dashboard = () => {
     const total = emailsDossiers + emailsGeneraux;
     const received = total + Math.round(total * 0.25); // total received includes spam/newsletters filtered out
     return {
-      ...briefing.content.stats,
+      ...(stats || {}),
       emails_received: received,
       emails_analyzed: total,
       emails_dossiers: emailsDossiers,
