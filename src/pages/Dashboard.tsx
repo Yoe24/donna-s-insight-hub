@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,7 +24,6 @@ const PERIOD_LABELS: Record<PeriodFilter, string> = {
 };
 
 const Dashboard = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [briefing, setBriefing] = useState<BriefingData | null>(null);
   const [loading, setLoading] = useState(true);
