@@ -9,7 +9,10 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { PageTransition } from "@/components/PageTransition";
 import { apiPublicGet } from "@/lib/api";
+import { getUserId, setUserId, isDemo } from "@/lib/auth";
 import heroBg from "@/assets/hero-bg.jpg";
+
+const DEMO_USER_ID = "9082c497-0efe-401f-978a-e43cc149ff57";
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 48 48" className="shrink-0">
@@ -40,16 +43,16 @@ const Login = () => {
   const { signIn } = useAuth();
   const emailRef = useRef<HTMLInputElement>(null);
 
-  // Redirect if already logged in via localStorage or demo mode
+  // Redirect if already logged in (real user or demo)
   useEffect(() => {
     const userId = localStorage.getItem("donna_user_id");
-    const isDemo = localStorage.getItem("donna_demo_mode") === "true";
-    if (userId || isDemo) {
+    if (userId && userId !== DEMO_USER_ID) {
       navigate("/dashboard", { replace: true });
     }
   }, [navigate]);
 
   const handleStartDemo = () => {
+    setUserId(DEMO_USER_ID);
     localStorage.setItem("donna_demo_mode", "true");
     navigate("/onboarding?demo=true");
   };
