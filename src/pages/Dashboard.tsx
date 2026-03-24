@@ -244,9 +244,20 @@ const Dashboard = () => {
             <p className="text-sm text-foreground/80 leading-relaxed">
               Vous avez reçu <strong>{adjustedStats.emails_received} emails</strong> {period === "24h" ? "dans les dernières 24 heures" : period === "7j" ? "ces 7 derniers jours" : "ces 30 derniers jours"}.
               <br />
-              Donna a traité <strong>{adjustedStats.emails_analyzed} emails</strong> : <strong>{adjustedStats.emails_dossiers}</strong> liés à vos dossiers · <strong>{adjustedStats.emails_generaux}</strong> généraux
+              Donna a traité{" "}
+              <a href="/fil?tab=emails" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                <strong>{adjustedStats.emails_analyzed} emails</strong>
+              </a>{" "}
+              : <strong>{adjustedStats.emails_dossiers}</strong> liés à vos dossiers · <strong>{adjustedStats.emails_generaux}</strong> généraux
               <br />
-              <strong>{adjustedStats.pieces_extraites}</strong> pièces jointes extraites · <strong>{relancesCount}</strong> relances détectées
+              <a href="/fil?tab=pj" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                <strong>{adjustedStats.pieces_extraites} pièces jointes</strong>
+              </a>{" "}
+              extraites ·{" "}
+              <a href="/fil?tab=relances" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                <strong>{relancesCount} relances</strong>
+              </a>{" "}
+              détectées
             </p>
           </motion.div>
         )}
