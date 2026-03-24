@@ -292,7 +292,7 @@ const DossierDetailPage = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 lg:grid-cols-5 gap-6"
+          className="grid grid-cols-1 lg:grid-cols-5 gap-6 overflow-hidden"
         >
           {/* Emails — 3/5 = 60% */}
           <div className="lg:col-span-3">
