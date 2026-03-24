@@ -1,11 +1,15 @@
 import { useState, useCallback } from "react";
 
 const STORAGE_KEY = "donna_demo_mode";
+const DEMO_USER_ID = "9082c497-0efe-401f-978a-e43cc149ff57";
 
 export function useDemoMode() {
   const [isDemo, setIsDemo] = useState(() => {
+    // If a real (non-demo) user_id exists, never be in demo mode
+    const userId = localStorage.getItem("donna_user_id");
+    if (userId && userId !== DEMO_USER_ID) return false;
+    
     const stored = localStorage.getItem(STORAGE_KEY);
-    // Default to demo if no Gmail is connected
     return stored === null ? true : stored === "true";
   });
 
@@ -26,6 +30,9 @@ export function useDemoMode() {
 }
 
 export function isDemoMode(): boolean {
+  const userId = localStorage.getItem("donna_user_id");
+  if (userId && userId !== DEMO_USER_ID) return false;
+  
   const stored = localStorage.getItem(STORAGE_KEY);
   return stored === null ? true : stored === "true";
 }
