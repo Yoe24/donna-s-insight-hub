@@ -44,8 +44,7 @@ const Configuration = () => {
 
   useEffect(() => {
     if (isDemo) {
-      setGmailConnected(true);
-      setGmailEmail("alexandra.fernandez@gmail.com");
+      setGmailConnected(false);
       setSignature("Cordialement,\nMe Alexandra Fernandez\nAvocate au Barreau de Paris\n01 23 45 67 89");
       setSavedInstructions(["Les mails de l'Ordre des Avocats ne sont jamais urgents"]);
       setLoadingConfig(false);
