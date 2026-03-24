@@ -1,14 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, RefreshCw, ChevronRight, CalendarDays, Clock, Paperclip } from "lucide-react";
+import { Loader2, RefreshCw, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { format, differenceInDays, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { apiGet, apiPost } from "@/lib/api";
 import { isDemoMode } from "@/hooks/useDemoMode";
@@ -80,24 +78,23 @@ const Dashboard = () => {
   const dateStr = format(now, "EEEE d MMMM yyyy", { locale: fr });
 
   const dossiers = briefing?.content.dossiers ?? [];
-  const activeDossiers = dossiers.filter((d) => d.new_emails_count > 0 || d.needs_immediate_attention);
+  const activeDossiers = dossiers.filter((d) => d.new_emails_count > 0);
   const attenteDossiers = dossiers.filter((d) => d.attente);
   const stats = briefing?.content.stats;
 
-  // ── Loading ──
   if (loading) {
     return (
       <DashboardLayout>
         <div className="max-w-3xl mx-auto space-y-6 pt-8">
           <Skeleton className="h-7 w-72" />
-          <Skeleton className="h-5 w-48 mt-8" />
-          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
+          <Skeleton className="h-20 rounded-xl mt-6" />
+          <Skeleton className="h-4 w-32 mt-8" />
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
         </div>
       </DashboardLayout>
     );
   }
 
-  // ── No briefing ──
   if (notFound || !briefing) {
     return (
       <DashboardLayout>
@@ -117,69 +114,83 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto pb-16">
-        {/* ── Header ── */}
+        {/* Header */}
         <motion.p
           {...fadeIn}
-          className="pt-8 pb-8 text-lg font-serif text-foreground"
+          className="pt-8 pb-6 text-lg font-serif text-foreground"
         >
           {greeting}{nomAvocat ? ` ${nomAvocat}` : ""} — <span className="capitalize">{dateStr}</span>
         </motion.p>
 
-        {/* ── Depuis votre dernière connexion ── */}
+        {/* Rapport Donna */}
+        {stats && (
+          <motion.div
+            {...fadeIn}
+            transition={{ delay: 0.05 }}
+            className="rounded-xl bg-muted/50 px-5 py-4 mb-10"
+          >
+            <p className="text-sm text-foreground/80 leading-relaxed">
+              Donna a traité <strong>{stats.emails_analyzed} emails</strong> depuis hier soir.
+              <br />
+              <strong>{stats.emails_dossiers ?? stats.emails_analyzed}</strong> emails liés à vos dossiers · <strong>{stats.emails_generaux ?? 0}</strong> emails généraux
+              <br />
+              <strong>{stats.pieces_extraites ?? 0}</strong> pièces jointes extraites · <strong>{stats.dates_detectees ?? 0}</strong> dates importantes détectées
+            </p>
+          </motion.div>
+        )}
+
+        {/* Dossiers actifs */}
         {activeDossiers.length > 0 && (
           <motion.section {...fadeIn} transition={{ delay: 0.1 }} className="mb-10">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-              Depuis votre dernière connexion
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+              Dossiers actifs
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-1">
               {activeDossiers.map((d) => (
-                <DossierBriefCard key={d.dossier_id} dossier={d} navigate={navigate} />
+                <DossierLine key={d.dossier_id} dossier={d} navigate={navigate} />
               ))}
             </div>
           </motion.section>
         )}
 
         {activeDossiers.length === 0 && (
-          <motion.div {...fadeIn} transition={{ delay: 0.1 }} className="mb-10 text-center py-12">
-            <p className="text-sm text-muted-foreground">Rien de nouveau depuis votre dernière connexion.</p>
+          <motion.div {...fadeIn} transition={{ delay: 0.1 }} className="mb-10 py-10 text-center">
+            <p className="text-sm text-muted-foreground">Aucune activité détectée depuis votre dernière connexion.</p>
           </motion.div>
         )}
 
-        {/* ── En attente de réponse ── */}
+        {/* En attente */}
         {attenteDossiers.length > 0 && (
           <motion.section {...fadeIn} transition={{ delay: 0.2 }} className="mb-10">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-              En attente de réponse
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+              En attente
             </h2>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {attenteDossiers.map((d) => (
                 <div
                   key={`attente-${d.dossier_id}`}
                   onClick={() => navigate(`/dossiers/${d.dossier_id}`)}
-                  className="flex items-start gap-3 px-4 py-3 rounded-xl bg-card border border-border hover:shadow-sm cursor-pointer transition-all group"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted/40 cursor-pointer transition-colors group"
                 >
-                  <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <span className="text-sm text-foreground">
                       <span className="font-medium">{d.nom}</span>
-                      {" — "}
-                      {d.attente!.description}
-                      <span className="text-muted-foreground"> ({d.attente!.jours} jours)</span>
+                      <span className="text-muted-foreground"> · {d.attente!.description} ({d.attente!.jours} jours)</span>
                     </span>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               ))}
             </div>
           </motion.section>
         )}
 
-        {/* ── Footer stats ── */}
+        {/* Stats footer */}
         {stats && (
           <motion.p
             {...fadeIn}
             transition={{ delay: 0.3 }}
-            className="text-xs text-muted-foreground/60 text-center pt-8"
+            className="text-xs text-muted-foreground/50 text-center pt-8"
           >
             {stats.emails_analyzed} emails traités · {stats.temps_gagne_minutes ?? 0}min gagnées
           </motion.p>
@@ -189,76 +200,43 @@ const Dashboard = () => {
   );
 };
 
-// ── Dossier briefing card ──
+/* ── Single dossier line ── */
 
-function DossierBriefCard({
+function DossierLine({
   dossier: d,
   navigate,
 }: {
   dossier: BriefingDossier;
   navigate: (path: string) => void;
 }) {
+  const isUrgent = d.deadline_days !== null && d.deadline_days <= 7;
+  const narrative = d.emails_narrative.length > 90
+    ? d.emails_narrative.slice(0, 87) + "…"
+    : d.emails_narrative;
+
   return (
-    <Card
-      className="bg-card border-border hover:shadow-sm transition-all cursor-pointer overflow-hidden"
+    <div
       onClick={() => navigate(`/dossiers/${d.dossier_id}`)}
+      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted/40 cursor-pointer transition-colors group"
     >
-      <div className="flex">
-        {/* Left accent */}
-        <div
-          className={`w-1 shrink-0 ${d.needs_immediate_attention ? "bg-destructive" : "bg-muted"}`}
-        />
-        <CardContent className="p-5 flex-1 min-w-0 space-y-2.5">
-          {/* Header */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-sm text-foreground">{d.nom}</h3>
-            {d.domaine && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                {d.domaine}
-              </span>
-            )}
-            {d.deadline_days !== null && d.deadline_days <= 7 && (
-              <Badge
-                variant="outline"
-                className="text-[10px] px-1.5 py-0 h-4 border-destructive/40 text-destructive bg-destructive/5"
-              >
-                Deadline dans {d.deadline_days}j
-              </Badge>
-            )}
-          </div>
+      {/* Urgency dot */}
+      <span className="shrink-0 w-2 h-2 rounded-full" style={{
+        backgroundColor: isUrgent ? 'hsl(var(--destructive))' : 'transparent',
+      }} />
 
-          {/* Narrative: emails */}
-          <p className="text-sm text-foreground/80 leading-relaxed">
-            {d.emails_narrative}
-          </p>
-
-          {/* Narrative: pieces jointes */}
-          {d.pieces_narrative && (
-            <div className="flex items-start gap-1.5">
-              <Paperclip className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
-              <p className="text-xs text-muted-foreground leading-relaxed">{d.pieces_narrative}</p>
-            </div>
-          )}
-
-          {/* Dates clés */}
-          {d.dates_cles.length > 0 && (
-            <div className="flex items-start gap-1.5">
-              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
-              <div className="space-y-0.5">
-                {d.dates_cles.map((date, i) => (
-                  <p key={i} className="text-xs text-muted-foreground">{date}</p>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-
-        {/* Chevron */}
-        <div className="flex items-center pr-4">
-          <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
-        </div>
+      {/* Content */}
+      <div className="flex-1 min-w-0 truncate">
+        <span className="text-sm text-foreground">
+          <span className="font-medium">{d.nom}</span>
+          <span className="text-muted-foreground"> · {d.domaine}</span>
+          <span className="text-muted-foreground"> · </span>
+          <span className="text-foreground/70">"{narrative}"</span>
+        </span>
       </div>
-    </Card>
+
+      {/* Arrow */}
+      <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+    </div>
   );
 }
 

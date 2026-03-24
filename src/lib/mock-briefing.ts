@@ -1,5 +1,4 @@
 // Mock briefing data for demo mode — matches the API shape of /api/briefs/today
-// but restructured as a narrative situational briefing
 
 export interface BriefingDossier {
   dossier_id: string;
@@ -8,25 +7,30 @@ export interface BriefingDossier {
   needs_immediate_attention: boolean;
   new_emails_count: number;
   summary: string;
-  // Narrative fields for the briefing
-  emails_narrative: string; // e.g. "Me Bernard a envoyé les conclusions adverses."
-  pieces_narrative: string | null; // e.g. "2 pièces jointes reçues : ..."
+  // One-line narrative for briefing view
+  emails_narrative: string;
+  pieces_narrative: string | null;
   dates_cles: string[];
-  deadline_days: number | null; // days until nearest deadline, null if none
-  // "En attente" data
+  deadline_days: number | null;
   attente?: { description: string; jours: number } | null;
+}
+
+export interface BriefingStats {
+  emails_analyzed: number;
+  emails_dossiers: number;
+  emails_generaux: number;
+  dossiers_count: number;
+  deadline_soon_count: number;
+  needs_response_count: number;
+  temps_gagne_minutes: number;
+  pieces_extraites: number;
+  dates_detectees: number;
 }
 
 export interface BriefingData {
   content: {
     executive_summary: string;
-    stats: {
-      emails_analyzed: number;
-      dossiers_count: number;
-      deadline_soon_count: number;
-      needs_response_count: number;
-      temps_gagne_minutes: number;
-    };
+    stats: BriefingStats;
     dossiers: BriefingDossier[];
   };
 }
@@ -36,10 +40,14 @@ export const mockBriefing: BriefingData = {
     executive_summary: "Vous avez reçu 29 emails sur 7 dossiers depuis hier.",
     stats: {
       emails_analyzed: 29,
+      emails_dossiers: 22,
+      emails_generaux: 7,
       dossiers_count: 7,
       deadline_soon_count: 1,
       needs_response_count: 3,
       temps_gagne_minutes: 145,
+      pieces_extraites: 3,
+      dates_detectees: 2,
     },
     dossiers: [
       {
@@ -50,7 +58,7 @@ export const mockBriefing: BriefingData = {
         new_emails_count: 3,
         summary: "Mme Dupont conteste une facture de 3 200 € pour travaux non conformes.",
         emails_narrative:
-          "Mme Dupont a demandé des nouvelles sur l'avancement de la procédure. L'entreprise BTP Pro n'a toujours pas répondu à la mise en demeure.",
+          "Mme Dupont demande des nouvelles, BTP Pro n'a pas répondu à la mise en demeure",
         pieces_narrative: "1 pièce jointe reçue : photos complémentaires des travaux (JPEG).",
         dates_cles: ["14 mars 2026 — Expiration mise en demeure"],
         deadline_days: 4,
@@ -67,7 +75,7 @@ export const mockBriefing: BriefingData = {
         new_emails_count: 2,
         summary: "Rupture conventionnelle en cours de négociation avec SAS TechCorp.",
         emails_narrative:
-          "M. Martin a posé une question sur le montant des indemnités. Le service RH de TechCorp a confirmé le 2e entretien.",
+          "2e entretien confirmé par RH TechCorp, simulation d'indemnités reçue",
         pieces_narrative: "1 pièce jointe reçue : simulation d'indemnités (PDF).",
         dates_cles: ["12 mars 2026 — 2e entretien employeur"],
         deadline_days: 2,
@@ -81,7 +89,7 @@ export const mockBriefing: BriefingData = {
         new_emails_count: 1,
         summary: "Vices cachés confirmés par l'expertise. Audience fixée au 20 mars.",
         emails_narrative:
-          "L'expert judiciaire a transmis son rapport définitif confirmant les désordres structurels.",
+          "Rapport d'expertise définitif reçu, désordres structurels confirmés",
         pieces_narrative:
           "2 pièces jointes reçues : rapport d'expertise définitif (PDF), annexe photographique (PDF).",
         dates_cles: ["20 mars 2026 — Audience TGI"],
@@ -96,12 +104,12 @@ export const mockBriefing: BriefingData = {
         new_emails_count: 1,
         summary: "Charges de copropriété abusives. Audience le 15 avril.",
         emails_narrative:
-          "Le Tribunal a envoyé la convocation pour l'audience du 15 avril, salle 3B.",
+          "Convocation audience 15 avril reçue, salle 3B",
         pieces_narrative: "1 pièce jointe reçue : convocation TGI (PDF).",
         dates_cles: ["10 avril 2026 — Date limite pièces complémentaires", "15 avril 2026 — Audience TGI"],
         deadline_days: 32,
         attente: {
-          description: "Pièces complémentaires demandées à Mme Dubois le 3 mars, pas encore reçues",
+          description: "Pièces complémentaires demandées à Mme Dubois le 3 mars",
           jours: 21,
         },
       },
@@ -113,7 +121,7 @@ export const mockBriefing: BriefingData = {
         new_emails_count: 1,
         summary: "Nouveau dossier — divorce par consentement mutuel.",
         emails_narrative:
-          "Mme Bernard a demandé un premier rendez-vous pour entamer la procédure de divorce.",
+          "Demande de premier rendez-vous pour procédure de divorce",
         pieces_narrative: null,
         dates_cles: [],
         deadline_days: null,
