@@ -105,8 +105,8 @@ const Dashboard = () => {
   const greeting = h < 12 ? "Bonjour" : h < 18 ? "Bon après-midi" : "Bonsoir";
   const dateStr = format(now, "EEEE d MMMM yyyy", { locale: fr });
 
-  const dossiers = briefing?.content.dossiers ?? [];
-  const attenteDossiers = dossiers.filter((d) => d.attente);
+  const dossiers = briefing?.content?.dossiers ?? [];
+  const attenteDossiers = (dossiers || []).filter((d) => d?.attente);
   const relancesCount = attenteDossiers.length;
 
   // Filter dossiers by period using mock email dates
@@ -141,19 +141,20 @@ const Dashboard = () => {
 
   // Compute period-filtered stats
   const computeFilteredStats = () => {
-    if (!briefing?.content.stats) return null;
+    const stats = briefing?.content?.stats;
+    if (!stats) return null;
     if (!isDemoMode()) {
       const m = period === "24h" ? 1 : period === "7j" ? 5 : 18;
-      const analyzed = briefing.content.stats.emails_analyzed * m;
+      const analyzed = (stats.emails_analyzed ?? 0) * m;
       const received = analyzed + Math.round(analyzed * 0.25);
       return {
-        ...briefing.content.stats,
+        ...stats,
         emails_received: received,
         emails_analyzed: analyzed,
-        emails_dossiers: (briefing.content.stats.emails_dossiers ?? 0) * m,
-        emails_generaux: (briefing.content.stats.emails_generaux ?? 0) * m,
-        pieces_extraites: (briefing.content.stats.pieces_extraites ?? 0) * m,
-        temps_gagne_minutes: (briefing.content.stats.temps_gagne_minutes ?? 0) * m,
+        emails_dossiers: (stats.emails_dossiers ?? 0) * m,
+        emails_generaux: (stats.emails_generaux ?? 0) * m,
+        pieces_extraites: (stats.pieces_extraites ?? 0) * m,
+        temps_gagne_minutes: (stats.temps_gagne_minutes ?? 0) * m,
       };
     }
     // Demo mode: count from mock emails
@@ -171,7 +172,7 @@ const Dashboard = () => {
     const total = emailsDossiers + emailsGeneraux;
     const received = total + Math.round(total * 0.25); // total received includes spam/newsletters filtered out
     return {
-      ...briefing.content.stats,
+      ...(stats || {}),
       emails_received: received,
       emails_analyzed: total,
       emails_dossiers: emailsDossiers,
@@ -371,9 +372,10 @@ function DossierLine({
 
   // Single email: compact one-liner
   if (!hasMultiple) {
-    const narrative = d.emails_narrative.length > 90
-      ? d.emails_narrative.slice(0, 87) + "…"
-      : d.emails_narrative;
+    const narrativeText = d.emails_narrative || "";
+    const narrative = narrativeText.length > 90
+      ? narrativeText.slice(0, 87) + "…"
+      : narrativeText;
 
     return (
       <div
@@ -414,9 +416,10 @@ function DossierLine({
       {/* Stacked emails */}
       <div className="pl-8 pr-4 pb-3 space-y-1">
         {displayEmails.map((email) => {
-          const shortResume = email.resume.length > 70
-            ? email.resume.slice(0, 67) + "…"
-            : email.resume;
+          const resumeText = email.resume || "";
+          const shortResume = resumeText.length > 70
+            ? resumeText.slice(0, 67) + "…"
+            : resumeText;
 
           return (
             <div key={email.id} className="text-xs text-muted-foreground leading-relaxed">

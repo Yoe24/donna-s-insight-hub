@@ -28,7 +28,8 @@ interface Props {
 
 export function BriefingDetailPanel({ dossier, emails, periodLabel, onClose }: Props) {
   const navigate = useNavigate();
-  const lastEmail = emails.length > 0 ? emails[0] : null;
+  const safeEmails = emails || [];
+  const lastEmail = safeEmails.length > 0 ? safeEmails[0] : null;
 
   return (
     <AnimatePresence>
@@ -82,13 +83,13 @@ export function BriefingDetailPanel({ dossier, emails, periodLabel, onClose }: P
                       <div className="p-4 space-y-3">
                         <div className="flex items-baseline justify-between gap-2">
                           <p className="text-xs text-muted-foreground">
-                            De : {lastEmail.expediteur}
-                            <span className="ml-1">({lastEmail.email})</span>
+                            De : {lastEmail.expediteur || "Expéditeur inconnu"}
+                            {lastEmail.email && <span className="ml-1">({lastEmail.email})</span>}
                           </p>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">{lastEmail.date}</span>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">{lastEmail.date || "—"}</span>
                         </div>
-                        <p className="text-sm font-semibold text-foreground">{lastEmail.objet}</p>
-                        <p className="text-sm text-foreground/80 leading-relaxed">{lastEmail.resume}</p>
+                        <p className="text-sm font-semibold text-foreground">{lastEmail.objet || "Sans objet"}</p>
+                        <p className="text-sm text-foreground/80 leading-relaxed">{lastEmail.resume || ""}</p>
                         <button className="text-xs text-emerald hover:underline flex items-center gap-1 pt-1">
                           Voir l'email complet <ChevronRight className="h-3 w-3" />
                         </button>

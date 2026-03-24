@@ -155,7 +155,7 @@ const DossierDetailPage = () => {
       const data = await apiGet<DossierDetailData>(`/api/dossiers/${id}`);
       setDossier(data);
       setDocuments(data.dossier_documents || []);
-      if (data.emails && data.emails.length > 0) {
+      if (data?.emails && data.emails.length > 0) {
         setEmails(data.emails);
       } else {
         try {
@@ -216,9 +216,9 @@ const DossierDetailPage = () => {
     );
   }
 
-  const sortedEmails = [...emails].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  const sortedDocs = [...documents].sort((a, b) => new Date(b.date_reception || b.created_at).getTime() - new Date(a.date_reception || a.created_at).getTime());
-  const clientName = dossier.nom || dossier.name || dossier.nom_client;
+  const sortedEmails = [...(emails || [])].sort((a, b) => new Date(b?.created_at || 0).getTime() - new Date(a?.created_at || 0).getTime());
+  const sortedDocs = [...(documents || [])].sort((a, b) => new Date(b?.date_reception || b?.created_at || 0).getTime() - new Date(a?.date_reception || a?.created_at || 0).getTime());
+  const clientName = dossier?.nom || dossier?.name || dossier?.nom_client || "Client";
 
   // Compute last exchange date from emails if dernier_echange_date is not parseable
   const lastExchangeDate = (() => {
@@ -230,6 +230,8 @@ const DossierDetailPage = () => {
   })();
 
   const resumeText = dossier?.resume_situation || "";
+  const safeEmails = emails || [];
+  const safeDocs = documents || [];
   const resumeIsLong = resumeText.length > 250;
 
   return (
@@ -263,7 +265,7 @@ const DossierDetailPage = () => {
             {/* Info bloc */}
             <div className="text-right text-xs text-muted-foreground space-y-0.5 shrink-0">
               <p>Dernier échange : {lastExchangeDate}</p>
-              <p>{emails.length} emails · {documents.length} documents</p>
+              <p>{safeEmails.length} emails · {safeDocs.length} documents</p>
             </div>
           </div>
         </motion.div>
@@ -311,7 +313,7 @@ const DossierDetailPage = () => {
                   ) : (
                     sortedEmails.map((email) => {
                       const isSent = (email as any)._type === "envoye";
-                      const senderName = email.expediteur?.replace(/<[^>]+>/, "").trim() || "Inconnu";
+                      const senderName = (email.expediteur || "").replace(/<[^>]+>/, "").trim() || "Inconnu";
                       return (
                          <button
                            key={email.id}
@@ -327,9 +329,9 @@ const DossierDetailPage = () => {
                              {isSent ? "Vous" : senderName}
                            </span>
                            <span className="text-muted-foreground shrink-0">—</span>
-                           <span className="text-sm text-muted-foreground truncate flex-1 min-w-0">
-                             {email.objet}
-                           </span>
+                            <span className="text-sm text-muted-foreground truncate flex-1 min-w-0">
+                              {email.objet || "Sans objet"}
+                            </span>
                            <span className="text-xs text-muted-foreground shrink-0 ml-auto pl-2 tabular-nums whitespace-nowrap">
                              {formatDateShort(email.created_at)}
                            </span>
