@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Loader2, Mail, CheckCircle, ChevronRight, X, FolderOpen, Trash2 } from "lucide-react";
 import { apiGet, apiPut, apiPublicGet } from "@/lib/api";
@@ -36,8 +37,10 @@ const Configuration = () => {
   const navigate = useNavigate();
   const [config, setConfig] = useState<ConfigData>({});
   const [gmailConnected, setGmailConnected] = useState(false);
+  const [gmailEmail, setGmailEmail] = useState("");
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [connectingGmail, setConnectingGmail] = useState(false);
+  const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
   const isDemo = isDemoMode();
 
   // Dossiers
@@ -59,7 +62,8 @@ const Configuration = () => {
 
   useEffect(() => {
     if (isDemo) {
-      setGmailConnected(false);
+      setGmailConnected(true);
+      setGmailEmail("alexandra.fernandez@gmail.com");
       setSignature("Cordialement,\nMe Alexandra Martin");
       setTauxHoraire("");
       setSavedInstructions(["Les mails de l'Ordre des Avocats ne sont jamais urgents"]);
@@ -207,15 +211,26 @@ const Configuration = () => {
               Connexion email
             </h2>
             {gmailConnected ? (
-              <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-primary shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">Gmail connecté</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Donna surveille votre boîte mail en continu.</p>
+              <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-2">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">
+                      Connecté à <strong>{gmailEmail || "votre boîte Gmail"}</strong>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Donna analyse vos emails en continu</p>
+                  </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleConnectGmail} disabled={connectingGmail} className="text-xs text-muted-foreground">
-                  {connectingGmail && <Loader2 className="h-3 w-3 animate-spin mr-1" />} Reconnecter
-                </Button>
+                <div className="pl-8">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => setShowDisconnectDialog(true)}
+                  >
+                    Déconnecter
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="rounded-xl border border-border bg-card p-6 text-center space-y-4">
@@ -230,6 +245,31 @@ const Configuration = () => {
                 </Button>
               </div>
             )}
+
+            {/* Disconnect confirmation dialog */}
+            <AlertDialog open={showDisconnectDialog} onOpenChange={setShowDisconnectDialog}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Déconnecter Gmail ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûre ? Donna arrêtera d'analyser vos emails.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => {
+                      setGmailConnected(false);
+                      setGmailEmail("");
+                      toast.success("Gmail déconnecté");
+                    }}
+                  >
+                    Confirmer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </section>
 
           {/* Bloc 2 — Ce que Donna a compris */}
