@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Coffee, Eye, ChevronDown, Archive, Loader2, RefreshCw } from "lucide-react";
+import { Coffee, Loader2, RefreshCw, FolderOpen, Mail, Paperclip, CalendarDays, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Email } from "@/hooks/useEmails";
@@ -13,6 +12,8 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { apiGet } from "@/lib/api";
 import { EmailDrawer } from "@/components/EmailDrawer";
+import { isDemoMode } from "@/hooks/useDemoMode";
+import { activityFeed } from "@/lib/mock-data";
 
 // ── Helpers ──
 
@@ -21,149 +22,49 @@ function formatEmailTime(created_at: string) {
     const date = new Date(created_at);
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
-    if (isToday) {
-      return `Aujourd'hui à ${format(date, "HH'h'mm", { locale: fr })}`;
-    }
+    if (isToday) return format(date, "'Aujourd'hui à' HH'h'mm", { locale: fr });
     return format(date, "d MMM 'à' HH'h'mm", { locale: fr });
   } catch {
     return "";
   }
 }
 
-function useAnimatedCounter(target: number, duration = 1000) {
-  const [count, setCount] = useState(0);
-  const prevTarget = useRef(0);
-
-  useEffect(() => {
-    if (target === prevTarget.current) return;
-    prevTarget.current = target;
-    const startTime = performance.now();
-
-    const tick = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.round(target * eased));
-      if (progress < 1) requestAnimationFrame(tick);
-    };
-
-    requestAnimationFrame(tick);
-  }, [target, duration]);
-
-  return count;
-}
-
 function senderInitial(expediteur: string): string {
   const match = expediteur.match(/^([^<]+)/);
   const name = match ? match[1].trim() : expediteur;
-  const firstChar = name.replace(/[^a-zA-ZÀ-ÿ]/g, "")[0] || name[0] || "?";
-  return firstChar.toUpperCase();
+  return (name.replace(/[^a-zA-ZÀ-ÿ]/g, "")[0] || name[0] || "?").toUpperCase();
 }
 
 function senderColor(expediteur: string): string {
   let hash = 0;
-  for (let i = 0; i < expediteur.length; i++) {
-    hash = expediteur.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 60%, 45%)`;
+  for (let i = 0; i < expediteur.length; i++) hash = expediteur.charCodeAt(i) + ((hash << 5) - hash);
+  return `hsl(${Math.abs(hash) % 360}, 55%, 48%)`;
 }
 
-function SenderAvatar({ expediteur, size = 40 }: { expediteur: string; size?: number }) {
+function SenderAvatar({ expediteur, size = 28 }: { expediteur: string; size?: number }) {
   return (
     <div
-      className="rounded-full flex items-center justify-center shrink-0 text-white font-bold"
-      style={{
-        width: size,
-        height: size,
-        backgroundColor: senderColor(expediteur),
-        fontSize: size * 0.4,
-      }}
+      className="rounded-full flex items-center justify-center shrink-0 font-bold"
+      style={{ width: size, height: size, backgroundColor: senderColor(expediteur), color: "white", fontSize: size * 0.4 }}
     >
       {senderInitial(expediteur)}
     </div>
   );
 }
 
-type EmailCategorie = "client" | "prospect" | "other";
+// ── Types ──
 
-function getCategorie(email: Email): EmailCategorie {
-  const cat = email.metadata?.filtre?.categorie;
-  if (cat === "client") return "client";
-  if (cat === "prospect") return "prospect";
-  return "other";
-}
-
-function CategorieBadge({ email }: { email: Email }) {
-  const cat = getCategorie(email);
-  if (cat === "other") return null;
-
-  if (cat === "client") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-client-light text-client-foreground text-[10px] px-2 py-0.5 font-semibold">
-        👤 Client
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-prospect-light text-prospect-foreground text-[10px] px-2 py-0.5 font-semibold">
-      🌱 Prospect
-    </span>
-  );
-}
-
-function ImportArchives({ emails }: { emails: Email[] }) {
-  const senderCounts: Record<string, number> = {};
-  emails.forEach(e => {
-    senderCounts[e.expediteur] = (senderCounts[e.expediteur] || 0) + 1;
-  });
-  const sortedSenders = Object.entries(senderCounts).sort((a, b) => b[1] - a[1]);
-  const uniqueDossiers = new Set(emails.map(e => e.metadata?.filtre?.categorie)).size;
-
-  return (
-    <Collapsible>
-      <CollapsibleTrigger asChild>
-        <button className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors group">
-          <Archive className="h-3.5 w-3.5" />
-          <span>Voir les archives d'import</span>
-          <ChevronDown className="h-3 w-3 transition-transform group-data-[state=open]:rotate-180" />
-        </button>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <Card className="mt-3 border-border bg-card">
-          <CardContent className="p-4 space-y-3">
-            <p className="text-sm text-foreground">
-              <span className="font-medium">{emails.length} emails importés</span>, répartis sur{" "}
-              <span className="font-medium">{uniqueDossiers} catégories</span>
-            </p>
-            <div className="space-y-1.5">
-              {sortedSenders.slice(0, 10).map(([sender, count]) => (
-                <div key={sender} className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground truncate mr-4">{sender}</span>
-                  <span className="text-foreground font-medium tabular-nums">{count} email{count > 1 ? "s" : ""}</span>
-                </div>
-              ))}
-              {sortedSenders.length > 10 && (
-                <p className="text-xs text-muted-foreground">… et {sortedSenders.length - 10} autres expéditeurs</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </CollapsibleContent>
-    </Collapsible>
-  );
+interface DossierGroup {
+  dossier_id: string;
+  dossier_name: string;
+  domaine: string;
+  emails: Email[];
+  pieces: string[];
+  dates: string[];
 }
 
 // ── Constants ──
-
-const PAGE_SIZE = 20;
-
-const PIPELINE_LABELS: Record<string, string> = {
-  all: "Tous",
-  pret_a_reviser: "Prêt à réviser",
-  en_attente: "En attente",
-  filtre_rejete: "Filtrés",
-};
+const PAGE_SIZE = 10; // groups
 
 // ── Main Component ──
 
@@ -173,36 +74,70 @@ const FilActualite = () => {
   const [allEmails, setAllEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-
-  // Filters
-  const [filterPipeline, setFilterPipeline] = useState("all");
   const [filterDossier, setFilterDossier] = useState("all");
-  const [filterUnclassified, setFilterUnclassified] = useState(
-    () => searchParams.get("filter") === "unclassified"
-  );
+  const [visibleGroupCount, setVisibleGroupCount] = useState(PAGE_SIZE);
 
-  // Client-side pagination
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  // Dossier name lookup
+  const [dossierNames, setDossierNames] = useState<Record<string, { name: string; domaine: string }>>({});
+
+  const isDemo = isDemoMode();
 
   const fetchEmails = useCallback(async () => {
+    if (isDemo) {
+      // Convert mock activity feed to Email-like objects
+      const mockEmails: Email[] = activityFeed.map((item) => ({
+        id: item.id,
+        expediteur: item.expediteur,
+        objet: item.objet,
+        resume: item.resume,
+        brouillon: item.brouillon || null,
+        pipeline_step: "pret_a_reviser" as any,
+        contexte_choisi: "",
+        statut: "traite" as any,
+        metadata: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        dossier_id: item.dossier,
+      })) as any;
+      setAllEmails(mockEmails);
+      // Build dossier names from mock
+      const names: Record<string, { name: string; domaine: string }> = {};
+      activityFeed.forEach((item) => {
+        if (item.dossier) names[item.dossier] = { name: item.dossier, domaine: "" };
+      });
+      setDossierNames(names);
+      setLoading(false);
+      return;
+    }
     try {
-      const userId = localStorage.getItem("donna_user_id");
-      if (!userId) return;
       const data = await apiGet<Email[]>("/api/emails");
-      setAllEmails(
-        (data || []).sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        )
+      const sorted = (data || []).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
+      setAllEmails(sorted);
       setError(false);
     } catch (e) {
       console.error("Error fetching emails:", e);
       setError(true);
-      toast.error("Erreur de connexion — impossible de charger les emails");
+      toast.error("Erreur de connexion");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isDemo]);
+
+  // Fetch dossier names for live mode
+  useEffect(() => {
+    if (isDemo) return;
+    apiGet<any[]>("/api/dossiers")
+      .then((dossiers) => {
+        const map: Record<string, { name: string; domaine: string }> = {};
+        (dossiers || []).forEach((d: any) => {
+          map[d.id] = { name: d.nom_client || d.nom || d.id, domaine: d.domaine || "" };
+        });
+        setDossierNames(map);
+      })
+      .catch(() => {});
+  }, [isDemo]);
 
   useEffect(() => {
     const userId = searchParams.get("user_id");
@@ -214,79 +149,108 @@ const FilActualite = () => {
 
   useEffect(() => {
     fetchEmails();
-    const interval = setInterval(fetchEmails, 60000);
-    return () => clearInterval(interval);
-  }, [fetchEmails]);
+    if (!isDemo) {
+      const interval = setInterval(fetchEmails, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [fetchEmails, isDemo]);
 
-  // Compute metrics from emails
-  const traites = allEmails.filter(e => e.pipeline_step === "pret_a_reviser").length;
-  const enAttenteCount = allEmails.filter(e => e.pipeline_step === "en_attente").length;
-  const tempsMinutes = traites * 5;
-  const economise = Math.round(traites * 5 * 75 / 60);
-  const animatedTraites = useAnimatedCounter(traites, 1500);
+  // Group emails by dossier
+  const dossierGroups: DossierGroup[] = useMemo(() => {
+    const grouped: Record<string, Email[]> = {};
+    const ungrouped: Email[] = [];
 
-  // Extract unique dossier IDs for filter
-  const dossierIds = Array.from(
-    new Set(allEmails.map(e => (e as any).dossier_id).filter(Boolean))
-  ) as string[];
+    allEmails
+      .filter((e) => e.statut !== "archive" && e.pipeline_step !== "importe" && e.pipeline_step !== "filtre_rejete")
+      .forEach((email) => {
+        const dossierId = (email as any).dossier_id;
+        if (dossierId) {
+          if (!grouped[dossierId]) grouped[dossierId] = [];
+          grouped[dossierId].push(email);
+        } else {
+          ungrouped.push(email);
+        }
+      });
 
-  // Apply filters
-  const filteredEmails = allEmails
-    .filter(e => {
-      if (filterUnclassified && (e as any).dossier_id) return false;
-      if (filterPipeline !== "all" && e.pipeline_step !== filterPipeline) return false;
-      if (filterDossier !== "all" && (e as any).dossier_id !== filterDossier) return false;
-      return true;
-    })
-    .filter(e => e.statut !== "archive" && e.pipeline_step !== "importe");
+    const groups: DossierGroup[] = Object.entries(grouped).map(([id, emails]) => {
+      const info = dossierNames[id];
+      // Extract pieces from email classification
+      const pieces: string[] = [];
+      const dates: string[] = [];
+      emails.forEach((e) => {
+        const cls = (e as any).classification;
+        if (cls?.attachments) pieces.push(...cls.attachments);
+        if (cls?.key_dates) dates.push(...cls.key_dates.map((d: any) => typeof d === "string" ? d : `${d.date} — ${d.description}`));
+      });
 
-  // Sort: non-rejected first
-  const sortedEmails = [...filteredEmails].sort((a, b) => {
-    const aRej = a.pipeline_step === "filtre_rejete" ? 1 : 0;
-    const bRej = b.pipeline_step === "filtre_rejete" ? 1 : 0;
-    return aRej - bRej;
-  });
+      return {
+        dossier_id: id,
+        dossier_name: info?.name || `Dossier #${id.slice(0, 8)}`,
+        domaine: info?.domaine || "",
+        emails,
+        pieces: [...new Set(pieces)],
+        dates: [...new Set(dates)],
+      };
+    });
 
-  const visibleEmails = sortedEmails.slice(0, visibleCount);
-  const hasMore = visibleCount < sortedEmails.length;
-  const isInboxEmpty = sortedEmails.length === 0;
-  const importedEmails = allEmails.filter(e => e.pipeline_step === "importe");
+    // Add ungrouped as a pseudo-dossier
+    if (ungrouped.length > 0) {
+      groups.push({
+        dossier_id: "__unclassified__",
+        dossier_name: "Emails non classés",
+        domaine: "",
+        emails: ungrouped,
+        pieces: [],
+        dates: [],
+      });
+    }
 
-  // Reset pagination when filters change
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [filterPipeline, filterDossier, filterUnclassified]);
+    // Sort: most recent email first
+    groups.sort((a, b) => {
+      const aDate = a.emails[0] ? new Date(a.emails[0].created_at).getTime() : 0;
+      const bDate = b.emails[0] ? new Date(b.emails[0].created_at).getTime() : 0;
+      return bDate - aDate;
+    });
 
+    return groups;
+  }, [allEmails, dossierNames]);
+
+  // Filter
+  const filteredGroups = filterDossier === "all"
+    ? dossierGroups
+    : dossierGroups.filter((g) => g.dossier_id === filterDossier);
+
+  const visibleGroups = filteredGroups.slice(0, visibleGroupCount);
+  const hasMoreGroups = visibleGroupCount < filteredGroups.length;
+  const totalEmails = allEmails.filter((e) => e.statut !== "archive" && e.pipeline_step !== "importe" && e.pipeline_step !== "filtre_rejete").length;
+  const tempsMinutes = Math.round(totalEmails * 5);
+
+  // ── Loading ──
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="mt-8 mb-10 space-y-3">
-            <div className="h-16 w-48 bg-muted animate-pulse rounded" />
-            <div className="h-4 w-64 bg-muted animate-pulse rounded" />
-          </div>
-          <div className="space-y-2.5 pt-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="rounded-lg border border-border p-4 flex items-start gap-3">
-                <div className="h-10 w-10 rounded-full bg-muted animate-pulse shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 w-40 bg-muted animate-pulse rounded" />
-                  <div className="h-3 w-full bg-muted animate-pulse rounded" />
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="max-w-3xl mx-auto space-y-6 pt-8">
+          <div className="h-6 w-48 bg-muted animate-pulse rounded" />
+          <div className="h-4 w-64 bg-muted animate-pulse rounded" />
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-5 w-56 bg-muted animate-pulse rounded" />
+              <div className="h-16 bg-muted animate-pulse rounded-xl" />
+              <div className="h-16 bg-muted animate-pulse rounded-xl" />
+            </div>
+          ))}
         </div>
       </DashboardLayout>
     );
   }
 
+  // ── Error ──
   if (error && allEmails.length === 0) {
     return (
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto text-center py-20">
+        <div className="max-w-3xl mx-auto text-center py-20">
           <p className="text-lg font-serif text-foreground mb-2">Connexion impossible</p>
-          <p className="text-sm text-muted-foreground mb-4">Impossible de charger vos emails. Vérifiez votre connexion.</p>
+          <p className="text-sm text-muted-foreground mb-4">Impossible de charger vos emails.</p>
           <Button variant="outline" onClick={fetchEmails} className="gap-2">
             <RefreshCw className="h-4 w-4" /> Réessayer
           </Button>
@@ -297,181 +261,152 @@ const FilActualite = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto">
-
-        {/* Header metrics */}
-        <div className="mt-8 mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="flex items-baseline gap-3"
-          >
-            <span className="text-[4rem] font-extrabold leading-none tabular-nums text-foreground">
-              {animatedTraites}
-            </span>
-            <span className="text-base font-normal text-muted-foreground">
-              emails traités
-            </span>
-          </motion.div>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.4 }}
-            className="mt-2 text-[0.9rem] text-muted-foreground"
-          >
-            ⏱ {tempsMinutes}min gagnées
-          </motion.p>
-          {enAttenteCount > 0 && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.35, duration: 0.3 }}
-              className="mt-1.5 text-[0.85rem] text-destructive"
-            >
-              ⚡ {enAttenteCount} email{enAttenteCount > 1 ? "s" : ""} nécessite{enAttenteCount > 1 ? "nt" : ""} votre attention
-            </motion.p>
-          )}
+      <div className="max-w-3xl mx-auto pb-16">
+        {/* Header */}
+        <div className="pt-8 pb-2">
+          <h1 className="text-lg font-serif font-semibold text-foreground">Activité de Donna</h1>
+          <p className="text-sm text-muted-foreground mt-1">Tout ce que Donna a traité dans vos emails</p>
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-3 mb-6 flex-wrap">
-          <Select value={filterPipeline} onValueChange={setFilterPipeline}>
-            <SelectTrigger className="w-44 h-8 text-xs bg-card border-border">
-              <SelectValue />
+        {/* Filter */}
+        <div className="flex items-center gap-3 mb-6 mt-4">
+          <Select value={filterDossier} onValueChange={(v) => { setFilterDossier(v); setVisibleGroupCount(PAGE_SIZE); }}>
+            <SelectTrigger className="w-52 h-8 text-xs bg-card border-border">
+              <SelectValue placeholder="Tous les dossiers" />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(PIPELINE_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
-              ))}
+              <SelectItem value="all">Tous les dossiers</SelectItem>
+              {dossierGroups
+                .filter((g) => g.dossier_id !== "__unclassified__")
+                .map((g) => (
+                  <SelectItem key={g.dossier_id} value={g.dossier_id}>
+                    {g.dossier_name}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
-
-          {dossierIds.length > 0 && (
-            <Select value={filterDossier} onValueChange={setFilterDossier}>
-              <SelectTrigger className="w-44 h-8 text-xs bg-card border-border">
-                <SelectValue placeholder="Tous les dossiers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les dossiers</SelectItem>
-                {dossierIds.map(id => (
-                  <SelectItem key={id} value={id}>{id}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          {filterUnclassified && (
-            <button
-              onClick={() => setFilterUnclassified(false)}
-              className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
-            >
-              Non classés uniquement ✕
-            </button>
-          )}
-
           <span className="text-xs text-muted-foreground ml-auto">
-            {sortedEmails.length} email{sortedEmails.length !== 1 ? "s" : ""}
+            {filteredGroups.length} dossier{filteredGroups.length !== 1 ? "s" : ""}
           </span>
         </div>
 
         {/* Empty state */}
-        {allEmails.length === 0 ? (
-          <div className="text-center py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" />
-            <p className="text-lg font-serif text-foreground mb-1">Donna analyse vos emails...</p>
-            <p className="text-sm text-muted-foreground">Revenez dans quelques minutes.</p>
-          </div>
-        ) : isInboxEmpty ? (
-          <div className="space-y-6">
+        {dossierGroups.length === 0 ? (
+          allEmails.length === 0 ? (
+            <div className="text-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" />
+              <p className="text-lg font-serif text-foreground mb-1">Donna analyse vos emails...</p>
+              <p className="text-sm text-muted-foreground">Revenez dans quelques minutes.</p>
+            </div>
+          ) : (
             <div className="text-center py-12">
               <Coffee className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-xs text-muted-foreground">Rien de nouveau pour l'instant</p>
             </div>
-            {importedEmails.length > 0 && <ImportArchives emails={importedEmails} />}
-          </div>
+          )
         ) : (
-          <div className="space-y-2.5">
-            <AnimatePresence>
-              {visibleEmails.map((email, i) => {
-                const isRejected = email.pipeline_step === "filtre_rejete";
+          <div className="space-y-6">
+            {visibleGroups.map((group, gi) => (
+              <motion.div
+                key={group.dossier_id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: gi * 0.05 }}
+              >
+                {/* Dossier header */}
+                <div className="flex items-center gap-2 mb-3">
+                  <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-semibold text-foreground">{group.dossier_name}</span>
+                  {group.domaine && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                      {group.domaine}
+                    </span>
+                  )}
+                </div>
 
-                return (
-                  <motion.div
-                    key={email.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ delay: i * 0.04 }}
-                  >
+                {/* Emails in this dossier */}
+                <div className="space-y-2 pl-6 border-l-2 border-border ml-2">
+                  {group.emails.map((email) => (
                     <Card
-                      className={`bg-card hover:shadow-md transition-all cursor-pointer group ${isRejected ? "opacity-40" : ""}`}
-                      onClick={() => {
-                        if (!isRejected) setSelectedEmail(email);
-                      }}
+                      key={email.id}
+                      className="bg-card hover:shadow-sm transition-all cursor-pointer group"
+                      onClick={() => setSelectedEmail(email)}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <SenderAvatar expediteur={email.expediteur} />
+                      <CardContent className="p-3">
+                        <div className="flex items-start gap-2.5">
+                          <Mail className="h-3.5 w-3.5 text-muted-foreground mt-1 shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-semibold text-sm text-foreground truncate">{email.expediteur}</span>
-                              {isRejected ? (
-                                <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground text-[10px] px-2 py-0.5 font-medium">Filtré</span>
-                              ) : (
-                                <CategorieBadge email={email} />
-                              )}
-                              <span className="text-[11px] text-muted-foreground ml-auto shrink-0">{formatEmailTime(email.created_at)}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-foreground truncate">{email.expediteur}</span>
+                              <span className="text-[10px] text-muted-foreground shrink-0">
+                                {formatEmailTime(email.created_at)}
+                              </span>
                             </div>
-                            <p className="text-sm text-foreground/80 mt-1 truncate">{email.objet}</p>
-                            {!isRejected && email.resume && (
-                              <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">{email.resume}</p>
+                            <p className="text-sm text-foreground/70 truncate mt-0.5">"{email.objet}"</p>
+                            {email.resume && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-1 leading-relaxed">
+                                → {email.resume}
+                              </p>
                             )}
                           </div>
-                          {!isRejected && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="shrink-0 mt-0.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedEmail(email);
-                              }}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          )}
+                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                       </CardContent>
                     </Card>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                  ))}
+
+                  {/* Pieces jointes for this dossier */}
+                  {group.pieces.length > 0 && (
+                    <div className="flex items-start gap-2 px-3 py-2">
+                      <Paperclip className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        Pièces reçues : {group.pieces.join(", ")}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Dates détectées for this dossier */}
+                  {group.dates.length > 0 && (
+                    <div className="flex items-start gap-2 px-3 py-2">
+                      <CalendarDays className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                      <div className="space-y-0.5">
+                        {group.dates.map((date, di) => (
+                          <p key={di} className="text-xs text-muted-foreground">{date}</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
 
             {/* Load more */}
-            {hasMore && (
-              <div className="text-center pt-4 pb-8">
+            {hasMoreGroups && (
+              <div className="text-center pt-4">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
+                  onClick={() => setVisibleGroupCount((prev) => prev + PAGE_SIZE)}
                   className="text-xs"
                 >
-                  Charger plus ({sortedEmails.length - visibleCount} restants)
+                  Voir plus de dossiers ({filteredGroups.length - visibleGroupCount} restants)
                 </Button>
               </div>
             )}
           </div>
         )}
+
+        {/* Footer stats */}
+        {totalEmails > 0 && (
+          <p className="text-xs text-muted-foreground/50 text-center pt-10">
+            {totalEmails} emails traités · {tempsMinutes}min gagnées
+          </p>
+        )}
       </div>
 
       <AnimatePresence>
         {selectedEmail && (
-          <EmailDrawer
-            email={selectedEmail}
-            onClose={() => setSelectedEmail(null)}
-          />
+          <EmailDrawer email={selectedEmail} onClose={() => setSelectedEmail(null)} />
         )}
       </AnimatePresence>
     </DashboardLayout>
