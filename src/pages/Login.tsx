@@ -206,7 +206,13 @@ const Login = () => {
                 <p className="text-xs text-muted-foreground text-center italic font-sans">Bientôt disponible</p>
               </div>
 
-
+              {/* Demo button */}
+              <button
+                onClick={handleStartDemo}
+                className="w-full min-h-[56px] rounded-xl border border-primary/30 bg-primary/5 text-primary font-medium text-sm font-sans flex items-center justify-center gap-2 hover:bg-primary/10 hover:border-primary/50 transition-colors"
+              >
+                Essayer la démo →
+              </button>
 
 
               {/* Separator + fallback login */}

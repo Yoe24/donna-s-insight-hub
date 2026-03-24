@@ -234,6 +234,109 @@ function ScanScreen() {
   );
 }
 
+// ── Demo Scan Screen ──
+
+const DEMO_MESSAGES = [
+  "Donna analyse vos emails...",
+  "42 emails détectés",
+  "7 dossiers identifiés",
+  "12 pièces jointes extraites",
+  "Votre briefing est prêt",
+];
+
+function DemoScanScreen() {
+  const navigate = useNavigate();
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [canProceed, setCanProceed] = useState(false);
+
+  // Animate progress over 6 seconds
+  useEffect(() => {
+    const duration = 6000;
+    const interval = 50;
+    const steps = duration / interval;
+    let step = 0;
+    const timer = setInterval(() => {
+      step++;
+      setProgress(Math.min(100, (step / steps) * 100));
+      if (step >= steps) {
+        clearInterval(timer);
+        setCanProceed(true);
+      }
+    }, interval);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Rotate messages
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMessageIndex((prev) => Math.min(prev + 1, DEMO_MESSAGES.length - 1));
+    }, 1200);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentMessage = DEMO_MESSAGES[messageIndex];
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-sm w-full text-center space-y-10"
+      >
+        <motion.h2
+          animate={{ opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="text-3xl font-serif font-bold tracking-tight text-foreground"
+        >
+          Donna
+        </motion.h2>
+
+        <div className="h-8 relative overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={currentMessage}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.4 }}
+              className="text-sm text-muted-foreground absolute inset-x-0"
+            >
+              {currentMessage}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+
+        <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
+          <motion.div
+            className="h-full rounded-full bg-primary"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        <AnimatePresence>
+          {canProceed && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Button
+                size="lg"
+                className="w-full rounded-xl"
+                onClick={() => navigate("/dashboard")}
+              >
+                Voir mon briefing →
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  );
+}
+
 // ── Choose Mode ──
 
 function ChooseMode() {
