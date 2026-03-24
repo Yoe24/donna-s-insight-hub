@@ -5,14 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, RefreshCw, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { apiGet, apiPost } from "@/lib/api";
 import { isDemoMode } from "@/hooks/useDemoMode";
-import { mockBriefing, type BriefingData, type BriefingDossier } from "@/lib/mock-briefing";
+import { mockBriefing, mockDossierEmails, type BriefingData, type BriefingDossier } from "@/lib/mock-briefing";
+import { BriefingDetailPanel, type DossierEmail } from "@/components/BriefingDetailPanel";
 
 const fadeIn = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } };
+
+type PeriodFilter = "24h" | "7j" | "30j";
+
+const PERIOD_LABELS: Record<PeriodFilter, string> = {
+  "24h": "24 heures",
+  "7j": "7 jours",
+  "30j": "30 jours",
+};
 
 const Dashboard = () => {
   const [searchParams] = useSearchParams();
@@ -22,6 +31,9 @@ const Dashboard = () => {
   const [notFound, setNotFound] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [nomAvocat, setNomAvocat] = useState("");
+  const [period, setPeriod] = useState<PeriodFilter>("24h");
+  const [selectedDossier, setSelectedDossier] = useState<BriefingDossier | null>(null);
+  const [panelEmails, setPanelEmails] = useState<DossierEmail[]>([]);
 
   useEffect(() => {
     const userId = searchParams.get("user_id");
@@ -72,6 +84,32 @@ const Dashboard = () => {
     finally { setGenerating(false); }
   };
 
+  const handleDossierClick = (d: BriefingDossier) => {
+    setSelectedDossier(d);
+    // In demo mode, use mock emails; in live mode, fetch from API
+    if (isDemoMode()) {
+      setPanelEmails(mockDossierEmails[d.dossier_id] ?? []);
+    } else {
+      apiGet<DossierEmail[]>(`/api/emails?dossier_id=${d.dossier_id}`)
+        .then((emails) => setPanelEmails(emails ?? []))
+        .catch(() => setPanelEmails([]));
+    }
+  };
+
+  // Period-based filtering for demo stats
+  const periodMultiplier = period === "24h" ? 1 : period === "7j" ? 5 : 18;
+  const adjustedStats = briefing?.content.stats
+    ? {
+        ...briefing.content.stats,
+        emails_analyzed: briefing.content.stats.emails_analyzed * periodMultiplier,
+        emails_dossiers: (briefing.content.stats.emails_dossiers ?? briefing.content.stats.emails_analyzed) * periodMultiplier,
+        emails_generaux: (briefing.content.stats.emails_generaux ?? 0) * periodMultiplier,
+        pieces_extraites: (briefing.content.stats.pieces_extraites ?? 0) * periodMultiplier,
+        dates_detectees: (briefing.content.stats.dates_detectees ?? 0) * periodMultiplier,
+        temps_gagne_minutes: (briefing.content.stats.temps_gagne_minutes ?? 0) * periodMultiplier,
+      }
+    : null;
+
   const now = new Date();
   const h = now.getHours();
   const greeting = h < 12 ? "Bonjour" : h < 18 ? "Bon après-midi" : "Bonsoir";
@@ -80,7 +118,6 @@ const Dashboard = () => {
   const dossiers = briefing?.content.dossiers ?? [];
   const activeDossiers = dossiers.filter((d) => d.new_emails_count > 0);
   const attenteDossiers = dossiers.filter((d) => d.attente);
-  const stats = briefing?.content.stats;
 
   if (loading) {
     return (
@@ -117,24 +154,41 @@ const Dashboard = () => {
         {/* Header */}
         <motion.p
           {...fadeIn}
-          className="pt-8 pb-6 text-lg font-serif text-foreground"
+          className="pt-8 pb-4 text-lg font-serif text-foreground"
         >
           {greeting}{nomAvocat ? ` ${nomAvocat}` : ""} — <span className="capitalize">{dateStr}</span>
         </motion.p>
 
+        {/* Period tabs */}
+        <motion.div {...fadeIn} transition={{ delay: 0.03 }} className="flex gap-1.5 mb-6">
+          {(["24h", "7j", "30j"] as PeriodFilter[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                period === p
+                  ? "bg-emerald text-emerald-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {PERIOD_LABELS[p]}
+            </button>
+          ))}
+        </motion.div>
+
         {/* Rapport Donna */}
-        {stats && (
+        {adjustedStats && (
           <motion.div
             {...fadeIn}
             transition={{ delay: 0.05 }}
             className="rounded-xl bg-muted/50 px-5 py-4 mb-10"
           >
             <p className="text-sm text-foreground/80 leading-relaxed">
-              Donna a traité <strong>{stats.emails_analyzed} emails</strong> depuis hier soir.
+              Donna a traité <strong>{adjustedStats.emails_analyzed} emails</strong> {period === "24h" ? "depuis hier soir" : period === "7j" ? "cette semaine" : "ce mois-ci"}.
               <br />
-              <strong>{stats.emails_dossiers ?? stats.emails_analyzed}</strong> emails liés à vos dossiers · <strong>{stats.emails_generaux ?? 0}</strong> emails généraux
+              <strong>{adjustedStats.emails_dossiers}</strong> emails liés à vos dossiers · <strong>{adjustedStats.emails_generaux}</strong> emails généraux
               <br />
-              <strong>{stats.pieces_extraites ?? 0}</strong> pièces jointes extraites · <strong>{stats.dates_detectees ?? 0}</strong> dates importantes détectées
+              <strong>{adjustedStats.pieces_extraites}</strong> pièces jointes extraites · <strong>{adjustedStats.dates_detectees}</strong> dates importantes détectées
             </p>
           </motion.div>
         )}
@@ -147,7 +201,7 @@ const Dashboard = () => {
             </h2>
             <div className="space-y-1">
               {activeDossiers.map((d) => (
-                <DossierLine key={d.dossier_id} dossier={d} navigate={navigate} />
+                <DossierLine key={d.dossier_id} dossier={d} onClick={() => handleDossierClick(d)} />
               ))}
             </div>
           </motion.section>
@@ -169,7 +223,7 @@ const Dashboard = () => {
               {attenteDossiers.map((d) => (
                 <div
                   key={`attente-${d.dossier_id}`}
-                  onClick={() => navigate(`/dossiers/${d.dossier_id}`)}
+                  onClick={() => handleDossierClick(d)}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted/40 cursor-pointer transition-colors group"
                 >
                   <div className="flex-1 min-w-0">
@@ -186,16 +240,24 @@ const Dashboard = () => {
         )}
 
         {/* Stats footer */}
-        {stats && (
+        {adjustedStats && (
           <motion.p
             {...fadeIn}
             transition={{ delay: 0.3 }}
             className="text-xs text-muted-foreground/50 text-center pt-8"
           >
-            {stats.emails_analyzed} emails traités · {stats.temps_gagne_minutes ?? 0}min gagnées
+            {adjustedStats.emails_analyzed} emails traités · {adjustedStats.temps_gagne_minutes}min gagnées
           </motion.p>
         )}
       </div>
+
+      {/* Detail panel */}
+      <BriefingDetailPanel
+        dossier={selectedDossier}
+        emails={panelEmails}
+        periodLabel={PERIOD_LABELS[period]}
+        onClose={() => setSelectedDossier(null)}
+      />
     </DashboardLayout>
   );
 };
@@ -204,10 +266,10 @@ const Dashboard = () => {
 
 function DossierLine({
   dossier: d,
-  navigate,
+  onClick,
 }: {
   dossier: BriefingDossier;
-  navigate: (path: string) => void;
+  onClick: () => void;
 }) {
   const isUrgent = d.deadline_days !== null && d.deadline_days <= 7;
   const narrative = d.emails_narrative.length > 90
@@ -216,7 +278,7 @@ function DossierLine({
 
   return (
     <div
-      onClick={() => navigate(`/dossiers/${d.dossier_id}`)}
+      onClick={onClick}
       className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted/40 cursor-pointer transition-colors group"
     >
       {/* Urgency dot */}

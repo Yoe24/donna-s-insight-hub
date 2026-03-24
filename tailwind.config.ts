@@ -81,6 +81,11 @@ export default {
           light: "hsl(var(--donna-light))",
           foreground: "hsl(var(--donna-foreground))",
         },
+        emerald: {
+          DEFAULT: "hsl(var(--emerald))",
+          foreground: "hsl(var(--emerald-foreground))",
+          light: "hsl(var(--emerald-light))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
