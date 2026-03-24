@@ -40,13 +40,19 @@ const Login = () => {
   const { signIn } = useAuth();
   const emailRef = useRef<HTMLInputElement>(null);
 
-  // Redirect if already logged in via localStorage
+  // Redirect if already logged in via localStorage or demo mode
   useEffect(() => {
     const userId = localStorage.getItem("donna_user_id");
-    if (userId) {
+    const isDemo = localStorage.getItem("donna_demo_mode") === "true";
+    if (userId || isDemo) {
       navigate("/dashboard", { replace: true });
     }
   }, [navigate]);
+
+  const handleStartDemo = () => {
+    localStorage.setItem("donna_demo_mode", "true");
+    navigate("/onboarding?demo=true");
+  };
 
   useEffect(() => {
     if (showFallback) emailRef.current?.focus();
@@ -200,7 +206,13 @@ const Login = () => {
                 <p className="text-xs text-muted-foreground text-center italic font-sans">Bientôt disponible</p>
               </div>
 
-
+              {/* Demo button */}
+              <button
+                onClick={handleStartDemo}
+                className="w-full min-h-[56px] rounded-xl border border-primary/30 bg-primary/5 text-primary font-medium text-sm font-sans flex items-center justify-center gap-2 hover:bg-primary/10 hover:border-primary/50 transition-colors"
+              >
+                Essayer la démo →
+              </button>
 
 
               {/* Separator + fallback login */}

@@ -37,12 +37,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   const hasLocalUserId = !!localStorage.getItem("donna_user_id");
+  const isDemoMode = localStorage.getItem("donna_demo_mode") === "true";
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Chargement...</div>;
   }
 
-  if (!user && !hasLocalUserId) {
+  if (!user && !hasLocalUserId && !isDemoMode) {
     window.location.replace("/login");
     return null;
   }

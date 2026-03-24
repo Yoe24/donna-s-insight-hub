@@ -6,7 +6,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDossiers } from "@/hooks/useDossiers";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import { dossiers as mockDossiersList } from "@/lib/mock-data";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -61,7 +60,7 @@ export function AppSidebar() {
   const { signOut } = useAuth();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const { dossiers: liveDossiers, loading: liveLoading } = useDossiers();
-  const { isDemo, toggleMode } = useDemoMode();
+  const { isDemo } = useDemoMode();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -107,26 +106,6 @@ export function AppSidebar() {
 
   const getBriefInfo = (dossierId: string) => {
     return briefDossiers.find((bd) => bd.dossier_id === dossierId);
-  };
-
-  // Check if Gmail is connected
-  const [gmailConnected, setGmailConnected] = useState(false);
-  useEffect(() => {
-    if (isDemo) return;
-    apiGet<any>("/api/config")
-      .then((d) => setGmailConnected(!!d?.refresh_token))
-      .catch(() => {});
-  }, [isDemo]);
-
-  const handleToggleMode = () => {
-    if (isDemo) {
-      // Switching to Gmail mode
-      if (!gmailConnected && !localStorage.getItem("donna_user_id")) {
-        navigate("/configuration");
-        return;
-      }
-    }
-    toggleMode();
   };
 
   const handleLogout = async () => {
@@ -303,18 +282,15 @@ export function AppSidebar() {
         </SidebarContent>
 
         <SidebarFooter className="p-4 space-y-3">
-          {/* Demo / Gmail toggle */}
-          {!collapsed && (
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">
-                {isDemo ? "Mode démo" : "Mode Gmail"}
-              </span>
-              <Switch
-                checked={!isDemo}
-                onCheckedChange={handleToggleMode}
-                className="scale-90"
-              />
-            </div>
+          {/* Demo mode: link to connect Gmail */}
+          {!collapsed && isDemo && (
+            <Link
+              to="/login"
+              onClick={() => localStorage.removeItem("donna_demo_mode")}
+              className="text-xs text-primary hover:underline font-sans"
+            >
+              Connecter Gmail pour de vrais dossiers →
+            </Link>
           )}
 
           <button
