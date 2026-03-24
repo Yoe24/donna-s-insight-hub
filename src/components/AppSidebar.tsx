@@ -61,7 +61,7 @@ export function AppSidebar() {
   const { signOut } = useAuth();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const { dossiers: liveDossiers, loading: liveLoading } = useDossiers();
-  const { isDemo, toggleMode } = useDemoMode();
+  const { isDemo } = useDemoMode();
   const navigate = useNavigate();
   const location = useLocation();
 
