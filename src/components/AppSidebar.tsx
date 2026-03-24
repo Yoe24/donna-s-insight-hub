@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Settings, LogOut, Mail, Paperclip, InboxIcon } from "lucide-react";
+import { LayoutDashboard, Settings, LogOut, Mail, InboxIcon } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDossiers } from "@/hooks/useDossiers";
+import { useDemoMode } from "@/hooks/useDemoMode";
+import { dossiers as mockDossiersList } from "@/lib/mock-data";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -31,7 +35,7 @@ import { cn } from "@/lib/utils";
 import { apiGet } from "@/lib/api";
 
 const navItems = [
-  { title: "Aujourd'hui", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Briefing", url: "/dashboard", icon: LayoutDashboard },
   { title: "Fil d'actualité", url: "/fil", icon: Mail },
   { title: "Configurez-moi", url: "/configuration", icon: Settings },
 ];
@@ -56,7 +60,8 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const { dossiers, loading } = useDossiers();
+  const { dossiers: liveDossiers, loading: liveLoading } = useDossiers();
+  const { isDemo, toggleMode } = useDemoMode();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -64,7 +69,22 @@ export function AppSidebar() {
   const [briefDossiers, setBriefDossiers] = useState<BriefDossier[]>([]);
   const [unclassifiedCount, setUnclassifiedCount] = useState(0);
 
+  // Build dossier list based on mode
+  const demoDossiers = mockDossiersList.map((d) => ({
+    id: d.id,
+    nom_client: d.nomClient,
+    email_client: "",
+    statut: d.statut,
+    domaine: d.categorie,
+    dernier_echange_date: "",
+    nouveaux_emails: d.nombreMails,
+  }));
+
+  const dossiers = isDemo ? demoDossiers : liveDossiers;
+  const loading = isDemo ? false : liveLoading;
+
   useEffect(() => {
+    if (isDemo) return;
     const fetchBriefData = async () => {
       try {
         const brief = await apiGet<any>("/api/briefs/today");
@@ -83,10 +103,30 @@ export function AppSidebar() {
     fetchBriefData();
     const interval = setInterval(fetchBriefData, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isDemo]);
 
   const getBriefInfo = (dossierId: string) => {
     return briefDossiers.find((bd) => bd.dossier_id === dossierId);
+  };
+
+  // Check if Gmail is connected
+  const [gmailConnected, setGmailConnected] = useState(false);
+  useEffect(() => {
+    if (isDemo) return;
+    apiGet<any>("/api/config")
+      .then((d) => setGmailConnected(!!d?.refresh_token))
+      .catch(() => {});
+  }, [isDemo]);
+
+  const handleToggleMode = () => {
+    if (isDemo) {
+      // Switching to Gmail mode
+      if (!gmailConnected && !localStorage.getItem("donna_user_id")) {
+        navigate("/configuration");
+        return;
+      }
+    }
+    toggleMode();
   };
 
   const handleLogout = async () => {
@@ -101,10 +141,23 @@ export function AppSidebar() {
     <>
       <Sidebar collapsible="icon" className="border-r border-border">
         <div className="px-4 py-6">
-          <Link to="/dashboard">
+          <Link to="/dashboard" className="flex items-center gap-2">
             <h2 className="text-xl font-serif font-bold text-sidebar-foreground">
               {collapsed ? "D" : "Donna"}
             </h2>
+            {!collapsed && (
+              <Badge
+                className={cn(
+                  "text-[9px] font-semibold px-1.5 py-0 h-4 rounded",
+                  isDemo
+                    ? "bg-amber-100 text-amber-700 border-amber-200"
+                    : "bg-emerald-100 text-emerald-700 border-emerald-200"
+                )}
+                variant="outline"
+              >
+                {isDemo ? "DÉMO" : "LIVE"}
+              </Badge>
+            )}
           </Link>
         </div>
 
@@ -188,7 +241,6 @@ export function AppSidebar() {
                             )}
                           >
                             <div className="flex items-center gap-2 w-full min-w-0">
-                              {/* Avatar / Initiale */}
                               <div className="relative shrink-0">
                                 <div
                                   className={cn(
@@ -200,11 +252,10 @@ export function AppSidebar() {
                                 >
                                   {getInitials(dossier.nom_client)}
                                 </div>
-                                {/* Status dot: red if needs attention, green otherwise */}
                                 <span
                                   className={cn(
                                     "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-sidebar",
-                                    needsAttention ? "bg-destructive" : "bg-[#10B981]"
+                                    needsAttention ? "bg-destructive" : "bg-primary"
                                   )}
                                 />
                               </div>
@@ -236,7 +287,7 @@ export function AppSidebar() {
               </ScrollArea>
 
               {/* Emails non classés */}
-              {!collapsed && unclassifiedCount > 0 && (
+              {!collapsed && unclassifiedCount > 0 && !isDemo && (
                 <div className="px-3 pt-2 pb-1">
                   <button
                     onClick={() => navigate("/fil?filter=unclassified")}
@@ -251,7 +302,21 @@ export function AppSidebar() {
           </SidebarGroup>
         </SidebarContent>
 
-        <SidebarFooter className="p-4">
+        <SidebarFooter className="p-4 space-y-3">
+          {/* Demo / Gmail toggle */}
+          {!collapsed && (
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                {isDemo ? "Mode démo" : "Mode Gmail"}
+              </span>
+              <Switch
+                checked={!isDemo}
+                onCheckedChange={handleToggleMode}
+                className="scale-90"
+              />
+            </div>
+          )}
+
           <button
             onClick={() => setShowLogoutDialog(true)}
             className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors font-sans"

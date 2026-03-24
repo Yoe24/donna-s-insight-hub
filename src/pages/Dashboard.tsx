@@ -4,61 +4,22 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, RefreshCw, Mail, FolderOpen, CalendarDays, Reply, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, RefreshCw, ChevronRight, CalendarDays, Clock, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
+import { format, differenceInDays, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { apiGet, apiPost } from "@/lib/api";
+import { isDemoMode } from "@/hooks/useDemoMode";
+import { mockBriefing, type BriefingData, type BriefingDossier } from "@/lib/mock-briefing";
 
-// ── Types ──
-
-interface BriefDossier {
-  dossier_id: string;
-  nom: string;
-  new_emails_count: number;
-  summary: string;
-  dates_cles: string[];
-  emails_recus: string[];
-  needs_immediate_attention: boolean;
-}
-
-interface BriefData {
-  content: {
-    executive_summary: string;
-    stats: {
-      emails_analyzed: number;
-      dossiers_count: number;
-      deadline_soon_count: number;
-      needs_response_count: number;
-    };
-    dossiers: BriefDossier[];
-  };
-}
-
-// ── Animated counter ──
-
-function useAnimatedCounter(target: number, duration = 1200) {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (target === 0) { setCount(0); return; }
-    const start = performance.now();
-    const tick = (now: number) => {
-      const p = Math.min((now - start) / duration, 1);
-      setCount(Math.round(target * (1 - Math.pow(1 - p, 3))));
-      if (p < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }, [target, duration]);
-  return count;
-}
-
-// ── Dashboard ──
+const fadeIn = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } };
 
 const Dashboard = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [brief, setBrief] = useState<BriefData | null>(null);
+  const [briefing, setBriefing] = useState<BriefingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -72,34 +33,43 @@ const Dashboard = () => {
     }
   }, [searchParams]);
 
-  const fetchBrief = useCallback(async () => {
+  const fetchBriefing = useCallback(async () => {
+    if (isDemoMode()) {
+      setBriefing(mockBriefing);
+      setNomAvocat("Alexandra");
+      setNotFound(false);
+      setLoading(false);
+      return;
+    }
     try {
-      const data = await apiGet<BriefData>("/api/briefs/today");
-      setBrief(data);
+      const data = await apiGet<BriefingData>("/api/briefs/today");
+      setBriefing(data);
       setNotFound(false);
     } catch (e: any) {
       if (e?.message?.includes("404")) setNotFound(true);
-      else { console.error(e); toast.error("Impossible de charger le brief"); }
+      else { console.error(e); toast.error("Impossible de charger le briefing"); }
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchBrief();
-    apiGet<{ nom_avocat?: string }>("/api/config")
-      .then((d) => { if (d?.nom_avocat) setNomAvocat(d.nom_avocat); })
-      .catch(() => {});
-  }, [fetchBrief]);
+    fetchBriefing();
+    if (!isDemoMode()) {
+      apiGet<{ nom_avocat?: string }>("/api/config")
+        .then((d) => { if (d?.nom_avocat) setNomAvocat(d.nom_avocat); })
+        .catch(() => {});
+    }
+  }, [fetchBriefing]);
 
   const handleGenerate = async () => {
     setGenerating(true);
     try {
       await apiPost("/api/briefs/generate");
-      toast.success("Brief généré");
+      toast.success("Briefing généré");
       setLoading(true);
       setNotFound(false);
-      await fetchBrief();
+      await fetchBriefing();
     } catch { toast.error("Erreur lors de la génération"); }
     finally { setGenerating(false); }
   };
@@ -109,169 +79,187 @@ const Dashboard = () => {
   const greeting = h < 12 ? "Bonjour" : h < 18 ? "Bon après-midi" : "Bonsoir";
   const dateStr = format(now, "EEEE d MMMM yyyy", { locale: fr });
 
-  const stats = brief?.content.stats;
-  const aEmails = useAnimatedCounter(stats?.emails_analyzed ?? 0);
-  const aDossiers = useAnimatedCounter(stats?.dossiers_count ?? 0);
-  const aDeadlines = useAnimatedCounter(stats?.deadline_soon_count ?? 0);
-  const aResponses = useAnimatedCounter(stats?.needs_response_count ?? 0);
+  const dossiers = briefing?.content.dossiers ?? [];
+  const activeDossiers = dossiers.filter((d) => d.new_emails_count > 0 || d.needs_immediate_attention);
+  const attenteDossiers = dossiers.filter((d) => d.attente);
+  const stats = briefing?.content.stats;
 
-  const userId = localStorage.getItem("donna_user_id");
-  const allDossiers = brief?.content.dossiers ?? [];
-  const urgentDossiers = allDossiers.filter((d) => d.needs_immediate_attention);
-  const visibleDossiers = allDossiers.slice(0, 5);
-  const hasMore = allDossiers.length > 5;
-
-  // ── Loading skeleton ──
+  // ── Loading ──
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto space-y-6 pt-8">
-          <Skeleton className="h-7 w-80" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
-          </div>
-          <Skeleton className="h-5 w-32 mt-6" />
-          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
+        <div className="max-w-3xl mx-auto space-y-6 pt-8">
+          <Skeleton className="h-7 w-72" />
+          <Skeleton className="h-5 w-48 mt-8" />
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
         </div>
       </DashboardLayout>
     );
   }
 
-  // ── 404 — No brief ──
-  if (notFound || !brief) {
+  // ── No briefing ──
+  if (notFound || !briefing) {
     return (
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto text-center py-24">
+        <div className="max-w-3xl mx-auto text-center py-24">
           <Loader2 className={`h-7 w-7 mx-auto mb-4 text-muted-foreground ${generating ? "animate-spin" : ""}`} />
-          <p className="text-lg font-serif text-foreground mb-1">Donna prépare votre brief…</p>
-          <p className="text-sm text-muted-foreground mb-6">Votre résumé quotidien sera prêt dans quelques instants.</p>
+          <p className="text-lg font-serif text-foreground mb-1">Donna prépare votre briefing…</p>
+          <p className="text-sm text-muted-foreground mb-6">Votre résumé de situation sera prêt dans quelques instants.</p>
           <Button onClick={handleGenerate} disabled={generating} variant="outline" className="gap-2">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            Générer le brief
+            Générer le briefing
           </Button>
         </div>
       </DashboardLayout>
     );
   }
 
-  // ── Brief loaded ──
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto pb-12">
-
-        {/* 1 — Header line */}
+      <div className="max-w-3xl mx-auto pb-16">
+        {/* ── Header ── */}
         <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="pt-8 pb-6 text-lg font-serif text-foreground"
+          {...fadeIn}
+          className="pt-8 pb-8 text-lg font-serif text-foreground"
         >
           {greeting}{nomAvocat ? ` ${nomAvocat}` : ""} — <span className="capitalize">{dateStr}</span>
         </motion.p>
 
-        {/* 2 — KPI cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.35 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10"
-        >
-          {[
-            { icon: <Mail className="h-5 w-5 text-muted-foreground" />, value: aEmails, label: "emails traités", alert: false },
-            { icon: <FolderOpen className="h-5 w-5 text-muted-foreground" />, value: aDossiers, label: "dossiers actifs", alert: false },
-            { icon: <CalendarDays className="h-5 w-5 text-muted-foreground" />, value: aDeadlines, label: "deadline(s) proche(s)", alert: (stats?.deadline_soon_count ?? 0) > 0 },
-            { icon: <Reply className="h-5 w-5 text-muted-foreground" />, value: aResponses, label: "en attente de réponse", alert: false },
-          ].map((kpi, i) => (
-            <Card key={i} className={`bg-card shadow-sm ${kpi.alert ? "border-destructive/40" : "border-border"}`}>
-              <CardContent className="p-4 flex flex-col gap-1">
-                {kpi.icon}
-                <span className="text-2xl font-bold tabular-nums text-foreground">{kpi.value}</span>
-                <span className="text-xs text-muted-foreground">{kpi.label}</span>
-              </CardContent>
-            </Card>
-          ))}
-        </motion.div>
-
-        {/* 3 — À traiter (urgent only) */}
-        {urgentDossiers.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.3 }}
-            className="mb-10"
-          >
-            <h2 className="text-sm font-semibold text-foreground mb-3 tracking-wide uppercase">À traiter</h2>
-            <div className="space-y-2">
-              {urgentDossiers.map((d) => (
-                <div
-                  key={d.dossier_id}
-                  onClick={() => navigate(`/dossiers/${d.dossier_id}${userId ? `?user_id=${userId}` : ""}`)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-card border border-border hover:shadow-sm cursor-pointer transition-shadow group"
-                >
-                  <span className="h-2.5 w-2.5 rounded-full bg-destructive shrink-0" />
-                  <span className="font-medium text-sm text-foreground truncate">{d.nom}</span>
-                  {d.dates_cles?.[0] && (
-                    <span className="hidden sm:inline text-xs text-muted-foreground shrink-0">
-                      {d.dates_cles[0]}
-                    </span>
-                  )}
-                  <span className="text-xs text-muted-foreground truncate flex-1 hidden md:inline">
-                    {d.summary}
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
+        {/* ── Depuis votre dernière connexion ── */}
+        {activeDossiers.length > 0 && (
+          <motion.section {...fadeIn} transition={{ delay: 0.1 }} className="mb-10">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+              Depuis votre dernière connexion
+            </h2>
+            <div className="space-y-4">
+              {activeDossiers.map((d) => (
+                <DossierBriefCard key={d.dossier_id} dossier={d} navigate={navigate} />
               ))}
             </div>
+          </motion.section>
+        )}
+
+        {activeDossiers.length === 0 && (
+          <motion.div {...fadeIn} transition={{ delay: 0.1 }} className="mb-10 text-center py-12">
+            <p className="text-sm text-muted-foreground">Rien de nouveau depuis votre dernière connexion.</p>
           </motion.div>
         )}
 
-        {/* 4 — Vos dossiers */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.3 }}
-        >
-          <h2 className="text-sm font-semibold text-foreground mb-3 tracking-wide uppercase">Vos dossiers</h2>
-
-          {allDossiers.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">Aucun dossier actif aujourd'hui.</p>
-          ) : (
-            <>
-              <div className="space-y-3">
-                {visibleDossiers.map((d, i) => (
-                  <Card
-                    key={d.dossier_id}
-                    className="bg-card border-border hover:shadow-sm transition-shadow cursor-pointer overflow-hidden"
-                    onClick={() => navigate(`/dossiers/${d.dossier_id}${userId ? `?user_id=${userId}` : ""}`)}
-                  >
-                    <div className="flex">
-                      <div className={`w-1 shrink-0 ${d.needs_immediate_attention ? "bg-destructive" : "bg-muted"}`} />
-                      <CardContent className="p-4 flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2 mb-0.5">
-                          <h3 className="font-semibold text-sm text-foreground truncate">{d.nom}</h3>
-                          <span className="text-xs text-muted-foreground shrink-0">
-                            {d.new_emails_count} email{d.new_emails_count > 1 ? "s" : ""} reçu{d.new_emails_count > 1 ? "s" : ""}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground line-clamp-1">{d.summary}</p>
-                      </CardContent>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-
-              {hasMore && (
-                <div className="mt-4 text-center">
-                  <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => navigate("/fil")}>
-                    Voir tous les dossiers →
-                  </Button>
+        {/* ── En attente de réponse ── */}
+        {attenteDossiers.length > 0 && (
+          <motion.section {...fadeIn} transition={{ delay: 0.2 }} className="mb-10">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+              En attente de réponse
+            </h2>
+            <div className="space-y-2">
+              {attenteDossiers.map((d) => (
+                <div
+                  key={`attente-${d.dossier_id}`}
+                  onClick={() => navigate(`/dossiers/${d.dossier_id}`)}
+                  className="flex items-start gap-3 px-4 py-3 rounded-xl bg-card border border-border hover:shadow-sm cursor-pointer transition-all group"
+                >
+                  <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm text-foreground">
+                      <span className="font-medium">{d.nom}</span>
+                      {" — "}
+                      {d.attente!.description}
+                      <span className="text-muted-foreground"> ({d.attente!.jours} jours)</span>
+                    </span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5" />
                 </div>
-              )}
-            </>
-          )}
-        </motion.div>
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {/* ── Footer stats ── */}
+        {stats && (
+          <motion.p
+            {...fadeIn}
+            transition={{ delay: 0.3 }}
+            className="text-xs text-muted-foreground/60 text-center pt-8"
+          >
+            {stats.emails_analyzed} emails traités · {stats.temps_gagne_minutes ?? 0}min gagnées
+          </motion.p>
+        )}
       </div>
     </DashboardLayout>
   );
 };
+
+// ── Dossier briefing card ──
+
+function DossierBriefCard({
+  dossier: d,
+  navigate,
+}: {
+  dossier: BriefingDossier;
+  navigate: (path: string) => void;
+}) {
+  return (
+    <Card
+      className="bg-card border-border hover:shadow-sm transition-all cursor-pointer overflow-hidden"
+      onClick={() => navigate(`/dossiers/${d.dossier_id}`)}
+    >
+      <div className="flex">
+        {/* Left accent */}
+        <div
+          className={`w-1 shrink-0 ${d.needs_immediate_attention ? "bg-destructive" : "bg-muted"}`}
+        />
+        <CardContent className="p-5 flex-1 min-w-0 space-y-2.5">
+          {/* Header */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-sm text-foreground">{d.nom}</h3>
+            {d.domaine && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                {d.domaine}
+              </span>
+            )}
+            {d.deadline_days !== null && d.deadline_days <= 7 && (
+              <Badge
+                variant="outline"
+                className="text-[10px] px-1.5 py-0 h-4 border-destructive/40 text-destructive bg-destructive/5"
+              >
+                Deadline dans {d.deadline_days}j
+              </Badge>
+            )}
+          </div>
+
+          {/* Narrative: emails */}
+          <p className="text-sm text-foreground/80 leading-relaxed">
+            {d.emails_narrative}
+          </p>
+
+          {/* Narrative: pieces jointes */}
+          {d.pieces_narrative && (
+            <div className="flex items-start gap-1.5">
+              <Paperclip className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground leading-relaxed">{d.pieces_narrative}</p>
+            </div>
+          )}
+
+          {/* Dates clés */}
+          {d.dates_cles.length > 0 && (
+            <div className="flex items-start gap-1.5">
+              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="space-y-0.5">
+                {d.dates_cles.map((date, i) => (
+                  <p key={i} className="text-xs text-muted-foreground">{date}</p>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+
+        {/* Chevron */}
+        <div className="flex items-center pr-4">
+          <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 export default Dashboard;

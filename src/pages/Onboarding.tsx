@@ -3,11 +3,10 @@ import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, CheckCircle2, AlertCircle, Loader2, Zap, PenLine, Check } from "lucide-react";
+import { Mail, AlertCircle, Loader2, Zap, PenLine, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiGet, apiPublicGet } from "@/lib/api";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Progress } from "@/components/ui/progress";
 
 interface ImportStatus {
   status: "processing" | "done" | "error";
@@ -15,6 +14,7 @@ interface ImportStatus {
   total: number;
   processed: number;
   dossiers_created: number;
+  attachments_count?: number;
 }
 
 const Onboarding = () => {
@@ -68,11 +68,9 @@ const Onboarding = () => {
   return <ChooseMode />;
 };
 
-// ── Scan Screen (nouveau design plein écran) ──
+// ── Scan Screen ──
 
-const SCAN_MESSAGES = [
-  "Donna analyse vos emails...",
-];
+const SCAN_MESSAGES_BASE = ["Donna analyse vos emails..."];
 
 function ScanScreen() {
   const navigate = useNavigate();
@@ -82,14 +80,21 @@ function ScanScreen() {
   const startTimeRef = useRef(Date.now());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Build dynamic messages based on status
   const dynamicMessages = useCallback(() => {
-    const msgs = [...SCAN_MESSAGES];
+    const msgs = [...SCAN_MESSAGES_BASE];
     if (status && status.processed > 0) {
       msgs.push(`${status.processed} emails détectés`);
     }
     if (status && status.dossiers_created > 0) {
-      msgs.push(`${status.dossiers_created} dossier${status.dossiers_created > 1 ? "s" : ""} identifié${status.dossiers_created > 1 ? "s" : ""}`);
+      msgs.push(
+        `${status.dossiers_created} dossier${status.dossiers_created > 1 ? "s" : ""} identifié${status.dossiers_created > 1 ? "s" : ""}`
+      );
+    }
+    if (status && (status.attachments_count ?? 0) > 0) {
+      msgs.push(`${status.attachments_count} pièces jointes extraites`);
+    }
+    if (status?.status === "done") {
+      msgs.push("Votre briefing est prêt");
     }
     return msgs;
   }, [status]);
@@ -120,10 +125,12 @@ function ScanScreen() {
     };
     poll();
     intervalRef.current = setInterval(poll, 3000);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, []);
 
-  // Enforce minimum 5s display before allowing proceed
+  // Min 5s display
   useEffect(() => {
     if (status?.status === "done") {
       const elapsed = Date.now() - startTimeRef.current;
@@ -167,7 +174,6 @@ function ScanScreen() {
         transition={{ duration: 0.5 }}
         className="max-w-sm w-full text-center space-y-10"
       >
-        {/* Logo with pulse */}
         <motion.h2
           animate={{ opacity: [0.7, 1, 0.7] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -176,7 +182,6 @@ function ScanScreen() {
           Donna
         </motion.h2>
 
-        {/* Rotating message */}
         <div className="h-8 relative overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.p
@@ -192,7 +197,6 @@ function ScanScreen() {
           </AnimatePresence>
         </div>
 
-        {/* Progress bar */}
         <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
           <motion.div
             className="h-full rounded-full bg-primary"
@@ -202,7 +206,6 @@ function ScanScreen() {
           />
         </div>
 
-        {/* CTA when done */}
         <AnimatePresence>
           {isDone && canProceed && (
             <motion.div
@@ -215,7 +218,7 @@ function ScanScreen() {
                 className="w-full rounded-xl"
                 onClick={() => navigate("/dashboard")}
               >
-                Voir mon tableau de bord →
+                Voir mon briefing →
               </Button>
             </motion.div>
           )}
@@ -225,7 +228,7 @@ function ScanScreen() {
   );
 }
 
-// ── Choose Mode (inchangé) ──
+// ── Choose Mode ──
 
 function ChooseMode() {
   const [loading, setLoading] = useState(false);
@@ -247,7 +250,7 @@ function ChooseMode() {
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <div className="max-w-2xl w-full mb-4">
           <Link to="/dashboard" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-            ← Tableau de bord
+            ← Briefing
           </Link>
         </div>
 
