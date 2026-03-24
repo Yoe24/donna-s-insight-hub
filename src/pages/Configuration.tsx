@@ -70,7 +70,14 @@ const Configuration = () => {
     load();
   }, [isDemo]);
 
+  const navigate = useNavigate();
+
   const handleConnectGmail = async () => {
+    if (isDemo) {
+      localStorage.removeItem("donna_demo_mode");
+      navigate("/login");
+      return;
+    }
     setConnectingGmail(true);
     try {
       const res = await apiPublicGet<{ auth_url: string }>("/api/import/gmail/auth");
