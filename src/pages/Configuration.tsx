@@ -64,6 +64,7 @@ const Configuration = () => {
     if (isDemo) {
       setGmailConnected(true);
       setGmailEmail("alexandra.fernandez@gmail.com");
+      setSignature("Cordialement,\nMe Alexandra Martin");
       setTauxHoraire("");
       setSavedInstructions(["Les mails de l'Ordre des Avocats ne sont jamais urgents"]);
       setLoadingConfig(false);
