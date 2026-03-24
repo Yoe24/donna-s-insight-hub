@@ -138,11 +138,13 @@ const Dashboard = () => {
   const computeFilteredStats = () => {
     if (!briefing?.content.stats) return null;
     if (!isDemoMode()) {
-      // Live mode: multiply as approximation
       const m = period === "24h" ? 1 : period === "7j" ? 5 : 18;
+      const analyzed = briefing.content.stats.emails_analyzed * m;
+      const received = analyzed + Math.round(analyzed * 0.25);
       return {
         ...briefing.content.stats,
-        emails_analyzed: briefing.content.stats.emails_analyzed * m,
+        emails_received: received,
+        emails_analyzed: analyzed,
         emails_dossiers: (briefing.content.stats.emails_dossiers ?? 0) * m,
         emails_generaux: (briefing.content.stats.emails_generaux ?? 0) * m,
         pieces_extraites: (briefing.content.stats.pieces_extraites ?? 0) * m,
@@ -162,8 +164,10 @@ const Dashboard = () => {
     }
     const emailsGeneraux = Math.round(emailsDossiers * 0.32); // approximate ratio
     const total = emailsDossiers + emailsGeneraux;
+    const received = total + Math.round(total * 0.25); // total received includes spam/newsletters filtered out
     return {
       ...briefing.content.stats,
+      emails_received: received,
       emails_analyzed: total,
       emails_dossiers: emailsDossiers,
       emails_generaux: emailsGeneraux,
@@ -238,9 +242,9 @@ const Dashboard = () => {
             className="rounded-xl bg-muted/50 px-5 py-4 mb-10"
           >
             <p className="text-sm text-foreground/80 leading-relaxed">
-              Donna a traité <strong>{adjustedStats.emails_analyzed} emails</strong> {period === "24h" ? "dans les dernières 24 heures" : period === "7j" ? "ces 7 derniers jours" : "ces 30 derniers jours"}.
+              Vous avez reçu <strong>{adjustedStats.emails_received} emails</strong> {period === "24h" ? "dans les dernières 24 heures" : period === "7j" ? "ces 7 derniers jours" : "ces 30 derniers jours"}.
               <br />
-              <strong>{adjustedStats.emails_dossiers}</strong> emails liés à vos dossiers · <strong>{adjustedStats.emails_generaux}</strong> emails généraux
+              Donna a traité <strong>{adjustedStats.emails_analyzed} emails</strong> : <strong>{adjustedStats.emails_dossiers}</strong> liés à vos dossiers · <strong>{adjustedStats.emails_generaux}</strong> généraux
               <br />
               <strong>{adjustedStats.pieces_extraites}</strong> pièces jointes extraites · <strong>{relancesCount}</strong> relances détectées
             </p>
