@@ -254,9 +254,20 @@ const Dashboard = () => {
               Dossiers actifs
             </h2>
             <div className="space-y-1">
-              {activeDossiers.map((d) => (
-                <DossierLine key={d.dossier_id} dossier={d} onClick={() => handleDossierClick(d)} />
-              ))}
+              {activeDossiers.map((d) => {
+                const dossierEmails = isDemoMode()
+                  ? filterEmailsByPeriod(mockDossierEmails[d.dossier_id] ?? [])
+                  : [];
+                return (
+                  <DossierLine
+                    key={d.dossier_id}
+                    dossier={d}
+                    periodEmails={dossierEmails}
+                    onClick={() => handleDossierClick(d)}
+                    onViewFull={() => navigate(`/dossiers/${d.dossier_id}`)}
+                  />
+                );
+              })}
             </div>
           </motion.section>
         )}
