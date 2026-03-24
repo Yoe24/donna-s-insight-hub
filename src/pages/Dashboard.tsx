@@ -96,28 +96,82 @@ const Dashboard = () => {
     }
   };
 
-  // Period-based filtering for demo stats
-  const periodMultiplier = period === "24h" ? 1 : period === "7j" ? 5 : 18;
-  const adjustedStats = briefing?.content.stats
-    ? {
-        ...briefing.content.stats,
-        emails_analyzed: briefing.content.stats.emails_analyzed * periodMultiplier,
-        emails_dossiers: (briefing.content.stats.emails_dossiers ?? briefing.content.stats.emails_analyzed) * periodMultiplier,
-        emails_generaux: (briefing.content.stats.emails_generaux ?? 0) * periodMultiplier,
-        pieces_extraites: (briefing.content.stats.pieces_extraites ?? 0) * periodMultiplier,
-        dates_detectees: (briefing.content.stats.dates_detectees ?? 0) * periodMultiplier,
-        temps_gagne_minutes: (briefing.content.stats.temps_gagne_minutes ?? 0) * periodMultiplier,
-      }
-    : null;
-
   const now = new Date();
   const h = now.getHours();
   const greeting = h < 12 ? "Bonjour" : h < 18 ? "Bon après-midi" : "Bonsoir";
   const dateStr = format(now, "EEEE d MMMM yyyy", { locale: fr });
 
   const dossiers = briefing?.content.dossiers ?? [];
-  const activeDossiers = dossiers.filter((d) => d.new_emails_count > 0);
   const attenteDossiers = dossiers.filter((d) => d.attente);
+  const relancesCount = attenteDossiers.length;
+
+  // Filter dossiers by period using mock email dates
+  const periodHours = period === "24h" ? 24 : period === "7j" ? 168 : 720;
+  const cutoff = new Date(now.getTime() - periodHours * 60 * 60 * 1000);
+
+  const filterEmailsByPeriod = (emails: DossierEmail[]) =>
+    emails.filter((e) => {
+      // Parse French date like "23 mars 2026, 14h32"
+      const match = e.date.match(/(\d+)\s+(\w+)\s+(\d{4}),?\s*(\d+)h(\d+)/);
+      if (!match) return true;
+      const [, day, monthName, year, hour, minute] = match;
+      const monthMap: Record<string, number> = {
+        janvier: 0, février: 1, mars: 2, avril: 3, mai: 4, juin: 5,
+        juillet: 6, août: 7, septembre: 8, octobre: 9, novembre: 10, décembre: 11,
+      };
+      const d = new Date(Number(year), monthMap[monthName] ?? 0, Number(day), Number(hour), Number(minute));
+      return d >= cutoff;
+    });
+
+  // Compute which dossiers have activity in the selected period
+  const activeDossiers = dossiers
+    .filter((d) => d.new_emails_count > 0)
+    .filter((d) => {
+      if (isDemoMode()) {
+        const emails = mockDossierEmails[d.dossier_id] ?? [];
+        return filterEmailsByPeriod(emails).length > 0;
+      }
+      return true; // In live mode, API handles filtering
+    });
+
+  // Compute period-filtered stats
+  const computeFilteredStats = () => {
+    if (!briefing?.content.stats) return null;
+    if (!isDemoMode()) {
+      // Live mode: multiply as approximation
+      const m = period === "24h" ? 1 : period === "7j" ? 5 : 18;
+      return {
+        ...briefing.content.stats,
+        emails_analyzed: briefing.content.stats.emails_analyzed * m,
+        emails_dossiers: (briefing.content.stats.emails_dossiers ?? 0) * m,
+        emails_generaux: (briefing.content.stats.emails_generaux ?? 0) * m,
+        pieces_extraites: (briefing.content.stats.pieces_extraites ?? 0) * m,
+        temps_gagne_minutes: (briefing.content.stats.temps_gagne_minutes ?? 0) * m,
+      };
+    }
+    // Demo mode: count from mock emails
+    let emailsDossiers = 0;
+    let piecesExtraites = 0;
+    for (const d of dossiers) {
+      const emails = mockDossierEmails[d.dossier_id] ?? [];
+      const filtered = filterEmailsByPeriod(emails);
+      emailsDossiers += filtered.length;
+      for (const e of filtered) {
+        piecesExtraites += e.pieces_jointes?.length ?? 0;
+      }
+    }
+    const emailsGeneraux = Math.round(emailsDossiers * 0.32); // approximate ratio
+    const total = emailsDossiers + emailsGeneraux;
+    return {
+      ...briefing.content.stats,
+      emails_analyzed: total,
+      emails_dossiers: emailsDossiers,
+      emails_generaux: emailsGeneraux,
+      pieces_extraites: piecesExtraites,
+      temps_gagne_minutes: Math.round(total * 5),
+    };
+  };
+  const adjustedStats = computeFilteredStats();
 
   if (loading) {
     return (
@@ -188,7 +242,7 @@ const Dashboard = () => {
               <br />
               <strong>{adjustedStats.emails_dossiers}</strong> emails liés à vos dossiers · <strong>{adjustedStats.emails_generaux}</strong> emails généraux
               <br />
-              <strong>{adjustedStats.pieces_extraites}</strong> pièces jointes extraites · <strong>{adjustedStats.dates_detectees}</strong> dates importantes détectées
+              <strong>{adjustedStats.pieces_extraites}</strong> pièces jointes extraites · <strong>{relancesCount}</strong> relances détectées
             </p>
           </motion.div>
         )}
@@ -209,7 +263,9 @@ const Dashboard = () => {
 
         {activeDossiers.length === 0 && (
           <motion.div {...fadeIn} transition={{ delay: 0.1 }} className="mb-10 py-10 text-center">
-            <p className="text-sm text-muted-foreground">Aucune activité détectée depuis votre dernière connexion.</p>
+            <p className="text-sm text-muted-foreground">
+              Aucune activité dans les {PERIOD_LABELS[period].startsWith("24") ? "dernières " : "derniers "}{PERIOD_LABELS[period]}.
+            </p>
           </motion.div>
         )}
 
