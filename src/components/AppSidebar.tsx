@@ -109,26 +109,6 @@ export function AppSidebar() {
     return briefDossiers.find((bd) => bd.dossier_id === dossierId);
   };
 
-  // Check if Gmail is connected
-  const [gmailConnected, setGmailConnected] = useState(false);
-  useEffect(() => {
-    if (isDemo) return;
-    apiGet<any>("/api/config")
-      .then((d) => setGmailConnected(!!d?.refresh_token))
-      .catch(() => {});
-  }, [isDemo]);
-
-  const handleToggleMode = () => {
-    if (isDemo) {
-      // Switching to Gmail mode
-      if (!gmailConnected && !localStorage.getItem("donna_user_id")) {
-        navigate("/configuration");
-        return;
-      }
-    }
-    toggleMode();
-  };
-
   const handleLogout = async () => {
     localStorage.removeItem("donna_user_id");
     localStorage.removeItem("donna_chat_history");
