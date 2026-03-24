@@ -242,7 +242,7 @@ const Dashboard = () => {
               <br />
               <strong>{adjustedStats.emails_dossiers}</strong> emails liés à vos dossiers · <strong>{adjustedStats.emails_generaux}</strong> emails généraux
               <br />
-              <strong>{adjustedStats.pieces_extraites}</strong> pièces jointes extraites · <strong>{adjustedStats.dates_detectees}</strong> dates importantes détectées
+              <strong>{adjustedStats.pieces_extraites}</strong> pièces jointes extraites · <strong>{relancesCount}</strong> relances détectées
             </p>
           </motion.div>
         )}
