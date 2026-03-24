@@ -355,11 +355,11 @@ const FilActualite = () => {
                       <div className="flex items-center gap-2 overflow-hidden">
                         <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         <span className="text-sm font-medium text-foreground shrink-0 max-w-[160px] truncate">
-                          {email.expediteur}
+                          {email.expediteur || "Expéditeur inconnu"}
                         </span>
                         <span className="text-muted-foreground shrink-0">—</span>
                         <span className="text-sm text-foreground/70 truncate flex-1 min-w-0">
-                          "{email.objet}"
+                          "{email.objet || "Sans objet"}"
                         </span>
                         <span className="text-xs text-muted-foreground ml-auto pl-2 whitespace-nowrap shrink-0">
                           {formatEmailDateTime(email.created_at)}
