@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { LayoutDashboard, Settings, LogOut, Mail, InboxIcon } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { LayoutDashboard, Settings, LogOut, Mail, InboxIcon, MoreHorizontal, Pencil, ArrowRightLeft, Trash2, Tag } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,6 +7,7 @@ import { useDossiers } from "@/hooks/useDossiers";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import { dossiers as mockDossiersList } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -17,6 +18,16 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -32,11 +43,24 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { apiGet } from "@/lib/api";
+import { toast } from "sonner";
 
 const navItems = [
   { title: "Briefing", url: "/dashboard", icon: LayoutDashboard },
   { title: "Fil d'actualité", url: "/fil", icon: Mail },
   { title: "Configurez-moi", url: "/configuration", icon: Settings },
+];
+
+const DOMAINES = [
+  "Droit du travail",
+  "Droit de la famille",
+  "Droit immobilier",
+  "Droit commercial",
+  "Droit des successions",
+  "Droit pénal",
+  "Bail commercial",
+  "Gestion cabinet",
+  "Autre",
 ];
 
 function getInitials(name: string) {
@@ -64,11 +88,18 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Brief data for attention indicators
+  // Brief data
   const [briefDossiers, setBriefDossiers] = useState<BriefDossier[]>([]);
   const [unclassifiedCount, setUnclassifiedCount] = useState(0);
 
-  // Build dossier list based on mode
+  // Dossier management state
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [localDossiers, setLocalDossiers] = useState<any[]>([]);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  // Build dossier list
   const demoDossiers = mockDossiersList.map((d) => ({
     id: d.id,
     nom_client: d.nomClient,
@@ -79,8 +110,13 @@ export function AppSidebar() {
     nouveaux_emails: d.nombreMails,
   }));
 
-  const dossiers = isDemo ? demoDossiers : liveDossiers;
+  const sourceDossiers = isDemo ? demoDossiers : liveDossiers;
   const loading = isDemo ? false : liveLoading;
+
+  // Sync local dossiers with source
+  useEffect(() => {
+    setLocalDossiers(sourceDossiers);
+  }, [sourceDossiers]);
 
   useEffect(() => {
     if (isDemo) return;
@@ -88,21 +124,24 @@ export function AppSidebar() {
       try {
         const brief = await apiGet<any>("/api/briefs/today");
         setBriefDossiers(brief?.content?.dossiers || []);
-      } catch {
-        // silent
-      }
+      } catch { /* silent */ }
       try {
         const emails = await apiGet<any[]>("/api/emails");
         const unclassified = (emails || []).filter((e) => !e.dossier_id);
         setUnclassifiedCount(unclassified.length);
-      } catch {
-        // silent
-      }
+      } catch { /* silent */ }
     };
     fetchBriefData();
     const interval = setInterval(fetchBriefData, 60000);
     return () => clearInterval(interval);
   }, [isDemo]);
+
+  useEffect(() => {
+    if (renamingId && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [renamingId]);
 
   const getBriefInfo = (dossierId: string) => {
     return briefDossiers.find((bd) => bd.dossier_id === dossierId);
@@ -114,6 +153,43 @@ export function AppSidebar() {
     localStorage.removeItem("donna_demo_mode");
     await signOut();
     window.location.replace("/login");
+  };
+
+  const handleRenameStart = (id: string, currentName: string) => {
+    setRenamingId(id);
+    setRenameValue(currentName);
+  };
+
+  const handleRenameConfirm = (id: string) => {
+    if (!renameValue.trim()) {
+      setRenamingId(null);
+      return;
+    }
+    setLocalDossiers((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, nom_client: renameValue.trim() } : d))
+    );
+    toast.success("Dossier renommé");
+    setRenamingId(null);
+  };
+
+  const handleChangeDomaine = (id: string, domaine: string) => {
+    setLocalDossiers((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, domaine } : d))
+    );
+    toast.success("Domaine mis à jour");
+  };
+
+  const handleMerge = (sourceId: string, targetId: string) => {
+    const target = localDossiers.find((d) => d.id === targetId);
+    setLocalDossiers((prev) => prev.filter((d) => d.id !== sourceId));
+    toast.success(`Dossier fusionné avec ${target?.nom_client || "un autre dossier"}`);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!deleteTarget) return;
+    setLocalDossiers((prev) => prev.filter((d) => d.id !== deleteTarget.id));
+    toast.success("Dossier supprimé");
+    setDeleteTarget(null);
   };
 
   return (
@@ -188,7 +264,7 @@ export function AppSidebar() {
                         </div>
                       </SidebarMenuItem>
                     ))
-                  ) : dossiers.length === 0 ? (
+                  ) : localDossiers.length === 0 ? (
                     !collapsed && (
                       <div className="px-3 py-4 text-center">
                         <p className="text-xs text-muted-foreground">Aucun dossier</p>
@@ -201,17 +277,19 @@ export function AppSidebar() {
                       </div>
                     )
                   ) : (
-                    dossiers.map((dossier) => {
+                    localDossiers.map((dossier) => {
                       const active = location.pathname === `/dossiers/${dossier.id}`;
                       const briefInfo = getBriefInfo(dossier.id);
-                      const needsAttention = briefInfo?.needs_immediate_attention ?? false;
                       const newEmails = briefInfo?.new_emails_count ?? 0;
+                      const isRenaming = renamingId === dossier.id;
 
                       return (
-                        <SidebarMenuItem key={dossier.id}>
+                        <SidebarMenuItem key={dossier.id} className="group/dossier relative">
                           <SidebarMenuButton
                             isActive={active}
-                            onClick={() => navigate(`/dossiers/${dossier.id}`)}
+                            onClick={() => {
+                              if (!isRenaming) navigate(`/dossiers/${dossier.id}`);
+                            }}
                             className={cn(
                               "w-full rounded-md px-2 py-2 text-sm font-sans transition-colors cursor-pointer",
                               active
@@ -235,23 +313,114 @@ export function AppSidebar() {
 
                               {!collapsed && (
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="truncate text-sm font-medium leading-tight">
-                                      {dossier.nom_client}
-                                    </span>
-                                    {newEmails > 0 && (
-                                      <span className="inline-flex items-center justify-center h-4 min-w-[16px] rounded-full bg-foreground/10 text-[10px] font-semibold text-foreground px-1">
-                                        {newEmails}
+                                  {isRenaming ? (
+                                    <Input
+                                      ref={renameInputRef}
+                                      className="h-6 text-sm px-1 py-0 border-primary"
+                                      value={renameValue}
+                                      onChange={(e) => setRenameValue(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        e.stopPropagation();
+                                        if (e.key === "Enter") handleRenameConfirm(dossier.id);
+                                        if (e.key === "Escape") setRenamingId(null);
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      onBlur={() => handleRenameConfirm(dossier.id)}
+                                    />
+                                  ) : (
+                                    <>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="truncate text-sm font-medium leading-tight">
+                                          {dossier.nom_client}
+                                        </span>
+                                        {newEmails > 0 && (
+                                          <span className="inline-flex items-center justify-center h-4 min-w-[16px] rounded-full bg-foreground/10 text-[10px] font-semibold text-foreground px-1">
+                                            {newEmails}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className="text-[10px] text-muted-foreground truncate block">
+                                        {dossier.domaine || "—"}
                                       </span>
-                                    )}
-                                  </div>
-                                  <span className="text-[10px] text-muted-foreground truncate block">
-                                    {dossier.domaine || "—"}
-                                  </span>
+                                    </>
+                                  )}
                                 </div>
                               )}
                             </div>
                           </SidebarMenuButton>
+
+                          {/* Context menu trigger */}
+                          {!collapsed && !isRenaming && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded opacity-0 group-hover/dossier:opacity-100 hover:bg-sidebar-accent transition-opacity"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem
+                                  onClick={() => handleRenameStart(dossier.id, dossier.nom_client)}
+                                >
+                                  <Pencil className="h-3.5 w-3.5 mr-2" />
+                                  Renommer
+                                </DropdownMenuItem>
+
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>
+                                    <Tag className="h-3.5 w-3.5 mr-2" />
+                                    Changer le domaine
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent className="w-48">
+                                    {DOMAINES.map((dom) => (
+                                      <DropdownMenuItem
+                                        key={dom}
+                                        onClick={() => handleChangeDomaine(dossier.id, dom)}
+                                        className={cn(
+                                          dossier.domaine === dom && "font-medium text-primary"
+                                        )}
+                                      >
+                                        {dom}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>
+                                    <ArrowRightLeft className="h-3.5 w-3.5 mr-2" />
+                                    Fusionner avec…
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent className="w-48">
+                                    {localDossiers
+                                      .filter((d) => d.id !== dossier.id)
+                                      .map((d) => (
+                                        <DropdownMenuItem
+                                          key={d.id}
+                                          onClick={() => handleMerge(dossier.id, d.id)}
+                                        >
+                                          {d.nom_client}
+                                        </DropdownMenuItem>
+                                      ))}
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+
+                                <DropdownMenuSeparator />
+
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() =>
+                                    setDeleteTarget({ id: dossier.id, name: dossier.nom_client })
+                                  }
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 mr-2" />
+                                  Supprimer
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </SidebarMenuItem>
                       );
                     })
@@ -276,7 +445,6 @@ export function AppSidebar() {
         </SidebarContent>
 
         <SidebarFooter className="p-4 space-y-3">
-          {/* Demo mode: link to connect Gmail */}
           {!collapsed && isDemo && (
             <Link
               to="/login"
@@ -297,6 +465,7 @@ export function AppSidebar() {
         </SidebarFooter>
       </Sidebar>
 
+      {/* Logout dialog */}
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
@@ -316,6 +485,27 @@ export function AppSidebar() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Se déconnecter
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete dossier confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer le dossier ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Les emails de « {deleteTarget?.name} » seront marqués comme non classés. Confirmer ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row justify-end gap-3 sm:justify-end">
+            <AlertDialogCancel className="mt-0">Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirmer
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
