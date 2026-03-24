@@ -184,7 +184,7 @@ const Dashboard = () => {
             className="rounded-xl bg-muted/50 px-5 py-4 mb-10"
           >
             <p className="text-sm text-foreground/80 leading-relaxed">
-              Donna a traité <strong>{adjustedStats.emails_analyzed} emails</strong> {period === "24h" ? "depuis hier soir" : period === "7j" ? "cette semaine" : "ce mois-ci"}.
+              Donna a traité <strong>{adjustedStats.emails_analyzed} emails</strong> {period === "24h" ? "dans les dernières 24 heures" : period === "7j" ? "ces 7 derniers jours" : "ces 30 derniers jours"}.
               <br />
               <strong>{adjustedStats.emails_dossiers}</strong> emails liés à vos dossiers · <strong>{adjustedStats.emails_generaux}</strong> emails généraux
               <br />
