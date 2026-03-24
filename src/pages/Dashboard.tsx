@@ -263,7 +263,9 @@ const Dashboard = () => {
 
         {activeDossiers.length === 0 && (
           <motion.div {...fadeIn} transition={{ delay: 0.1 }} className="mb-10 py-10 text-center">
-            <p className="text-sm text-muted-foreground">Aucune activité détectée depuis votre dernière connexion.</p>
+            <p className="text-sm text-muted-foreground">
+              Aucune activité dans les {PERIOD_LABELS[period].startsWith("24") ? "dernières " : "derniers "}{PERIOD_LABELS[period]}.
+            </p>
           </motion.div>
         )}
 
