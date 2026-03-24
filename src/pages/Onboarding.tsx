@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Mail, AlertCircle, Loader2, Zap, PenLine, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiGet, apiPublicGet } from "@/lib/api";
+import { captureUserIdFromUrl } from "@/lib/userSession";
 import { DashboardLayout } from "@/components/DashboardLayout";
 
 interface ImportStatus {
@@ -25,16 +26,12 @@ const Onboarding = () => {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const incomingUserId = searchParams.get("user_id");
-    const existingUserId = localStorage.getItem("donna_user_id");
+    // Capture user_id from OAuth callback URL
+    captureUserIdFromUrl();
+    const incomingUserId = searchParams.get("user_id") || localStorage.getItem("donna_user_id");
 
-    if (isImporting && incomingUserId && existingUserId === incomingUserId) {
-      navigate("/dashboard", { replace: true });
-      return;
-    }
-
-    if (incomingUserId) {
-      localStorage.setItem("donna_user_id", incomingUserId);
+    if (isImporting && incomingUserId && localStorage.getItem("donna_user_id") === incomingUserId) {
+      // Already processed this user, check if import is done
     }
 
     if (isImporting || isDemo) {
@@ -222,7 +219,10 @@ function ScanScreen() {
               <Button
                 size="lg"
                 className="w-full rounded-xl"
-                onClick={() => navigate("/dashboard")}
+                onClick={() => {
+                  const uid = localStorage.getItem("donna_user_id");
+                  navigate(uid ? `/dashboard?user_id=${uid}` : "/dashboard");
+                }}
               >
                 Voir mon briefing →
               </Button>

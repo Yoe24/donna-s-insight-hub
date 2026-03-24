@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { captureUserIdFromUrl } from "@/lib/userSession";
 import Index from "./pages/Index";
 
 import Login from "./pages/Login";
@@ -28,13 +29,8 @@ const queryClient = new QueryClient();
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
-  // Capturer le user_id depuis l'URL (retour OAuth) AVANT de vérifier localStorage
-  const params = new URLSearchParams(window.location.search);
-  const urlUserId = params.get("user_id");
-  if (urlUserId) {
-    localStorage.setItem("donna_user_id", urlUserId);
-    window.history.replaceState({}, "", window.location.pathname);
-  }
+  // Capture user_id from URL (OAuth callback) — this also disables demo if real user
+  captureUserIdFromUrl();
 
   const hasLocalUserId = !!localStorage.getItem("donna_user_id");
   const isDemoMode = localStorage.getItem("donna_demo_mode") === "true";
