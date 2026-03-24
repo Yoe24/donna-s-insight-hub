@@ -229,8 +229,7 @@ const DossierDetailPage = () => {
     return parsed;
   })();
 
-  const [resumeExpanded, setResumeExpanded] = useState(false);
-  const resumeText = dossier.resume_situation || "";
+  const resumeText = dossier?.resume_situation || "";
   const resumeIsLong = resumeText.length > 250;
 
   return (
