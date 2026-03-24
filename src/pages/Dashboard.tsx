@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -254,9 +254,20 @@ const Dashboard = () => {
               Dossiers actifs
             </h2>
             <div className="space-y-1">
-              {activeDossiers.map((d) => (
-                <DossierLine key={d.dossier_id} dossier={d} onClick={() => handleDossierClick(d)} />
-              ))}
+              {activeDossiers.map((d) => {
+                const dossierEmails = isDemoMode()
+                  ? filterEmailsByPeriod(mockDossierEmails[d.dossier_id] ?? [])
+                  : [];
+                return (
+                  <DossierLine
+                    key={d.dossier_id}
+                    dossier={d}
+                    periodEmails={dossierEmails}
+                    onClick={() => handleDossierClick(d)}
+                    onViewFull={() => navigate(`/dossiers/${d.dossier_id}`)}
+                  />
+                );
+              })}
             </div>
           </motion.section>
         )}
@@ -318,42 +329,92 @@ const Dashboard = () => {
   );
 };
 
-/* ── Single dossier line ── */
+/* ── Single dossier line with stacked emails ── */
+
+const MAX_STACKED_EMAILS = 5;
 
 function DossierLine({
   dossier: d,
+  periodEmails,
   onClick,
+  onViewFull,
 }: {
   dossier: BriefingDossier;
+  periodEmails: DossierEmail[];
   onClick: () => void;
+  onViewFull: () => void;
 }) {
-  const isUrgent = d.deadline_days !== null && d.deadline_days <= 7;
-  const narrative = d.emails_narrative.length > 90
-    ? d.emails_narrative.slice(0, 87) + "…"
-    : d.emails_narrative;
+  const emailCount = periodEmails.length;
+  const hasMultiple = emailCount > 1;
+  const displayEmails = periodEmails.slice(0, MAX_STACKED_EMAILS);
+  const extraCount = emailCount - MAX_STACKED_EMAILS;
 
+  // Single email: compact one-liner
+  if (!hasMultiple) {
+    const narrative = d.emails_narrative.length > 90
+      ? d.emails_narrative.slice(0, 87) + "…"
+      : d.emails_narrative;
+
+    return (
+      <div
+        onClick={onClick}
+        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted/40 cursor-pointer transition-colors group"
+      >
+        <div className="flex-1 min-w-0 truncate">
+          <span className="text-sm text-foreground">
+            <span className="font-medium">{d.nom}</span>
+            <span className="text-muted-foreground"> · {d.domaine}</span>
+            <span className="text-muted-foreground"> · </span>
+            <span className="text-foreground/70">"{narrative}"</span>
+          </span>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+    );
+  }
+
+  // Multiple emails: stacked layout
   return (
-    <div
-      onClick={onClick}
-      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted/40 cursor-pointer transition-colors group"
-    >
-      {/* Urgency dot */}
-      <span className="shrink-0 w-2 h-2 rounded-full" style={{
-        backgroundColor: isUrgent ? 'hsl(var(--destructive))' : 'transparent',
-      }} />
-
-      {/* Content */}
-      <div className="flex-1 min-w-0 truncate">
-        <span className="text-sm text-foreground">
-          <span className="font-medium">{d.nom}</span>
-          <span className="text-muted-foreground"> · {d.domaine}</span>
-          <span className="text-muted-foreground"> · </span>
-          <span className="text-foreground/70">"{narrative}"</span>
-        </span>
+    <div className="rounded-lg hover:bg-muted/40 transition-colors">
+      {/* Header row */}
+      <div
+        onClick={onClick}
+        className="flex items-center gap-3 px-4 py-3 cursor-pointer group"
+      >
+        <div className="flex-1 min-w-0">
+          <span className="text-sm text-foreground">
+            <span className="font-medium">{d.nom}</span>
+            <span className="text-muted-foreground"> · {d.domaine}</span>
+          </span>
+        </div>
+        <span className="text-xs text-muted-foreground shrink-0">{emailCount} emails</span>
+        <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
-      {/* Arrow */}
-      <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+      {/* Stacked emails */}
+      <div className="pl-8 pr-4 pb-3 space-y-1">
+        {displayEmails.map((email) => {
+          const shortResume = email.resume.length > 70
+            ? email.resume.slice(0, 67) + "…"
+            : email.resume;
+
+          return (
+            <div key={email.id} className="text-xs text-muted-foreground leading-relaxed">
+              <span className="text-foreground/50">→</span>{" "}
+              <span className="text-foreground/70">"{shortResume}"</span>{" "}
+              <span className="text-muted-foreground/60">({email.date})</span>
+            </div>
+          );
+        })}
+        {extraCount > 0 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onViewFull(); }}
+            className="text-xs text-emerald hover:underline"
+          >
+            et {extraCount} autre{extraCount > 1 ? "s" : ""} → Voir le dossier complet
+          </button>
+        )}
+      </div>
     </div>
   );
 }

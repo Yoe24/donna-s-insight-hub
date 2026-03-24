@@ -220,7 +220,7 @@ export function AppSidebar() {
                             )}
                           >
                             <div className="flex items-center gap-2 w-full min-w-0">
-                              <div className="relative shrink-0">
+                              <div className="shrink-0">
                                 <div
                                   className={cn(
                                     "h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-semibold",
@@ -231,12 +231,6 @@ export function AppSidebar() {
                                 >
                                   {getInitials(dossier.nom_client)}
                                 </div>
-                                <span
-                                  className={cn(
-                                    "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-sidebar",
-                                    needsAttention ? "bg-destructive" : "bg-primary"
-                                  )}
-                                />
                               </div>
 
                               {!collapsed && (
