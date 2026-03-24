@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,8 +45,7 @@ const Configuration = () => {
 
   useEffect(() => {
     if (isDemo) {
-      setGmailConnected(true);
-      setGmailEmail("alexandra.fernandez@gmail.com");
+      setGmailConnected(false);
       setSignature("Cordialement,\nMe Alexandra Fernandez\nAvocate au Barreau de Paris\n01 23 45 67 89");
       setSavedInstructions(["Les mails de l'Ordre des Avocats ne sont jamais urgents"]);
       setLoadingConfig(false);
@@ -70,7 +70,14 @@ const Configuration = () => {
     load();
   }, [isDemo]);
 
+  const navigate = useNavigate();
+
   const handleConnectGmail = async () => {
+    if (isDemo) {
+      localStorage.removeItem("donna_demo_mode");
+      navigate("/login");
+      return;
+    }
     setConnectingGmail(true);
     try {
       const res = await apiPublicGet<{ auth_url: string }>("/api/import/gmail/auth");
