@@ -64,12 +64,14 @@ const DOMAINES = [
 ];
 
 function getInitials(name: string) {
+  if (!name) return "?";
   return name
     .split(" ")
+    .filter(Boolean)
     .map((w) => w[0])
     .join("")
     .toUpperCase()
-    .slice(0, 2);
+    .slice(0, 2) || "?";
 }
 
 interface BriefDossier {

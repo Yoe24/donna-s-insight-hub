@@ -112,6 +112,7 @@ const Dashboard = () => {
   const filterEmailsByPeriod = (emails: DossierEmail[]) =>
     emails.filter((e) => {
       // Parse French date like "23 mars 2026, 14h32"
+      if (!e.date || typeof e.date !== 'string') return true;
       const match = e.date.match(/(\d+)\s+(\w+)\s+(\d{4}),?\s*(\d+)h(\d+)/);
       if (!match) return true;
       const [, day, monthName, year, hour, minute] = match;

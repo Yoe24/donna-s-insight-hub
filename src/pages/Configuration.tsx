@@ -59,7 +59,7 @@ const Configuration = () => {
           setGmailConnected(!!c.refresh_token);
           setSignature(c.signature || "");
           if (c.profil_style) {
-            setSavedInstructions(c.profil_style.split("\n").filter((l) => l.trim()));
+            setSavedInstructions((c.profil_style || "").split("\n").filter((l: string) => l.trim()));
           }
         }
       } catch (e) {
