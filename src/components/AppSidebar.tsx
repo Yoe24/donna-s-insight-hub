@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { apiGet } from "@/lib/api";
+import { apiGet, apiPublicGet } from "@/lib/api";
 import { toast } from "sonner";
 
 const navItems = [
@@ -446,13 +446,19 @@ export function AppSidebar() {
 
         <SidebarFooter className="p-4 space-y-3">
           {!collapsed && isDemo && (
-            <Link
-              to="/login"
-              onClick={() => localStorage.removeItem("donna_demo_mode")}
-              className="text-xs text-primary hover:underline font-sans"
+            <button
+              onClick={async () => {
+                try {
+                  const res = await apiPublicGet<{ auth_url: string }>("/api/import/gmail/auth");
+                  if (res?.auth_url) window.location.href = res.auth_url;
+                } catch {
+                  toast.error("Erreur lors de la connexion Gmail");
+                }
+              }}
+              className="text-xs text-primary hover:underline font-sans text-left"
             >
               Connecter Gmail pour de vrais dossiers →
-            </Link>
+            </button>
           )}
 
           <button
