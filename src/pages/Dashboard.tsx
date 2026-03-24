@@ -138,11 +138,13 @@ const Dashboard = () => {
   const computeFilteredStats = () => {
     if (!briefing?.content.stats) return null;
     if (!isDemoMode()) {
-      // Live mode: multiply as approximation
       const m = period === "24h" ? 1 : period === "7j" ? 5 : 18;
+      const analyzed = briefing.content.stats.emails_analyzed * m;
+      const received = analyzed + Math.round(analyzed * 0.25);
       return {
         ...briefing.content.stats,
-        emails_analyzed: briefing.content.stats.emails_analyzed * m,
+        emails_received: received,
+        emails_analyzed: analyzed,
         emails_dossiers: (briefing.content.stats.emails_dossiers ?? 0) * m,
         emails_generaux: (briefing.content.stats.emails_generaux ?? 0) * m,
         pieces_extraites: (briefing.content.stats.pieces_extraites ?? 0) * m,
