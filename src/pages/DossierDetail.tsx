@@ -97,6 +97,7 @@ const DossierDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedEmail, setSelectedEmail] = useState<DossierEmail | null>(null);
   const [error, setError] = useState(false);
+  const [resumeExpanded, setResumeExpanded] = useState(false);
 
   const isDemo = isDemoMode();
 
