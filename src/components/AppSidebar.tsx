@@ -4,7 +4,7 @@ import { NavLink } from "@/components/NavLink";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDossiers } from "@/hooks/useDossiers";
-import { useDemoMode } from "@/hooks/useDemoMode";
+import { isDemo as isDemoCheck, logout as authLogout } from "@/lib/auth";
 import { dossiers as mockDossiersList } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";

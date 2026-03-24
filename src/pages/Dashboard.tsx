@@ -36,12 +36,17 @@ const Dashboard = () => {
   const [panelEmails, setPanelEmails] = useState<DossierEmail[]>([]);
 
   useEffect(() => {
-    const userId = searchParams.get("user_id");
+    // Capture user_id from URL (returning OAuth user)
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get("user_id");
     if (userId) {
-      localStorage.setItem("donna_user_id", userId);
-      window.history.replaceState({}, "", "/dashboard");
+      import("@/lib/auth").then(({ setUserId }) => setUserId(userId));
+      localStorage.setItem("donna_demo_mode", "false");
+      params.delete("user_id");
+      const newSearch = params.toString();
+      window.history.replaceState({}, "", "/dashboard" + (newSearch ? `?${newSearch}` : ""));
     }
-  }, [searchParams]);
+  }, []);
 
   const fetchBriefing = useCallback(async () => {
     if (isDemoMode()) {
