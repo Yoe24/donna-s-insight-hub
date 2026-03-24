@@ -37,8 +37,10 @@ const Configuration = () => {
   const navigate = useNavigate();
   const [config, setConfig] = useState<ConfigData>({});
   const [gmailConnected, setGmailConnected] = useState(false);
+  const [gmailEmail, setGmailEmail] = useState("");
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [connectingGmail, setConnectingGmail] = useState(false);
+  const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
   const isDemo = isDemoMode();
 
   // Dossiers
