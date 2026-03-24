@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { captureUserIdFromUrl } from "@/lib/userSession";
+import { captureUserIdFromUrl, isDemo, getUserId } from "@/lib/auth";
 import Index from "./pages/Index";
 
 import Login from "./pages/Login";
@@ -29,17 +29,17 @@ const queryClient = new QueryClient();
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
-  // Capture user_id from URL (OAuth callback) — this also disables demo if real user
+  // Capture user_id from URL (OAuth callback)
   captureUserIdFromUrl();
 
-  const hasLocalUserId = !!localStorage.getItem("donna_user_id");
-  const isDemoMode = localStorage.getItem("donna_demo_mode") === "true";
+  const hasUserId = !!localStorage.getItem("donna_user_id");
+  const isDemoActive = isDemo();
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Chargement...</div>;
   }
 
-  if (!user && !hasLocalUserId && !isDemoMode) {
+  if (!user && !hasUserId && !isDemoActive) {
     window.location.replace("/login");
     return null;
   }

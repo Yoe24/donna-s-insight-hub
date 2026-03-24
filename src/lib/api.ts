@@ -1,8 +1,6 @@
 const BASE_URL = 'https://api.donna-legal.com';
 
-function getUserId(): string | null {
-  return localStorage.getItem('donna_user_id');
-}
+import { getUserId } from '@/lib/auth';
 
 // Public GET — no user_id required (e.g. Gmail OAuth URL)
 export async function apiPublicGet<T = any>(endpoint: string): Promise<T> {
@@ -18,10 +16,6 @@ export async function apiPublicGet<T = any>(endpoint: string): Promise<T> {
 
 function buildUrl(endpoint: string): string {
   const userId = getUserId();
-  if (!userId) {
-    window.location.replace('/login');
-    throw new Error('No user_id found, redirecting to login');
-  }
   const url = `${BASE_URL}${endpoint}`;
   return url + (url.includes('?') ? '&' : '?') + `user_id=${encodeURIComponent(userId)}`;
 }
@@ -44,11 +38,6 @@ export async function apiGet<T = any>(endpoint: string): Promise<T> {
 
 export async function apiPost<T = any>(endpoint: string, body?: object): Promise<T> {
   const userId = getUserId();
-  if (!userId) {
-    window.location.replace('/login');
-    throw new Error('No user_id found, redirecting to login');
-  }
-
   const url = `${BASE_URL}${endpoint}` + (endpoint.includes('?') ? '&' : '?') + `user_id=${encodeURIComponent(userId)}`;
   const finalBody = body ? { ...body, user_id: userId } : { user_id: userId };
 
@@ -72,11 +61,6 @@ export async function apiPost<T = any>(endpoint: string, body?: object): Promise
 
 export async function apiPut<T = any>(endpoint: string, body?: object): Promise<T> {
   const userId = getUserId();
-  if (!userId) {
-    window.location.replace('/login');
-    throw new Error('No user_id found, redirecting to login');
-  }
-
   const url = `${BASE_URL}${endpoint}` + (endpoint.includes('?') ? '&' : '?') + `user_id=${encodeURIComponent(userId)}`;
   const finalBody = body ? { ...body, user_id: userId } : { user_id: userId };
 
