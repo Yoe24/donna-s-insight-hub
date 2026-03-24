@@ -86,7 +86,7 @@ export function AppSidebar() {
   const { signOut } = useAuth();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const { dossiers: liveDossiers, loading: liveLoading } = useDossiers();
-  const { isDemo } = useDemoMode();
+  const isDemo = isDemoCheck();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -150,11 +150,8 @@ export function AppSidebar() {
   };
 
   const handleLogout = async () => {
-    localStorage.removeItem("donna_user_id");
-    localStorage.removeItem("donna_chat_history");
-    localStorage.removeItem("donna_demo_mode");
-    await signOut();
-    window.location.replace("/login");
+    await signOut().catch(() => {});
+    authLogout();
   };
 
   const handleRenameStart = (id: string, currentName: string) => {
