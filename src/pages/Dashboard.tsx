@@ -18,6 +18,7 @@ import { fr } from "date-fns/locale";
 import { apiGet, apiPost } from "@/lib/api";
 import { BriefingDetailPanel, type DossierEmail } from "@/components/BriefingDetailPanel";
 import type { BriefingData, BriefingDossier, PeriodStats } from "@/lib/mock-briefing";
+import type { Email } from "@/hooks/useEmails";
 
 const fadeIn = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } };
 
@@ -29,6 +30,15 @@ const PERIOD_LABELS: Record<PeriodFilter, string> = {
   "30j": "30 jours",
 };
 
+/** Lightweight email type for dossier lines (from /api/emails?dossier_id=...) */
+interface DossierLineEmail {
+  id: string;
+  expediteur: string;
+  objet: string;
+  resume: string | null;
+  created_at: string;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [briefing, setBriefing] = useState<BriefingData | null>(null);
@@ -39,6 +49,8 @@ const Dashboard = () => {
   const [period, setPeriod] = useState<PeriodFilter>("24h");
   const [selectedDossier, setSelectedDossier] = useState<BriefingDossier | null>(null);
   const [panelEmails, setPanelEmails] = useState<DossierEmail[]>([]);
+  // Cache of emails per dossier for inline display
+  const [dossierEmailsMap, setDossierEmailsMap] = useState<Record<string, DossierLineEmail[]>>({});
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -72,6 +84,47 @@ const Dashboard = () => {
       .catch(() => {});
   }, [fetchBriefing]);
 
+  // Fetch emails for each active dossier when briefing or period changes
+  useEffect(() => {
+    if (!briefing) return;
+    const dossiers = briefing.content?.dossiers ?? [];
+    const pKey = period === "24h" ? "last_24h" : period === "7j" ? "last_7d" : "last_30d";
+    const activeIds = briefing.content?.emails_by_period?.[pKey] ?? [];
+    const activeDossierIds = dossiers
+      .filter((d) => d.new_emails_count > 0 && activeIds.includes(d.dossier_id))
+      .map((d) => d.dossier_id);
+
+    activeDossierIds.forEach((dossierId) => {
+      if (dossierEmailsMap[dossierId]) return; // already cached
+      apiGet<DossierLineEmail[]>(`/api/emails?dossier_id=${dossierId}`)
+        .then((emails) => {
+          setDossierEmailsMap((prev) => ({ ...prev, [dossierId]: emails || [] }));
+        })
+        .catch(() => {});
+    });
+  }, [briefing, period]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleDossierClick = (d: BriefingDossier) => {
+    setSelectedDossier(d);
+    const cached = dossierEmailsMap[d.dossier_id];
+    if (cached) {
+      setPanelEmails(cached as any);
+    } else {
+      apiGet<DossierEmail[]>(`/api/emails?dossier_id=${d.dossier_id}`)
+        .then((emails) => setPanelEmails(emails ?? []))
+        .catch(() => setPanelEmails([]));
+    }
+  };
+
+  /** Open panel with a specific email pre-selected */
+  const handleEmailClick = (d: BriefingDossier, email: DossierLineEmail) => {
+    setSelectedDossier(d);
+    // Put the clicked email first so the panel shows it
+    const cached = dossierEmailsMap[d.dossier_id] || [];
+    const reordered = [email, ...cached.filter((e) => e.id !== email.id)] as any;
+    setPanelEmails(reordered);
+  };
+
   const handleGenerate = async () => {
     setGenerating(true);
     try {
@@ -82,13 +135,6 @@ const Dashboard = () => {
       await fetchBriefing();
     } catch { toast.error("Erreur lors de la génération"); }
     finally { setGenerating(false); }
-  };
-
-  const handleDossierClick = (d: BriefingDossier) => {
-    setSelectedDossier(d);
-    apiGet<DossierEmail[]>(`/api/emails?dossier_id=${d.dossier_id}`)
-      .then((emails) => setPanelEmails(emails ?? []))
-      .catch(() => setPanelEmails([]));
   };
 
   const now = new Date();
@@ -114,6 +160,8 @@ const Dashboard = () => {
     attachments_count: periodStats.attachments_count,
     temps_gagne_minutes: Math.round(periodStats.total * 5),
   } : null;
+
+  const periodLabel = period === "24h" ? "dans les dernières 24 heures" : period === "7j" ? "ces 7 derniers jours" : "ces 30 derniers jours";
 
   if (loading) {
     return (
@@ -167,26 +215,31 @@ const Dashboard = () => {
           ))}
         </motion.div>
 
+        {/* ── Rapport Donna — 3 lignes distinctes ── */}
         {adjustedStats && (
           <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="rounded-xl bg-muted/50 px-5 py-4 mb-10">
-            <p className="text-sm text-foreground/80 leading-relaxed">
-              Vous avez reçu{" "}
-              <a href="/fil?tab=emails" className="underline underline-offset-2 hover:text-foreground transition-colors">
-                <strong>{adjustedStats.total} emails</strong>
-              </a>{" "}
-              {period === "24h" ? "dans les dernières 24 heures" : period === "7j" ? "ces 7 derniers jours" : "ces 30 derniers jours"}.
-              {" "}Donna a traité <strong>{adjustedStats.total}</strong>{" "}
-              : <strong>{adjustedStats.dossier_emails}</strong> liés à vos dossiers · <strong>{adjustedStats.general_emails}</strong> autres emails (newsletters, notifications…)
-              <br />
-              <a href="/fil?tab=pj" className="underline underline-offset-2 hover:text-foreground transition-colors">
-                <strong>{adjustedStats.attachments_count} pièces jointes</strong>
-              </a>{" "}
-              extraites ·{" "}
-              <a href="/fil?tab=relances" className="underline underline-offset-2 hover:text-foreground transition-colors">
-                <strong>{relancesCount} relances</strong>
-              </a>{" "}
-              détectées
-            </p>
+            <div className="text-sm text-foreground/80 leading-relaxed space-y-1">
+              <p>
+                Vous avez reçu{" "}
+                <a href="/fil?tab=emails" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                  <strong>{adjustedStats.total} emails</strong>
+                </a>{" "}
+                {periodLabel}.
+              </p>
+              <p>
+                <strong>{adjustedStats.dossier_emails}</strong> liés à vos dossiers · <strong>{adjustedStats.general_emails}</strong> autres emails (newsletters, notifications…)
+              </p>
+              <p>
+                <a href="/fil?tab=pj" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                  <strong>{adjustedStats.attachments_count} {adjustedStats.attachments_count === 1 ? "pièce jointe" : "pièces jointes"}</strong>
+                </a>{" "}
+                {adjustedStats.attachments_count === 1 ? "extraite" : "extraites"} ·{" "}
+                <a href="/fil?tab=relances" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                  <strong>{relancesCount} {relancesCount === 1 ? "relance" : "relances"}</strong>
+                </a>{" "}
+                {relancesCount === 1 ? "détectée" : "détectées"}
+              </p>
+            </div>
           </motion.div>
         )}
 
@@ -200,8 +253,9 @@ const Dashboard = () => {
                 <DossierLine
                   key={d.dossier_id}
                   dossier={d}
-                  periodEmails={[]}
+                  dossierEmails={dossierEmailsMap[d.dossier_id] || []}
                   onClick={() => handleDossierClick(d)}
+                  onEmailClick={(email) => handleEmailClick(d, email)}
                   onViewFull={() => navigate(`/dossiers/${d.dossier_id}`)}
                 />
               ))}
@@ -259,29 +313,39 @@ const Dashboard = () => {
   );
 };
 
-/* ── Single dossier line ── */
+/* ── Single dossier line with clickable emails ── */
+
+const MAX_STACKED_EMAILS = 5;
+
+function formatShortDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "";
+    return format(d, "d MMM", { locale: fr });
+  } catch { return ""; }
+}
 
 function DossierLine({
   dossier: d,
-  periodEmails,
+  dossierEmails,
   onClick,
+  onEmailClick,
   onViewFull,
 }: {
   dossier: BriefingDossier;
-  periodEmails: DossierEmail[];
+  dossierEmails: DossierLineEmail[];
   onClick: () => void;
+  onEmailClick: (email: DossierLineEmail) => void;
   onViewFull: () => void;
 }) {
-  const emailCount = periodEmails.length;
-  const hasMultiple = emailCount > 1;
-  const displayEmails = periodEmails.slice(0, 5);
-  const extraCount = emailCount - 5;
+  const hasEmails = dossierEmails.length > 0;
+  const displayEmails = dossierEmails.slice(0, MAX_STACKED_EMAILS);
+  const extraCount = dossierEmails.length - MAX_STACKED_EMAILS;
 
-  if (!hasMultiple) {
+  // No fetched emails yet — show narrative fallback
+  if (!hasEmails) {
     const narrativeText = d.emails_narrative || "";
-    const narrative = narrativeText.length > 90
-      ? narrativeText.slice(0, 87) + "…"
-      : narrativeText;
+    const narrative = narrativeText.length > 90 ? narrativeText.slice(0, 87) + "…" : narrativeText;
 
     return (
       <div
@@ -292,8 +356,12 @@ function DossierLine({
           <span className="text-sm text-foreground">
             <span className="font-medium">{d.nom}</span>
             <span className="text-muted-foreground"> · {d.domaine}</span>
-            <span className="text-muted-foreground"> · </span>
-            <span className="text-foreground/70">"{narrative}"</span>
+            {narrative && (
+              <>
+                <span className="text-muted-foreground"> · </span>
+                <span className="text-foreground/70">"{narrative}"</span>
+              </>
+            )}
           </span>
         </div>
         <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -301,6 +369,41 @@ function DossierLine({
     );
   }
 
+  // Single email — compact
+  if (dossierEmails.length === 1) {
+    const email = dossierEmails[0];
+    const resumeText = email.resume || email.objet || "";
+    const shortResume = resumeText.length > 80 ? resumeText.slice(0, 77) + "…" : resumeText;
+
+    return (
+      <div className="rounded-lg hover:bg-muted/40 transition-colors">
+        <div
+          onClick={onClick}
+          className="flex items-center gap-3 px-4 py-3 cursor-pointer group"
+        >
+          <div className="flex-1 min-w-0 truncate">
+            <span className="text-sm text-foreground">
+              <span className="font-medium">{d.nom}</span>
+              <span className="text-muted-foreground"> · {d.domaine}</span>
+            </span>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+        </div>
+        <div className="pl-8 pr-4 pb-3">
+          <button
+            onClick={(e) => { e.stopPropagation(); onEmailClick(email); }}
+            className="text-xs text-muted-foreground leading-relaxed hover:text-foreground transition-colors cursor-pointer text-left"
+          >
+            <span className="text-foreground/50">→</span>{" "}
+            <span className="text-foreground/70">"{shortResume}"</span>{" "}
+            <span className="text-muted-foreground/60">({formatShortDate(email.created_at)})</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Multiple emails — stacked with individually clickable rows
   return (
     <div className="rounded-lg hover:bg-muted/40 transition-colors">
       <div onClick={onClick} className="flex items-center gap-3 px-4 py-3 cursor-pointer group">
@@ -310,19 +413,23 @@ function DossierLine({
             <span className="text-muted-foreground"> · {d.domaine}</span>
           </span>
         </div>
-        <span className="text-xs text-muted-foreground shrink-0">{emailCount} emails</span>
+        <span className="text-xs text-muted-foreground shrink-0">{dossierEmails.length} emails</span>
         <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
       <div className="pl-8 pr-4 pb-3 space-y-1">
         {displayEmails.map((email) => {
-          const resumeText = email.resume || "";
+          const resumeText = email.resume || email.objet || "";
           const shortResume = resumeText.length > 70 ? resumeText.slice(0, 67) + "…" : resumeText;
           return (
-            <div key={email.id} className="text-xs text-muted-foreground leading-relaxed">
+            <button
+              key={email.id}
+              onClick={(e) => { e.stopPropagation(); onEmailClick(email); }}
+              className="block text-xs text-muted-foreground leading-relaxed hover:text-foreground transition-colors cursor-pointer text-left w-full"
+            >
               <span className="text-foreground/50">→</span>{" "}
               <span className="text-foreground/70">"{shortResume}"</span>{" "}
-              <span className="text-muted-foreground/60">({email.date})</span>
-            </div>
+              <span className="text-muted-foreground/60">({formatShortDate(email.created_at)})</span>
+            </button>
           );
         })}
         {extraCount > 0 && (
