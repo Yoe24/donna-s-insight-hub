@@ -180,7 +180,10 @@ const Dashboard = () => {
   const periodKey = period === "24h" ? "last_24h" : period === "7j" ? "last_7d" : "last_30d";
   const activeDossierIds = briefing?.content?.emails_by_period?.[periodKey] ?? [];
   const activeDossiers = dossiers
-    .filter((d) => d.new_emails_count > 0)
+    .filter((d) => {
+      const inlineCount = (d.emails || d.emails_recus || []).length;
+      return d.new_emails_count > 0 || inlineCount > 0;
+    })
     .filter((d) => activeDossierIds.includes(d.dossier_id));
 
   const periodStats = briefing?.content?.stats?.[periodKey] as PeriodStats | undefined;
