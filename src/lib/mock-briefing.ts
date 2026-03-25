@@ -16,6 +16,13 @@ export interface BriefingDossier {
   attente?: { description: string; jours: number } | null;
 }
 
+export interface PeriodStats {
+  total: number;
+  dossier_emails: number;
+  general_emails: number;
+  attachments_count: number;
+}
+
 export interface BriefingStats {
   emails_analyzed: number;
   emails_dossiers: number;
@@ -26,6 +33,9 @@ export interface BriefingStats {
   temps_gagne_minutes: number;
   pieces_extraites: number;
   dates_detectees: number;
+  last_24h?: PeriodStats;
+  last_7d?: PeriodStats;
+  last_30d?: PeriodStats;
 }
 
 export interface BriefingData {
@@ -33,6 +43,11 @@ export interface BriefingData {
     executive_summary: string;
     stats: BriefingStats;
     dossiers: BriefingDossier[];
+    emails_by_period?: {
+      last_24h: string[];
+      last_7d: string[];
+      last_30d: string[];
+    };
   };
 }
 
