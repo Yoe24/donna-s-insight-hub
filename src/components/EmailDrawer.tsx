@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { X, Copy, FileText, Loader2, Mail, Paperclip, ExternalLink } from "lucide-react";
+import { X, Copy, FileText, Loader2, Mail, Paperclip, ExternalLink, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -10,6 +11,7 @@ import { fr } from "date-fns/locale";
 import type { Email } from "@/hooks/useEmails";
 import { useUpdateEmailStatus } from "@/hooks/useEmails";
 import { apiGet, apiPost } from "@/lib/api";
+import { isDemoMode } from "@/hooks/useDemoMode";
 
 function senderInitial(expediteur: string): string {
   if (!expediteur) return "?";
@@ -36,6 +38,28 @@ function SenderAvatar({ expediteur, size = 40 }: { expediteur: string; size?: nu
   );
 }
 
+function generateDemoDraft(email: Email, dossierName: string | null): string {
+  const sender = (email.expediteur || "").replace(/<[^>]+>/, "").trim() || "Madame, Monsieur";
+  const subject = email.objet || "votre demande";
+  const name = dossierName || "votre dossier";
+
+  return `Cher(e) ${sender},
+
+Je fais suite à votre email concernant « ${subject} » relatif au dossier ${name}.
+
+J'ai bien pris note des éléments que vous avez transmis et je les ai examinés avec attention. Voici mes observations préliminaires :
+
+1. Les pièces communiquées sont conformes à nos attentes.
+2. Je reviendrai vers vous dans les meilleurs délais avec une analyse détaillée.
+3. En attendant, je reste à votre disposition pour toute question complémentaire.
+
+Je vous prie d'agréer, ${sender}, l'expression de mes salutations distinguées.
+
+Cordialement,
+[Votre nom]
+Avocat(e) au Barreau de Paris`;
+}
+
 interface EmailDrawerProps {
   email: Email;
   onClose: () => void;
@@ -47,9 +71,12 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
   const [showOriginal, setShowOriginal] = useState(false);
   const [draftText, setDraftText] = useState<string | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
+  const [draftEditable, setDraftEditable] = useState(false);
   const [dossierDocs, setDossierDocs] = useState<any[]>([]);
   const [dossierName, setDossierName] = useState<string | null>(null);
   const { updateStatus } = useUpdateEmailStatus();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const descriptionId = `email-drawer-desc-${email.id}`;
 
   useEffect(() => {
     const dossierId = (email as any).dossier_id;
@@ -79,6 +106,16 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
 
   const handleGenerateDraft = async () => {
     setDraftLoading(true);
+    setDraftEditable(false);
+
+    if (isDemoMode()) {
+      setTimeout(() => {
+        setDraftText(generateDemoDraft(email, dossierName));
+        setDraftLoading(false);
+      }, 1500);
+      return;
+    }
+
     try {
       const data = await apiPost<{ draft: string }>(`/api/emails/${email.id}/draft`);
       setDraftText(data.draft);
@@ -95,6 +132,11 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
     toast.success("Réponse copiée !");
   };
 
+  const handleEditDraft = () => {
+    setDraftEditable(true);
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  };
+
   const handleFeedbackSelect = (value: string) => {
     const map: Record<string, "parfait" | "modifier" | "erreur"> = {
       parfait: "parfait", modifier: "modifier", erreur: "erreur",
@@ -107,7 +149,6 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
     catch { return ""; }
   })();
 
-   // Extract sender email if available
   const emailMatch = (email.expediteur || "").match(/<([^>]+)>/);
   const senderEmail = emailMatch ? emailMatch[1] : null;
 
@@ -125,6 +166,10 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
 
       {/* Drawer */}
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Email : ${email.objet || "Sans objet"}`}
+        aria-describedby={descriptionId}
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
@@ -132,6 +177,9 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
         className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[55%] sm:max-w-[640px] bg-background shadow-2xl overflow-y-auto"
       >
         <div className="p-6 sm:p-8">
+          {/* Visually hidden title for accessibility */}
+          <h1 className="sr-only">Détail de l'email : {email.objet || "Sans objet"}</h1>
+
           {/* Close */}
           <div className="flex items-center justify-between mb-8">
             <button
@@ -142,6 +190,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
             </button>
             <button
               onClick={onClose}
+              aria-label="Fermer"
               className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground hover:text-foreground ml-auto"
             >
               <X className="h-4 w-4" />
@@ -180,7 +229,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
 
           {/* Résumé Donna */}
           {email.resume && (
-            <div className="mb-6">
+            <div className="mb-6" id={descriptionId}>
               <h3 className="text-xs font-medium text-muted-foreground mb-2">Résumé Donna</h3>
               <div className="rounded-xl bg-muted/40 p-5">
                 <p className="text-sm text-foreground/85 whitespace-pre-line leading-relaxed">
@@ -251,7 +300,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
 
           {/* Actions — bottom */}
           <div className="space-y-4">
-            {/* Generate draft — ghost/outline */}
+            {/* Generate draft */}
             <Button
               variant="outline"
               size="sm"
@@ -262,7 +311,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
               {draftLoading ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                  Donna rédige une réponse...
+                  Génération en cours...
                 </>
               ) : (
                 <>
@@ -272,12 +321,30 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
               )}
             </Button>
 
-            {draftText && (
+            {/* Draft response section */}
+            {draftText && !draftLoading && (
               <div className="rounded-xl bg-muted/30 border border-border p-5 space-y-3">
-                <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">{draftText}</p>
-                <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyDraft}>
-                  <Copy className="h-3 w-3 mr-1" /> Copier la réponse
-                </Button>
+                <h3 className="text-xs font-medium text-muted-foreground mb-1">Brouillon de réponse</h3>
+                {draftEditable ? (
+                  <Textarea
+                    ref={textareaRef}
+                    value={draftText}
+                    onChange={(e) => setDraftText(e.target.value)}
+                    className="min-h-[200px] text-sm leading-relaxed bg-background border-border"
+                  />
+                ) : (
+                  <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">{draftText}</p>
+                )}
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyDraft}>
+                    <Copy className="h-3 w-3 mr-1" /> Copier
+                  </Button>
+                  {!draftEditable && (
+                    <Button variant="outline" size="sm" className="text-xs" onClick={handleEditDraft}>
+                      <Pencil className="h-3 w-3 mr-1" /> Modifier
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -304,7 +371,6 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
     </>
   );
 }
-
 // Re-export for convenience
 function ChevronRight({ className }: { className?: string }) {
   return (
