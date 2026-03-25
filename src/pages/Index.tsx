@@ -164,7 +164,7 @@ const Index = () => {
             <div className="flex-1 max-w-xl">
 
               <h1
-                className="text-3xl sm:text-4xl lg:text-[3.5rem] font-serif font-bold leading-[1.1] text-foreground mb-6"
+                className="text-3xl sm:text-4xl lg:text-[3.5rem] font-serif font-bold leading-[1.25] text-foreground mb-6"
               >
                 Une employée qui{" "}
                 <AnimatePresence mode="wait">
