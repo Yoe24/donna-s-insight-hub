@@ -11,7 +11,7 @@ import { fr } from "date-fns/locale";
 import type { Email } from "@/hooks/useEmails";
 import { useUpdateEmailStatus } from "@/hooks/useEmails";
 import { apiGet, apiPost } from "@/lib/api";
-import { isDemoMode } from "@/hooks/useDemoMode";
+
 
 function senderInitial(expediteur: string): string {
   if (!expediteur) return "?";
@@ -107,14 +107,6 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
   const handleGenerateDraft = async () => {
     setDraftLoading(true);
     setDraftEditable(false);
-
-    if (isDemoMode()) {
-      setTimeout(() => {
-        setDraftText(generateDemoDraft(email, dossierName));
-        setDraftLoading(false);
-      }, 1500);
-      return;
-    }
 
     try {
       const data = await apiPost<{ draft: string }>(`/api/emails/${email.id}/draft`);

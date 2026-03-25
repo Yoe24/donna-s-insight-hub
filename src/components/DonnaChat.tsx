@@ -1,9 +1,8 @@
 /**
  * DonnaChat — Floating chat widget
  *
- * DEMO vs API BOUNDARY:
- * - Demo mode: generates contextual responses locally, NO API calls
- * - Real mode: sends messages to /api/chat
+ * Always sends messages to /api/chat using the active user_id (demo or real).
+ * The API handles demo responses server-side.
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -11,7 +10,6 @@ import { MessageCircle, X, ArrowUp } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { apiPost } from "@/lib/api";
-import { isDemoMode } from "@/hooks/useDemoMode";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -67,35 +65,6 @@ function TypingIndicator() {
   );
 }
 
-/** Demo mode: generate contextual responses without API */
-function generateDemoResponse(message: string): string {
-  const lower = message.toLowerCase();
-
-  if (lower.includes("dupont")) {
-    return "📋 **Dossier Dupont — Litige commercial**\n\nMme Dupont conteste une facture de 3 200 € pour travaux non conformes. La mise en demeure envoyée le 2 mars n'a pas reçu de réponse de BTP Pro.\n\n⚠️ **Échéance** : la mise en demeure expire le 14 mars (J-4). Je recommande de préparer une relance recommandée.";
-  }
-  if (lower.includes("martin")) {
-    return "📋 **Dossier Martin — Droit du travail**\n\nRupture conventionnelle en cours de négociation avec SAS TechCorp. Le 2e entretien est confirmé pour le 12 mars.\n\nL'indemnité légale est estimée à 8 400 €. Je recommande de négocier une supra-légale à 12 000 €.";
-  }
-  if (lower.includes("priorit") || lower.includes("urgent")) {
-    return "🔴 **Priorités du jour :**\n\n1. **Marie Dupont** — Mise en demeure expire dans 4 jours, relance à envoyer\n2. **Jean-Pierre Martin** — 2e entretien employeur dans 2 jours, préparer les arguments\n3. **Alice Bernard** — Nouveau dossier, checklist documentaire à envoyer";
-  }
-  if (lower.includes("résum") || lower.includes("semaine") || lower.includes("recap")) {
-    return "📊 **Résumé de la semaine :**\n\n- **29 emails** traités sur **7 dossiers**\n- **3 pièces jointes** extraites et classées\n- **2 relances** détectées (Dupont, Dubois)\n- **1 nouveau dossier** : Alice Bernard (divorce)\n\nTemps estimé gagné : ~145 minutes ⏱️";
-  }
-  if (lower.includes("lefebvre") || lower.includes("bail")) {
-    return "📋 **Dossier Lefebvre — Bail commercial**\n\nLe bail de Mme Lefebvre expire le 1er juin. Le bailleur n'a pas notifié ses intentions.\n\n⚠️ Je recommande d'envoyer une demande de renouvellement par acte d'huissier avant le **1er avril** pour sécuriser ses droits.";
-  }
-  if (lower.includes("roux") || lower.includes("immobilier")) {
-    return "📋 **Dossier Roux — Immobilier**\n\nVices cachés confirmés par l'expertise judiciaire. L'audience est fixée au **20 mars** au TGI.\n\nLes conclusions récapitulatives sont prêtes. Je recommande un point téléphonique avec la famille Roux le 18 mars.";
-  }
-  if (lower.includes("bonjour") || lower.includes("salut") || lower.includes("hello")) {
-    return "Bonjour ! 👋 Comment puis-je vous aider aujourd'hui ?\n\nVous pouvez me demander :\n- L'état d'un dossier (ex: « Où en est le dossier Dupont ? »)\n- Un résumé de la semaine\n- Les priorités du jour";
-  }
-
-  return "Je suis en mode démonstration. Voici ce que je peux faire :\n\n- **Résumer un dossier** : « Où en est le dossier Dupont ? »\n- **Lister les priorités** : « Qu'est-ce qui est urgent ? »\n- **Résumer la semaine** : « Résume-moi la semaine »\n\nConnectez votre boîte Gmail dans **Configurez-moi** pour que je travaille sur vos vrais emails !";
-}
-
 export default function DonnaChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(loadMessages);
@@ -140,18 +109,6 @@ export default function DonnaChat() {
       textareaRef.current.style.height = "auto";
     }
 
-    // ── DEMO MODE: generate local contextual response ──
-    if (isDemoMode()) {
-      setTimeout(() => {
-        const response = generateDemoResponse(text);
-        const assistantMsg: ChatMessage = { role: "assistant", content: response, timestamp: Date.now() };
-        setMessages(prev => [...prev, assistantMsg]);
-        setIsLoading(false);
-      }, 800 + Math.random() * 700);
-      return;
-    }
-
-    // ── REAL MODE: call API ──
     try {
       const history = newMessages.slice(-MAX_HISTORY).map(({ role, content }) => ({ role, content }));
       const res = await apiPost<{ response: string }>("/api/chat", { message: text, history });
@@ -178,7 +135,6 @@ export default function DonnaChat() {
 
   return (
     <>
-      {/* Floating button */}
       <button
         onClick={() => { setIsOpen(o => !o); isFirstLoad.current = false; }}
         className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[#6C63FF] text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer"
@@ -190,7 +146,6 @@ export default function DonnaChat() {
         )}
       </button>
 
-      {/* Chat panel */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -200,7 +155,6 @@ export default function DonnaChat() {
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="fixed z-50 bottom-24 right-6 w-[400px] h-[520px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden max-sm:inset-0 max-sm:w-full max-sm:h-full max-sm:rounded-none max-sm:bottom-0 max-sm:right-0"
           >
-            {/* Header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
               <span className="text-base font-semibold text-gray-900">💬 Donna</span>
               <button
@@ -212,7 +166,6 @@ export default function DonnaChat() {
               </button>
             </div>
 
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scroll-smooth">
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "items-end gap-2"}`}>
@@ -242,7 +195,6 @@ export default function DonnaChat() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
             <div className="px-3 pb-3 pt-1">
               <div className="flex items-end gap-2 bg-[#F3F4F6] rounded-xl px-3 py-2 focus-within:shadow-md transition-shadow">
                 <textarea
@@ -270,7 +222,6 @@ export default function DonnaChat() {
         )}
       </AnimatePresence>
 
-      {/* Bounce animation */}
       <style>{`
         @keyframes donna-bounce {
           0%, 60%, 100% { transform: translateY(0); }
