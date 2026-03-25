@@ -319,7 +319,7 @@ const Dashboard = () => {
                 >
                   <div className="flex-1 min-w-0">
                     <span className="text-sm text-foreground">
-                      <span className="font-medium">{d.nom}</span>
+                      <span className="font-medium">{getDossierName(d)}</span>
                       <span className="text-muted-foreground"> · {d.attente!.description} ({d.attente!.jours} jours)</span>
                     </span>
                   </div>
