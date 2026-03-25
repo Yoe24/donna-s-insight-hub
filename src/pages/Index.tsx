@@ -166,7 +166,7 @@ const Index = () => {
               <h1
                 className="text-3xl sm:text-4xl lg:text-[3.5rem] font-serif font-bold leading-[1.25] text-foreground mb-6"
               >
-                Une employée qui{" "}
+                Une employée qui
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={rotatingPhrases[phraseIndex]}
@@ -174,7 +174,7 @@ const Index = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.5 }}
-                    className="text-primary inline-block"
+                    className="text-primary block pt-2 sm:pt-3"
                   >
                     {rotatingPhrases[phraseIndex]}
                   </motion.span>
