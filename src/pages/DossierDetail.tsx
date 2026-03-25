@@ -10,7 +10,7 @@ import { useParams, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, File, Mail, Image, Send, RefreshCw } from "lucide-react";
+import { ArrowLeft, FileText, File, Mail, Image, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { Email } from "@/hooks/useEmails";
@@ -18,41 +18,55 @@ import { apiGet } from "@/lib/api";
 import { EmailDrawer } from "@/components/EmailDrawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-interface DossierDetailData {
+interface ApiDossierEmail {
   id: string;
-  nom_client: string;
-  nom?: string;
+  from_name?: string;
+  from_email?: string;
+  subject?: string;
+  summary?: string;
+  date?: string;
+}
+
+interface ApiDossierDocument {
+  id?: string;
+  filename?: string;
+  type?: string;
+  date?: string;
+  summary?: string;
+  url?: string;
+}
+
+interface ApiDossierDetailData {
+  id: string;
   name?: string;
-  client_name?: string;
-  reference?: string;
-  email_client: string;
-  statut: string;
-  domaine: string;
-  resume_situation: string;
-  dernier_echange_date: string;
-  emails?: DossierEmail[];
-  dossier_documents?: DossierDocument[];
+  domain?: string;
+  summary?: string;
+  status?: string;
+  emails?: ApiDossierEmail[];
+  documents?: ApiDossierDocument[];
 }
 
 interface DossierDocument {
   id: string;
   nom_fichier: string;
-  nom?: string;
   type: string;
-  contenu_extrait?: string;
-  date_reception?: string;
-  created_at: string;
-  email_id?: string;
-  expediteur?: string;
+  summary?: string;
+  date_reception: string;
+  url?: string;
 }
 
 interface DossierEmail extends Email {
-  contenu?: string;
-  classification?: {
-    needs_response?: boolean;
-    key_dates?: { date: string; description: string }[];
-    [key: string]: any;
-  };
+  from_email?: string;
+}
+
+interface DossierDetailData {
+  id: string;
+  name: string;
+  domain: string;
+  summary: string;
+  status: string;
+  emails: DossierEmail[];
+  documents: DossierDocument[];
 }
 
 const statutBadge = (statut: string) => {
@@ -74,7 +88,9 @@ const formatDateFr = (dateStr: string) => {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return "—";
     return d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
-  } catch { return "—"; }
+  } catch {
+    return "—";
+  }
 };
 
 const formatDateShort = (dateStr: string) => {
@@ -82,7 +98,9 @@ const formatDateShort = (dateStr: string) => {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return "—";
     return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
-  } catch { return "—"; }
+  } catch {
+    return "—";
+  }
 };
 
 const getDocIcon = (type: string) => {
@@ -92,6 +110,52 @@ const getDocIcon = (type: string) => {
   if (t.includes("image") || t.includes("zip")) return <Image className="h-4 w-4 text-muted-foreground shrink-0" />;
   return <FileText className="h-4 w-4 text-muted-foreground shrink-0" />;
 };
+
+function buildSender(fromName?: string, fromEmail?: string): string {
+  const safeName = fromName || "";
+  const safeEmail = fromEmail || "";
+  if (safeName && safeEmail) return `${safeName} <${safeEmail}>`;
+  return safeName || safeEmail || "";
+}
+
+function normalizeEmail(email: ApiDossierEmail): DossierEmail {
+  return {
+    id: email.id,
+    expediteur: buildSender(email.from_name, email.from_email),
+    objet: email.subject || "",
+    resume: email.summary || "",
+    brouillon: null,
+    pipeline_step: "pret_a_reviser",
+    contexte_choisi: "",
+    statut: "traite",
+    created_at: email.date || "",
+    updated_at: email.date || "",
+    from_email: email.from_email || "",
+  };
+}
+
+function normalizeDocument(doc: ApiDossierDocument, index: number): DossierDocument {
+  return {
+    id: doc.id || `doc-${index}`,
+    nom_fichier: doc.filename || "",
+    type: doc.type || "",
+    summary: doc.summary || "",
+    date_reception: doc.date || "",
+    url: doc.url || "",
+  };
+}
+
+function normalizeDossier(data: ApiDossierDetailData): DossierDetailData {
+  return {
+    id: data.id,
+    name: data.name || "",
+    domain: data.domain || "",
+    summary: data.summary || "",
+    status: data.status || "",
+    emails: (data.emails || []).map(normalizeEmail),
+    documents: (data.documents || []).map(normalizeDocument),
+  };
+}
 
 const DossierDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -107,17 +171,11 @@ const DossierDetailPage = () => {
     if (!id) return;
 
     try {
-      const data = await apiGet<DossierDetailData>(`/api/dossiers/${id}`);
-      setDossier(data);
-      setDocuments(data.dossier_documents || []);
-      if (data?.emails && data.emails.length > 0) {
-        setEmails(data.emails);
-      } else {
-        try {
-          const emailData = await apiGet<DossierEmail[]>(`/api/emails?dossier_id=${id}`);
-          setEmails(emailData || []);
-        } catch { setEmails([]); }
-      }
+      const data = await apiGet<ApiDossierDetailData>(`/api/dossiers/${id}`);
+      const normalized = normalizeDossier(data);
+      setDossier(normalized);
+      setDocuments(normalized.documents);
+      setEmails(normalized.emails);
       setError(false);
     } catch (e) {
       console.error("Error fetching dossier:", e);
@@ -128,7 +186,9 @@ const DossierDetailPage = () => {
     }
   }, [id]);
 
-  useEffect(() => { fetchDossier(); }, [fetchDossier]);
+  useEffect(() => {
+    fetchDossier();
+  }, [fetchDossier]);
 
   if (loading) {
     return (
@@ -171,18 +231,10 @@ const DossierDetailPage = () => {
     );
   }
 
-  const sortedEmails = [...(emails || [])].sort((a, b) => new Date(b?.created_at || 0).getTime() - new Date(a?.created_at || 0).getTime());
-  const sortedDocs = [...(documents || [])].sort((a, b) => new Date(b?.date_reception || b?.created_at || 0).getTime() - new Date(a?.date_reception || a?.created_at || 0).getTime());
-  const clientName = dossier?.nom || dossier?.name || dossier?.nom_client || "Client";
-
-  const lastExchangeDate = (() => {
-    if (sortedEmails.length > 0) return formatDateFr(sortedEmails[0].created_at);
-    return formatDateFr(dossier.dernier_echange_date);
-  })();
-
-  const resumeText = dossier?.resume_situation || "";
-  const safeEmails = emails || [];
-  const safeDocs = documents || [];
+  const sortedEmails = [...emails].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+  const sortedDocs = [...documents].sort((a, b) => new Date(b.date_reception || 0).getTime() - new Date(a.date_reception || 0).getTime());
+  const lastExchangeDate = sortedEmails.length > 0 ? formatDateFr(sortedEmails[0].created_at) : "—";
+  const resumeText = dossier.summary || "";
   const resumeIsLong = resumeText.length > 250;
 
   return (
@@ -196,39 +248,36 @@ const DossierDetailPage = () => {
           <div className="flex items-start justify-between gap-4 mb-1">
             <div className="min-w-0">
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-serif font-bold text-foreground truncate">{clientName}</h1>
-                {statutBadge(dossier.statut)}
-                {dossier.domaine && (
+                <h1 className="text-2xl font-serif font-bold text-foreground truncate">{dossier.name}</h1>
+                {statutBadge(dossier.status)}
+                {dossier.domain ? (
                   <span className="inline-flex items-center rounded-md bg-secondary text-secondary-foreground text-xs px-2.5 py-1 font-medium shrink-0">
-                    {dossier.domaine}
+                    {dossier.domain}
                   </span>
-                )}
+                ) : null}
               </div>
-              {dossier.email_client && (
-                <p className="text-sm text-muted-foreground mt-0.5">{dossier.email_client}</p>
-              )}
             </div>
             <div className="text-right text-xs text-muted-foreground space-y-0.5 shrink-0">
               <p>Dernier échange : {lastExchangeDate}</p>
-              <p>{safeEmails.length} emails · {safeDocs.length} documents</p>
+              <p>{sortedEmails.length} emails · {sortedDocs.length} documents</p>
             </div>
           </div>
         </motion.div>
 
-        {resumeText && (
+        {resumeText ? (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6">
             <div className="rounded-xl bg-muted/40 border border-border p-5">
               <p className={`text-sm text-foreground/85 leading-relaxed whitespace-pre-line ${!resumeExpanded && resumeIsLong ? "line-clamp-3" : ""}`}>
                 {resumeText}
               </p>
-              {resumeIsLong && (
+              {resumeIsLong ? (
                 <button onClick={() => setResumeExpanded(!resumeExpanded)} className="text-xs text-primary hover:underline mt-1">
                   {resumeExpanded ? "Réduire" : "Lire la suite"}
                 </button>
-              )}
+              ) : null}
             </div>
           </motion.div>
-        )}
+        ) : null}
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 lg:grid-cols-5 gap-6 overflow-hidden">
           <div className="lg:col-span-3">
@@ -246,26 +295,17 @@ const DossierDetailPage = () => {
                     <p className="text-sm text-muted-foreground p-5">Aucun email</p>
                   ) : (
                     sortedEmails.map((email) => {
-                      const isSent = (email as any)._type === "envoye";
-                      const senderName = (email.expediteur || "").replace(/<[^>]+>/, "").trim() || "Inconnu";
+                      const senderName = (email.expediteur || "").replace(/<[^>]+>/, "").trim() || "";
                       return (
                         <button
                           key={email.id}
                           onClick={() => setSelectedEmail(email)}
                           className="w-full flex items-center gap-2 px-5 py-3 text-left hover:bg-muted/50 transition-colors overflow-hidden"
                         >
-                          {isSent ? (
-                            <Send className="h-4 w-4 text-primary/60 shrink-0" />
-                          ) : (
-                            <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                          )}
-                          <span className="text-sm font-medium text-foreground shrink-0 max-w-[120px] truncate">
-                            {isSent ? "Vous" : senderName}
-                          </span>
+                          <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="text-sm font-medium text-foreground shrink-0 max-w-[120px] truncate">{senderName}</span>
                           <span className="text-muted-foreground shrink-0">—</span>
-                          <span className="text-sm text-muted-foreground truncate flex-1 min-w-0">
-                            {email.objet || "Sans objet"}
-                          </span>
+                          <span className="text-sm text-muted-foreground truncate flex-1 min-w-0">{email.objet || ""}</span>
                           <span className="text-xs text-muted-foreground shrink-0 ml-auto pl-2 tabular-nums whitespace-nowrap">
                             {formatDateShort(email.created_at)}
                           </span>
@@ -293,16 +333,11 @@ const DossierDetailPage = () => {
                     <p className="text-sm text-muted-foreground p-5">Aucun document</p>
                   ) : (
                     sortedDocs.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="flex items-center gap-2 px-5 py-3 hover:bg-muted/50 transition-colors cursor-default overflow-hidden"
-                      >
+                      <div key={doc.id} className="flex items-center gap-2 px-5 py-3 hover:bg-muted/50 transition-colors cursor-default overflow-hidden">
                         {getDocIcon(doc.type)}
-                        <span className="text-sm text-foreground truncate flex-1 min-w-0">
-                          {doc.nom_fichier || doc.nom || "Document"}
-                        </span>
+                        <span className="text-sm text-foreground truncate flex-1 min-w-0">{doc.nom_fichier || ""}</span>
                         <span className="text-xs text-muted-foreground shrink-0 ml-auto pl-2 tabular-nums whitespace-nowrap">
-                          {formatDateShort(doc.date_reception || doc.created_at)}
+                          {formatDateShort(doc.date_reception)}
                         </span>
                       </div>
                     ))
@@ -315,9 +350,7 @@ const DossierDetailPage = () => {
       </div>
 
       <AnimatePresence>
-        {selectedEmail && (
-          <EmailDrawer email={selectedEmail} onClose={() => setSelectedEmail(null)} showDossierLink={false} />
-        )}
+        {selectedEmail ? <EmailDrawer email={selectedEmail} onClose={() => setSelectedEmail(null)} showDossierLink={false} /> : null}
       </AnimatePresence>
     </DashboardLayout>
   );
