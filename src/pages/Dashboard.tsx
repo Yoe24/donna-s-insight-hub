@@ -388,8 +388,8 @@ function DossierLine({
       >
         <div className="flex-1 min-w-0 truncate">
           <span className="text-sm text-foreground">
-            <span className="font-medium">{d.nom}</span>
-            <span className="text-muted-foreground"> · {d.domaine}</span>
+            <span className="font-medium">{getDossierName(d)}</span>
+            <span className="text-muted-foreground">{getDossierDomain(d) ? ` · ${getDossierDomain(d)}` : ""}</span>
             {narrative && (
               <>
                 <span className="text-muted-foreground"> · </span>
@@ -417,8 +417,8 @@ function DossierLine({
         >
           <div className="flex-1 min-w-0 truncate">
             <span className="text-sm text-foreground">
-              <span className="font-medium">{d.nom}</span>
-              <span className="text-muted-foreground"> · {d.domaine}</span>
+              <span className="font-medium">{getDossierName(d)}</span>
+              <span className="text-muted-foreground">{getDossierDomain(d) ? ` · ${getDossierDomain(d)}` : ""}</span>
             </span>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -443,8 +443,8 @@ function DossierLine({
       <div onClick={onClick} className="flex items-center gap-3 px-4 py-3 cursor-pointer group">
         <div className="flex-1 min-w-0">
           <span className="text-sm text-foreground">
-            <span className="font-medium">{d.nom}</span>
-            <span className="text-muted-foreground"> · {d.domaine}</span>
+            <span className="font-medium">{getDossierName(d)}</span>
+            <span className="text-muted-foreground">{getDossierDomain(d) ? ` · ${getDossierDomain(d)}` : ""}</span>
           </span>
         </div>
         <span className="text-xs text-muted-foreground shrink-0">{dossierEmails.length} emails</span>
