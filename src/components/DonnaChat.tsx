@@ -1,8 +1,17 @@
+/**
+ * DonnaChat — Floating chat widget
+ *
+ * DEMO vs API BOUNDARY:
+ * - Demo mode: generates contextual responses locally, NO API calls
+ * - Real mode: sends messages to /api/chat
+ */
+
 import { useState, useRef, useEffect, useCallback } from "react";
 import { MessageCircle, X, ArrowUp } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { apiPost } from "@/lib/api";
+import { isDemoMode } from "@/hooks/useDemoMode";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -102,6 +111,18 @@ export default function DonnaChat() {
       textareaRef.current.style.height = "auto";
     }
 
+    // ── DEMO MODE: generate local contextual response ──
+    if (isDemoMode()) {
+      setTimeout(() => {
+        const response = generateDemoResponse(text);
+        const assistantMsg: ChatMessage = { role: "assistant", content: response, timestamp: Date.now() };
+        setMessages(prev => [...prev, assistantMsg]);
+        setIsLoading(false);
+      }, 800 + Math.random() * 700);
+      return;
+    }
+
+    // ── REAL MODE: call API ──
     try {
       const history = newMessages.slice(-MAX_HISTORY).map(({ role, content }) => ({ role, content }));
       const res = await apiPost<{ response: string }>("/api/chat", { message: text, history });
