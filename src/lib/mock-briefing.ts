@@ -72,6 +72,7 @@ export const mockBriefing: BriefingData = {
       last_24h: ["1", "2", "6"],
       last_7d: ["1", "2", "4", "5", "6"],
       last_30d: ["1", "2", "4", "5", "6"],
+    },
     dossiers: [
       {
         dossier_id: "1",
