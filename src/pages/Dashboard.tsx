@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { apiGet, apiPost } from "@/lib/api";
 import { isDemoMode } from "@/hooks/useDemoMode";
-import { mockBriefing, mockDossierEmails, type BriefingData, type BriefingDossier } from "@/lib/mock-briefing";
+import { mockBriefing, mockDossierEmails, type BriefingData, type BriefingDossier, type PeriodStats } from "@/lib/mock-briefing";
 import { BriefingDetailPanel, type DossierEmail } from "@/components/BriefingDetailPanel";
 
 const fadeIn = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } };
@@ -109,79 +109,26 @@ const Dashboard = () => {
   const attenteDossiers = (dossiers || []).filter((d) => d?.attente);
   const relancesCount = attenteDossiers.length;
 
-  // Filter dossiers by period using mock email dates
-  const periodHours = period === "24h" ? 24 : period === "7j" ? 168 : 720;
-  const cutoff = new Date(now.getTime() - periodHours * 60 * 60 * 1000);
+  // Map period filter to API key
+  const periodKey = period === "24h" ? "last_24h" : period === "7j" ? "last_7d" : "last_30d";
 
-  const filterEmailsByPeriod = (emails: DossierEmail[]) =>
-    emails.filter((e) => {
-      // Parse French date like "23 mars 2026, 14h32"
-      if (!e.date || typeof e.date !== 'string') return true;
-      const match = e.date.match(/(\d+)\s+(\w+)\s+(\d{4}),?\s*(\d+)h(\d+)/);
-      if (!match) return true;
-      const [, day, monthName, year, hour, minute] = match;
-      const monthMap: Record<string, number> = {
-        janvier: 0, février: 1, mars: 2, avril: 3, mai: 4, juin: 5,
-        juillet: 6, août: 7, septembre: 8, octobre: 9, novembre: 10, décembre: 11,
-      };
-      const d = new Date(Number(year), monthMap[monthName] ?? 0, Number(day), Number(hour), Number(minute));
-      return d >= cutoff;
-    });
+  // Get active dossier IDs for selected period
+  const activeDossierIds = briefing?.content?.emails_by_period?.[periodKey] ?? [];
 
-  // Compute which dossiers have activity in the selected period
+  // Filter dossiers by period
   const activeDossiers = dossiers
     .filter((d) => d.new_emails_count > 0)
-    .filter((d) => {
-      if (isDemoMode()) {
-        const emails = mockDossierEmails[d.dossier_id] ?? [];
-        return filterEmailsByPeriod(emails).length > 0;
-      }
-      return true; // In live mode, API handles filtering
-    });
+    .filter((d) => activeDossierIds.includes(d.dossier_id));
 
-  // Compute period-filtered stats
-  const computeFilteredStats = () => {
-    const stats = briefing?.content?.stats;
-    if (!stats) return null;
-    if (!isDemoMode()) {
-      const m = period === "24h" ? 1 : period === "7j" ? 5 : 18;
-      const analyzed = (stats.emails_analyzed ?? 0) * m;
-      const received = analyzed + Math.round(analyzed * 0.25);
-      return {
-        ...stats,
-        emails_received: received,
-        emails_analyzed: analyzed,
-        emails_dossiers: (stats.emails_dossiers ?? 0) * m,
-        emails_generaux: (stats.emails_generaux ?? 0) * m,
-        pieces_extraites: (stats.pieces_extraites ?? 0) * m,
-        temps_gagne_minutes: (stats.temps_gagne_minutes ?? 0) * m,
-      };
-    }
-    // Demo mode: count from mock emails
-    let emailsDossiers = 0;
-    let piecesExtraites = 0;
-    for (const d of dossiers) {
-      const emails = mockDossierEmails[d.dossier_id] ?? [];
-      const filtered = filterEmailsByPeriod(emails);
-      emailsDossiers += filtered.length;
-      for (const e of filtered) {
-        piecesExtraites += e.pieces_jointes?.length ?? 0;
-      }
-    }
-    const emailsGeneraux = Math.round(emailsDossiers * 0.32); // approximate ratio
-    const total = emailsDossiers + emailsGeneraux;
-    const received = total + Math.round(total * 0.25); // total received includes spam/newsletters filtered out
-    return {
-      ...(stats || {}),
-      emails_received: received,
-      emails_analyzed: total,
-      emails_dossiers: emailsDossiers,
-      emails_generaux: emailsGeneraux,
-      pieces_extraites: piecesExtraites,
-      temps_gagne_minutes: Math.round(total * 5),
-    };
-  };
-  const adjustedStats = computeFilteredStats();
+  // Get period stats from API
+  const periodStats = briefing?.content?.stats?.[periodKey] as PeriodStats | undefined;
+  const adjustedStats = periodStats ? {
+    total: periodStats.total,
+    dossier_emails: periodStats.dossier_emails,
+    general_emails: periodStats.general_emails,
+    attachments_count: periodStats.attachments_count,
+    temps_gagne_minutes: Math.round(periodStats.total * 5),
+  } : null;
 
   if (loading) {
     return (
@@ -250,14 +197,14 @@ const Dashboard = () => {
             <p className="text-sm text-foreground/80 leading-relaxed">
               Vous avez reçu{" "}
               <a href="/fil?tab=emails" className="underline underline-offset-2 hover:text-foreground transition-colors">
-                <strong>{adjustedStats.emails_dossiers + adjustedStats.emails_generaux} emails</strong>
+                <strong>{adjustedStats.total} emails</strong>
               </a>{" "}
               {period === "24h" ? "dans les dernières 24 heures" : period === "7j" ? "ces 7 derniers jours" : "ces 30 derniers jours"}.
-              {" "}Donna a traité <strong>{adjustedStats.emails_dossiers + adjustedStats.emails_generaux}</strong>{" "}
-              : <strong>{adjustedStats.emails_dossiers}</strong> liés à vos dossiers · <strong>{adjustedStats.emails_generaux}</strong> autres emails (newsletters, notifications…)
+              {" "}Donna a traité <strong>{adjustedStats.total}</strong>{" "}
+              : <strong>{adjustedStats.dossier_emails}</strong> liés à vos dossiers · <strong>{adjustedStats.general_emails}</strong> autres emails (newsletters, notifications…)
               <br />
               <a href="/fil?tab=pj" className="underline underline-offset-2 hover:text-foreground transition-colors">
-                <strong>{adjustedStats.pieces_extraites} pièces jointes</strong>
+                <strong>{adjustedStats.attachments_count} pièces jointes</strong>
               </a>{" "}
               extraites ·{" "}
               <a href="/fil?tab=relances" className="underline underline-offset-2 hover:text-foreground transition-colors">
@@ -277,7 +224,7 @@ const Dashboard = () => {
             <div className="space-y-1">
               {activeDossiers.map((d) => {
                 const dossierEmails = isDemoMode()
-                  ? filterEmailsByPeriod(mockDossierEmails[d.dossier_id] ?? [])
+                  ? (mockDossierEmails[d.dossier_id] ?? [])
                   : [];
                 return (
                   <DossierLine
@@ -334,7 +281,7 @@ const Dashboard = () => {
             transition={{ delay: 0.3 }}
             className="text-xs text-muted-foreground/50 text-center pt-8"
           >
-            {adjustedStats.emails_analyzed} emails traités · {adjustedStats.temps_gagne_minutes}min gagnées
+            {adjustedStats.total} emails traités · {adjustedStats.temps_gagne_minutes}min gagnées
           </motion.p>
         )}
       </div>

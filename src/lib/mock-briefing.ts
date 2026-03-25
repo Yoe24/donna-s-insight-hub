@@ -16,6 +16,13 @@ export interface BriefingDossier {
   attente?: { description: string; jours: number } | null;
 }
 
+export interface PeriodStats {
+  total: number;
+  dossier_emails: number;
+  general_emails: number;
+  attachments_count: number;
+}
+
 export interface BriefingStats {
   emails_analyzed: number;
   emails_dossiers: number;
@@ -26,6 +33,9 @@ export interface BriefingStats {
   temps_gagne_minutes: number;
   pieces_extraites: number;
   dates_detectees: number;
+  last_24h?: PeriodStats;
+  last_7d?: PeriodStats;
+  last_30d?: PeriodStats;
 }
 
 export interface BriefingData {
@@ -33,6 +43,11 @@ export interface BriefingData {
     executive_summary: string;
     stats: BriefingStats;
     dossiers: BriefingDossier[];
+    emails_by_period?: {
+      last_24h: string[];
+      last_7d: string[];
+      last_30d: string[];
+    };
   };
 }
 
@@ -49,6 +64,14 @@ export const mockBriefing: BriefingData = {
       temps_gagne_minutes: 145,
       pieces_extraites: 3,
       dates_detectees: 2,
+      last_24h: { total: 8, dossier_emails: 6, general_emails: 2, attachments_count: 1 },
+      last_7d: { total: 29, dossier_emails: 22, general_emails: 7, attachments_count: 3 },
+      last_30d: { total: 87, dossier_emails: 64, general_emails: 23, attachments_count: 9 },
+    },
+    emails_by_period: {
+      last_24h: ["1", "2", "6"],
+      last_7d: ["1", "2", "4", "5", "6"],
+      last_30d: ["1", "2", "4", "5", "6"],
     },
     dossiers: [
       {
