@@ -197,14 +197,14 @@ const Dashboard = () => {
             <p className="text-sm text-foreground/80 leading-relaxed">
               Vous avez reçu{" "}
               <a href="/fil?tab=emails" className="underline underline-offset-2 hover:text-foreground transition-colors">
-                <strong>{adjustedStats.emails_dossiers + adjustedStats.emails_generaux} emails</strong>
+                <strong>{adjustedStats.total} emails</strong>
               </a>{" "}
               {period === "24h" ? "dans les dernières 24 heures" : period === "7j" ? "ces 7 derniers jours" : "ces 30 derniers jours"}.
-              {" "}Donna a traité <strong>{adjustedStats.emails_dossiers + adjustedStats.emails_generaux}</strong>{" "}
-              : <strong>{adjustedStats.emails_dossiers}</strong> liés à vos dossiers · <strong>{adjustedStats.emails_generaux}</strong> autres emails (newsletters, notifications…)
+              {" "}Donna a traité <strong>{adjustedStats.total}</strong>{" "}
+              : <strong>{adjustedStats.dossier_emails}</strong> liés à vos dossiers · <strong>{adjustedStats.general_emails}</strong> autres emails (newsletters, notifications…)
               <br />
               <a href="/fil?tab=pj" className="underline underline-offset-2 hover:text-foreground transition-colors">
-                <strong>{adjustedStats.pieces_extraites} pièces jointes</strong>
+                <strong>{adjustedStats.attachments_count} pièces jointes</strong>
               </a>{" "}
               extraites ·{" "}
               <a href="/fil?tab=relances" className="underline underline-offset-2 hover:text-foreground transition-colors">
@@ -224,7 +224,7 @@ const Dashboard = () => {
             <div className="space-y-1">
               {activeDossiers.map((d) => {
                 const dossierEmails = isDemoMode()
-                  ? filterEmailsByPeriod(mockDossierEmails[d.dossier_id] ?? [])
+                  ? (mockDossierEmails[d.dossier_id] ?? [])
                   : [];
                 return (
                   <DossierLine
@@ -281,7 +281,7 @@ const Dashboard = () => {
             transition={{ delay: 0.3 }}
             className="text-xs text-muted-foreground/50 text-center pt-8"
           >
-            {adjustedStats.emails_analyzed} emails traités · {adjustedStats.temps_gagne_minutes}min gagnées
+            {adjustedStats.total} emails traités · {adjustedStats.temps_gagne_minutes}min gagnées
           </motion.p>
         )}
       </div>
