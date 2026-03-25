@@ -23,7 +23,9 @@ function formatEmailDateTime(created_at: string): string {
     const date = new Date(created_at);
     if (isNaN(date.getTime())) return "";
     return format(date, "d MMM, HH'h'mm", { locale: fr });
-  } catch { return ""; }
+  } catch {
+    return "";
+  }
 }
 
 function formatShortDate(created_at: string): string {
@@ -31,7 +33,9 @@ function formatShortDate(created_at: string): string {
     const date = new Date(created_at);
     if (isNaN(date.getTime())) return "";
     return format(date, "d MMM", { locale: fr });
-  } catch { return ""; }
+  } catch {
+    return "";
+  }
 }
 
 type TabId = "tous" | "emails" | "pj" | "relances";
@@ -43,21 +47,40 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "relances", label: "Relances" },
 ];
 
-interface FlatEmail {
+interface ApiAttachment {
+  id?: string;
+  filename?: string;
+  name?: string;
+  type?: string;
+  date?: string;
+  created_at?: string;
+}
+
+interface ApiEmail {
   id: string;
-  expediteur: string;
-  objet: string;
-  resume: string | null;
-  brouillon: string | null;
+  from_name?: string;
+  from_email?: string;
+  subject?: string;
+  summary?: string | null;
+  date?: string;
+  dossier_id?: string | null;
+  dossier_name?: string | null;
+  dossier_domain?: string | null;
+  gmail_link?: string | null;
+  attachments?: ApiAttachment[];
+  statut?: Email["statut"];
+  pipeline_step?: Email["pipeline_step"];
+  contexte_choisi?: string;
+  updated_at?: string;
+}
+
+interface FlatEmail extends Email {
+  from_email: string | null;
+  gmail_link: string | null;
+  attachments: ApiAttachment[];
   dossier_name: string | null;
   dossier_domaine: string | null;
   dossier_id: string | null;
-  created_at: string;
-  pipeline_step: string;
-  statut: string;
-  contexte_choisi: string;
-  metadata?: any;
-  updated_at: string;
 }
 
 interface FlatPJ {
@@ -75,7 +98,55 @@ interface FlatRelance {
   jours: number;
 }
 
+interface ApiBriefDossier {
+  name?: string;
+  nom?: string;
+  attente?: {
+    description?: string;
+    jours?: number;
+  };
+}
+
 const PAGE_SIZE = 15;
+
+function buildSender(fromName?: string, fromEmail?: string): string {
+  const safeName = fromName || "";
+  const safeEmail = fromEmail || "";
+  if (safeName && safeEmail) return `${safeName} <${safeEmail}>`;
+  return safeName || safeEmail || "";
+}
+
+function normalizeEmail(email: ApiEmail): FlatEmail {
+  return {
+    id: email.id,
+    expediteur: buildSender(email.from_name, email.from_email),
+    objet: email.subject || "",
+    resume: email.summary || "",
+    brouillon: null,
+    pipeline_step: email.pipeline_step || "pret_a_reviser",
+    contexte_choisi: email.contexte_choisi || "",
+    statut: email.statut || "traite",
+    metadata: undefined,
+    created_at: email.date || "",
+    updated_at: email.updated_at || email.date || "",
+    from_email: email.from_email || null,
+    gmail_link: email.gmail_link || null,
+    attachments: email.attachments || [],
+    dossier_name: email.dossier_name || null,
+    dossier_domaine: email.dossier_domain || null,
+    dossier_id: email.dossier_id || null,
+  };
+}
+
+function normalizeAttachment(email: FlatEmail, attachment: ApiAttachment, index: number): FlatPJ {
+  return {
+    id: attachment.id || `${email.id}-att-${index}`,
+    nom: attachment.filename || attachment.name || "",
+    dossier_name: email.dossier_name || "",
+    date: attachment.date || attachment.created_at || email.created_at || "",
+    type: attachment.type || "",
+  };
+}
 
 const FilActualite = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -88,40 +159,24 @@ const FilActualite = () => {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const rawTab = searchParams.get("tab");
-  const activeTab: TabId = (rawTab === "emails" || rawTab === "pj" || rawTab === "relances") ? rawTab : "tous";
+  const activeTab: TabId = rawTab === "emails" || rawTab === "pj" || rawTab === "relances" ? rawTab : "tous";
 
   const setActiveTab = (tab: TabId) => {
     setSearchParams(tab === "tous" ? {} : { tab }, { replace: true });
     setVisibleCount(PAGE_SIZE);
   };
 
-  const [dossierNames, setDossierNames] = useState<Record<string, { name: string; domaine: string }>>({});
-
-  // Fetch dossier names for enrichment
-  useEffect(() => {
-    apiGet<any[]>("/api/dossiers")
-      .then((dossiers) => {
-        const map: Record<string, { name: string; domaine: string }> = {};
-        (dossiers || []).forEach((d: any) => {
-          map[d.id] = { name: d.nom_client || d.nom || d.id, domaine: d.domaine || "" };
-        });
-        setDossierNames(map);
-      })
-      .catch(() => {});
-  }, []);
-
-  // Fetch relances from briefing
   useEffect(() => {
     apiGet<any>("/api/briefs/today")
       .then((brief) => {
-        const dossiers = brief?.content?.dossiers || [];
+        const dossiers: ApiBriefDossier[] = brief?.content?.dossiers || [];
         const relances: FlatRelance[] = dossiers
-          .filter((d: any) => d.attente)
-          .map((d: any, i: number) => ({
-            id: `rel-${i}`,
-            nom_client: d.nom,
-            description: d.attente.description,
-            jours: d.attente.jours,
+          .filter((dossier) => dossier.attente)
+          .map((dossier, index) => ({
+            id: `rel-${index}`,
+            nom_client: dossier.name || dossier.nom || "",
+            description: dossier.attente?.description || "",
+            jours: dossier.attente?.jours || 0,
           }));
         setRelancesList(relances);
       })
@@ -130,42 +185,18 @@ const FilActualite = () => {
 
   const fetchEmails = useCallback(async () => {
     try {
-      const data = await apiGet<any[]>("/api/emails");
-      const sorted = (data || []).sort(
-        (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      const data = await apiGet<ApiEmail[]>("/api/emails");
+      const normalized = (data || []).map(normalizeEmail);
+      const sorted = normalized.sort(
+        (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
       );
-      const flat: FlatEmail[] = sorted.map((e: any) => {
-        const dossierId = e.dossier_id;
-        const info = dossierId ? dossierNames[dossierId] : null;
-        return {
-          ...e,
-          dossier_name: info?.name || null,
-          dossier_domaine: info?.domaine || null,
-          dossier_id: dossierId || null,
-        };
-      });
-      setAllEmails(flat);
 
-      // Extract PJ from email documents
-      // The API may include documents; build PJ list from dossier documents
-      try {
-        const dossiers = await apiGet<any[]>("/api/dossiers");
-        const pjs: FlatPJ[] = [];
-        (dossiers || []).forEach((d: any) => {
-          const docs = d.dossier_documents || [];
-          docs.forEach((doc: any, idx: number) => {
-            pjs.push({
-              id: doc.id || `pj-${d.id}-${idx}`,
-              nom: doc.nom_fichier || doc.nom || "Document",
-              dossier_name: d.nom_client || d.nom || "",
-              date: doc.date_reception || doc.created_at || "",
-              type: doc.type || "pdf",
-            });
-          });
-        });
-        setPjList(pjs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-      } catch { /* PJ loading optional */ }
-
+      setAllEmails(sorted);
+      setPjList(
+        sorted
+          .flatMap((email) => (email.attachments || []).map((attachment, index) => normalizeAttachment(email, attachment, index)))
+          .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
+      );
       setError(false);
     } catch (err) {
       console.error("Error fetching emails:", err);
@@ -174,7 +205,7 @@ const FilActualite = () => {
     } finally {
       setLoading(false);
     }
-  }, [dossierNames]);
+  }, []);
 
   useEffect(() => {
     const userId = searchParams.get("user_id");
@@ -191,9 +222,10 @@ const FilActualite = () => {
   }, [fetchEmails]);
 
   const filteredEmails = useMemo(
-    () => allEmails.filter(
-      (e) => e.statut !== "archive" && e.pipeline_step !== "importe" && e.pipeline_step !== "filtre_rejete"
-    ),
+    () =>
+      allEmails.filter(
+        (email) => email.statut !== "archive" && email.pipeline_step !== "importe" && email.pipeline_step !== "filtre_rejete"
+      ),
     [allEmails]
   );
 
@@ -209,7 +241,7 @@ const FilActualite = () => {
   const hasMore = visibleCount < totalItems;
 
   const handleEmailClick = (email: FlatEmail) => {
-    setSelectedEmail(email as unknown as Email);
+    setSelectedEmail(email as Email);
   };
 
   const fileIcon = (type: string) => {
@@ -265,9 +297,7 @@ const FilActualite = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                activeTab === tab.id
-                  ? "bg-foreground text-background"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                activeTab === tab.id ? "bg-foreground text-background" : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
               {tab.label}
@@ -298,12 +328,10 @@ const FilActualite = () => {
                       <div className="flex items-center gap-2 overflow-hidden">
                         <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         <span className="text-sm font-medium text-foreground shrink-0 max-w-[160px] truncate">
-                          {email.expediteur || "Expéditeur inconnu"}
+                          {(email.expediteur || email.from_email || "").replace(/<[^>]+>/, "").trim()}
                         </span>
                         <span className="text-muted-foreground shrink-0">—</span>
-                        <span className="text-sm text-foreground/70 truncate flex-1 min-w-0">
-                          "{email.objet || "Sans objet"}"
-                        </span>
+                        <span className="text-sm text-foreground/70 truncate flex-1 min-w-0">"{email.objet || ""}"</span>
                         <span className="text-xs text-muted-foreground ml-auto pl-2 whitespace-nowrap shrink-0">
                           {formatEmailDateTime(email.created_at)}
                         </span>
@@ -313,19 +341,13 @@ const FilActualite = () => {
                         {email.dossier_name ? (
                           <span className="text-xs text-muted-foreground">
                             Dossier : {email.dossier_name}
-                            {email.dossier_domaine && ` · ${email.dossier_domaine}`}
+                            {email.dossier_domaine ? ` · ${email.dossier_domaine}` : ""}
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground italic">
-                            Non rattaché à un dossier
-                          </span>
+                          <span className="text-xs text-muted-foreground italic">Non rattaché à un dossier</span>
                         )}
                       </div>
-                      {email.resume && (
-                        <p className="text-xs text-muted-foreground mt-0.5 ml-[22px] line-clamp-1">
-                          → {email.resume}
-                        </p>
-                      )}
+                      {email.resume ? <p className="text-xs text-muted-foreground mt-0.5 ml-[22px] line-clamp-1">→ {email.resume}</p> : null}
                     </button>
                   </motion.div>
                 ))}
@@ -353,10 +375,8 @@ const FilActualite = () => {
                     <div className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-muted/40 transition-colors cursor-pointer overflow-hidden">
                       {fileIcon(pj.type)}
                       <span className="text-sm text-foreground truncate flex-1 min-w-0">{pj.nom}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">· {pj.dossier_name}</span>
-                      <span className="text-xs text-muted-foreground ml-auto pl-2 whitespace-nowrap shrink-0">
-                        {formatShortDate(pj.date)}
-                      </span>
+                      <span className="text-xs text-muted-foreground shrink-0">{pj.dossier_name ? `· ${pj.dossier_name}` : ""}</span>
+                      <span className="text-xs text-muted-foreground ml-auto pl-2 whitespace-nowrap shrink-0">{formatShortDate(pj.date)}</span>
                     </div>
                   </motion.div>
                 ))}
@@ -386,9 +406,7 @@ const FilActualite = () => {
                       <span className="text-sm text-foreground font-medium shrink-0">{rel.nom_client}</span>
                       <span className="text-muted-foreground shrink-0">·</span>
                       <span className="text-sm text-foreground/70 truncate flex-1 min-w-0">{rel.description}</span>
-                      <span className="text-xs text-amber-600 ml-auto pl-2 whitespace-nowrap shrink-0">
-                        il y a {rel.jours} jours
-                      </span>
+                      <span className="text-xs text-amber-600 ml-auto pl-2 whitespace-nowrap shrink-0">il y a {rel.jours} jours</span>
                     </div>
                   </motion.div>
                 ))}
@@ -399,12 +417,7 @@ const FilActualite = () => {
 
         {hasMore && (
           <div className="text-center pt-6">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
-              className="text-xs"
-            >
+            <Button variant="outline" size="sm" onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)} className="text-xs">
               Voir plus ({totalItems - visibleCount} restants)
             </Button>
           </div>
@@ -418,9 +431,7 @@ const FilActualite = () => {
       </div>
 
       <AnimatePresence>
-        {selectedEmail && (
-          <EmailDrawer email={selectedEmail} onClose={() => setSelectedEmail(null)} />
-        )}
+        {selectedEmail && <EmailDrawer email={selectedEmail} onClose={() => setSelectedEmail(null)} />}
       </AnimatePresence>
     </DashboardLayout>
   );

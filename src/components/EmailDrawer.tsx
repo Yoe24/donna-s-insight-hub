@@ -38,28 +38,6 @@ function SenderAvatar({ expediteur, size = 40 }: { expediteur: string; size?: nu
   );
 }
 
-function generateDemoDraft(email: Email, dossierName: string | null): string {
-  const sender = (email.expediteur || "").replace(/<[^>]+>/, "").trim() || "Madame, Monsieur";
-  const subject = email.objet || "votre demande";
-  const name = dossierName || "votre dossier";
-
-  return `Cher(e) ${sender},
-
-Je fais suite à votre email concernant « ${subject} » relatif au dossier ${name}.
-
-J'ai bien pris note des éléments que vous avez transmis et je les ai examinés avec attention. Voici mes observations préliminaires :
-
-1. Les pièces communiquées sont conformes à nos attentes.
-2. Je reviendrai vers vous dans les meilleurs délais avec une analyse détaillée.
-3. En attendant, je reste à votre disposition pour toute question complémentaire.
-
-Je vous prie d'agréer, ${sender}, l'expression de mes salutations distinguées.
-
-Cordialement,
-[Votre nom]
-Avocat(e) au Barreau de Paris`;
-}
-
 interface EmailDrawerProps {
   email: Email;
   onClose: () => void;
@@ -80,18 +58,45 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
 
   useEffect(() => {
     const dossierId = (email as any).dossier_id;
-    if (!dossierId) {
+    const emailAttachments = Array.isArray((email as any).attachments) ? (email as any).attachments : [];
+
+    if (emailAttachments.length > 0) {
+      setDossierDocs(
+        emailAttachments.map((attachment: any, index: number) => ({
+          id: attachment.id || `${email.id}-att-${index}`,
+          nom_fichier: attachment.filename || attachment.name || "",
+          type: attachment.type || "",
+          taille: attachment.size || "",
+        }))
+      );
+    } else {
       setDossierDocs([]);
+    }
+
+    if (!dossierId) {
       setDossierName(null);
       return;
     }
     apiGet(`/api/dossiers/${dossierId}`)
       .then((data: any) => {
-        setDossierName(data?.nom_client || data?.nom || data?.name || null);
-        const docs = data?.dossier_documents || [];
-        setDossierDocs(docs.filter((doc: any) => doc.email_id === email.id));
+        setDossierName(data?.name || null);
+        if (emailAttachments.length === 0) {
+          const docs = data?.documents || [];
+          setDossierDocs(
+            docs
+              .filter((doc: any) => !doc.email_id || doc.email_id === email.id)
+              .map((doc: any, index: number) => ({
+                id: doc.id || `${email.id}-doc-${index}`,
+                nom_fichier: doc.filename || "",
+                type: doc.type || "",
+                taille: doc.size || "",
+              }))
+          );
+        }
       })
-      .catch(() => { setDossierDocs([]); setDossierName(null); });
+      .catch(() => {
+        setDossierName(null);
+      });
   }, [email]);
 
   const handleFeedback = async (action: "parfait" | "modifier" | "erreur") => {
