@@ -64,7 +64,14 @@ export const mockBriefing: BriefingData = {
       temps_gagne_minutes: 145,
       pieces_extraites: 3,
       dates_detectees: 2,
+      last_24h: { total: 8, dossier_emails: 6, general_emails: 2, attachments_count: 1 },
+      last_7d: { total: 29, dossier_emails: 22, general_emails: 7, attachments_count: 3 },
+      last_30d: { total: 87, dossier_emails: 64, general_emails: 23, attachments_count: 9 },
     },
+    emails_by_period: {
+      last_24h: ["1", "2", "6"],
+      last_7d: ["1", "2", "4", "5", "6"],
+      last_30d: ["1", "2", "4", "5", "6"],
     dossiers: [
       {
         dossier_id: "1",

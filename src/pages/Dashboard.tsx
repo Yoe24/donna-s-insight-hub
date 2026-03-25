@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { apiGet, apiPost } from "@/lib/api";
 import { isDemoMode } from "@/hooks/useDemoMode";
-import { mockBriefing, mockDossierEmails, type BriefingData, type BriefingDossier } from "@/lib/mock-briefing";
+import { mockBriefing, mockDossierEmails, type BriefingData, type BriefingDossier, type PeriodStats } from "@/lib/mock-briefing";
 import { BriefingDetailPanel, type DossierEmail } from "@/components/BriefingDetailPanel";
 
 const fadeIn = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } };
