@@ -73,6 +73,7 @@ export function AppSidebar() {
   const renameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    console.log("[AppSidebar] liveDossiers from API:", liveDossiers);
     setLocalDossiers(liveDossiers);
   }, [liveDossiers]);
 
