@@ -1,9 +1,15 @@
+/**
+ * FilActualite — Activity feed page
+ *
+ * Always fetches from API using the active user_id (demo or real).
+ * The API returns demo data when the demo user_id is used.
+ */
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Coffee, Loader2, RefreshCw, Mail, FileText, Image, Clock, ChevronRight, Paperclip } from "lucide-react";
+import { Coffee, RefreshCw, Mail, FileText, Image, Clock, ChevronRight, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Email } from "@/hooks/useEmails";
@@ -11,20 +17,13 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { apiGet } from "@/lib/api";
 import { EmailDrawer } from "@/components/EmailDrawer";
-import { isDemoMode } from "@/hooks/useDemoMode";
-import { activityFeed, dossiers as mockDossiers } from "@/lib/mock-data";
-import { mockBriefing } from "@/lib/mock-briefing";
-
-// ── Helpers ──
 
 function formatEmailDateTime(created_at: string): string {
   try {
     const date = new Date(created_at);
     if (isNaN(date.getTime())) return "";
     return format(date, "d MMM, HH'h'mm", { locale: fr });
-  } catch {
-    return "";
-  }
+  } catch { return ""; }
 }
 
 function formatShortDate(created_at: string): string {
@@ -32,9 +31,7 @@ function formatShortDate(created_at: string): string {
     const date = new Date(created_at);
     if (isNaN(date.getTime())) return "";
     return format(date, "d MMM", { locale: fr });
-  } catch {
-    return "";
-  }
+  } catch { return ""; }
 }
 
 type TabId = "tous" | "emails" | "pj" | "relances";
@@ -45,8 +42,6 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "pj", label: "Pièces jointes" },
   { id: "relances", label: "Relances" },
 ];
-
-// ── Mock data enrichment ──
 
 interface FlatEmail {
   id: string;
@@ -70,7 +65,7 @@ interface FlatPJ {
   nom: string;
   dossier_name: string;
   date: string;
-  type: "pdf" | "word" | "image";
+  type: string;
 }
 
 interface FlatRelance {
@@ -80,83 +75,18 @@ interface FlatRelance {
   jours: number;
 }
 
-function buildDemoEmails(): FlatEmail[] {
-  const baseDate = new Date();
-  return activityFeed.map((item, i) => {
-    // Parse dossier name and domain from "Dupont - Litige commercial"
-    const parts = item.dossier?.split(" - ") ?? [];
-    const dossierName = parts[0] || null;
-    const dossierDomaine = parts[1] || null;
-
-    // Stagger times: first email = today minus 0h, last = today minus 48h spread
-    const offsetHours = i * 5 + Math.floor(i * 1.7);
-    const emailDate = new Date(baseDate.getTime() - offsetHours * 60 * 60 * 1000);
-
-    return {
-      id: item.id,
-      expediteur: item.expediteur,
-      objet: item.objet,
-      resume: item.resume,
-      brouillon: item.brouillon || null,
-      dossier_name: dossierName,
-      dossier_domaine: dossierDomaine,
-      dossier_id: item.dossier ? item.id : null,
-      created_at: emailDate.toISOString(),
-      pipeline_step: "pret_a_reviser",
-      statut: "traite",
-      contexte_choisi: "",
-      metadata: {},
-      updated_at: emailDate.toISOString(),
-    };
-  });
-}
-
-function buildDemoPJ(): FlatPJ[] {
-  const baseDate = new Date();
-  const pjs: FlatPJ[] = [];
-  let idx = 0;
-  mockDossiers.forEach((d) => {
-    d.piecesRecues.forEach((p) => {
-      const offsetHours = idx * 8 + 2;
-      const pjDate = new Date(baseDate.getTime() - offsetHours * 60 * 60 * 1000);
-      pjs.push({
-        id: `pj-${idx}`,
-        nom: p.nom,
-        dossier_name: d.nomClient,
-        date: pjDate.toISOString(),
-        type: p.type,
-      });
-      idx++;
-    });
-  });
-  return pjs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-}
-
-function buildDemoRelances(): FlatRelance[] {
-  return (mockBriefing.content.dossiers || [])
-    .filter((d) => d.attente)
-    .map((d, i) => ({
-      id: `rel-${i}`,
-      nom_client: d.nom,
-      description: d.attente!.description,
-      jours: d.attente!.jours,
-    }));
-}
-
-// ── Constants ──
 const PAGE_SIZE = 15;
-
-// ── Main Component ──
 
 const FilActualite = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [allEmails, setAllEmails] = useState<FlatEmail[]>([]);
+  const [pjList, setPjList] = useState<FlatPJ[]>([]);
+  const [relancesList, setRelancesList] = useState<FlatRelance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  // Tab from URL or default
   const rawTab = searchParams.get("tab");
   const activeTab: TabId = (rawTab === "emails" || rawTab === "pj" || rawTab === "relances") ? rawTab : "tous";
 
@@ -165,51 +95,10 @@ const FilActualite = () => {
     setVisibleCount(PAGE_SIZE);
   };
 
-  // Dossier name lookup for live mode
   const [dossierNames, setDossierNames] = useState<Record<string, { name: string; domaine: string }>>({});
 
-  const isDemo = isDemoMode();
-
-  // Demo data
-  const demoPJ = useMemo(() => isDemo ? buildDemoPJ() : [], [isDemo]);
-  const demoRelances = useMemo(() => isDemo ? buildDemoRelances() : [], [isDemo]);
-
-  const fetchEmails = useCallback(async () => {
-    if (isDemo) {
-      setAllEmails(buildDemoEmails());
-      setLoading(false);
-      return;
-    }
-    try {
-      const data = await apiGet<Email[]>("/api/emails");
-      const sorted = (data || []).sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      // Convert to FlatEmail with dossier info
-      const flat: FlatEmail[] = sorted.map((e) => {
-        const dossierId = (e as any).dossier_id;
-        const info = dossierId ? dossierNames[dossierId] : null;
-        return {
-          ...e,
-          dossier_name: info?.name || null,
-          dossier_domaine: info?.domaine || null,
-          dossier_id: dossierId || null,
-        };
-      });
-      setAllEmails(flat);
-      setError(false);
-    } catch (err) {
-      console.error("Error fetching emails:", err);
-      setError(true);
-      toast.error("Erreur de connexion");
-    } finally {
-      setLoading(false);
-    }
-  }, [isDemo, dossierNames]);
-
-  // Fetch dossier names for live mode
+  // Fetch dossier names for enrichment
   useEffect(() => {
-    if (isDemo) return;
     apiGet<any[]>("/api/dossiers")
       .then((dossiers) => {
         const map: Record<string, { name: string; domaine: string }> = {};
@@ -219,7 +108,73 @@ const FilActualite = () => {
         setDossierNames(map);
       })
       .catch(() => {});
-  }, [isDemo]);
+  }, []);
+
+  // Fetch relances from briefing
+  useEffect(() => {
+    apiGet<any>("/api/briefs/today")
+      .then((brief) => {
+        const dossiers = brief?.content?.dossiers || [];
+        const relances: FlatRelance[] = dossiers
+          .filter((d: any) => d.attente)
+          .map((d: any, i: number) => ({
+            id: `rel-${i}`,
+            nom_client: d.nom,
+            description: d.attente.description,
+            jours: d.attente.jours,
+          }));
+        setRelancesList(relances);
+      })
+      .catch(() => {});
+  }, []);
+
+  const fetchEmails = useCallback(async () => {
+    try {
+      const data = await apiGet<any[]>("/api/emails");
+      const sorted = (data || []).sort(
+        (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      const flat: FlatEmail[] = sorted.map((e: any) => {
+        const dossierId = e.dossier_id;
+        const info = dossierId ? dossierNames[dossierId] : null;
+        return {
+          ...e,
+          dossier_name: info?.name || null,
+          dossier_domaine: info?.domaine || null,
+          dossier_id: dossierId || null,
+        };
+      });
+      setAllEmails(flat);
+
+      // Extract PJ from email documents
+      // The API may include documents; build PJ list from dossier documents
+      try {
+        const dossiers = await apiGet<any[]>("/api/dossiers");
+        const pjs: FlatPJ[] = [];
+        (dossiers || []).forEach((d: any) => {
+          const docs = d.dossier_documents || [];
+          docs.forEach((doc: any, idx: number) => {
+            pjs.push({
+              id: doc.id || `pj-${d.id}-${idx}`,
+              nom: doc.nom_fichier || doc.nom || "Document",
+              dossier_name: d.nom_client || d.nom || "",
+              date: doc.date_reception || doc.created_at || "",
+              type: doc.type || "pdf",
+            });
+          });
+        });
+        setPjList(pjs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      } catch { /* PJ loading optional */ }
+
+      setError(false);
+    } catch (err) {
+      console.error("Error fetching emails:", err);
+      setError(true);
+      toast.error("Erreur de connexion");
+    } finally {
+      setLoading(false);
+    }
+  }, [dossierNames]);
 
   useEffect(() => {
     const userId = searchParams.get("user_id");
@@ -231,25 +186,20 @@ const FilActualite = () => {
 
   useEffect(() => {
     fetchEmails();
-    if (!isDemo) {
-      const interval = setInterval(fetchEmails, 60000);
-      return () => clearInterval(interval);
-    }
-  }, [fetchEmails, isDemo]);
+    const interval = setInterval(fetchEmails, 60000);
+    return () => clearInterval(interval);
+  }, [fetchEmails]);
 
-  // Filter emails (exclude archived/rejected)
   const filteredEmails = useMemo(
-    () =>
-      allEmails.filter(
-        (e) => e.statut !== "archive" && e.pipeline_step !== "importe" && e.pipeline_step !== "filtre_rejete"
-      ),
+    () => allEmails.filter(
+      (e) => e.statut !== "archive" && e.pipeline_step !== "importe" && e.pipeline_step !== "filtre_rejete"
+    ),
     [allEmails]
   );
 
-  // Items for current tab
   const emailsToShow = activeTab === "tous" || activeTab === "emails" ? filteredEmails : [];
-  const pjToShow = activeTab === "pj" ? demoPJ : [];
-  const relancesToShow = activeTab === "relances" ? demoRelances : [];
+  const pjToShow = activeTab === "pj" ? pjList : [];
+  const relancesToShow = activeTab === "relances" ? relancesList : [];
 
   const totalItems =
     activeTab === "pj" ? pjToShow.length : activeTab === "relances" ? relancesToShow.length : emailsToShow.length;
@@ -259,17 +209,15 @@ const FilActualite = () => {
   const hasMore = visibleCount < totalItems;
 
   const handleEmailClick = (email: FlatEmail) => {
-    // Cast to Email for the drawer
     setSelectedEmail(email as unknown as Email);
   };
 
   const fileIcon = (type: string) => {
     if (type === "image") return <Image className="h-4 w-4 text-muted-foreground shrink-0" />;
-    if (type === "word") return <FileText className="h-4 w-4 text-blue-500 shrink-0" />;
+    if (type === "word" || type === "doc") return <FileText className="h-4 w-4 text-blue-500 shrink-0" />;
     return <FileText className="h-4 w-4 text-red-500 shrink-0" />;
   };
 
-  // ── Loading ──
   if (loading) {
     return (
       <DashboardLayout>
@@ -289,12 +237,11 @@ const FilActualite = () => {
     );
   }
 
-  // ── Error ──
   if (error && allEmails.length === 0) {
     return (
       <DashboardLayout>
         <div className="max-w-3xl mx-auto text-center py-20">
-          <p className="text-lg font-serif text-foreground mb-2">Connexion impossible</p>
+          <p className="text-lg font-serif text-foreground mb-2">Erreur de chargement</p>
           <p className="text-sm text-muted-foreground mb-4">Impossible de charger vos emails.</p>
           <Button variant="outline" onClick={fetchEmails} className="gap-2">
             <RefreshCw className="h-4 w-4" /> Réessayer
@@ -307,13 +254,11 @@ const FilActualite = () => {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto pb-16">
-        {/* Header */}
         <div className="pt-8 pb-2">
           <h1 className="text-lg font-serif font-semibold text-foreground">Fil d'actualité</h1>
           <p className="text-sm text-muted-foreground mt-1">Tout ce que Donna a traité dans vos emails</p>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-1.5 mt-4 mb-6">
           {TABS.map((tab) => (
             <button
@@ -330,7 +275,6 @@ const FilActualite = () => {
           ))}
         </div>
 
-        {/* Tab: Tous / Emails */}
         {(activeTab === "tous" || activeTab === "emails") && (
           <>
             {filteredEmails.length === 0 ? (
@@ -351,7 +295,6 @@ const FilActualite = () => {
                       onClick={() => handleEmailClick(email)}
                       className="w-full text-left px-4 py-3 rounded-lg hover:bg-muted/40 transition-colors group"
                     >
-                      {/* Line 1: sender + subject + date */}
                       <div className="flex items-center gap-2 overflow-hidden">
                         <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         <span className="text-sm font-medium text-foreground shrink-0 max-w-[160px] truncate">
@@ -366,7 +309,6 @@ const FilActualite = () => {
                         </span>
                         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                      {/* Line 2: dossier */}
                       <div className="ml-[22px] mt-0.5">
                         {email.dossier_name ? (
                           <span className="text-xs text-muted-foreground">
@@ -379,7 +321,6 @@ const FilActualite = () => {
                           </span>
                         )}
                       </div>
-                      {/* Line 3: summary */}
                       {email.resume && (
                         <p className="text-xs text-muted-foreground mt-0.5 ml-[22px] line-clamp-1">
                           → {email.resume}
@@ -393,7 +334,6 @@ const FilActualite = () => {
           </>
         )}
 
-        {/* Tab: Pièces jointes */}
         {activeTab === "pj" && (
           <>
             {pjToShow.length === 0 ? (
@@ -425,7 +365,6 @@ const FilActualite = () => {
           </>
         )}
 
-        {/* Tab: Relances */}
         {activeTab === "relances" && (
           <>
             {relancesToShow.length === 0 ? (
@@ -458,7 +397,6 @@ const FilActualite = () => {
           </>
         )}
 
-        {/* Load more */}
         {hasMore && (
           <div className="text-center pt-6">
             <Button
@@ -472,7 +410,6 @@ const FilActualite = () => {
           </div>
         )}
 
-        {/* Footer stats */}
         {filteredEmails.length > 0 && (
           <p className="text-xs text-muted-foreground/50 text-center pt-10">
             {filteredEmails.length} emails traités · {Math.round(filteredEmails.length * 5)}min gagnées

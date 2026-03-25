@@ -1,3 +1,10 @@
+/**
+ * AppSidebar — Main navigation sidebar
+ *
+ * Always fetches dossiers and brief data from API using the active user_id.
+ * No hardcoded demo data — the API serves demo content for the demo user_id.
+ */
+
 import { useState, useEffect, useRef } from "react";
 import { LayoutDashboard, Settings, LogOut, Mail, InboxIcon, MoreHorizontal, Pencil, ArrowRightLeft, Trash2, Tag } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -5,40 +12,19 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDossiers } from "@/hooks/useDossiers";
 import { isDemo as isDemoCheck, logout as authLogout } from "@/lib/auth";
-import { dossiers as mockDossiersList } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub,
+  DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
-  useSidebar,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -52,26 +38,13 @@ const navItems = [
 ];
 
 const DOMAINES = [
-  "Droit du travail",
-  "Droit de la famille",
-  "Droit immobilier",
-  "Droit commercial",
-  "Droit des successions",
-  "Droit pénal",
-  "Bail commercial",
-  "Gestion cabinet",
-  "Autre",
+  "Droit du travail", "Droit de la famille", "Droit immobilier", "Droit commercial",
+  "Droit des successions", "Droit pénal", "Bail commercial", "Gestion cabinet", "Autre",
 ];
 
 function getInitials(name: string) {
   if (!name) return "?";
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) || "?";
+  return name.split(" ").filter(Boolean).map((w) => w[0]).join("").toUpperCase().slice(0, 2) || "?";
 }
 
 interface BriefDossier {
@@ -85,43 +58,25 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const { dossiers: liveDossiers, loading: liveLoading } = useDossiers();
+  const { dossiers: liveDossiers, loading } = useDossiers();
   const isDemo = isDemoCheck();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Brief data
   const [briefDossiers, setBriefDossiers] = useState<BriefDossier[]>([]);
   const [unclassifiedCount, setUnclassifiedCount] = useState(0);
 
-  // Dossier management state
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [localDossiers, setLocalDossiers] = useState<any[]>([]);
   const renameInputRef = useRef<HTMLInputElement>(null);
 
-  // Build dossier list
-  const demoDossiers = mockDossiersList.map((d) => ({
-    id: d.id,
-    nom_client: d.nomClient,
-    email_client: "",
-    statut: d.statut,
-    domaine: d.categorie,
-    dernier_echange_date: "",
-    nouveaux_emails: d.nombreMails,
-  }));
-
-  const sourceDossiers = isDemo ? demoDossiers : liveDossiers;
-  const loading = isDemo ? false : liveLoading;
-
-  // Sync local dossiers with source
   useEffect(() => {
-    setLocalDossiers(sourceDossiers);
-  }, [sourceDossiers]);
+    setLocalDossiers(liveDossiers);
+  }, [liveDossiers]);
 
   useEffect(() => {
-    if (isDemo) return;
     const fetchBriefData = async () => {
       try {
         const brief = await apiGet<any>("/api/briefs/today");
@@ -136,7 +91,7 @@ export function AppSidebar() {
     fetchBriefData();
     const interval = setInterval(fetchBriefData, 60000);
     return () => clearInterval(interval);
-  }, [isDemo]);
+  }, []);
 
   useEffect(() => {
     if (renamingId && renameInputRef.current) {
@@ -145,9 +100,7 @@ export function AppSidebar() {
     }
   }, [renamingId]);
 
-  const getBriefInfo = (dossierId: string) => {
-    return briefDossiers.find((bd) => bd.dossier_id === dossierId);
-  };
+  const getBriefInfo = (dossierId: string) => briefDossiers.find((bd) => bd.dossier_id === dossierId);
 
   const handleLogout = async () => {
     await signOut().catch(() => {});
@@ -160,21 +113,14 @@ export function AppSidebar() {
   };
 
   const handleRenameConfirm = (id: string) => {
-    if (!renameValue.trim()) {
-      setRenamingId(null);
-      return;
-    }
-    setLocalDossiers((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, nom_client: renameValue.trim() } : d))
-    );
+    if (!renameValue.trim()) { setRenamingId(null); return; }
+    setLocalDossiers((prev) => prev.map((d) => (d.id === id ? { ...d, nom_client: renameValue.trim() } : d)));
     toast.success("Dossier renommé");
     setRenamingId(null);
   };
 
   const handleChangeDomaine = (id: string, domaine: string) => {
-    setLocalDossiers((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, domaine } : d))
-    );
+    setLocalDossiers((prev) => prev.map((d) => (d.id === id ? { ...d, domaine } : d)));
     toast.success("Domaine mis à jour");
   };
 
@@ -216,7 +162,6 @@ export function AppSidebar() {
         </div>
 
         <SidebarContent>
-          {/* Navigation principale */}
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -239,7 +184,6 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          {/* Dossiers dynamiques */}
           <SidebarGroup>
             {!collapsed && (
               <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/70 px-3">
@@ -267,10 +211,7 @@ export function AppSidebar() {
                     !collapsed && (
                       <div className="px-3 py-4 text-center">
                         <p className="text-xs text-muted-foreground">Aucun dossier</p>
-                        <Link
-                          to="/configuration"
-                          className="text-xs text-primary hover:underline mt-1 inline-block"
-                        >
+                        <Link to="/configuration" className="text-xs text-primary hover:underline mt-1 inline-block">
                           Connecter Gmail
                         </Link>
                       </div>
@@ -286,9 +227,7 @@ export function AppSidebar() {
                         <SidebarMenuItem key={dossier.id} className="group/dossier relative">
                           <SidebarMenuButton
                             isActive={active}
-                            onClick={() => {
-                              if (!isRenaming) navigate(`/dossiers/${dossier.id}`);
-                            }}
+                            onClick={() => { if (!isRenaming) navigate(`/dossiers/${dossier.id}`); }}
                             className={cn(
                               "w-full rounded-md px-2 py-2 text-sm font-sans transition-colors cursor-pointer",
                               active
@@ -298,18 +237,13 @@ export function AppSidebar() {
                           >
                             <div className="flex items-center gap-2 w-full min-w-0">
                               <div className="shrink-0">
-                                <div
-                                  className={cn(
-                                    "h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-semibold",
-                                    active
-                                      ? "bg-primary text-primary-foreground"
-                                      : "bg-muted text-muted-foreground"
-                                  )}
-                                >
+                                <div className={cn(
+                                  "h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-semibold",
+                                  active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                )}>
                                   {getInitials(dossier.nom_client)}
                                 </div>
                               </div>
-
                               {!collapsed && (
                                 <div className="flex-1 min-w-0">
                                   {isRenaming ? (
@@ -329,18 +263,14 @@ export function AppSidebar() {
                                   ) : (
                                     <>
                                       <div className="flex items-center gap-1.5">
-                                        <span className="truncate text-sm font-medium leading-tight">
-                                          {dossier.nom_client}
-                                        </span>
+                                        <span className="truncate text-sm font-medium leading-tight">{dossier.nom_client}</span>
                                         {newEmails > 0 && (
                                           <span className="inline-flex items-center justify-center h-4 min-w-[16px] rounded-full bg-foreground/10 text-[10px] font-semibold text-foreground px-1">
                                             {newEmails}
                                           </span>
                                         )}
                                       </div>
-                                      <span className="text-[10px] text-muted-foreground truncate block">
-                                        {dossier.domaine || "—"}
-                                      </span>
+                                      <span className="text-[10px] text-muted-foreground truncate block">{dossier.domaine || "—"}</span>
                                     </>
                                   )}
                                 </div>
@@ -348,7 +278,6 @@ export function AppSidebar() {
                             </div>
                           </SidebarMenuButton>
 
-                          {/* Context menu trigger */}
                           {!collapsed && !isRenaming && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -360,62 +289,30 @@ export function AppSidebar() {
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem
-                                  onClick={() => handleRenameStart(dossier.id, dossier.nom_client)}
-                                >
-                                  <Pencil className="h-3.5 w-3.5 mr-2" />
-                                  Renommer
+                                <DropdownMenuItem onClick={() => handleRenameStart(dossier.id, dossier.nom_client)}>
+                                  <Pencil className="h-3.5 w-3.5 mr-2" /> Renommer
                                 </DropdownMenuItem>
-
                                 <DropdownMenuSub>
-                                  <DropdownMenuSubTrigger>
-                                    <Tag className="h-3.5 w-3.5 mr-2" />
-                                    Changer le domaine
-                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubTrigger><Tag className="h-3.5 w-3.5 mr-2" /> Changer le domaine</DropdownMenuSubTrigger>
                                   <DropdownMenuSubContent className="w-48">
                                     {DOMAINES.map((dom) => (
-                                      <DropdownMenuItem
-                                        key={dom}
-                                        onClick={() => handleChangeDomaine(dossier.id, dom)}
-                                        className={cn(
-                                          dossier.domaine === dom && "font-medium text-primary"
-                                        )}
-                                      >
+                                      <DropdownMenuItem key={dom} onClick={() => handleChangeDomaine(dossier.id, dom)} className={cn(dossier.domaine === dom && "font-medium text-primary")}>
                                         {dom}
                                       </DropdownMenuItem>
                                     ))}
                                   </DropdownMenuSubContent>
                                 </DropdownMenuSub>
-
                                 <DropdownMenuSub>
-                                  <DropdownMenuSubTrigger>
-                                    <ArrowRightLeft className="h-3.5 w-3.5 mr-2" />
-                                    Fusionner avec…
-                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubTrigger><ArrowRightLeft className="h-3.5 w-3.5 mr-2" /> Fusionner avec…</DropdownMenuSubTrigger>
                                   <DropdownMenuSubContent className="w-48">
-                                    {localDossiers
-                                      .filter((d) => d.id !== dossier.id)
-                                      .map((d) => (
-                                        <DropdownMenuItem
-                                          key={d.id}
-                                          onClick={() => handleMerge(dossier.id, d.id)}
-                                        >
-                                          {d.nom_client}
-                                        </DropdownMenuItem>
-                                      ))}
+                                    {localDossiers.filter((d) => d.id !== dossier.id).map((d) => (
+                                      <DropdownMenuItem key={d.id} onClick={() => handleMerge(dossier.id, d.id)}>{d.nom_client}</DropdownMenuItem>
+                                    ))}
                                   </DropdownMenuSubContent>
                                 </DropdownMenuSub>
-
                                 <DropdownMenuSeparator />
-
-                                <DropdownMenuItem
-                                  className="text-destructive focus:text-destructive"
-                                  onClick={() =>
-                                    setDeleteTarget({ id: dossier.id, name: dossier.nom_client })
-                                  }
-                                >
-                                  <Trash2 className="h-3.5 w-3.5 mr-2" />
-                                  Supprimer
+                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteTarget({ id: dossier.id, name: dossier.nom_client })}>
+                                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Supprimer
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -427,8 +324,7 @@ export function AppSidebar() {
                 </SidebarMenu>
               </ScrollArea>
 
-              {/* Emails non classés */}
-              {!collapsed && unclassifiedCount > 0 && !isDemo && (
+              {!collapsed && unclassifiedCount > 0 && (
                 <div className="px-3 pt-2 pb-1">
                   <button
                     onClick={() => navigate("/fil?filter=unclassified")}
@@ -450,9 +346,7 @@ export function AppSidebar() {
                 try {
                   const res = await apiPublicGet<{ auth_url: string }>("/api/import/gmail/auth");
                   if (res?.auth_url) window.location.href = res.auth_url;
-                } catch {
-                  toast.error("Erreur lors de la connexion Gmail");
-                }
+                } catch { toast.error("Erreur lors de la connexion Gmail"); }
               }}
               className="text-xs text-primary hover:underline font-sans text-left"
             >
@@ -470,32 +364,23 @@ export function AppSidebar() {
         </SidebarFooter>
       </Sidebar>
 
-      {/* Logout dialog */}
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-center text-lg">
-              Voulez-vous vraiment vous déconnecter ?
-            </AlertDialogTitle>
+            <AlertDialogTitle className="text-center text-lg">Voulez-vous vraiment vous déconnecter ?</AlertDialogTitle>
             <AlertDialogDescription className="text-center text-sm text-muted-foreground">
               Vous devrez vous reconnecter pour accéder à votre espace Donna.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row justify-center gap-3 sm:justify-center">
-            <AlertDialogCancel className="mt-0 border-muted-foreground/30 hover:bg-muted">
-              Annuler
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleLogout}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogCancel className="mt-0 border-muted-foreground/30 hover:bg-muted">Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Se déconnecter
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Delete dossier confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
@@ -506,10 +391,7 @@ export function AppSidebar() {
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row justify-end gap-3 sm:justify-end">
             <AlertDialogCancel className="mt-0">Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Confirmer
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -1,17 +1,23 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+/**
+ * Dashboard — Briefing page
+ *
+ * Always fetches from API using the active user_id (demo or real).
+ * The API returns demo data when the demo user_id is used.
+ */
+
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, RefreshCw, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { apiGet, apiPost } from "@/lib/api";
-import { isDemoMode } from "@/hooks/useDemoMode";
-import { mockBriefing, mockDossierEmails, type BriefingData, type BriefingDossier, type PeriodStats } from "@/lib/mock-briefing";
 import { BriefingDetailPanel, type DossierEmail } from "@/components/BriefingDetailPanel";
+import type { BriefingData, BriefingDossier, PeriodStats } from "@/lib/mock-briefing";
 
 const fadeIn = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } };
 
@@ -35,7 +41,6 @@ const Dashboard = () => {
   const [panelEmails, setPanelEmails] = useState<DossierEmail[]>([]);
 
   useEffect(() => {
-    // Capture user_id from URL (returning OAuth user)
     const params = new URLSearchParams(window.location.search);
     const userId = params.get("user_id");
     if (userId) {
@@ -48,13 +53,6 @@ const Dashboard = () => {
   }, []);
 
   const fetchBriefing = useCallback(async () => {
-    if (isDemoMode()) {
-      setBriefing(mockBriefing);
-      setNomAvocat("Alexandra");
-      setNotFound(false);
-      setLoading(false);
-      return;
-    }
     try {
       const data = await apiGet<BriefingData>("/api/briefs/today");
       setBriefing(data);
@@ -69,11 +67,9 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchBriefing();
-    if (!isDemoMode()) {
-      apiGet<{ nom_avocat?: string }>("/api/config")
-        .then((d) => { if (d?.nom_avocat) setNomAvocat(d.nom_avocat); })
-        .catch(() => {});
-    }
+    apiGet<{ nom_avocat?: string }>("/api/config")
+      .then((d) => { if (d?.nom_avocat) setNomAvocat(d.nom_avocat); })
+      .catch(() => {});
   }, [fetchBriefing]);
 
   const handleGenerate = async () => {
@@ -90,14 +86,9 @@ const Dashboard = () => {
 
   const handleDossierClick = (d: BriefingDossier) => {
     setSelectedDossier(d);
-    // In demo mode, use mock emails; in live mode, fetch from API
-    if (isDemoMode()) {
-      setPanelEmails(mockDossierEmails[d.dossier_id] ?? []);
-    } else {
-      apiGet<DossierEmail[]>(`/api/emails?dossier_id=${d.dossier_id}`)
-        .then((emails) => setPanelEmails(emails ?? []))
-        .catch(() => setPanelEmails([]));
-    }
+    apiGet<DossierEmail[]>(`/api/emails?dossier_id=${d.dossier_id}`)
+      .then((emails) => setPanelEmails(emails ?? []))
+      .catch(() => setPanelEmails([]));
   };
 
   const now = new Date();
@@ -109,18 +100,12 @@ const Dashboard = () => {
   const attenteDossiers = (dossiers || []).filter((d) => d?.attente);
   const relancesCount = attenteDossiers.length;
 
-  // Map period filter to API key
   const periodKey = period === "24h" ? "last_24h" : period === "7j" ? "last_7d" : "last_30d";
-
-  // Get active dossier IDs for selected period
   const activeDossierIds = briefing?.content?.emails_by_period?.[periodKey] ?? [];
-
-  // Filter dossiers by period
   const activeDossiers = dossiers
     .filter((d) => d.new_emails_count > 0)
     .filter((d) => activeDossierIds.includes(d.dossier_id));
 
-  // Get period stats from API
   const periodStats = briefing?.content?.stats?.[periodKey] as PeriodStats | undefined;
   const adjustedStats = periodStats ? {
     total: periodStats.total,
@@ -162,15 +147,10 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto pb-16">
-        {/* Header */}
-        <motion.p
-          {...fadeIn}
-          className="pt-8 pb-4 text-lg font-serif text-foreground"
-        >
+        <motion.p {...fadeIn} className="pt-8 pb-4 text-lg font-serif text-foreground">
           {greeting}{nomAvocat ? ` ${nomAvocat}` : ""} — <span className="capitalize">{dateStr}</span>
         </motion.p>
 
-        {/* Period tabs */}
         <motion.div {...fadeIn} transition={{ delay: 0.03 }} className="flex gap-1.5 mb-6">
           {(["24h", "7j", "30j"] as PeriodFilter[]).map((p) => (
             <button
@@ -187,13 +167,8 @@ const Dashboard = () => {
           ))}
         </motion.div>
 
-        {/* Rapport Donna */}
         {adjustedStats && (
-          <motion.div
-            {...fadeIn}
-            transition={{ delay: 0.05 }}
-            className="rounded-xl bg-muted/50 px-5 py-4 mb-10"
-          >
+          <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="rounded-xl bg-muted/50 px-5 py-4 mb-10">
             <p className="text-sm text-foreground/80 leading-relaxed">
               Vous avez reçu{" "}
               <a href="/fil?tab=emails" className="underline underline-offset-2 hover:text-foreground transition-colors">
@@ -215,27 +190,21 @@ const Dashboard = () => {
           </motion.div>
         )}
 
-        {/* Dossiers actifs */}
         {activeDossiers.length > 0 && (
           <motion.section {...fadeIn} transition={{ delay: 0.1 }} className="mb-10">
             <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
               Dossiers actifs
             </h2>
             <div className="space-y-1">
-              {activeDossiers.map((d) => {
-                const dossierEmails = isDemoMode()
-                  ? (mockDossierEmails[d.dossier_id] ?? [])
-                  : [];
-                return (
-                  <DossierLine
-                    key={d.dossier_id}
-                    dossier={d}
-                    periodEmails={dossierEmails}
-                    onClick={() => handleDossierClick(d)}
-                    onViewFull={() => navigate(`/dossiers/${d.dossier_id}`)}
-                  />
-                );
-              })}
+              {activeDossiers.map((d) => (
+                <DossierLine
+                  key={d.dossier_id}
+                  dossier={d}
+                  periodEmails={[]}
+                  onClick={() => handleDossierClick(d)}
+                  onViewFull={() => navigate(`/dossiers/${d.dossier_id}`)}
+                />
+              ))}
             </div>
           </motion.section>
         )}
@@ -248,7 +217,6 @@ const Dashboard = () => {
           </motion.div>
         )}
 
-        {/* En attente */}
         {attenteDossiers.length > 0 && (
           <motion.section {...fadeIn} transition={{ delay: 0.2 }} className="mb-10">
             <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
@@ -274,19 +242,13 @@ const Dashboard = () => {
           </motion.section>
         )}
 
-        {/* Stats footer */}
         {adjustedStats && (
-          <motion.p
-            {...fadeIn}
-            transition={{ delay: 0.3 }}
-            className="text-xs text-muted-foreground/50 text-center pt-8"
-          >
+          <motion.p {...fadeIn} transition={{ delay: 0.3 }} className="text-xs text-muted-foreground/50 text-center pt-8">
             {adjustedStats.total} emails traités · {adjustedStats.temps_gagne_minutes}min gagnées
           </motion.p>
         )}
       </div>
 
-      {/* Detail panel */}
       <BriefingDetailPanel
         dossier={selectedDossier}
         emails={panelEmails}
@@ -297,9 +259,7 @@ const Dashboard = () => {
   );
 };
 
-/* ── Single dossier line with stacked emails ── */
-
-const MAX_STACKED_EMAILS = 5;
+/* ── Single dossier line ── */
 
 function DossierLine({
   dossier: d,
@@ -314,10 +274,9 @@ function DossierLine({
 }) {
   const emailCount = periodEmails.length;
   const hasMultiple = emailCount > 1;
-  const displayEmails = periodEmails.slice(0, MAX_STACKED_EMAILS);
-  const extraCount = emailCount - MAX_STACKED_EMAILS;
+  const displayEmails = periodEmails.slice(0, 5);
+  const extraCount = emailCount - 5;
 
-  // Single email: compact one-liner
   if (!hasMultiple) {
     const narrativeText = d.emails_narrative || "";
     const narrative = narrativeText.length > 90
@@ -342,14 +301,9 @@ function DossierLine({
     );
   }
 
-  // Multiple emails: stacked layout
   return (
     <div className="rounded-lg hover:bg-muted/40 transition-colors">
-      {/* Header row */}
-      <div
-        onClick={onClick}
-        className="flex items-center gap-3 px-4 py-3 cursor-pointer group"
-      >
+      <div onClick={onClick} className="flex items-center gap-3 px-4 py-3 cursor-pointer group">
         <div className="flex-1 min-w-0">
           <span className="text-sm text-foreground">
             <span className="font-medium">{d.nom}</span>
@@ -359,15 +313,10 @@ function DossierLine({
         <span className="text-xs text-muted-foreground shrink-0">{emailCount} emails</span>
         <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
-
-      {/* Stacked emails */}
       <div className="pl-8 pr-4 pb-3 space-y-1">
         {displayEmails.map((email) => {
           const resumeText = email.resume || "";
-          const shortResume = resumeText.length > 70
-            ? resumeText.slice(0, 67) + "…"
-            : resumeText;
-
+          const shortResume = resumeText.length > 70 ? resumeText.slice(0, 67) + "…" : resumeText;
           return (
             <div key={email.id} className="text-xs text-muted-foreground leading-relaxed">
               <span className="text-foreground/50">→</span>{" "}
