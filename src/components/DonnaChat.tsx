@@ -1,8 +1,17 @@
+/**
+ * DonnaChat — Floating chat widget
+ *
+ * DEMO vs API BOUNDARY:
+ * - Demo mode: generates contextual responses locally, NO API calls
+ * - Real mode: sends messages to /api/chat
+ */
+
 import { useState, useRef, useEffect, useCallback } from "react";
 import { MessageCircle, X, ArrowUp } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { apiPost } from "@/lib/api";
+import { isDemoMode } from "@/hooks/useDemoMode";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -58,6 +67,35 @@ function TypingIndicator() {
   );
 }
 
+/** Demo mode: generate contextual responses without API */
+function generateDemoResponse(message: string): string {
+  const lower = message.toLowerCase();
+
+  if (lower.includes("dupont")) {
+    return "📋 **Dossier Dupont — Litige commercial**\n\nMme Dupont conteste une facture de 3 200 € pour travaux non conformes. La mise en demeure envoyée le 2 mars n'a pas reçu de réponse de BTP Pro.\n\n⚠️ **Échéance** : la mise en demeure expire le 14 mars (J-4). Je recommande de préparer une relance recommandée.";
+  }
+  if (lower.includes("martin")) {
+    return "📋 **Dossier Martin — Droit du travail**\n\nRupture conventionnelle en cours de négociation avec SAS TechCorp. Le 2e entretien est confirmé pour le 12 mars.\n\nL'indemnité légale est estimée à 8 400 €. Je recommande de négocier une supra-légale à 12 000 €.";
+  }
+  if (lower.includes("priorit") || lower.includes("urgent")) {
+    return "🔴 **Priorités du jour :**\n\n1. **Marie Dupont** — Mise en demeure expire dans 4 jours, relance à envoyer\n2. **Jean-Pierre Martin** — 2e entretien employeur dans 2 jours, préparer les arguments\n3. **Alice Bernard** — Nouveau dossier, checklist documentaire à envoyer";
+  }
+  if (lower.includes("résum") || lower.includes("semaine") || lower.includes("recap")) {
+    return "📊 **Résumé de la semaine :**\n\n- **29 emails** traités sur **7 dossiers**\n- **3 pièces jointes** extraites et classées\n- **2 relances** détectées (Dupont, Dubois)\n- **1 nouveau dossier** : Alice Bernard (divorce)\n\nTemps estimé gagné : ~145 minutes ⏱️";
+  }
+  if (lower.includes("lefebvre") || lower.includes("bail")) {
+    return "📋 **Dossier Lefebvre — Bail commercial**\n\nLe bail de Mme Lefebvre expire le 1er juin. Le bailleur n'a pas notifié ses intentions.\n\n⚠️ Je recommande d'envoyer une demande de renouvellement par acte d'huissier avant le **1er avril** pour sécuriser ses droits.";
+  }
+  if (lower.includes("roux") || lower.includes("immobilier")) {
+    return "📋 **Dossier Roux — Immobilier**\n\nVices cachés confirmés par l'expertise judiciaire. L'audience est fixée au **20 mars** au TGI.\n\nLes conclusions récapitulatives sont prêtes. Je recommande un point téléphonique avec la famille Roux le 18 mars.";
+  }
+  if (lower.includes("bonjour") || lower.includes("salut") || lower.includes("hello")) {
+    return "Bonjour ! 👋 Comment puis-je vous aider aujourd'hui ?\n\nVous pouvez me demander :\n- L'état d'un dossier (ex: « Où en est le dossier Dupont ? »)\n- Un résumé de la semaine\n- Les priorités du jour";
+  }
+
+  return "Je suis en mode démonstration. Voici ce que je peux faire :\n\n- **Résumer un dossier** : « Où en est le dossier Dupont ? »\n- **Lister les priorités** : « Qu'est-ce qui est urgent ? »\n- **Résumer la semaine** : « Résume-moi la semaine »\n\nConnectez votre boîte Gmail dans **Configurez-moi** pour que je travaille sur vos vrais emails !";
+}
+
 export default function DonnaChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(loadMessages);
@@ -102,6 +140,18 @@ export default function DonnaChat() {
       textareaRef.current.style.height = "auto";
     }
 
+    // ── DEMO MODE: generate local contextual response ──
+    if (isDemoMode()) {
+      setTimeout(() => {
+        const response = generateDemoResponse(text);
+        const assistantMsg: ChatMessage = { role: "assistant", content: response, timestamp: Date.now() };
+        setMessages(prev => [...prev, assistantMsg]);
+        setIsLoading(false);
+      }, 800 + Math.random() * 700);
+      return;
+    }
+
+    // ── REAL MODE: call API ──
     try {
       const history = newMessages.slice(-MAX_HISTORY).map(({ role, content }) => ({ role, content }));
       const res = await apiPost<{ response: string }>("/api/chat", { message: text, history });
