@@ -31,7 +31,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import heroBg from "@/assets/hero-bg.jpg";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -102,7 +101,7 @@ const steps = [
   {
     num: "02",
     title: "Donna analyse votre cabinet",
-    text: "En 5 minutes, Donna lit vos 90 derniers jours d'emails, crée vos dossiers clients et apprend votre style.",
+    text: "En 5 minutes, Donna lit vos 30 derniers jours d'emails, crée vos dossiers clients et apprend votre style.",
   },
   {
     num: "03",
@@ -144,6 +143,11 @@ const Index = () => {
       toast({ title: "Veuillez remplir au moins votre nom et email.", variant: "destructive" });
       return;
     }
+    // Store in localStorage until a real backend is connected
+    const submissions = JSON.parse(localStorage.getItem("donna_demo_requests") || "[]");
+    submissions.push({ ...form, submittedAt: new Date().toISOString() });
+    localStorage.setItem("donna_demo_requests", JSON.stringify(submissions));
+
     setSent(true);
     toast({ title: "Merci ! Nous vous recontactons sous 24h." });
   };
@@ -205,15 +209,17 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Right image */}
-            <div
-              className="flex-1 w-full max-w-lg"
-            >
-              <img
-                src={heroBg}
-                alt="Avocate travaillant dans son cabinet"
-                className="w-full h-auto rounded-2xl object-cover shadow-lg aspect-[4/3]"
-              />
+            {/* Right — abstract CSS visual */}
+            <div className="flex-1 w-full max-w-lg">
+              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden" style={{ background: "linear-gradient(135deg, #FFF5F0 0%, #F3E8FF 100%)" }}>
+                {/* Decorative geometric shapes */}
+                <div className="absolute top-[10%] right-[15%] w-40 h-40 rounded-full opacity-[0.15]" style={{ backgroundColor: "#8B5CF6", filter: "blur(40px)" }} />
+                <div className="absolute bottom-[15%] left-[10%] w-52 h-52 rounded-full opacity-[0.12]" style={{ backgroundColor: "#EC4899", filter: "blur(50px)" }} />
+                <div className="absolute top-[45%] left-[35%] w-28 h-28 rounded-full opacity-[0.10]" style={{ backgroundColor: "#8B5CF6", filter: "blur(30px)" }} />
+                <div className="absolute top-[20%] left-[20%] w-20 h-20 rounded-full border opacity-[0.15]" style={{ borderColor: "#8B5CF6" }} />
+                <div className="absolute bottom-[25%] right-[20%] w-32 h-32 rounded-full border opacity-[0.12]" style={{ borderColor: "#EC4899" }} />
+                <div className="absolute top-[60%] right-[35%] w-14 h-14 rounded-full border opacity-[0.10]" style={{ borderColor: "#8B5CF6" }} />
+              </div>
             </div>
           </div>
         </section>
@@ -331,7 +337,7 @@ const Index = () => {
                   variants={fadeUp}
                 >
                   <p className="text-5xl sm:text-6xl lg:text-7xl font-serif font-bold text-white mb-3">{stat.big}</p>
-                  <p className="text-sm sm:text-base" style={{ color: "#aaa" }}>{stat.sub}</p>
+                  <p className="text-sm sm:text-base" style={{ color: "#6B7280" }}>{stat.sub}</p>
                 </motion.div>
               ))}
             </div>
@@ -400,7 +406,7 @@ const Index = () => {
               variants={fadeUp}
               className="text-gray-600 text-sm font-sans"
             >
-              — Avocate en droit des affaires, Paris
+              — Témoignage d'une avocate en droit des affaires, Paris — nom partagé sur demande
             </motion.p>
           </div>
         </section>
@@ -452,7 +458,7 @@ const Index = () => {
               <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white mb-6">
                 Prêt à recruter Donna&nbsp;?
               </h2>
-              <p className="text-sm sm:text-base leading-relaxed" style={{ color: "#aaa" }}>
+              <p className="text-sm sm:text-base leading-relaxed" style={{ color: "#6B7280" }}>
                 Laissez-nous vos coordonnées et nous vous recontactons sous 24h pour une démonstration personnalisée.
               </p>
             </div>
@@ -465,11 +471,13 @@ const Index = () => {
                   <p className="text-muted-foreground text-sm">Nous vous recontactons sous 24h.</p>
                 </div>
               ) : (
-                <form onSubmit={handleDemo} className="space-y-5">
+                <form onSubmit={handleDemo} method="POST" className="space-y-5">
                   <div>
                     <Label htmlFor="d-nom" className="text-foreground text-sm">Nom complet</Label>
                     <Input
                       id="d-nom"
+                      name="nom"
+                      required
                       value={form.nom}
                       onChange={(e) => setForm({ ...form, nom: e.target.value })}
                       className="mt-1.5"
@@ -479,7 +487,9 @@ const Index = () => {
                     <Label htmlFor="d-email" className="text-foreground text-sm">Email professionnel</Label>
                     <Input
                       id="d-email"
+                      name="email"
                       type="email"
+                      required
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
                       className="mt-1.5"
@@ -489,6 +499,7 @@ const Index = () => {
                     <Label htmlFor="d-cabinet" className="text-foreground text-sm">Nom du cabinet</Label>
                     <Input
                       id="d-cabinet"
+                      name="cabinet"
                       value={form.cabinet}
                       onChange={(e) => setForm({ ...form, cabinet: e.target.value })}
                       className="mt-1.5"
@@ -496,7 +507,7 @@ const Index = () => {
                   </div>
                   <div>
                     <Label className="text-foreground text-sm">Emails reçus par jour</Label>
-                    <Select value={form.volume} onValueChange={(v) => setForm({ ...form, volume: v })}>
+                    <Select name="emails_par_jour" value={form.volume} onValueChange={(v) => setForm({ ...form, volume: v })}>
                       <SelectTrigger className="mt-1.5">
                         <SelectValue placeholder="Sélectionnez" />
                       </SelectTrigger>
@@ -529,16 +540,16 @@ const Index = () => {
           <div className="max-w-7xl mx-auto px-6 sm:px-10 py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div>
               <p className="font-serif font-bold text-white text-sm">Donna</p>
-              <p className="text-xs mt-1" style={{ color: "#aaa" }}>Votre employé numérique juridique</p>
+              <p className="text-xs mt-1" style={{ color: "#6B7280" }}>Votre employée numérique juridique</p>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-sans" style={{ color: "#aaa" }}>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-sans" style={{ color: "#6B7280" }}>
               <Link to="/securite" className="hover:text-white transition-colors">Sécurité</Link>
               <Link to="/mentions-legales" className="hover:text-white transition-colors">Mentions légales</Link>
               <button onClick={scrollToDemo} className="hover:text-white transition-colors">Demander une démo</button>
             </div>
           </div>
           <div className="max-w-7xl mx-auto px-6 sm:px-10 pb-8">
-            <p className="text-xs" style={{ color: "#555" }}>© 2026 Donna-Legal.ai — Votre employé numérique juridique</p>
+            <p className="text-xs" style={{ color: "#4B5563" }}>© 2026 Donna-Legal.ai — Votre employée numérique juridique</p>
           </div>
         </footer>
 
