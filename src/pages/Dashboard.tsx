@@ -17,7 +17,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { apiGet, apiPost } from "@/lib/api";
 import { BriefingDetailPanel, type DossierEmail } from "@/components/BriefingDetailPanel";
-import type { BriefingData, BriefingDossier, PeriodStats } from "@/lib/mock-briefing";
+import type { BriefingData, BriefingDossier, BriefingDossierEmail, PeriodStats } from "@/lib/mock-briefing";
 import type { Email } from "@/hooks/useEmails";
 
 const fadeIn = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } };
@@ -30,13 +30,34 @@ const PERIOD_LABELS: Record<PeriodFilter, string> = {
   "30j": "30 jours",
 };
 
-/** Lightweight email type for dossier lines (from /api/emails?dossier_id=...) */
+/** Lightweight email type for dossier lines — normalized from API fields */
 interface DossierLineEmail {
   id: string;
   expediteur: string;
   objet: string;
   resume: string | null;
   created_at: string;
+}
+
+/** Normalize a briefing email (API shape) to DossierLineEmail */
+function normalizeBriefEmail(raw: BriefingDossierEmail, index: number): DossierLineEmail {
+  return {
+    id: raw.id || `brief-email-${index}`,
+    expediteur: raw.from_name || raw.expediteur || "",
+    objet: raw.subject || raw.objet || "",
+    resume: raw.summary || raw.resume || null,
+    created_at: raw.date || raw.created_at || "",
+  };
+}
+
+/** Get display name for a briefing dossier (API may use `name` or `nom`) */
+function getDossierName(d: BriefingDossier): string {
+  return d.name || d.nom || "";
+}
+
+/** Get display domain for a briefing dossier */
+function getDossierDomain(d: BriefingDossier): string {
+  return d.domain || d.domaine || "";
 }
 
 const Dashboard = () => {
@@ -84,23 +105,33 @@ const Dashboard = () => {
       .catch(() => {});
   }, [fetchBriefing]);
 
-  // Fetch emails for each active dossier when briefing or period changes
+  // Build dossierEmailsMap from inline brief data (d.emails or d.emails_recus) or fetch from API
   useEffect(() => {
     if (!briefing) return;
     const dossiers = briefing.content?.dossiers ?? [];
     const pKey = period === "24h" ? "last_24h" : period === "7j" ? "last_7d" : "last_30d";
     const activeIds = briefing.content?.emails_by_period?.[pKey] ?? [];
-    const activeDossierIds = dossiers
-      .filter((d) => d.new_emails_count > 0 && activeIds.includes(d.dossier_id))
-      .map((d) => d.dossier_id);
 
-    activeDossierIds.forEach((dossierId) => {
-      if (dossierEmailsMap[dossierId]) return; // already cached
-      apiGet<DossierLineEmail[]>(`/api/emails?dossier_id=${dossierId}`)
-        .then((emails) => {
-          setDossierEmailsMap((prev) => ({ ...prev, [dossierId]: emails || [] }));
-        })
-        .catch(() => {});
+    console.log("[Dashboard] Briefing dossiers:", dossiers);
+    console.log("[Dashboard] Active IDs for period", period, ":", activeIds);
+
+    dossiers.forEach((d) => {
+      if (dossierEmailsMap[d.dossier_id]) return; // already cached
+      // Prefer inline emails from the brief
+      const inlineEmails = d.emails || d.emails_recus || [];
+      if (inlineEmails.length > 0) {
+        const normalized = inlineEmails.map(normalizeBriefEmail);
+        console.log(`[Dashboard] Dossier ${d.dossier_id} inline emails:`, normalized);
+        setDossierEmailsMap((prev) => ({ ...prev, [d.dossier_id]: normalized }));
+      } else {
+        // Fallback: fetch from API
+        apiGet<any[]>(`/api/emails?dossier_id=${d.dossier_id}`)
+          .then((emails) => {
+            const normalized = (emails || []).map((e: any, i: number) => normalizeBriefEmail(e, i));
+            setDossierEmailsMap((prev) => ({ ...prev, [d.dossier_id]: normalized }));
+          })
+          .catch(() => {});
+      }
     });
   }, [briefing, period]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -149,7 +180,10 @@ const Dashboard = () => {
   const periodKey = period === "24h" ? "last_24h" : period === "7j" ? "last_7d" : "last_30d";
   const activeDossierIds = briefing?.content?.emails_by_period?.[periodKey] ?? [];
   const activeDossiers = dossiers
-    .filter((d) => d.new_emails_count > 0)
+    .filter((d) => {
+      const inlineCount = (d.emails || d.emails_recus || []).length;
+      return d.new_emails_count > 0 || inlineCount > 0;
+    })
     .filter((d) => activeDossierIds.includes(d.dossier_id));
 
   const periodStats = briefing?.content?.stats?.[periodKey] as PeriodStats | undefined;
@@ -285,7 +319,7 @@ const Dashboard = () => {
                 >
                   <div className="flex-1 min-w-0">
                     <span className="text-sm text-foreground">
-                      <span className="font-medium">{d.nom}</span>
+                      <span className="font-medium">{getDossierName(d)}</span>
                       <span className="text-muted-foreground"> · {d.attente!.description} ({d.attente!.jours} jours)</span>
                     </span>
                   </div>
@@ -354,8 +388,8 @@ function DossierLine({
       >
         <div className="flex-1 min-w-0 truncate">
           <span className="text-sm text-foreground">
-            <span className="font-medium">{d.nom}</span>
-            <span className="text-muted-foreground"> · {d.domaine}</span>
+            <span className="font-medium">{getDossierName(d)}</span>
+            <span className="text-muted-foreground">{getDossierDomain(d) ? ` · ${getDossierDomain(d)}` : ""}</span>
             {narrative && (
               <>
                 <span className="text-muted-foreground"> · </span>
@@ -383,8 +417,8 @@ function DossierLine({
         >
           <div className="flex-1 min-w-0 truncate">
             <span className="text-sm text-foreground">
-              <span className="font-medium">{d.nom}</span>
-              <span className="text-muted-foreground"> · {d.domaine}</span>
+              <span className="font-medium">{getDossierName(d)}</span>
+              <span className="text-muted-foreground">{getDossierDomain(d) ? ` · ${getDossierDomain(d)}` : ""}</span>
             </span>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -409,8 +443,8 @@ function DossierLine({
       <div onClick={onClick} className="flex items-center gap-3 px-4 py-3 cursor-pointer group">
         <div className="flex-1 min-w-0">
           <span className="text-sm text-foreground">
-            <span className="font-medium">{d.nom}</span>
-            <span className="text-muted-foreground"> · {d.domaine}</span>
+            <span className="font-medium">{getDossierName(d)}</span>
+            <span className="text-muted-foreground">{getDossierDomain(d) ? ` · ${getDossierDomain(d)}` : ""}</span>
           </span>
         </div>
         <span className="text-xs text-muted-foreground shrink-0">{dossierEmails.length} emails</span>
