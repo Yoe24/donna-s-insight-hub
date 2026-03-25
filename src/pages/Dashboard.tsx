@@ -248,13 +248,13 @@ const Dashboard = () => {
             className="rounded-xl bg-muted/50 px-5 py-4 mb-10"
           >
             <p className="text-sm text-foreground/80 leading-relaxed">
-              Vous avez reçu <strong>{adjustedStats.emails_received} emails</strong> {period === "24h" ? "dans les dernières 24 heures" : period === "7j" ? "ces 7 derniers jours" : "ces 30 derniers jours"}.
-              <br />
-              Donna a traité{" "}
+              Vous avez reçu{" "}
               <a href="/fil?tab=emails" className="underline underline-offset-2 hover:text-foreground transition-colors">
-                <strong>{adjustedStats.emails_analyzed} emails</strong>
+                <strong>{adjustedStats.emails_dossiers + adjustedStats.emails_generaux} emails</strong>
               </a>{" "}
-              : <strong>{adjustedStats.emails_dossiers}</strong> liés à vos dossiers · <strong>{adjustedStats.emails_generaux}</strong> généraux
+              {period === "24h" ? "dans les dernières 24 heures" : period === "7j" ? "ces 7 derniers jours" : "ces 30 derniers jours"}.
+              {" "}Donna a traité <strong>{adjustedStats.emails_dossiers + adjustedStats.emails_generaux}</strong>{" "}
+              : <strong>{adjustedStats.emails_dossiers}</strong> liés à vos dossiers · <strong>{adjustedStats.emails_generaux}</strong> autres emails (newsletters, notifications…)
               <br />
               <a href="/fil?tab=pj" className="underline underline-offset-2 hover:text-foreground transition-colors">
                 <strong>{adjustedStats.pieces_extraites} pièces jointes</strong>
