@@ -2,9 +2,28 @@
 
 import type { DossierEmail } from "@/components/BriefingDetailPanel";
 
+/** Email shape inside a briefing dossier (from API) */
+export interface BriefingDossierEmail {
+  id?: string;
+  from_name?: string;
+  from_email?: string;
+  subject?: string;
+  date?: string;
+  summary?: string;
+  /** Legacy field names */
+  expediteur?: string;
+  objet?: string;
+  resume?: string | null;
+  created_at?: string;
+}
+
 export interface BriefingDossier {
   dossier_id: string;
+  /** API may return `name` or `nom` */
+  name?: string;
   nom: string;
+  /** API may return `domain` or `domaine` */
+  domain?: string;
   domaine: string;
   needs_immediate_attention: boolean;
   new_emails_count: number;
@@ -14,6 +33,9 @@ export interface BriefingDossier {
   dates_cles: string[];
   deadline_days: number | null;
   attente?: { description: string; jours: number } | null;
+  /** Inline emails array from the API brief */
+  emails?: BriefingDossierEmail[];
+  emails_recus?: BriefingDossierEmail[];
 }
 
 export interface PeriodStats {
