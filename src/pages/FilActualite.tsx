@@ -17,8 +17,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { apiGet } from "@/lib/api";
 import { isDemo } from "@/lib/auth";
-import { mockBriefing } from "@/lib/mock-briefing";
-import { activityFeed } from "@/lib/mock-data";
+import { mockBriefing, mockAllEmails } from "@/lib/mock-briefing";
 import { EmailDrawer } from "@/components/EmailDrawer";
 
 function formatEmailDateTime(created_at: string): string {
@@ -45,9 +44,9 @@ type TabId = "tous" | "emails" | "pj" | "relances";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "tous", label: "Tous" },
-  { id: "emails", label: "Emails" },
+  { id: "emails", label: "Clients" },
   { id: "pj", label: "Pièces jointes" },
-  { id: "relances", label: "Relances" },
+  { id: "relances", label: "Autre" },
 ];
 
 interface ApiAttachment {
@@ -194,26 +193,32 @@ const FilActualite = () => {
     try {
       let normalized: FlatEmail[];
       if (isDemo()) {
-        // Convert mock activity feed to FlatEmail shape
-        normalized = activityFeed.map((item) => ({
+        // Convert mockAllEmails to FlatEmail shape
+        normalized = mockAllEmails.map((item) => ({
           id: item.id,
           expediteur: `${item.expediteur} <${item.email}>`,
           objet: item.objet,
           resume: item.resume,
-          brouillon: item.brouillon || null,
-          pipeline_step: "pret_a_reviser" as const,
+          brouillon: item.brouillon_mock || null,
+          pipeline_step: (item.category === "client" ? "pret_a_reviser" : "filtre_rejete") as any,
           contexte_choisi: "",
-          statut: (item.statut === "brouillon_genere" ? "traite" : item.statut === "valide" ? "valide" : "en_attente") as FlatEmail["statut"],
+          statut: (item.category === "client" ? "traite" : "ignore") as FlatEmail["statut"],
           metadata: undefined,
-          created_at: item.created_at,
-          updated_at: item.created_at,
+          created_at: item.date,
+          updated_at: item.date,
           from_email: item.email,
           gmail_link: null,
-          attachments: item.attachments || [],
-          dossier_name: item.dossier,
-          dossier_domaine: null,
-          dossier_id: item.dossier_id || null,
-          contenu: (item as any).contenu || null,
+          attachments: item.pieces_jointes.map((pj, i) => ({
+            id: `${item.id}-att-${i}`,
+            filename: pj.nom,
+            type: pj.type_mime.includes("pdf") ? "pdf" : pj.type_mime.includes("image") ? "image" : "other",
+            date: item.date,
+          })),
+          dossier_name: item.dossier_nom ? `${item.dossier_nom} - ${item.dossier_domaine}` : null,
+          dossier_domaine: item.dossier_domaine,
+          dossier_id: item.dossier_id,
+          contenu: item.corps_original,
+          category: item.category,
         } as any));
       } else {
         const data = await apiGet<ApiEmail[]>("/api/emails");
@@ -256,14 +261,23 @@ const FilActualite = () => {
   const filteredEmails = useMemo(
     () =>
       allEmails.filter(
-        (email) => email.statut !== "archive" && email.pipeline_step !== "importe" && email.pipeline_step !== "filtre_rejete"
+        (email) => email.statut !== "archive" && email.pipeline_step !== "importe"
       ),
     [allEmails]
   );
 
-  const emailsToShow = activeTab === "tous" || activeTab === "emails" ? filteredEmails : [];
+  const clientEmails = useMemo(() => filteredEmails.filter((e) => {
+    const cat = (e as any).category;
+    return cat ? cat === "client" : e.pipeline_step !== "filtre_rejete";
+  }), [filteredEmails]);
+  const nonClientEmails = useMemo(() => filteredEmails.filter((e) => {
+    const cat = (e as any).category;
+    return cat ? cat !== "client" : e.pipeline_step === "filtre_rejete";
+  }), [filteredEmails]);
+
+  const emailsToShow = activeTab === "tous" ? filteredEmails : activeTab === "emails" ? clientEmails : [];
   const pjToShow = activeTab === "pj" ? pjList : [];
-  const relancesToShow = activeTab === "relances" ? relancesList : [];
+  const relancesToShow = activeTab === "relances" ? nonClientEmails as any[] : [];
 
   const totalItems =
     activeTab === "pj" ? pjToShow.length : activeTab === "relances" ? relancesToShow.length : emailsToShow.length;
@@ -364,6 +378,11 @@ const FilActualite = () => {
                         </span>
                         <span className="text-muted-foreground shrink-0">—</span>
                         <span className="text-sm text-foreground/70 truncate flex-1 min-w-0">"{email.objet || ""}"</span>
+                        {(email as any).category && (email as any).category !== "client" && (
+                          <span className="inline-flex items-center rounded-full text-[9px] px-2 py-0.5 bg-muted text-muted-foreground shrink-0">
+                            Filtré
+                          </span>
+                        )}
                         <span className="text-xs text-muted-foreground ml-auto pl-2 whitespace-nowrap shrink-0">
                           {formatEmailDateTime(email.created_at)}
                         </span>
@@ -422,23 +441,30 @@ const FilActualite = () => {
             {relancesToShow.length === 0 ? (
               <div className="text-center py-16">
                 <Clock className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">Aucune relance en attente</p>
+                <p className="text-sm text-muted-foreground">Aucun email filtré</p>
               </div>
             ) : (
               <div className="space-y-1">
-                {relancesToShow.map((rel, i) => (
+                {relancesToShow.map((email: any, i: number) => (
                   <motion.div
-                    key={rel.id}
+                    key={email.id}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(i * 0.03, 0.3) }}
                   >
-                    <div className="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-muted/40 transition-colors overflow-hidden">
-                      <Clock className="h-4 w-4 text-amber-500 shrink-0" />
-                      <span className="text-sm text-foreground font-medium shrink-0">{rel.nom_client}</span>
-                      <span className="text-muted-foreground shrink-0">·</span>
-                      <span className="text-sm text-foreground/70 truncate flex-1 min-w-0">{rel.description}</span>
-                      <span className="text-xs text-amber-600 ml-auto pl-2 whitespace-nowrap shrink-0">il y a {rel.jours} jours</span>
+                    <div className="w-full text-left px-4 py-3 rounded-lg hover:bg-muted/40 transition-colors opacity-60">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <span className="text-sm text-muted-foreground shrink-0 max-w-[160px] truncate">
+                          {(email.expediteur || "").replace(/<[^>]+>/, "").trim()}
+                        </span>
+                        <span className="text-muted-foreground shrink-0">—</span>
+                        <span className="text-sm text-muted-foreground truncate flex-1 min-w-0">{email.objet || ""}</span>
+                        <span className="inline-flex items-center rounded-full text-[9px] px-2 py-0.5 bg-muted text-muted-foreground shrink-0">
+                          Filtré par Donna
+                        </span>
+                      </div>
+                      {email.resume ? <p className="text-xs text-muted-foreground mt-0.5 ml-[22px] line-clamp-1">→ {email.resume}</p> : null}
                     </div>
                   </motion.div>
                 ))}

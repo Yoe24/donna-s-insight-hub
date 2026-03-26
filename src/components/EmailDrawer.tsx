@@ -122,7 +122,15 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
 
   const handleGenerateDraft = async () => {
     if (isDemo()) {
-      toast.info("Fonctionnalité disponible avec Gmail connecté");
+      const mockDraft = (email as any).brouillon || (email as any).brouillon_mock;
+      if (mockDraft) {
+        setDraftLoading(true);
+        await new Promise((r) => setTimeout(r, 600));
+        setDraftText(mockDraft);
+        setDraftLoading(false);
+      } else {
+        toast.info("Fonctionnalité disponible avec Gmail connecté");
+      }
       return;
     }
     setDraftLoading(true);
