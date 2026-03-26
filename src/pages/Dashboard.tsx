@@ -18,8 +18,10 @@ import { fr } from "date-fns/locale";
 import { apiGet, apiPost } from "@/lib/api";
 import { BriefingDetailPanel, type DossierEmail } from "@/components/BriefingDetailPanel";
 import type { BriefingData, BriefingDossier, BriefingDossierEmail, PeriodStats } from "@/lib/mock-briefing";
-import { mockBriefing, mockDossierEmails, mockConfig, getEmailsForPeriod } from "@/lib/mock-briefing";
+import { mockBriefing, mockDossierEmails, mockConfig, getEmailsForPeriod, mockAllEmails } from "@/lib/mock-briefing";
 import { isDemo } from "@/lib/auth";
+import { EmailDrawer } from "@/components/EmailDrawer";
+import { AnimatePresence } from "framer-motion";
 import type { Email } from "@/hooks/useEmails";
 
 const fadeIn = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } };
@@ -72,6 +74,7 @@ const Dashboard = () => {
   const [period, setPeriod] = useState<PeriodFilter>("24h");
   const [selectedDossier, setSelectedDossier] = useState<BriefingDossier | null>(null);
   const [panelEmails, setPanelEmails] = useState<DossierEmail[]>([]);
+  const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   // Cache of emails per dossier for inline display
   const [dossierEmailsMap, setDossierEmailsMap] = useState<Record<string, DossierLineEmail[]>>({});
 
@@ -173,11 +176,40 @@ const Dashboard = () => {
     }
   };
 
-  /** Open panel with a specific email pre-selected */
-  const handleEmailClick = (d: BriefingDossier, email: DossierLineEmail) => {
-    setSelectedDossier(d);
-    // Put the clicked email first so the panel shows it
-    const cached = dossierEmailsMap[d.dossier_id] || [];
+  /** Open EmailDrawer with a specific email */
+  const handleEmailClick = (_d: BriefingDossier, email: DossierLineEmail) => {
+    if (isDemo()) {
+      // Find the full mock email data by id
+      const mockEmail = mockAllEmails.find((e) => e.id === email.id);
+      if (mockEmail) {
+        setSelectedEmail({
+          id: mockEmail.id,
+          expediteur: `${mockEmail.expediteur} <${mockEmail.email}>`,
+          objet: mockEmail.objet,
+          resume: mockEmail.resume,
+          brouillon: mockEmail.brouillon_mock,
+          pipeline_step: "pret_a_reviser",
+          contexte_choisi: "",
+          statut: "traite",
+          created_at: mockEmail.date,
+          updated_at: mockEmail.date,
+          contenu: mockEmail.corps_original,
+          dossier_id: mockEmail.dossier_id,
+          dossier_name: mockEmail.dossier_nom ? `${mockEmail.dossier_nom} - ${mockEmail.dossier_domaine}` : null,
+          from_email: mockEmail.email,
+          attachments: mockEmail.pieces_jointes.map((pj, i) => ({
+            id: `${mockEmail.id}-att-${i}`,
+            filename: pj.nom,
+            type: pj.type_mime.includes("pdf") ? "pdf" : pj.type_mime.includes("image") ? "image" : "other",
+            size: pj.taille,
+          })),
+        } as any);
+        return;
+      }
+    }
+    // Fallback: open BriefingDetailPanel with clicked email first
+    setSelectedDossier(_d);
+    const cached = dossierEmailsMap[_d.dossier_id] || [];
     const reordered = [email, ...cached.filter((e) => e.id !== email.id)] as any;
     setPanelEmails(reordered);
   };
@@ -376,6 +408,10 @@ const Dashboard = () => {
         periodLabel={PERIOD_LABELS[period]}
         onClose={() => setSelectedDossier(null)}
       />
+
+      <AnimatePresence>
+        {selectedEmail && <EmailDrawer email={selectedEmail} onClose={() => setSelectedEmail(null)} />}
+      </AnimatePresence>
     </DashboardLayout>
   );
 };
