@@ -240,7 +240,6 @@ const Dashboard = () => {
 
   const dossiers = briefing?.content?.dossiers ?? [];
   const attenteDossiers = (dossiers || []).filter((d) => d?.attente);
-  const relancesCount = attenteDossiers.length;
 
   const periodKey = period === "24h" ? "last_24h" : period === "7j" ? "last_7d" : "last_30d";
   const activeDossierIds = briefing?.content?.emails_by_period?.[periodKey] ?? [];
@@ -332,11 +331,7 @@ const Dashboard = () => {
                 <a href="/fil?tab=pj" className="underline underline-offset-2 hover:text-foreground transition-colors">
                   <strong>{adjustedStats.attachments_count} {adjustedStats.attachments_count === 1 ? "pièce jointe" : "pièces jointes"}</strong>
                 </a>{" "}
-                {adjustedStats.attachments_count === 1 ? "extraite" : "extraites"} ·{" "}
-                <a href="/fil?tab=relances" className="underline underline-offset-2 hover:text-foreground transition-colors">
-                  <strong>{relancesCount} {relancesCount === 1 ? "relance" : "relances"}</strong>
-                </a>{" "}
-                {relancesCount === 1 ? "détectée" : "détectées"}
+                {adjustedStats.attachments_count === 1 ? "extraite" : "extraites"}
               </p>
             </div>
           </motion.div>
