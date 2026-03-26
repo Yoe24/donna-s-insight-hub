@@ -1,8 +1,8 @@
 /**
  * DossierDetail — Single dossier page
  *
- * Always fetches from API using the active user_id (demo or real).
- * The API returns demo data when the demo user_id is used.
+ * In demo mode, uses local mock data (no API calls).
+ * In real mode, fetches from API using the active user_id.
  */
 
 import { useEffect, useState, useCallback } from "react";
@@ -15,6 +15,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { Email } from "@/hooks/useEmails";
 import { apiGet } from "@/lib/api";
+import { isDemo } from "@/lib/auth";
+import { mockBriefing, mockDossierEmails } from "@/lib/mock-briefing";
 import { EmailDrawer } from "@/components/EmailDrawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -169,6 +171,53 @@ const DossierDetailPage = () => {
 
   const fetchDossier = useCallback(async () => {
     if (!id) return;
+
+    if (isDemo()) {
+      const mockDossier = mockBriefing.content.dossiers.find((d) => d.dossier_id === id);
+      if (!mockDossier) { setError(true); setLoading(false); return; }
+
+      const rawEmails = mockDossierEmails[id] || [];
+      const demoEmails: DossierEmail[] = rawEmails.map((e) => ({
+        id: e.id,
+        expediteur: buildSender(e.expediteur, e.email),
+        objet: e.objet,
+        resume: e.resume || "",
+        brouillon: null,
+        pipeline_step: "pret_a_reviser",
+        contexte_choisi: "",
+        statut: "traite",
+        created_at: e.date || "",
+        updated_at: e.date || "",
+        from_email: e.email || "",
+      }));
+
+      const demoDocs: DossierDocument[] = rawEmails.flatMap((e, i) =>
+        (e.pieces_jointes || []).map((pj, j) => ({
+          id: `doc-${i}-${j}`,
+          nom_fichier: pj.nom,
+          type: pj.nom.split(".").pop() || "",
+          summary: pj.resume || "",
+          date_reception: e.date || "",
+          url: "",
+        }))
+      );
+
+      const detail: DossierDetailData = {
+        id,
+        name: mockDossier.nom || mockDossier.name || "",
+        domain: mockDossier.domaine || mockDossier.domain || "",
+        summary: mockDossier.summary || "",
+        status: "actif",
+        emails: demoEmails,
+        documents: demoDocs,
+      };
+      setDossier(detail);
+      setEmails(demoEmails);
+      setDocuments(demoDocs);
+      setError(false);
+      setLoading(false);
+      return;
+    }
 
     try {
       const data = await apiGet<ApiDossierDetailData>(`/api/dossiers/${id}`);

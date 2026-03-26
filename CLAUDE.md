@@ -65,6 +65,7 @@ Le frontend a deux modes de fonctionnement :
 - Aucune authentification requise
 - Permet de tester l'UI sans backend
 - Bug fix sidebar mode demo — `useDossiers.ts` utilise maintenant les mocks en mode demo au lieu d'appeler l'API
+- Bug fix page dossier mode demo — `DossierDetail.tsx` utilise maintenant les mocks en mode demo au lieu d'appeler l'API
 
 ### Mode reel (utilisateur connecte via Supabase Auth)
 - Auth Supabase obligatoire (session JWT)
