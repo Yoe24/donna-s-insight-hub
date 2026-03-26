@@ -67,6 +67,7 @@ Le frontend a deux modes de fonctionnement :
 - Bug fix sidebar mode demo — `useDossiers.ts` utilise maintenant les mocks en mode demo au lieu d'appeler l'API
 - Bug fix page dossier mode demo — `DossierDetail.tsx` utilise maintenant les mocks en mode demo au lieu d'appeler l'API
 - Mocks enrichis (26 mars 2026) — contenu email original, PJ avec dates, config complete, EmailDrawer guard isDemo()
+- Refonte complete mocks (26 mars 2026) — 12 emails avec corps_original/resume/brouillon_mock, stats calculees dynamiquement, tabs Clients/Autre avec badge "Filtre par Donna", PJ cliquables avec resume_ia
 
 ### Mode reel (utilisateur connecte via Supabase Auth)
 - Auth Supabase obligatoire (session JWT)
