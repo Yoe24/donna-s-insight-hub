@@ -12,6 +12,10 @@ import type { Email } from "@/hooks/useEmails";
 import { useUpdateEmailStatus } from "@/hooks/useEmails";
 import { apiGet, apiPost } from "@/lib/api";
 import { isDemo } from "@/lib/auth";
+import { mockAllEmails } from "@/lib/mock-briefing";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 
 
 function senderInitial(expediteur: string): string {
@@ -53,6 +57,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
   const [draftEditable, setDraftEditable] = useState(false);
   const [dossierDocs, setDossierDocs] = useState<any[]>([]);
   const [dossierName, setDossierName] = useState<string | null>(null);
+  const [selectedAttachment, setSelectedAttachment] = useState<any>(null);
   const { updateStatus } = useUpdateEmailStatus();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const descriptionId = `email-drawer-desc-${email.id}`;
@@ -62,13 +67,19 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
     const emailAttachments = Array.isArray((email as any).attachments) ? (email as any).attachments : [];
 
     if (emailAttachments.length > 0) {
+      // In demo mode, enrich with resume_ia from mockAllEmails
+      const mockEmail = isDemo() ? mockAllEmails.find((e) => e.id === email.id) : null;
       setDossierDocs(
-        emailAttachments.map((attachment: any, index: number) => ({
-          id: attachment.id || `${email.id}-att-${index}`,
-          nom_fichier: attachment.filename || attachment.name || "",
-          type: attachment.type || "",
-          taille: attachment.size || "",
-        }))
+        emailAttachments.map((attachment: any, index: number) => {
+          const mockPj = mockEmail?.pieces_jointes?.[index];
+          return {
+            id: attachment.id || `${email.id}-att-${index}`,
+            nom_fichier: attachment.filename || attachment.name || mockPj?.nom || "",
+            type: attachment.type || "",
+            taille: attachment.size || mockPj?.taille || "",
+            resume_ia: mockPj?.resume_ia || "",
+          };
+        })
       );
     } else {
       setDossierDocs([]);
@@ -270,13 +281,17 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
                 {dossierDocs.map((doc: any, idx: number) => {
                   const isPdf = doc.type?.toLowerCase()?.includes("pdf") || doc.nom_fichier?.endsWith(".pdf");
                   return (
-                    <div key={idx} className="flex items-center gap-2.5">
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedAttachment(doc)}
+                      className="flex items-center gap-2.5 w-full text-left hover:bg-muted/60 rounded-md px-1 py-0.5 -mx-1 transition-colors"
+                    >
                       <FileText className={`h-4 w-4 shrink-0 ${isPdf ? "text-destructive/70" : "text-primary/70"}`} />
                       <span className="text-sm text-foreground">{doc.nom_fichier}</span>
                       {doc.taille && (
                         <span className="text-[10px] text-muted-foreground ml-auto">{doc.taille}</span>
                       )}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -388,6 +403,29 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
           </div>
         </div>
       </motion.div>
+
+      <Dialog open={!!selectedAttachment} onOpenChange={(open) => !open && setSelectedAttachment(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              {selectedAttachment?.nom_fichier}
+            </DialogTitle>
+            {selectedAttachment?.taille && (
+              <DialogDescription>{selectedAttachment.taille}</DialogDescription>
+            )}
+          </DialogHeader>
+          {selectedAttachment?.resume_ia && (
+            <div className="rounded-lg bg-muted/40 p-4">
+              <p className="text-xs font-medium text-muted-foreground mb-1.5">Résumé Donna</p>
+              <p className="text-sm text-foreground/85 leading-relaxed">{selectedAttachment.resume_ia}</p>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground text-center pt-2">
+            Téléchargement disponible après connexion Gmail
+          </p>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

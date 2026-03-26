@@ -19,6 +19,9 @@ import { isDemo } from "@/lib/auth";
 import { mockBriefing, mockDossierEmails } from "@/lib/mock-briefing";
 import { EmailDrawer } from "@/components/EmailDrawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 
 interface ApiDossierEmail {
   id: string;
@@ -53,6 +56,7 @@ interface DossierDocument {
   nom_fichier: string;
   type: string;
   summary?: string;
+  taille?: string;
   date_reception: string;
   url?: string;
 }
@@ -168,6 +172,7 @@ const DossierDetailPage = () => {
   const [selectedEmail, setSelectedEmail] = useState<DossierEmail | null>(null);
   const [error, setError] = useState(false);
   const [resumeExpanded, setResumeExpanded] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState<DossierDocument | null>(null);
 
   const fetchDossier = useCallback(async () => {
     if (!id) return;
@@ -197,6 +202,7 @@ const DossierDetailPage = () => {
           nom_fichier: pj.nom,
           type: pj.nom.split(".").pop() || "",
           summary: pj.resume || "",
+          taille: pj.taille || "",
           date_reception: e.date || "",
           url: "",
         }))
@@ -382,13 +388,17 @@ const DossierDetailPage = () => {
                     <p className="text-sm text-muted-foreground p-5">Aucun document</p>
                   ) : (
                     sortedDocs.map((doc) => (
-                      <div key={doc.id} className="flex items-center gap-2 px-5 py-3 hover:bg-muted/50 transition-colors cursor-default overflow-hidden">
+                      <button
+                        key={doc.id}
+                        onClick={() => setSelectedDoc(doc)}
+                        className="w-full flex items-center gap-2 px-5 py-3 hover:bg-muted/50 transition-colors cursor-pointer overflow-hidden text-left"
+                      >
                         {getDocIcon(doc.type)}
                         <span className="text-sm text-foreground truncate flex-1 min-w-0">{doc.nom_fichier || ""}</span>
                         <span className="text-xs text-muted-foreground shrink-0 ml-auto pl-2 tabular-nums whitespace-nowrap">
                           {formatDateShort(doc.date_reception)}
                         </span>
-                      </div>
+                      </button>
                     ))
                   )}
                 </div>
@@ -401,6 +411,29 @@ const DossierDetailPage = () => {
       <AnimatePresence>
         {selectedEmail ? <EmailDrawer email={selectedEmail} onClose={() => setSelectedEmail(null)} showDossierLink={false} /> : null}
       </AnimatePresence>
+
+      <Dialog open={!!selectedDoc} onOpenChange={(open) => !open && setSelectedDoc(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              {selectedDoc?.nom_fichier}
+            </DialogTitle>
+            {selectedDoc?.taille && (
+              <DialogDescription>{selectedDoc.taille}</DialogDescription>
+            )}
+          </DialogHeader>
+          {selectedDoc?.summary && (
+            <div className="rounded-lg bg-muted/40 p-4">
+              <p className="text-xs font-medium text-muted-foreground mb-1.5">Résumé Donna</p>
+              <p className="text-sm text-foreground/85 leading-relaxed">{selectedDoc.summary}</p>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground text-center pt-2">
+            Téléchargement disponible après connexion Gmail
+          </p>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
