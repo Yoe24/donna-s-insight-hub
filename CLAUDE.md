@@ -17,6 +17,17 @@
 - Brouillon mock sur "Générer une réponse" dans EmailDrawer
 - "Relances" retiré des stats briefing
 
+## Refonte design v2 (26 mars 2026)
+- Double header "Donna" supprimé — branding uniquement dans la sidebar
+- "Dernier échange : ---" corrigé — dates ISO depuis mockAllEmails
+- "X emails traités · Ymin gagnées" remonté sous le greeting
+- Badges email variés : Action requise / Relance / Convocation / Document reçu / Informatif
+- Indicateur "Donna à jour · Dernière analyse il y a 2 min" dans la sidebar
+- Padding-bottom 24 sur toutes les pages pour la bulle de chat
+- Section "EN ATTENTE" commentée (TODO pour plus tard)
+- Cards harmonisées : rounded-2xl + shadow-sm + bg-background partout
+- Hover states cohérents avec transition-colors duration-200
+
 ## Bugs potentiels restants à vérifier
 - "Voir l'email complet" dans le drawer — vérifier que corps_original s'affiche bien (différent du résumé)
 - "Générer une réponse" — vérifier que le brouillon mock apparaît
