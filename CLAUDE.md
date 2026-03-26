@@ -66,6 +66,7 @@ Le frontend a deux modes de fonctionnement :
 - Permet de tester l'UI sans backend
 - Bug fix sidebar mode demo — `useDossiers.ts` utilise maintenant les mocks en mode demo au lieu d'appeler l'API
 - Bug fix page dossier mode demo — `DossierDetail.tsx` utilise maintenant les mocks en mode demo au lieu d'appeler l'API
+- Mocks enrichis (26 mars 2026) — contenu email original, PJ avec dates, config complete, EmailDrawer guard isDemo()
 
 ### Mode reel (utilisateur connecte via Supabase Auth)
 - Auth Supabase obligatoire (session JWT)
