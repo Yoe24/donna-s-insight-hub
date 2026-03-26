@@ -1,8 +1,8 @@
 /**
  * Dashboard — Briefing page
  *
- * Always fetches from API using the active user_id (demo or real).
- * The API returns demo data when the demo user_id is used.
+ * In demo mode, uses local mock data (no API calls).
+ * In real mode, fetches from API using the active user_id.
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -18,6 +18,8 @@ import { fr } from "date-fns/locale";
 import { apiGet, apiPost } from "@/lib/api";
 import { BriefingDetailPanel, type DossierEmail } from "@/components/BriefingDetailPanel";
 import type { BriefingData, BriefingDossier, BriefingDossierEmail, PeriodStats } from "@/lib/mock-briefing";
+import { mockBriefing, mockDossierEmails, mockConfig } from "@/lib/mock-briefing";
+import { isDemo } from "@/lib/auth";
 import type { Email } from "@/hooks/useEmails";
 
 const fadeIn = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } };
@@ -86,6 +88,12 @@ const Dashboard = () => {
   }, []);
 
   const fetchBriefing = useCallback(async () => {
+    if (isDemo()) {
+      setBriefing(mockBriefing);
+      setNotFound(false);
+      setLoading(false);
+      return;
+    }
     try {
       const data = await apiGet<BriefingData>("/api/briefs/today");
       setBriefing(data);
@@ -100,9 +108,13 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchBriefing();
-    apiGet<{ nom_avocat?: string }>("/api/config")
-      .then((d) => { if (d?.nom_avocat) setNomAvocat(d.nom_avocat); })
-      .catch(() => {});
+    if (isDemo()) {
+      setNomAvocat(mockConfig.nom_avocat);
+    } else {
+      apiGet<{ nom_avocat?: string }>("/api/config")
+        .then((d) => { if (d?.nom_avocat) setNomAvocat(d.nom_avocat); })
+        .catch(() => {});
+    }
   }, [fetchBriefing]);
 
   // Build dossierEmailsMap from inline brief data (d.emails or d.emails_recus) or fetch from API
@@ -123,6 +135,11 @@ const Dashboard = () => {
         const normalized = inlineEmails.map(normalizeBriefEmail);
         console.log(`[Dashboard] Dossier ${d.dossier_id} inline emails:`, normalized);
         setDossierEmailsMap((prev) => ({ ...prev, [d.dossier_id]: normalized }));
+      } else if (isDemo()) {
+        // In demo mode, use mock dossier emails
+        const mockEmails = mockDossierEmails[d.dossier_id] || [];
+        const normalized = mockEmails.map((e: any, i: number) => normalizeBriefEmail(e, i));
+        setDossierEmailsMap((prev) => ({ ...prev, [d.dossier_id]: normalized }));
       } else {
         // Fallback: fetch from API
         apiGet<any[]>(`/api/emails?dossier_id=${d.dossier_id}`)
@@ -140,6 +157,8 @@ const Dashboard = () => {
     const cached = dossierEmailsMap[d.dossier_id];
     if (cached) {
       setPanelEmails(cached as any);
+    } else if (isDemo()) {
+      setPanelEmails((mockDossierEmails[d.dossier_id] || []) as any);
     } else {
       apiGet<DossierEmail[]>(`/api/emails?dossier_id=${d.dossier_id}`)
         .then((emails) => setPanelEmails(emails ?? []))
@@ -159,7 +178,14 @@ const Dashboard = () => {
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      await apiPost("/api/briefs/generate");
+      if (isDemo()) {
+        // Simulate a short delay for demo UX
+        await new Promise((r) => setTimeout(r, 800));
+        setBriefing(mockBriefing);
+        setNotFound(false);
+      } else {
+        await apiPost("/api/briefs/generate");
+      }
       toast.success("Briefing généré");
       setLoading(true);
       setNotFound(false);

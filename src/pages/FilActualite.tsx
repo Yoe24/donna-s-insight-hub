@@ -1,8 +1,8 @@
 /**
  * FilActualite — Activity feed page
  *
- * Always fetches from API using the active user_id (demo or real).
- * The API returns demo data when the demo user_id is used.
+ * In demo mode, uses local mock data (no API calls).
+ * In real mode, fetches from API using the active user_id.
  */
 
 import { useState, useEffect, useCallback, useMemo } from "react";
@@ -16,6 +16,9 @@ import type { Email } from "@/hooks/useEmails";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { apiGet } from "@/lib/api";
+import { isDemo } from "@/lib/auth";
+import { mockBriefing } from "@/lib/mock-briefing";
+import { activityFeed } from "@/lib/mock-data";
 import { EmailDrawer } from "@/components/EmailDrawer";
 
 function formatEmailDateTime(created_at: string): string {
@@ -167,8 +170,9 @@ const FilActualite = () => {
   };
 
   useEffect(() => {
-    apiGet<any>("/api/briefs/today")
-      .then((brief) => {
+    const loadRelances = async () => {
+      try {
+        const brief = isDemo() ? mockBriefing : await apiGet<any>("/api/briefs/today");
         const dossiers: ApiBriefDossier[] = brief?.content?.dossiers || [];
         const relances: FlatRelance[] = dossiers
           .filter((dossier) => dossier.attente)
@@ -179,14 +183,41 @@ const FilActualite = () => {
             jours: dossier.attente?.jours || 0,
           }));
         setRelancesList(relances);
-      })
-      .catch(() => {});
+      } catch {
+        // ignore
+      }
+    };
+    loadRelances();
   }, []);
 
   const fetchEmails = useCallback(async () => {
     try {
-      const data = await apiGet<ApiEmail[]>("/api/emails");
-      const normalized = (data || []).map(normalizeEmail);
+      let normalized: FlatEmail[];
+      if (isDemo()) {
+        // Convert mock activity feed to FlatEmail shape
+        normalized = activityFeed.map((item) => ({
+          id: item.id,
+          expediteur: `${item.expediteur} <${item.email}>`,
+          objet: item.objet,
+          resume: item.resume,
+          brouillon: item.brouillon || null,
+          pipeline_step: "pret_a_reviser" as const,
+          contexte_choisi: "",
+          statut: (item.statut === "brouillon_genere" ? "traite" : item.statut === "valide" ? "valide" : "en_attente") as FlatEmail["statut"],
+          metadata: undefined,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          from_email: item.email,
+          gmail_link: null,
+          attachments: [],
+          dossier_name: item.dossier,
+          dossier_domaine: null,
+          dossier_id: null,
+        }));
+      } else {
+        const data = await apiGet<ApiEmail[]>("/api/emails");
+        normalized = (data || []).map(normalizeEmail);
+      }
       const sorted = normalized.sort(
         (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
       );
