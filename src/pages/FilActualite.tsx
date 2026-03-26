@@ -207,6 +207,7 @@ const FilActualite = () => {
           created_at: item.date,
           updated_at: item.date,
           from_email: item.email,
+          email_type: item.email_type,
           gmail_link: null,
           attachments: item.pieces_jointes.map((pj, i) => ({
             id: `${item.id}-att-${i}`,

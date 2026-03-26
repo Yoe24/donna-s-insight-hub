@@ -201,6 +201,7 @@ const Dashboard = () => {
           dossier_id: mockEmail.dossier_id,
           dossier_name: mockEmail.dossier_nom ? `${mockEmail.dossier_nom} - ${mockEmail.dossier_domaine}` : null,
           from_email: mockEmail.email,
+          email_type: mockEmail.email_type,
           attachments: mockEmail.pieces_jointes.map((pj, i) => ({
             id: `${mockEmail.id}-att-${i}`,
             filename: pj.nom,
@@ -297,9 +298,16 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto pb-16">
-        <motion.p {...fadeIn} className="pt-8 pb-4 text-lg font-serif text-foreground">
-          {greeting}{nomAvocat ? ` ${nomAvocat}` : ""} — <span className="capitalize">{dateStr}</span>
-        </motion.p>
+        <motion.div {...fadeIn} className="pt-8 pb-4">
+          <p className="text-lg font-serif text-foreground">
+            {greeting}{nomAvocat ? ` ${nomAvocat}` : ""} — <span className="capitalize">{dateStr}</span>
+          </p>
+          {adjustedStats && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {adjustedStats.total} emails traités · {adjustedStats.temps_gagne_minutes}min gagnées
+            </p>
+          )}
+        </motion.div>
 
         <motion.div {...fadeIn} transition={{ delay: 0.03 }} className="flex gap-1.5 mb-6">
           {(["24h", "7j", "30j"] as PeriodFilter[]).map((p) => (
@@ -319,7 +327,7 @@ const Dashboard = () => {
 
         {/* ── Rapport Donna — 3 lignes distinctes ── */}
         {adjustedStats && (
-          <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="rounded-xl bg-muted/50 px-5 py-4 mb-10">
+          <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="rounded-2xl bg-muted/40 border border-border px-5 py-4 mb-10">
             <div className="text-sm text-foreground/80 leading-relaxed space-y-1">
               <p>
                 Vous avez reçu{" "}
@@ -369,36 +377,8 @@ const Dashboard = () => {
           </motion.div>
         )}
 
-        {attenteDossiers.length > 0 && (
-          <motion.section {...fadeIn} transition={{ delay: 0.2 }} className="mb-10">
-            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              En attente
-            </h2>
-            <div className="space-y-1">
-              {attenteDossiers.map((d) => (
-                <div
-                  key={`attente-${d.dossier_id}`}
-                  onClick={() => handleDossierClick(d)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted/40 cursor-pointer transition-colors group"
-                >
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm text-foreground">
-                      <span className="font-medium">{getDossierName(d)}</span>
-                      <span className="text-muted-foreground"> · {d.attente!.description} ({d.attente!.jours} jours)</span>
-                    </span>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-              ))}
-            </div>
-          </motion.section>
-        )}
+        {/* TODO: Réactiver la section EN ATTENTE quand le workflow de priorisation sera défini */}
 
-        {adjustedStats && (
-          <motion.p {...fadeIn} transition={{ delay: 0.3 }} className="text-xs text-muted-foreground/50 text-center pt-8">
-            {adjustedStats.total} emails traités · {adjustedStats.temps_gagne_minutes}min gagnées
-          </motion.p>
-        )}
       </div>
 
       <BriefingDetailPanel

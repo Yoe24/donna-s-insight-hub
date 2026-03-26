@@ -8,11 +8,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="sticky top-0 z-40 h-14 flex items-center border-b border-border px-4 bg-background/80 backdrop-blur-xl">
+          <header className="sticky top-0 z-40 h-12 flex items-center px-4 bg-background/80 backdrop-blur-xl md:bg-transparent md:backdrop-blur-none">
             <SidebarTrigger className="text-muted-foreground" />
-            <span className="ml-4 text-lg font-serif font-bold tracking-tight text-foreground">Donna</span>
           </header>
-          <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-auto bg-muted/30">
+          <main className="flex-1 p-4 pb-24 sm:p-6 sm:pb-24 md:p-8 md:pb-24 overflow-auto bg-background">
             <PageTransition>
               {children}
             </PageTransition>

@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import type { Email } from "@/hooks/useEmails";
 import { apiGet } from "@/lib/api";
 import { isDemo } from "@/lib/auth";
-import { mockBriefing, mockDossierEmails } from "@/lib/mock-briefing";
+import { mockBriefing, mockDossierEmails, mockAllEmails } from "@/lib/mock-briefing";
 import { EmailDrawer } from "@/components/EmailDrawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -191,8 +191,14 @@ const DossierDetailPage = () => {
         pipeline_step: "pret_a_reviser",
         contexte_choisi: "",
         statut: "traite",
-        created_at: e.date || "",
-        updated_at: e.date || "",
+        created_at: (() => {
+          const m = mockAllEmails.find((me) => me.id === e.id);
+          return m ? m.date : e.date || "";
+        })(),
+        updated_at: (() => {
+          const m = mockAllEmails.find((me) => me.id === e.id);
+          return m ? m.date : e.date || "";
+        })(),
         from_email: e.email || "",
       }));
 
@@ -313,7 +319,7 @@ const DossierDetailPage = () => {
               </div>
             </div>
             <div className="text-right text-xs text-muted-foreground space-y-0.5 shrink-0">
-              <p>Dernier échange : {lastExchangeDate}</p>
+              {lastExchangeDate !== "—" && <p>Dernier échange : {lastExchangeDate}</p>}
               <p>{sortedEmails.length} emails · {sortedDocs.length} documents</p>
             </div>
           </div>
@@ -321,7 +327,7 @@ const DossierDetailPage = () => {
 
         {resumeText ? (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6">
-            <div className="rounded-xl bg-muted/40 border border-border p-5">
+            <div className="rounded-2xl bg-muted/40 border border-border p-5">
               <p className={`text-sm text-foreground/85 leading-relaxed whitespace-pre-line ${!resumeExpanded && resumeIsLong ? "line-clamp-3" : ""}`}>
                 {resumeText}
               </p>
@@ -336,7 +342,7 @@ const DossierDetailPage = () => {
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 lg:grid-cols-5 gap-6 overflow-hidden">
           <div className="lg:col-span-3">
-            <div className="rounded-xl border border-border bg-card">
+            <div className="rounded-2xl border border-border bg-card shadow-sm">
               <div className="flex items-center justify-between px-5 py-3 border-b border-border">
                 <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
@@ -374,7 +380,7 @@ const DossierDetailPage = () => {
           </div>
 
           <div className="lg:col-span-2">
-            <div className="rounded-xl border border-border bg-card">
+            <div className="rounded-2xl border border-border bg-card shadow-sm">
               <div className="flex items-center justify-between px-5 py-3 border-b border-border">
                 <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />

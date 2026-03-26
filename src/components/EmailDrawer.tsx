@@ -230,15 +230,22 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
 
           {/* Status Badge */}
           <div className="mb-5">
-            {(email as any).classification?.needs_response ? (
-              <span className="inline-flex items-center rounded-full text-[10px] px-2.5 py-0.5 font-semibold bg-orange-100 text-orange-800">
-                Action requise
-              </span>
-            ) : (
-              <span className="inline-flex items-center rounded-full text-[10px] px-2.5 py-0.5 font-semibold bg-muted text-muted-foreground">
-                Informatif
-              </span>
-            )}
+            {(() => {
+              const emailType = (email as any).email_type || ((email as any).classification?.needs_response ? "demande" : "informatif");
+              const badges: Record<string, { label: string; className: string }> = {
+                demande: { label: "Action requise", className: "bg-orange-100 text-orange-800" },
+                relance: { label: "Relance", className: "bg-amber-100 text-amber-800" },
+                convocation: { label: "Convocation", className: "bg-purple-100 text-purple-800" },
+                piece_jointe: { label: "Document reçu", className: "bg-emerald-100 text-emerald-800" },
+                informatif: { label: "Informatif", className: "bg-muted text-muted-foreground" },
+              };
+              const badge = badges[emailType] || badges.informatif;
+              return (
+                <span className={`inline-flex items-center rounded-full text-[10px] px-2.5 py-0.5 font-semibold ${badge.className}`}>
+                  {badge.label}
+                </span>
+              );
+            })()}
           </div>
 
           {/* Sender header */}

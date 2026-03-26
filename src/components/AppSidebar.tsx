@@ -160,6 +160,12 @@ export function AppSidebar() {
               </Badge>
             )}
           </Link>
+          {!collapsed && (
+            <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              À jour · Dernière analyse il y a 2 min
+            </p>
+          )}
         </div>
 
         <SidebarContent>
@@ -172,8 +178,8 @@ export function AppSidebar() {
                       <NavLink
                         to={item.url}
                         end
-                        className="hover:bg-sidebar-accent/50 rounded-md px-3 py-2 text-sm font-sans text-sidebar-foreground"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        className="hover:bg-sidebar-accent/50 rounded-lg px-3 py-2 text-sm font-sans text-sidebar-foreground transition-colors duration-200"
+                        activeClassName="bg-sidebar-accent/80 text-sidebar-accent-foreground font-medium"
                       >
                         <item.icon className="mr-3 h-4 w-4" />
                         {!collapsed && <span>{item.title}</span>}
