@@ -1,12 +1,14 @@
 /**
  * useDossiers — Data hook for dossier list
  *
- * Always fetches from API using the active user_id (demo or real).
- * In demo mode, getUserId() returns the demo UUID — the API serves demo data.
+ * In demo mode, returns mock dossiers from mockBriefing (no API calls).
+ * In real mode, fetches from API using the active user_id.
  */
 
 import { useState, useEffect, useCallback } from "react";
 import { apiGet } from "@/lib/api";
+import { isDemo } from "@/lib/auth";
+import { mockBriefing } from "@/lib/mock-briefing";
 
 export interface Dossier {
   id: string;
@@ -58,6 +60,19 @@ export function useDossiers() {
   const [loading, setLoading] = useState(true);
 
   const fetchDossiers = useCallback(async () => {
+    if (isDemo()) {
+      const mockDossiers: Dossier[] = (mockBriefing.content?.dossiers || []).map((d) => ({
+        id: d.dossier_id,
+        nom_client: d.name || d.nom || "",
+        email_client: "",
+        statut: "",
+        domaine: d.domain || d.domaine || "",
+        dernier_echange_date: "",
+      }));
+      setDossiers(mockDossiers);
+      setLoading(false);
+      return;
+    }
     try {
       const data = await apiGet<ApiDossier[]>("/api/dossiers");
       console.log("[useDossiers] Raw API response:", data);
