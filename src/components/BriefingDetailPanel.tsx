@@ -12,6 +12,7 @@ export interface DossierEmail {
   objet: string;
   date: string;
   resume: string;
+  contenu?: string;
   pieces_jointes?: {
     nom: string;
     taille: string;

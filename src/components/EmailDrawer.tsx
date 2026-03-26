@@ -11,6 +11,7 @@ import { fr } from "date-fns/locale";
 import type { Email } from "@/hooks/useEmails";
 import { useUpdateEmailStatus } from "@/hooks/useEmails";
 import { apiGet, apiPost } from "@/lib/api";
+import { isDemo } from "@/lib/auth";
 
 
 function senderInitial(expediteur: string): string {
@@ -77,6 +78,11 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
       setDossierName(null);
       return;
     }
+    if (isDemo()) {
+      // In demo mode, dossier name comes from the email itself
+      setDossierName((email as any).dossier_name || null);
+      return;
+    }
     apiGet(`/api/dossiers/${dossierId}`)
       .then((data: any) => {
         setDossierName(data?.name || null);
@@ -100,6 +106,11 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
   }, [email]);
 
   const handleFeedback = async (action: "parfait" | "modifier" | "erreur") => {
+    if (isDemo()) {
+      setFeedbackGiven(action);
+      toast.success("Feedback envoyé, merci");
+      return;
+    }
     try {
       await updateStatus(email.id, action);
       setFeedbackGiven(action);
@@ -110,6 +121,10 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
   };
 
   const handleGenerateDraft = async () => {
+    if (isDemo()) {
+      toast.info("Fonctionnalité disponible avec Gmail connecté");
+      return;
+    }
     setDraftLoading(true);
     setDraftEditable(false);
 
@@ -286,7 +301,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
               <CollapsibleContent>
                 <div className="mt-3 rounded-xl bg-muted/30 border border-border p-4">
                   <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed">
-                    {(email as any).contenu || "Contenu non disponible."}
+                    {(email as any).contenu || email.resume || "Contenu non disponible."}
                   </p>
                 </div>
               </CollapsibleContent>

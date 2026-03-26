@@ -46,17 +46,28 @@ export const computeROI = (data: typeof kpiData) => {
 
 export type PipelineStep = "reception" | "extraction" | "classification" | "lecture_pj" | "brouillon" | "controle_juridique" | "log_activite" | "dashboard";
 
+export interface MockAttachment {
+  id: string;
+  filename: string;
+  type: string;
+  date: string;
+}
+
 export interface ActivityItem {
   id: string;
   expediteur: string;
   email: string;
   objet: string;
   resume: string;
+  contenu: string;
   heureReception: string;
+  created_at: string;
   statut: "brouillon_genere" | "en_attente" | "valide";
   brouillon: string;
   dossier: string;
+  dossier_id: string | null;
   pipelineStep: PipelineStep;
+  attachments: MockAttachment[];
 }
 
 export const activityFeed: ActivityItem[] = [
@@ -64,49 +75,74 @@ export const activityFeed: ActivityItem[] = [
     id: "1",
     expediteur: "Marie Dupont",
     email: "marie.dupont@gmail.com",
-    objet: "Contestation facture - Dossier Dupont",
-    resume: "La cliente conteste une facture de 3 200€ reçue pour des travaux non conformes. Elle demande un recours amiable avant action judiciaire.",
+    objet: "Avancement de la procédure ?",
+    resume: "Mme Dupont demande où en est la mise en demeure envoyée à BTP Pro le 2 mars. Elle souhaite savoir si une réponse a été reçue.",
+    contenu: "Bonjour Maître Fernandez,\n\nJe me permets de vous relancer concernant la mise en demeure que vous avez envoyée à BTP Pro le 2 mars dernier.\n\nAvez-vous reçu une réponse de leur part ? Le silence de cette entreprise m'inquiète beaucoup. Les travaux non conformes continuent de causer des dégâts — j'ai constaté de nouvelles fissures sur la façade nord ce week-end (photos en pièce jointe).\n\nQuelles sont les prochaines étapes si BTP Pro ne répond pas avant l'expiration du délai ?\n\nJe vous remercie pour votre aide,\nMarie Dupont",
     heureReception: "09:12",
+    created_at: "2026-03-23T09:12:00Z",
     statut: "brouillon_genere",
     brouillon: "Madame Dupont,\n\nJ'ai bien pris connaissance de votre situation concernant la facture contestée de 3 200€. Je vous propose d'engager une procédure de médiation amiable dans un premier temps. Je prépare le courrier de mise en demeure à adresser à l'entreprise.\n\nCordialement,",
     dossier: "Dupont - Litige commercial",
+    dossier_id: "1",
     pipelineStep: "controle_juridique",
+    attachments: [
+      { id: "att-1-1", filename: "photos_travaux_complementaires.jpeg", type: "image", date: "2026-03-23T09:12:00Z" },
+    ],
   },
   {
     id: "2",
     expediteur: "Jean-Pierre Martin",
     email: "jp.martin@entreprise.fr",
-    objet: "Rupture conventionnelle - Question urgente",
-    resume: "Le client souhaite négocier une rupture conventionnelle avec son employeur. Il demande les étapes à suivre et les indemnités auxquelles il peut prétendre.",
+    objet: "Simulation d'indemnités",
+    resume: "M. Martin transmet la simulation d'indemnités reçue de son employeur. Il souhaite votre avis sur le montant proposé (8 400 € indemnité légale).",
+    contenu: "Bonjour Maître,\n\nJe viens de recevoir la simulation d'indemnités de mon employeur (en pièce jointe). Ils proposent l'indemnité légale uniquement, soit 8 400 €.\n\nÇa me semble faible après 7 ans dans l'entreprise. Est-ce qu'on peut négocier plus ? J'ai entendu parler d'indemnités supra-légales.\n\nMerci de me dire ce que vous en pensez avant l'entretien de mardi.\n\nCordialement,\nJean-Pierre Martin",
     heureReception: "09:45",
+    created_at: "2026-03-22T17:20:00Z",
     statut: "brouillon_genere",
     brouillon: "Monsieur Martin,\n\nConcernant votre demande de rupture conventionnelle, voici les étapes à suivre : 1) Demande d'entretien préalable, 2) Négociation des termes, 3) Signature de la convention. Vos indemnités minimales s'élèvent à...\n\nCordialement,",
     dossier: "Martin - Droit du travail",
+    dossier_id: "2",
     pipelineStep: "brouillon",
+    attachments: [
+      { id: "att-2-1", filename: "simulation_indemnites_martin.pdf", type: "pdf", date: "2026-03-22T17:20:00Z" },
+    ],
   },
   {
     id: "3",
-    expediteur: "Sophie Lefebvre",
-    email: "s.lefebvre@outlook.com",
-    objet: "Bail commercial - Renouvellement",
-    resume: "La cliente s'inquiète du renouvellement de son bail commercial arrivant à échéance dans 3 mois. Elle souhaite connaître ses droits et les démarches à effectuer.",
+    expediteur: "BTP Pro (via avocat)",
+    email: "cabinet.durand@avocat.fr",
+    objet: "Contestation mise en demeure Dupont",
+    resume: "L'avocat de BTP Pro conteste la non-conformité des travaux et demande un délai supplémentaire pour produire des pièces justificatives.",
+    contenu: "Chère Consoeur,\n\nJ'ai l'honneur de vous écrire au nom de mon client, la société BTP Pro, en réponse à votre mise en demeure du 2 mars 2026.\n\nMon client conteste formellement la non-conformité alléguée des travaux réalisés au domicile de Mme Dupont. Vous trouverez ci-joint une attestation de conformité établie par le chef de chantier.\n\nNous sollicitons un délai supplémentaire de 15 jours pour produire l'ensemble des pièces justificatives.\n\nMe Durand\nCabinet Durand & Associés",
     heureReception: "10:30",
+    created_at: "2026-03-19T16:45:00Z",
     statut: "en_attente",
     brouillon: "",
-    dossier: "Lefebvre - Bail commercial",
+    dossier: "Dupont - Litige commercial",
+    dossier_id: "1",
     pipelineStep: "lecture_pj",
+    attachments: [
+      { id: "att-3-1", filename: "attestation_conformite_BTP.pdf", type: "pdf", date: "2026-03-19T16:45:00Z" },
+    ],
   },
   {
     id: "4",
-    expediteur: "Cabinet Moreau & Associés",
-    email: "contact@moreau-associes.fr",
-    objet: "Proposition de collaboration - Dossier Roux",
-    resume: "Le cabinet Moreau propose une collaboration sur le dossier Roux, affaire de droit immobilier complexe. Ils recherchent un spécialiste en urbanisme.",
+    expediteur: "Expert judiciaire",
+    email: "expert.bati@experts.fr",
+    objet: "Rapport d'expertise définitif - Affaire Roux",
+    resume: "Transmission du rapport d'expertise définitif confirmant les vices cachés : fissures structurelles, infiltrations, défaut d'isolation.",
+    contenu: "Maître Fernandez,\n\nVeuillez trouver ci-joint mon rapport d'expertise définitif concernant le bien immobilier acquis par la famille Roux.\n\nMes conclusions confirment l'existence de vices cachés. Le coût estimé des réparations s'élève à 78 000 € HT.\n\nCordialement,\nM. Philippe Renard\nExpert judiciaire en bâtiment",
     heureReception: "11:15",
+    created_at: "2026-03-22T09:00:00Z",
     statut: "brouillon_genere",
-    brouillon: "Cher confrère,\n\nJe vous remercie pour cette proposition de collaboration sur le dossier Roux. Le sujet m'intéresse particulièrement. Je suis disponible pour un échange la semaine prochaine afin de discuter des modalités.\n\nConfraternellement,",
+    brouillon: "Cher confrère,\n\nJe vous remercie pour la transmission du rapport. Les conclusions confirment notre position.\n\nConfraternellement,",
     dossier: "Roux - Immobilier",
+    dossier_id: "4",
     pipelineStep: "dashboard",
+    attachments: [
+      { id: "att-4-1", filename: "rapport_expertise_definitif.pdf", type: "pdf", date: "2026-03-22T09:00:00Z" },
+      { id: "att-4-2", filename: "annexe_photographique.pdf", type: "pdf", date: "2026-03-22T09:00:00Z" },
+    ],
   },
   {
     id: "5",
@@ -114,23 +150,33 @@ export const activityFeed: ActivityItem[] = [
     email: "greffe.tgi@justice.fr",
     objet: "Convocation audience - 15 avril",
     resume: "Convocation pour l'audience du 15 avril à 14h00, salle 3B, concernant l'affaire Dubois c/ SCI Les Tilleuls. Pièces complémentaires à transmettre avant le 10 avril.",
+    contenu: "Maître,\n\nPar la présente, nous vous informons que l'affaire enregistrée sous le numéro RG 25/04512, opposant Mme Claire DUBOIS à la SCI LES TILLEULS, est fixée à l'audience du 15 avril 2026 à 14h00, salle 3B.\n\nLes pièces complémentaires devront être déposées avant le 10 avril 2026.\n\nLe Greffier en chef",
     heureReception: "14:02",
+    created_at: "2026-03-20T14:02:00Z",
     statut: "valide",
     brouillon: "Madame Dubois,\n\nJe vous informe que l'audience est fixée au 15 avril à 14h00. Merci de me transmettre les dernières pièces justificatives avant le 8 avril afin que je puisse préparer le dossier.\n\nCordialement,",
     dossier: "Dubois - Litige immobilier",
+    dossier_id: "5",
     pipelineStep: "dashboard",
+    attachments: [
+      { id: "att-5-1", filename: "convocation_TGI_15avril.pdf", type: "pdf", date: "2026-03-20T14:02:00Z" },
+    ],
   },
   {
     id: "6",
     expediteur: "Alice Bernard",
     email: "alice.b@free.fr",
-    objet: "Divorce par consentement mutuel",
+    objet: "Divorce par consentement mutuel - Premier contact",
     resume: "Nouvelle cliente souhaitant entamer une procédure de divorce par consentement mutuel. Elle demande un premier rendez-vous et les documents nécessaires.",
+    contenu: "Bonjour Maître Fernandez,\n\nJe me permets de vous contacter sur recommandation de mon amie Sophie.\n\nMon mari et moi avons décidé d'un commun accord de divorcer. Nous sommes mariés depuis 8 ans, nous avons deux enfants (6 et 4 ans).\n\nNous souhaitons un divorce par consentement mutuel. Pourriez-vous me recevoir pour un premier rendez-vous ?\n\nAlice Bernard\n06 12 34 56 78",
     heureReception: "15:30",
+    created_at: "2026-03-23T15:30:00Z",
     statut: "brouillon_genere",
     brouillon: "Madame Bernard,\n\nJe serais ravie de vous accompagner dans votre procédure de divorce par consentement mutuel. Pour notre premier rendez-vous, merci de préparer : livret de famille, justificatifs de revenus, et état du patrimoine.\n\nCordialement,",
     dossier: "Bernard - Droit de la famille",
+    dossier_id: "6",
     pipelineStep: "extraction",
+    attachments: [],
   },
 ];
 

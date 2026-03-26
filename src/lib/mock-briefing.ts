@@ -187,6 +187,7 @@ export const mockDossierEmails: Record<string, DossierEmail[]> = {
       objet: "Avancement de la procédure ?",
       date: "23 mars 2026, 14h32",
       resume: "Mme Dupont demande où en est la mise en demeure envoyée à BTP Pro le 2 mars. Elle souhaite savoir si une réponse a été reçue et quelles sont les prochaines étapes.",
+      contenu: "Bonjour Maître Fernandez,\n\nJe me permets de vous relancer concernant la mise en demeure que vous avez envoyée à BTP Pro le 2 mars dernier.\n\nAvez-vous reçu une réponse de leur part ? Le silence de cette entreprise m'inquiète beaucoup. Les travaux non conformes continuent de causer des dégâts — j'ai constaté de nouvelles fissures sur la façade nord ce week-end (photos en pièce jointe).\n\nQuelles sont les prochaines étapes si BTP Pro ne répond pas avant l'expiration du délai ?\n\nJe vous remercie pour votre aide,\nMarie Dupont",
       pieces_jointes: [
         {
           nom: "photos_travaux_complementaires.jpeg",
@@ -202,6 +203,7 @@ export const mockDossierEmails: Record<string, DossierEmail[]> = {
       objet: "RE: Mise en demeure BTP Pro",
       date: "21 mars 2026, 09h15",
       resume: "Relance sur le statut de la mise en demeure. Mme Dupont s'inquiète du silence de l'entreprise.",
+      contenu: "Bonjour Maître,\n\nJe reviens vers vous car je n'ai toujours aucune nouvelle de BTP Pro depuis l'envoi de la mise en demeure. Cela fait maintenant 19 jours.\n\nEst-ce normal qu'ils ne répondent pas ? Dois-je m'inquiéter ?\n\nBien cordialement,\nMarie Dupont",
     },
     {
       id: "e1-3",
@@ -210,6 +212,7 @@ export const mockDossierEmails: Record<string, DossierEmail[]> = {
       objet: "Contestation mise en demeure Dupont",
       date: "19 mars 2026, 16h45",
       resume: "L'avocat de BTP Pro conteste la non-conformité des travaux et demande un délai supplémentaire pour produire des pièces justificatives.",
+      contenu: "Chère Consoeur,\n\nJ'ai l'honneur de vous écrire au nom de mon client, la société BTP Pro, en réponse à votre mise en demeure du 2 mars 2026.\n\nMon client conteste formellement la non-conformité alléguée des travaux réalisés au domicile de Mme Dupont. Vous trouverez ci-joint une attestation de conformité établie par le chef de chantier.\n\nNous sollicitons un délai supplémentaire de 15 jours pour produire l'ensemble des pièces justificatives, notamment le procès-verbal de réception des travaux.\n\nDans l'attente de votre retour, je vous prie d'agréer, Chère Consoeur, l'expression de mes sentiments confraternels.\n\nMe Durand\nCabinet Durand & Associés",
       pieces_jointes: [
         {
           nom: "attestation_conformite_BTP.pdf",
@@ -227,6 +230,7 @@ export const mockDossierEmails: Record<string, DossierEmail[]> = {
       objet: "Confirmation 2e entretien - Rupture conventionnelle",
       date: "23 mars 2026, 10h00",
       resume: "Le service RH confirme le 2e entretien prévu le 25 mars à 15h. L'ordre du jour portera sur les conditions financières.",
+      contenu: "Maître Fernandez,\n\nNous vous confirmons la tenue du deuxième entretien dans le cadre de la procédure de rupture conventionnelle de M. Jean-Pierre Martin.\n\nDate : 25 mars 2026 à 15h00\nLieu : Salle de réunion B2, siège TechCorp\nOrdre du jour : conditions financières de la rupture\n\nM. Martin pourra être accompagné de la personne de son choix.\n\nCordialement,\nService des Ressources Humaines\nSAS TechCorp",
     },
     {
       id: "e2-2",
@@ -235,6 +239,7 @@ export const mockDossierEmails: Record<string, DossierEmail[]> = {
       objet: "Simulation d'indemnités",
       date: "22 mars 2026, 17h20",
       resume: "M. Martin transmet la simulation d'indemnités reçue de son employeur. Il souhaite votre avis sur le montant proposé.",
+      contenu: "Bonjour Maître,\n\nJe viens de recevoir la simulation d'indemnités de mon employeur (en pièce jointe). Ils proposent l'indemnité légale uniquement, soit 8 400 €.\n\nÇa me semble faible après 7 ans dans l'entreprise. Est-ce qu'on peut négocier plus ? J'ai entendu parler d'indemnités supra-légales.\n\nMerci de me dire ce que vous en pensez avant l'entretien de mardi.\n\nCordialement,\nJean-Pierre Martin",
       pieces_jointes: [
         {
           nom: "simulation_indemnites_martin.pdf",
@@ -252,6 +257,7 @@ export const mockDossierEmails: Record<string, DossierEmail[]> = {
       objet: "Rapport d'expertise définitif - Affaire Roux",
       date: "22 mars 2026, 09h00",
       resume: "Transmission du rapport d'expertise définitif confirmant les vices cachés : fissures structurelles, infiltrations, défaut d'isolation.",
+      contenu: "Maître Fernandez,\n\nVeuillez trouver ci-joint mon rapport d'expertise définitif concernant le bien immobilier acquis par la famille Roux, situé au 45 avenue des Lilas, 75019 Paris.\n\nMes conclusions confirment l'existence de vices cachés :\n- Fissures structurelles affectant les murs porteurs (infiltrations d'eau en sous-sol)\n- Défaut d'isolation thermique non conforme à la RT2012\n- Désordres de la charpente nécessitant une reprise complète\n\nLe coût estimé des réparations s'élève à 78 000 € HT.\n\nL'annexe photographique (67 clichés) documente l'ensemble des désordres constatés.\n\nJe reste à votre disposition pour toute question.\n\nCordialement,\nM. Philippe Renard\nExpert judiciaire en bâtiment",
       pieces_jointes: [
         {
           nom: "rapport_expertise_definitif.pdf",
@@ -274,6 +280,7 @@ export const mockDossierEmails: Record<string, DossierEmail[]> = {
       objet: "Convocation audience - 15 avril",
       date: "20 mars 2026, 14h02",
       resume: "Convocation pour l'audience du 15 avril à 14h00, salle 3B, concernant l'affaire Dubois c/ SCI Les Tilleuls.",
+      contenu: "Maître,\n\nPar la présente, nous vous informons que l'affaire enregistrée sous le numéro RG 25/04512, opposant Mme Claire DUBOIS à la SCI LES TILLEULS, est fixée à l'audience du :\n\n15 avril 2026 à 14h00\nSalle 3B — 2e chambre civile\nTribunal de Grande Instance de Paris\n\nLes pièces complémentaires devront être déposées au greffe avant le 10 avril 2026.\n\nVeuillez agréer, Maître, l'expression de nos salutations distinguées.\n\nLe Greffier en chef",
       pieces_jointes: [
         {
           nom: "convocation_TGI_15avril.pdf",
@@ -291,14 +298,19 @@ export const mockDossierEmails: Record<string, DossierEmail[]> = {
       objet: "Divorce par consentement mutuel - Premier contact",
       date: "23 mars 2026, 15h30",
       resume: "Nouvelle cliente souhaitant entamer une procédure de divorce par consentement mutuel. Elle demande un premier rendez-vous et les documents nécessaires.",
+      contenu: "Bonjour Maître Fernandez,\n\nJe me permets de vous contacter sur recommandation de mon amie Sophie qui a été très satisfaite de vos services.\n\nMon mari et moi avons décidé d'un commun accord de divorcer. Nous sommes mariés depuis 8 ans, nous avons deux enfants (6 et 4 ans) et un appartement en copropriété.\n\nNous souhaitons un divorce par consentement mutuel et avons déjà trouvé un accord sur la garde des enfants (alternée) et le partage du patrimoine.\n\nPourriez-vous me recevoir pour un premier rendez-vous ? Quels documents dois-je préparer ?\n\nJe vous remercie par avance,\nAlice Bernard\n06 12 34 56 78",
     },
   ],
 };
 
 export const mockConfig = {
   nom_avocat: "Alexandra",
+  nom_cabinet: "Cabinet Fernandez",
+  specialite: "Droit civil et droit de la famille",
+  signature: "Cordialement,\nMe Alexandra Fernandez\nAvocate au Barreau de Paris\nCabinet Fernandez\n12 rue de Rivoli, 75004 Paris\n01 23 45 67 89",
+  formule_appel: "cher_maitre",
+  formule_politesse: "cordialement",
+  profil_style: "Les mails de l'Ordre des Avocats ne sont jamais urgents",
   refresh_token: null,
-  profil_style: "",
-  signature: "",
-  taux_horaire: null,
+  taux_horaire: 350,
 };

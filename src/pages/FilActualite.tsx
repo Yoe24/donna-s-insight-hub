@@ -205,15 +205,16 @@ const FilActualite = () => {
           contexte_choisi: "",
           statut: (item.statut === "brouillon_genere" ? "traite" : item.statut === "valide" ? "valide" : "en_attente") as FlatEmail["statut"],
           metadata: undefined,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          created_at: item.created_at,
+          updated_at: item.created_at,
           from_email: item.email,
           gmail_link: null,
-          attachments: [],
+          attachments: item.attachments || [],
           dossier_name: item.dossier,
           dossier_domaine: null,
-          dossier_id: null,
-        }));
+          dossier_id: item.dossier_id || null,
+          contenu: (item as any).contenu || null,
+        } as any));
       } else {
         const data = await apiGet<ApiEmail[]>("/api/emails");
         normalized = (data || []).map(normalizeEmail);
