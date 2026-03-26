@@ -478,10 +478,10 @@ function DossierLine({
     const shortResume = resumeText.length > 80 ? resumeText.slice(0, 77) + "…" : resumeText;
 
     return (
-      <div className="rounded-lg hover:bg-muted/40 transition-colors">
-        <div
+      <div className="rounded-lg">
+        <button
           onClick={onClick}
-          className="flex items-center gap-3 px-4 py-3 cursor-pointer group"
+          className="w-full flex items-center gap-3 px-4 py-3 cursor-pointer group text-left rounded-t-lg hover:bg-muted/40 transition-colors"
         >
           <div className="flex-1 min-w-0 truncate">
             <span className="text-sm text-foreground">
@@ -490,25 +490,28 @@ function DossierLine({
             </span>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-        </div>
-        <div className="pl-8 pr-4 pb-3">
-          <button
-            onClick={(e) => { e.stopPropagation(); onEmailClick(email); }}
-            className="text-xs text-muted-foreground leading-relaxed hover:text-foreground transition-colors cursor-pointer text-left"
-          >
+        </button>
+        <button
+          onClick={() => onEmailClick(email)}
+          className="w-full text-left pl-8 pr-4 py-2 mb-1 rounded-b-lg hover:bg-primary/5 transition-colors cursor-pointer group/email"
+        >
+          <span className="text-xs text-muted-foreground leading-relaxed group-hover/email:text-foreground transition-colors">
             <span className="text-foreground/50">→</span>{" "}
             <span className="text-foreground/70">"{shortResume}"</span>{" "}
             <span className="text-muted-foreground/60">({formatShortDate(email.created_at)})</span>
-          </button>
-        </div>
+          </span>
+        </button>
       </div>
     );
   }
 
   // Multiple emails — stacked with individually clickable rows
   return (
-    <div className="rounded-lg hover:bg-muted/40 transition-colors">
-      <div onClick={onClick} className="flex items-center gap-3 px-4 py-3 cursor-pointer group">
+    <div className="rounded-lg">
+      <button
+        onClick={onClick}
+        className="w-full flex items-center gap-3 px-4 py-3 cursor-pointer group text-left rounded-t-lg hover:bg-muted/40 transition-colors"
+      >
         <div className="flex-1 min-w-0">
           <span className="text-sm text-foreground">
             <span className="font-medium">{getDossierName(d)}</span>
@@ -517,27 +520,29 @@ function DossierLine({
         </div>
         <span className="text-xs text-muted-foreground shrink-0">{dossierEmails.length} emails</span>
         <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-      </div>
-      <div className="pl-8 pr-4 pb-3 space-y-1">
+      </button>
+      <div className="pl-4 pr-4 pb-1 space-y-0.5">
         {displayEmails.map((email) => {
           const resumeText = email.resume || email.objet || "";
           const shortResume = resumeText.length > 70 ? resumeText.slice(0, 67) + "…" : resumeText;
           return (
             <button
               key={email.id}
-              onClick={(e) => { e.stopPropagation(); onEmailClick(email); }}
-              className="block text-xs text-muted-foreground leading-relaxed hover:text-foreground transition-colors cursor-pointer text-left w-full"
+              onClick={() => onEmailClick(email)}
+              className="block w-full text-left pl-4 pr-2 py-1.5 rounded-md hover:bg-primary/5 transition-colors cursor-pointer group/email"
             >
-              <span className="text-foreground/50">→</span>{" "}
-              <span className="text-foreground/70">"{shortResume}"</span>{" "}
-              <span className="text-muted-foreground/60">({formatShortDate(email.created_at)})</span>
+              <span className="text-xs text-muted-foreground leading-relaxed group-hover/email:text-foreground transition-colors">
+                <span className="text-foreground/50">→</span>{" "}
+                <span className="text-foreground/70">"{shortResume}"</span>{" "}
+                <span className="text-muted-foreground/60">({formatShortDate(email.created_at)})</span>
+              </span>
             </button>
           );
         })}
         {extraCount > 0 && (
           <button
-            onClick={(e) => { e.stopPropagation(); onViewFull(); }}
-            className="text-xs text-emerald hover:underline"
+            onClick={() => onViewFull()}
+            className="block pl-4 py-1.5 text-xs text-emerald hover:underline"
           >
             et {extraCount} autre{extraCount > 1 ? "s" : ""} → Voir le dossier complet
           </button>
