@@ -163,6 +163,7 @@ const Dashboard = () => {
   }, [briefing, period]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDossierClick = (d: BriefingDossier) => {
+    setSelectedEmail(null);
     setSelectedDossier(d);
     const cached = dossierEmailsMap[d.dossier_id];
     if (cached) {
@@ -178,6 +179,9 @@ const Dashboard = () => {
 
   /** Open EmailDrawer with a specific email */
   const handleEmailClick = (_d: BriefingDossier, email: DossierLineEmail) => {
+    // Close any open dossier panel first
+    setSelectedDossier(null);
+
     if (isDemo()) {
       // Find the full mock email data by id
       const mockEmail = mockAllEmails.find((e) => e.id === email.id);
@@ -207,7 +211,7 @@ const Dashboard = () => {
         return;
       }
     }
-    // Fallback: open BriefingDetailPanel with clicked email first
+    // Fallback for real mode: open BriefingDetailPanel with clicked email first
     setSelectedDossier(_d);
     const cached = dossierEmailsMap[_d.dossier_id] || [];
     const reordered = [email, ...cached.filter((e) => e.id !== email.id)] as any;
