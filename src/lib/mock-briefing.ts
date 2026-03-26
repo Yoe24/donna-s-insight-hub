@@ -1393,7 +1393,7 @@ export const mockAllEmails: MockEmail[] = [
 // Helpers: filter by period & compute stats
 // ---------------------------------------------------------------------------
 
-function getEmailsForPeriod(period: "24h" | "7j" | "30j"): MockEmail[] {
+export function getEmailsForPeriod(period: "24h" | "7j" | "30j"): MockEmail[] {
   const cutoff = new Date(NOW);
   if (period === "24h") cutoff.setDate(cutoff.getDate() - 1);
   else if (period === "7j") cutoff.setDate(cutoff.getDate() - 7);

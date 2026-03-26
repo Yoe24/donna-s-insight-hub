@@ -18,7 +18,7 @@ import { fr } from "date-fns/locale";
 import { apiGet, apiPost } from "@/lib/api";
 import { BriefingDetailPanel, type DossierEmail } from "@/components/BriefingDetailPanel";
 import type { BriefingData, BriefingDossier, BriefingDossierEmail, PeriodStats } from "@/lib/mock-briefing";
-import { mockBriefing, mockDossierEmails, mockConfig } from "@/lib/mock-briefing";
+import { mockBriefing, mockDossierEmails, mockConfig, getEmailsForPeriod } from "@/lib/mock-briefing";
 import { isDemo } from "@/lib/auth";
 import type { Email } from "@/hooks/useEmails";
 
@@ -117,39 +117,46 @@ const Dashboard = () => {
     }
   }, [fetchBriefing]);
 
-  // Build dossierEmailsMap from inline brief data (d.emails or d.emails_recus) or fetch from API
+  // Build dossierEmailsMap from mock data (filtered by period) or API
   useEffect(() => {
     if (!briefing) return;
     const dossiers = briefing.content?.dossiers ?? [];
-    const pKey = period === "24h" ? "last_24h" : period === "7j" ? "last_7d" : "last_30d";
-    const activeIds = briefing.content?.emails_by_period?.[pKey] ?? [];
 
-    console.log("[Dashboard] Briefing dossiers:", dossiers);
-    console.log("[Dashboard] Active IDs for period", period, ":", activeIds);
-
-    dossiers.forEach((d) => {
-      if (dossierEmailsMap[d.dossier_id]) return; // already cached
-      // Prefer inline emails from the brief
-      const inlineEmails = d.emails || d.emails_recus || [];
-      if (inlineEmails.length > 0) {
-        const normalized = inlineEmails.map(normalizeBriefEmail);
-        console.log(`[Dashboard] Dossier ${d.dossier_id} inline emails:`, normalized);
-        setDossierEmailsMap((prev) => ({ ...prev, [d.dossier_id]: normalized }));
-      } else if (isDemo()) {
-        // In demo mode, use mock dossier emails
-        const mockEmails = mockDossierEmails[d.dossier_id] || [];
-        const normalized = mockEmails.map((e: any, i: number) => normalizeBriefEmail(e, i));
-        setDossierEmailsMap((prev) => ({ ...prev, [d.dossier_id]: normalized }));
-      } else {
-        // Fallback: fetch from API
-        apiGet<any[]>(`/api/emails?dossier_id=${d.dossier_id}`)
-          .then((emails) => {
-            const normalized = (emails || []).map((e: any, i: number) => normalizeBriefEmail(e, i));
-            setDossierEmailsMap((prev) => ({ ...prev, [d.dossier_id]: normalized }));
-          })
-          .catch(() => {});
-      }
-    });
+    if (isDemo()) {
+      // In demo mode, filter emails by the selected period
+      const periodEmails = getEmailsForPeriod(period);
+      const newMap: Record<string, DossierLineEmail[]> = {};
+      dossiers.forEach((d) => {
+        const emails = periodEmails.filter((e) => e.dossier_id === d.dossier_id);
+        if (emails.length > 0) {
+          newMap[d.dossier_id] = emails.map((e, i) => normalizeBriefEmail({
+            id: e.id,
+            expediteur: e.expediteur,
+            objet: e.objet,
+            resume: e.resume,
+            created_at: e.date,
+          }, i));
+        }
+      });
+      setDossierEmailsMap(newMap);
+    } else {
+      // Real mode: use inline emails or fetch from API
+      dossiers.forEach((d) => {
+        if (dossierEmailsMap[d.dossier_id]) return;
+        const inlineEmails = d.emails || d.emails_recus || [];
+        if (inlineEmails.length > 0) {
+          const normalized = inlineEmails.map(normalizeBriefEmail);
+          setDossierEmailsMap((prev) => ({ ...prev, [d.dossier_id]: normalized }));
+        } else {
+          apiGet<any[]>(`/api/emails?dossier_id=${d.dossier_id}`)
+            .then((emails) => {
+              const normalized = (emails || []).map((e: any, i: number) => normalizeBriefEmail(e, i));
+              setDossierEmailsMap((prev) => ({ ...prev, [d.dossier_id]: normalized }));
+            })
+            .catch(() => {});
+        }
+      });
+    }
   }, [briefing, period]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDossierClick = (d: BriefingDossier) => {
