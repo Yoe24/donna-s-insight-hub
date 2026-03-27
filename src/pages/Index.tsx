@@ -188,7 +188,7 @@ const Index = () => {
               <p
                 className="text-gray-700 text-base sm:text-lg leading-relaxed max-w-md mb-10"
               >
-                Pendant que vous plaidez, Donna organise votre cabinet. 24&nbsp;heures sur 24, 7&nbsp;jours sur 7.
+                Vos 30 emails du matin résumés, triés et prêts à répondre — en 5&nbsp;minutes.
               </p>
 
               <div
