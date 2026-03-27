@@ -34,6 +34,13 @@
 - Onboarding banner sur le Dashboard en mode démo (OnboardingBanner.tsx)
 - Skeleton loaders : délai 300-400ms en démo pour afficher les skeletons existants
 
+## Todo simplifiée + inbox style (27 mars 2026)
+- Todo: expand panels supprimés, simple checklist avec checkbox circulaire
+- Clic texte tâche → navigue vers le dossier (plus d'expand)
+- DossierLine refait en inbox style: nom + date+heure + objet + résumé tronqué
+- formatMailDate: "Aujourd'hui 14h32", "Hier 11h13", "mer. 09h45"
+- Cross-highlight: hover todo → dossier correspondant en bg-primary/5
+
 ## Refonte premium — design final (27 mars 2026)
 - Cards: border-border/60 bg-white shadow ultra-légère, p-6 partout
 - Section titles: text-[11px] tracking-[0.15em] uppercase (harmonisé partout)
