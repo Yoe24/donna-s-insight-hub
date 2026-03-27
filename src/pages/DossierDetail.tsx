@@ -360,8 +360,8 @@ const DossierDetailPage = () => {
 
         {dossier.summary || dossier.domain ? (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6">
-            <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Résumé du dossier</h3>
+            <div className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6">
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Résumé du dossier</h3>
               <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm mb-4">
                 <div><span className="text-muted-foreground">Client :</span> <span className="text-foreground font-medium">{dossier.name}</span></div>
                 <div><span className="text-muted-foreground">Domaine :</span> <span className="text-foreground">{dossier.domain || "—"}</span></div>
@@ -380,10 +380,10 @@ const DossierDetailPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Échanges — 3/5 width */}
             <div className="lg:col-span-3">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Échanges</h2>
-              <div className="rounded-2xl border border-border bg-card shadow-sm">
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Échanges</h2>
+              <div className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
                 <ScrollArea className="max-h-[500px]">
-                  <div className="divide-y divide-border">
+                  <div className="divide-y divide-border/40">
                     {sortedEmails.length === 0 ? (
                       <p className="text-sm text-muted-foreground p-5">Aucun échange</p>
                     ) : sortedEmails.map((email) => {
@@ -406,9 +406,9 @@ const DossierDetailPage = () => {
 
             {/* Documents — 2/5 width */}
             <div className="lg:col-span-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Documents</h2>
-              <div className="rounded-2xl border border-border bg-card shadow-sm">
-                <div className="divide-y divide-border">
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Documents</h2>
+              <div className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                <div className="divide-y divide-border/40">
                   {sortedDocs.length === 0 ? (
                     <p className="text-sm text-muted-foreground p-5">Aucun document</p>
                   ) : sortedDocs.map((doc) => (
@@ -429,8 +429,8 @@ const DossierDetailPage = () => {
 
           {echeances.length > 0 && (
             <div className="mt-6">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Échéances</h2>
-              <div className="rounded-2xl border border-border bg-card shadow-sm divide-y divide-border">
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Échéances</h2>
+              <div className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] divide-y divide-border/40">
                 {echeances.map((ech) => {
                   const echDate = new Date(ech.date);
                   const daysUntil = Math.ceil((echDate.getTime() - Date.now()) / 86400000);
@@ -443,9 +443,9 @@ const DossierDetailPage = () => {
                         <p className="text-xs text-muted-foreground mt-0.5">Source : {ech.source}</p>
                       </div>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                        ech.status === "depassee" ? "bg-red-100 text-red-700" :
-                        ech.status === "proche" ? "bg-orange-100 text-orange-700" :
-                        "bg-emerald-100 text-emerald-700"
+                        ech.status === "depassee" ? "bg-red-50 text-red-700 ring-1 ring-red-200" :
+                        ech.status === "proche" ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200" :
+                        "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
                       }`}>
                         {ech.status === "depassee" ? "Dépassée" : ech.status === "proche" ? `J-${Math.abs(daysUntil)}` : `dans ${daysUntil}j`}
                       </span>

@@ -339,12 +339,13 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto pb-24" data-tour="briefing">
-        <motion.div {...fadeIn} className="pt-8 pb-4">
-          <p className="text-lg font-serif text-foreground">
-            {greeting}{nomAvocat ? ` ${nomAvocat}` : ""} — <span className="capitalize">{dateStr}</span>
+        <motion.div {...fadeIn} className="pt-10 pb-6">
+          <p className="text-2xl font-serif font-semibold text-foreground">
+            {greeting}{nomAvocat ? ` ${nomAvocat}` : ""}
           </p>
+          <p className="text-sm text-muted-foreground mt-1 capitalize">{dateStr}</p>
           {adjustedStats && (
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {adjustedStats.total} emails traités · {adjustedStats.temps_gagne_minutes}min gagnées
             </p>
           )}
@@ -368,7 +369,7 @@ const Dashboard = () => {
 
         {/* ── Rapport Donna — 3 lignes distinctes ── */}
         {adjustedStats && (
-          <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="rounded-2xl bg-muted/40 border border-border px-5 py-4 mb-10">
+          <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6 mb-10">
             <div className="text-sm text-foreground/80 leading-relaxed space-y-1">
               <p>
                 Vous avez reçu{" "}
@@ -378,21 +379,21 @@ const Dashboard = () => {
                 {periodLabel}.
               </p>
               <p>
-                <strong>{adjustedStats.dossier_emails}</strong> liés à vos dossiers · <strong>{adjustedStats.general_emails}</strong> autres emails (newsletters, notifications…)
+                <strong>{adjustedStats.dossier_emails}</strong> liés à vos dossiers · <strong>{adjustedStats.general_emails}</strong> filtrés par Donna
               </p>
               <p>
                 <button onClick={() => setShowPjList(!showPjList)} className="underline underline-offset-2 hover:text-foreground transition-colors">
                   <strong>{adjustedStats.attachments_count} {adjustedStats.attachments_count === 1 ? "pièce jointe" : "pièces jointes"}</strong>
                 </button>{" "}
-                {adjustedStats.attachments_count === 1 ? "extraite" : "extraites"}
+                {adjustedStats.attachments_count === 1 ? "extraite et résumée" : "extraites et résumées"}
               </p>
             </div>
           </motion.div>
         )}
 
         {showPjList && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="rounded-2xl border border-border bg-card shadow-sm p-5 mb-6 overflow-hidden">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Pièces jointes reçues</h3>
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6 mb-6 overflow-hidden">
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Pièces jointes reçues</h3>
             <div className="space-y-3">
               {getEmailsForPeriod(period).filter(e => e.pieces_jointes.length > 0).flatMap(e => e.pieces_jointes.map((pj, i) => (
                 <div key={`${e.id}-${i}`} className="flex items-start gap-2">
@@ -408,15 +409,15 @@ const Dashboard = () => {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
           {/* Left — Dossiers actifs */}
           <div ref={dossiersRef}>
             {activeDossiers.length > 0 && (
               <motion.section {...fadeIn} transition={{ delay: 0.1 }}>
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">
                   Dossiers actifs
                 </h2>
-                <div className="rounded-2xl border border-border bg-card shadow-sm p-5 space-y-1">
+                <div className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6 space-y-1">
                   {activeDossiers.map((d) => (
                     <DossierLine
                       key={d.dossier_id}
@@ -444,10 +445,10 @@ const Dashboard = () => {
             <div>
               <motion.section {...fadeIn} transition={{ delay: 0.12 }}>
                 <div className="flex items-baseline justify-between mb-3">
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">To-do list</h2>
+                  <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">To-do list</h2>
                   <span className="text-xs text-muted-foreground">{sortedTodos.filter((t) => !t.done).length} restantes</span>
                 </div>
-                <div className="rounded-2xl border border-border bg-card shadow-sm divide-y divide-border">
+                <div className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6 divide-y divide-border/40">
                   {sortedTodos.length === 0 ? (
                     <p className="text-sm text-muted-foreground p-5 text-center">Aucune tâche pour cette période</p>
                   ) : sortedTodos.map((item) => (
@@ -472,16 +473,16 @@ const Dashboard = () => {
                           >
                             {item.text}
                             {item.hasDraft && !item.done && (
-                              <span className="ml-2 inline-flex items-center bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full font-medium">Brouillon prêt</span>
+                              <span className="ml-2 inline-flex items-center bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 text-[10px] px-2 py-0.5 rounded-full font-medium">Brouillon prêt</span>
                             )}
                           </button>
                           <div className="flex items-center gap-2 mt-1">
                             <a href={`/dossiers/${item.dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">{item.dossier}</a>
                             <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-                              item.type === "reponse" ? "bg-orange-100 text-orange-700" :
-                              item.type === "relance" ? "bg-amber-100 text-amber-700" :
-                              item.type === "action" ? "bg-red-100 text-red-700" :
-                              "bg-muted text-muted-foreground"
+                              item.type === "reponse" ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200" :
+                              item.type === "relance" ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200" :
+                              item.type === "action" ? "bg-red-50 text-red-700 ring-1 ring-red-200" :
+                              "bg-gray-50 text-gray-600 ring-1 ring-gray-200"
                             }`}>{item.type === "reponse" ? "Réponse" : item.type === "relance" ? "Relance" : item.type === "action" ? "Action" : "À lire"}</span>
                           </div>
                         </div>

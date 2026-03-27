@@ -12,18 +12,18 @@ interface Step {
 const STEPS: Step[] = [
   {
     target: "briefing",
-    title: "Votre briefing quotidien",
-    text: "Chaque matin, Donna résume vos dossiers et prépare votre to-do list. Les brouillons de réponse sont déjà prêts — vous n'avez qu'à relire et envoyer.",
+    title: "Votre briefing",
+    text: "Chaque matin, Donna résume vos dossiers et prépare votre to-do list. Les brouillons sont déjà prêts — vous relisez et envoyez.",
   },
   {
     target: "dossiers",
-    title: "Vos dossiers clients",
-    text: "Chaque dossier regroupe les échanges, documents et échéances d'un client. Tout est visible d'un coup — pas besoin de chercher.",
+    title: "Vos dossiers",
+    text: "Échanges, documents, échéances — tout est visible d'un coup. Cliquez sur un email pour voir l'analyse de Donna.",
   },
   {
     target: null,
     title: "5 minutes au lieu de 2h30",
-    text: "Ouvrez Donna le matin, parcourez votre briefing, cochez vos tâches. Donna fait le travail, vous gardez le contrôle.",
+    text: "Parcourez votre briefing, cochez vos tâches, générez vos réponses. Donna fait le travail, vous gardez le contrôle.",
   },
 ];
 
@@ -58,9 +58,9 @@ export function GuidedTour({ onComplete }: { onComplete: () => void }) {
     if (!currentStep.target) return;
     const el = document.querySelector(`[data-tour="${currentStep.target}"]`);
     if (!el) return;
-    el.classList.add("relative", "z-[60]", "ring-4", "ring-primary/20", "rounded-xl");
+    el.classList.add("relative", "z-[60]", "ring-4", "ring-white/20", "rounded-xl");
     return () => {
-      el.classList.remove("relative", "z-[60]", "ring-4", "ring-primary/20", "rounded-xl");
+      el.classList.remove("relative", "z-[60]", "ring-4", "ring-white/20", "rounded-xl");
     };
   }, [currentStep]);
 
@@ -85,7 +85,7 @@ export function GuidedTour({ onComplete }: { onComplete: () => void }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/50"
+        className="fixed inset-0 z-50 bg-black/60"
         onClick={handleSkip}
       />
 

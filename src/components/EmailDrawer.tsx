@@ -114,11 +114,11 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
   // Badge
   const emailType = (email as any).email_type || ((email as any).classification?.needs_response ? "demande" : "informatif");
   const badges: Record<string, { label: string; className: string }> = {
-    demande: { label: "Action requise", className: "bg-orange-100 text-orange-800" },
-    relance: { label: "Relance", className: "bg-amber-100 text-amber-800" },
-    convocation: { label: "Convocation", className: "bg-purple-100 text-purple-800" },
-    piece_jointe: { label: "Document reçu", className: "bg-emerald-100 text-emerald-800" },
-    informatif: { label: "Informatif", className: "bg-muted text-muted-foreground" },
+    demande: { label: "Action requise", className: "bg-orange-50 text-orange-700 ring-1 ring-orange-200" },
+    relance: { label: "Relance", className: "bg-amber-50 text-amber-700 ring-1 ring-amber-200" },
+    convocation: { label: "Convocation", className: "bg-purple-50 text-purple-700 ring-1 ring-purple-200" },
+    piece_jointe: { label: "Document reçu", className: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" },
+    informatif: { label: "Informatif", className: "bg-gray-50 text-gray-600 ring-1 ring-gray-200" },
   };
   const badge = badges[emailType] || badges.informatif;
 
