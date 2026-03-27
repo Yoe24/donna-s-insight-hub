@@ -1686,6 +1686,33 @@ export const mockDossierEmails: Record<string, DossierEmail[]> = buildMockDossie
 // mockConfig — enriched cabinet configuration
 // ---------------------------------------------------------------------------
 
+export const mockEcheances: Record<string, Array<{
+  id: string;
+  label: string;
+  date: string;
+  source: string;
+  status: "a_venir" | "proche" | "depassee";
+}>> = {
+  "1": [
+    { id: "ech-1", label: "Expiration mise en demeure BTP Pro", date: daysAgo(-5).split("T")[0], source: "Mise en demeure du 2 mars", status: "proche" },
+    { id: "ech-2", label: "Audience Tribunal de commerce", date: daysAgo(-30).split("T")[0], source: "Assignation", status: "a_venir" },
+  ],
+  "2": [
+    { id: "ech-3", label: "2e entretien préalable TechCorp", date: daysAgo(-4).split("T")[0], source: "Email RH du 26 mars", status: "proche" },
+    { id: "ech-4", label: "Délai de rétractation", date: daysAgo(-20).split("T")[0], source: "Convention collective", status: "a_venir" },
+  ],
+  "4": [
+    { id: "ech-5", label: "Dépôt conclusions récapitulatives", date: daysAgo(-15).split("T")[0], source: "Ordonnance du juge", status: "a_venir" },
+  ],
+  "5": [
+    { id: "ech-6", label: "Audience TGI — Dubois c/ SCI Les Tilleuls", date: daysAgo(-18).split("T")[0], source: "Convocation tribunal", status: "a_venir" },
+    { id: "ech-7", label: "Production des pièces complémentaires", date: daysAgo(2).split("T")[0], source: "Ordonnance du juge", status: "depassee" },
+  ],
+  "6": [
+    { id: "ech-8", label: "Premier rendez-vous cabinet", date: daysAgo(-7).split("T")[0], source: "Email Alice Bernard", status: "a_venir" },
+  ],
+};
+
 export const mockConfig = {
   nom_avocat: "Alexandra",
   nom_cabinet: "Cabinet Fernandez",

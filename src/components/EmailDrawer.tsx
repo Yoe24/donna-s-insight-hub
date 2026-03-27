@@ -21,9 +21,10 @@ interface EmailDrawerProps {
   email: Email;
   onClose: () => void;
   showDossierLink?: boolean;
+  context?: "briefing" | "fil" | "dossier";
 }
 
-export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDrawerProps) {
+export function EmailDrawer({ email, onClose, showDossierLink = true, context = "briefing" }: EmailDrawerProps) {
   const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
   const [draftText, setDraftText] = useState<string | null>(null);
@@ -222,7 +223,8 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
 
           {/* Generate draft — primary action */}
           <Button
-            className="w-full mb-3"
+            className={context === "fil" ? "mb-3" : "w-full mb-3"}
+            variant={context === "fil" ? "outline" : "default"}
             onClick={handleGenerateDraft}
             disabled={draftLoading || (!!draftText && !draftLoading)}
           >
@@ -234,6 +236,14 @@ export function EmailDrawer({ email, onClose, showDossierLink = true }: EmailDra
               "Générer une réponse"
             )}
           </Button>
+          {context === "dossier" && !draftText && (
+            <p className="text-xs text-muted-foreground mb-3">Donna rédige dans votre style avec votre signature</p>
+          )}
+          {context === "fil" && (email as any).dossier_id && (
+            <a href={`/dossiers/${(email as any).dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors mb-3 block">
+              → Ouvrir le dossier pour travailler sur cet email
+            </a>
+          )}
 
           {/* Draft response */}
           {draftText && !draftLoading && (

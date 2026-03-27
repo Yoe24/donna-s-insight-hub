@@ -22,7 +22,8 @@ import { mockBriefing, mockDossierEmails, mockConfig, getEmailsForPeriod, mockAl
 import { isDemo } from "@/lib/auth";
 import { EmailDrawer } from "@/components/EmailDrawer";
 import { AnimatePresence } from "framer-motion";
-import { OnboardingBanner } from "@/components/OnboardingBanner";
+import { GuidedTour } from "@/components/GuidedTour";
+import { isTourCompleted } from "@/lib/tour-state";
 import type { Email } from "@/hooks/useEmails";
 
 const fadeIn = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } };
@@ -76,8 +77,22 @@ const Dashboard = () => {
   const [selectedDossier, setSelectedDossier] = useState<BriefingDossier | null>(null);
   const [panelEmails, setPanelEmails] = useState<DossierEmail[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
+  const [showTour, setShowTour] = useState(false);
+  const [highlightMode, setHighlightMode] = useState<null | "emails" | "pj">(null);
   // Cache of emails per dossier for inline display
   const [dossierEmailsMap, setDossierEmailsMap] = useState<Record<string, DossierLineEmail[]>>({});
+
+  const [todoItems, setTodoItems] = useState([
+    { id: "todo-1", text: "Répondre à Jean-Pierre Martin sur les points de l'entretien préalable", dossier: "Martin - Droit du travail", dossier_id: "2", type: "reponse", done: false },
+    { id: "todo-2", text: "Vérifier la mise en demeure reçue de BTP Pro (dossier Dupont)", dossier: "Dupont - Litige commercial", dossier_id: "1", type: "lecture", done: false },
+    { id: "todo-3", text: "Relancer Claire Dubois pour les pièces manquantes", dossier: "Dubois - Litige immobilier", dossier_id: "5", type: "relance", done: false },
+    { id: "todo-4", text: "Consulter le rapport d'expertise Famille Roux", dossier: "Roux - Immobilier", dossier_id: "4", type: "lecture", done: true },
+  ]);
+
+  const toggleTodo = (id: string) => {
+    setTodoItems((prev) => prev.map((t) => t.id === id ? { ...t, done: !t.done } : t));
+    toast.success("Tâche mise à jour");
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -112,7 +127,11 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    fetchBriefing();
+    fetchBriefing().then(() => {
+      if (isDemo() && !isTourCompleted()) {
+        setTimeout(() => setShowTour(true), 800);
+      }
+    });
     if (isDemo()) {
       setNomAvocat(mockConfig.nom_avocat);
     } else {
@@ -299,9 +318,8 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto pb-16">
-        {isDemo() && <div className="pt-8"><OnboardingBanner /></div>}
-        <motion.div {...fadeIn} className={isDemo() ? "pb-4" : "pt-8 pb-4"}>
+      <div className="max-w-3xl mx-auto pb-24" data-tour="briefing">
+        <motion.div {...fadeIn} className="pt-8 pb-4">
           <p className="text-lg font-serif text-foreground">
             {greeting}{nomAvocat ? ` ${nomAvocat}` : ""} — <span className="capitalize">{dateStr}</span>
           </p>
@@ -334,22 +352,59 @@ const Dashboard = () => {
             <div className="text-sm text-foreground/80 leading-relaxed space-y-1">
               <p>
                 Vous avez reçu{" "}
-                <a href="/fil?tab=emails" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                <button onClick={() => setHighlightMode(highlightMode === "emails" ? null : "emails")} className={`underline underline-offset-2 hover:text-foreground transition-colors ${highlightMode === "emails" ? "text-primary font-semibold" : ""}`}>
                   <strong>{adjustedStats.total} emails</strong>
-                </a>{" "}
+                </button>{" "}
                 {periodLabel}.
               </p>
               <p>
                 <strong>{adjustedStats.dossier_emails}</strong> liés à vos dossiers · <strong>{adjustedStats.general_emails}</strong> autres emails (newsletters, notifications…)
               </p>
               <p>
-                <a href="/fil?tab=pj" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                <button onClick={() => setHighlightMode(highlightMode === "pj" ? null : "pj")} className={`underline underline-offset-2 hover:text-foreground transition-colors ${highlightMode === "pj" ? "text-primary font-semibold" : ""}`}>
                   <strong>{adjustedStats.attachments_count} {adjustedStats.attachments_count === 1 ? "pièce jointe" : "pièces jointes"}</strong>
-                </a>{" "}
+                </button>{" "}
                 {adjustedStats.attachments_count === 1 ? "extraite" : "extraites"}
               </p>
+              {highlightMode && (
+                <p className="text-xs text-primary mt-1">
+                  {highlightMode === "emails" ? "Emails" : "Pièces jointes"} mis en surbrillance · <button onClick={() => setHighlightMode(null)} className="underline">Réinitialiser</button>
+                </p>
+              )}
             </div>
           </motion.div>
+        )}
+
+        {isDemo() && (
+          <motion.section {...fadeIn} transition={{ delay: 0.08 }} className="mb-8">
+            <div className="flex items-baseline justify-between mb-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">À faire aujourd'hui</h2>
+              <span className="text-xs text-muted-foreground">{todoItems.filter((t) => !t.done).length} tâches restantes</span>
+            </div>
+            <div className="rounded-2xl border border-border bg-card shadow-sm divide-y divide-border">
+              {todoItems.map((item) => (
+                <div key={item.id} className={`flex items-start gap-3 px-5 py-3.5 transition-all duration-200 ${item.done ? "opacity-40" : ""}`}>
+                  <button
+                    onClick={() => toggleTodo(item.id)}
+                    className={`mt-0.5 h-4.5 w-4.5 rounded border flex items-center justify-center shrink-0 transition-colors ${item.done ? "bg-primary border-primary" : "border-muted-foreground/30 hover:border-primary/50"}`}
+                  >
+                    {item.done && <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm text-foreground leading-relaxed ${item.done ? "line-through" : ""}`}>{item.text}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <a href={`/dossiers/${item.dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">{item.dossier}</a>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                        item.type === "reponse" ? "bg-orange-100 text-orange-700" :
+                        item.type === "relance" ? "bg-amber-100 text-amber-700" :
+                        "bg-muted text-muted-foreground"
+                      }`}>{item.type === "reponse" ? "Réponse" : item.type === "relance" ? "Relance" : "À lire"}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.section>
         )}
 
         {activeDossiers.length > 0 && (
@@ -357,7 +412,7 @@ const Dashboard = () => {
             <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
               Dossiers actifs
             </h2>
-            <div className="space-y-1">
+            <div className={`space-y-1 transition-all duration-300 ${highlightMode === "emails" ? "bg-primary/5 rounded-xl border-l-2 border-primary/30 pl-2" : highlightMode === "pj" ? "opacity-60" : ""}`}>
               {activeDossiers.map((d) => (
                 <DossierLine
                   key={d.dossier_id}
@@ -394,6 +449,8 @@ const Dashboard = () => {
       <AnimatePresence>
         {selectedEmail && <EmailDrawer email={selectedEmail} onClose={() => setSelectedEmail(null)} />}
       </AnimatePresence>
+
+      {showTour && <GuidedTour onComplete={() => setShowTour(false)} />}
     </DashboardLayout>
   );
 };

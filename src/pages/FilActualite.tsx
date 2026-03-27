@@ -333,9 +333,9 @@ const FilActualite = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto pb-16">
+      <div className="max-w-3xl mx-auto pb-24">
         <div className="pt-8 pb-2">
-          <h1 className="text-lg font-serif font-semibold text-foreground">Fil d'actualité</h1>
+          <h1 className="text-xl font-serif font-semibold text-foreground">Fil d'actualité</h1>
           <p className="text-sm text-muted-foreground mt-1">Tout ce que Donna a traité dans vos emails</p>
         </div>
 
@@ -345,7 +345,7 @@ const FilActualite = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                activeTab === tab.id ? "bg-foreground text-background" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                activeTab === tab.id ? "bg-emerald text-emerald-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
               {tab.label}
@@ -491,7 +491,7 @@ const FilActualite = () => {
       </div>
 
       <AnimatePresence>
-        {selectedEmail && <EmailDrawer email={selectedEmail} onClose={() => setSelectedEmail(null)} />}
+        {selectedEmail && <EmailDrawer email={selectedEmail} onClose={() => setSelectedEmail(null)} context="fil" />}
       </AnimatePresence>
     </DashboardLayout>
   );

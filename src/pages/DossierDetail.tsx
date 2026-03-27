@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import type { Email } from "@/hooks/useEmails";
 import { apiGet } from "@/lib/api";
 import { isDemo } from "@/lib/auth";
-import { mockBriefing, mockDossierEmails, mockAllEmails } from "@/lib/mock-briefing";
+import { mockBriefing, mockDossierEmails, mockAllEmails, mockEcheances } from "@/lib/mock-briefing";
 import { EmailDrawer } from "@/components/EmailDrawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -180,12 +180,14 @@ const DossierDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedEmail, setSelectedEmail] = useState<DossierEmail | null>(null);
   const [error, setError] = useState(false);
-  const [resumeExpanded, setResumeExpanded] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<DossierDocument | null>(null);
   const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [showDomaineDialog, setShowDomaineDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [renameValue, setRenameValue] = useState("");
+  const [activeTab, setActiveTab] = useState<"echanges" | "documents" | "echeances">("echanges");
+
+  const echeances = isDemo() ? (mockEcheances[id || ""] || []) : [];
 
   const fetchDossier = useCallback(async () => {
     if (!id) return;
@@ -268,14 +270,11 @@ const DossierDetailPage = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="max-w-5xl mx-auto py-8 space-y-6">
+        <div className="max-w-3xl mx-auto py-8 space-y-6">
           <div className="h-4 w-16 bg-muted animate-pulse rounded" />
           <div className="h-8 w-64 bg-muted animate-pulse rounded" />
           <div className="h-32 bg-muted animate-pulse rounded-xl" />
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            <div className="lg:col-span-3 h-64 bg-muted animate-pulse rounded-xl" />
-            <div className="lg:col-span-2 h-64 bg-muted animate-pulse rounded-xl" />
-          </div>
+          <div className="h-64 bg-muted animate-pulse rounded-xl" />
         </div>
       </DashboardLayout>
     );
@@ -284,7 +283,7 @@ const DossierDetailPage = () => {
   if (error && !dossier) {
     return (
       <DashboardLayout>
-        <div className="max-w-5xl mx-auto py-12 text-center">
+        <div className="max-w-3xl mx-auto py-12 text-center">
           <p className="text-lg font-serif text-foreground mb-2">Erreur de chargement</p>
           <p className="text-sm text-muted-foreground mb-4">Impossible de charger ce dossier.</p>
           <Button variant="outline" onClick={fetchDossier} className="gap-2">
@@ -298,7 +297,7 @@ const DossierDetailPage = () => {
   if (!dossier) {
     return (
       <DashboardLayout>
-        <div className="max-w-5xl mx-auto py-12 text-center">
+        <div className="max-w-3xl mx-auto py-12 text-center">
           <p className="text-muted-foreground">Dossier introuvable.</p>
           <Link to="/dashboard" className="text-primary underline text-sm mt-2 inline-block">← Retour</Link>
         </div>
@@ -309,12 +308,9 @@ const DossierDetailPage = () => {
   const sortedEmails = [...emails].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
   const sortedDocs = [...documents].sort((a, b) => new Date(b.date_reception || 0).getTime() - new Date(a.date_reception || 0).getTime());
   const lastExchangeDate = sortedEmails.length > 0 ? formatDateFr(sortedEmails[0].created_at) : "—";
-  const resumeText = dossier.summary || "";
-  const resumeIsLong = resumeText.length > 250;
-
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto pb-16 overflow-hidden">
+      <div className="max-w-3xl mx-auto pb-24">
         <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-6 transition-colors">
           <ArrowLeft className="h-3.5 w-3.5" /> Retour
         </Link>
@@ -323,7 +319,7 @@ const DossierDetailPage = () => {
           <div className="flex items-start justify-between gap-4 mb-1">
             <div className="min-w-0">
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-serif font-bold text-foreground truncate">{dossier.name}</h1>
+                <h1 className="text-xl font-serif font-semibold text-foreground truncate">{dossier.name}</h1>
                 {statutBadge(dossier.status)}
                 {dossier.domain ? (
                   <span className="inline-flex items-center rounded-md bg-secondary text-secondary-foreground text-xs px-2.5 py-1 font-medium shrink-0">
@@ -363,97 +359,114 @@ const DossierDetailPage = () => {
           </div>
         </motion.div>
 
-        {resumeText ? (
+        {dossier.summary || dossier.domain ? (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6">
-            <div className="rounded-2xl bg-muted/40 border border-border p-5">
-              <p className={`text-sm text-foreground/85 leading-relaxed whitespace-pre-line ${!resumeExpanded && resumeIsLong ? "line-clamp-3" : ""}`}>
-                {resumeText}
+            <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Résumé du dossier</h3>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm mb-4">
+                <div><span className="text-muted-foreground">Client :</span> <span className="text-foreground font-medium">{dossier.name}</span></div>
+                <div><span className="text-muted-foreground">Domaine :</span> <span className="text-foreground">{dossier.domain || "—"}</span></div>
+              </div>
+              {dossier.summary && (
+                <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{dossier.summary}</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-3">
+                {lastExchangeDate !== "—" ? `Dernier échange : ${lastExchangeDate}` : ""} · {sortedEmails.length} échanges · {sortedDocs.length} documents
               </p>
-              {resumeIsLong ? (
-                <button onClick={() => setResumeExpanded(!resumeExpanded)} className="text-xs text-primary hover:underline mt-1">
-                  {resumeExpanded ? "Réduire" : "Lire la suite"}
-                </button>
-              ) : null}
             </div>
           </motion.div>
         ) : null}
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 lg:grid-cols-5 gap-6 overflow-hidden">
-          <div className="lg:col-span-3">
-            <div className="rounded-2xl border border-border bg-card shadow-sm">
-              <div className="flex items-center justify-between px-5 py-3 border-b border-border">
-                <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  Emails
-                  <span className="text-muted-foreground font-normal">({sortedEmails.length})</span>
-                </h2>
-              </div>
-              <ScrollArea className="h-[420px]">
-                <div className="divide-y divide-border">
-                  {sortedEmails.length === 0 ? (
-                    <p className="text-sm text-muted-foreground p-5">Aucun email</p>
-                  ) : (
-                    sortedEmails.map((email) => {
-                      const senderName = (email.expediteur || "").replace(/<[^>]+>/, "").trim() || "";
-                      return (
-                        <button
-                          key={email.id}
-                          onClick={() => setSelectedEmail(email)}
-                          className="w-full flex items-center gap-2 px-5 py-3 text-left hover:bg-muted/50 transition-colors overflow-hidden"
-                        >
-                          <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <span className="text-sm font-medium text-foreground shrink-0 max-w-[120px] truncate">{senderName}</span>
-                          <span className="text-muted-foreground shrink-0">—</span>
-                          <span className="text-sm text-muted-foreground truncate flex-1 min-w-0">{email.objet || ""}</span>
-                          <span className="text-xs text-muted-foreground shrink-0 ml-auto pl-2 tabular-nums whitespace-nowrap">
-                            {formatDateShort(email.created_at)}
-                          </span>
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              </ScrollArea>
-            </div>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          {/* Tabs */}
+          <div className="flex gap-1.5 mb-4">
+            {([
+              { id: "echanges" as const, label: "Échanges", count: sortedEmails.length },
+              { id: "documents" as const, label: "Documents", count: sortedDocs.length },
+              { id: "echeances" as const, label: "Échéances", count: echeances.length },
+            ]).map((tab) => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
+                {tab.label} ({tab.count})
+              </button>
+            ))}
           </div>
 
-          <div className="lg:col-span-2">
-            <div className="rounded-2xl border border-border bg-card shadow-sm">
-              <div className="flex items-center justify-between px-5 py-3 border-b border-border">
-                <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  Documents
-                  <span className="text-muted-foreground font-normal">({sortedDocs.length})</span>
-                </h2>
-              </div>
-              <ScrollArea className="h-[420px]">
+          {/* Tab content */}
+          <div className="rounded-2xl border border-border bg-card shadow-sm">
+            {activeTab === "echanges" && (
+              <ScrollArea className="h-[480px]">
+                <div className="divide-y divide-border">
+                  {sortedEmails.length === 0 ? (
+                    <p className="text-sm text-muted-foreground p-5">Aucun échange</p>
+                  ) : sortedEmails.map((email) => {
+                    const senderName = (email.expediteur || "").replace(/<[^>]+>/, "").trim();
+                    return (
+                      <button key={email.id} onClick={() => setSelectedEmail(email)}
+                        className="w-full flex items-center gap-2 px-5 py-3 text-left hover:bg-muted/50 transition-colors">
+                        <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium text-foreground shrink-0 max-w-[140px] truncate">{senderName}</span>
+                        <span className="text-muted-foreground shrink-0">—</span>
+                        <span className="text-sm text-muted-foreground truncate flex-1 min-w-0">{email.objet || ""}</span>
+                        <span className="text-xs text-muted-foreground shrink-0 ml-auto pl-2 tabular-nums whitespace-nowrap">{formatDateShort(email.created_at)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            )}
+
+            {activeTab === "documents" && (
+              <ScrollArea className="h-[480px]">
                 <div className="divide-y divide-border">
                   {sortedDocs.length === 0 ? (
                     <p className="text-sm text-muted-foreground p-5">Aucun document</p>
-                  ) : (
-                    sortedDocs.map((doc) => (
-                      <button
-                        key={doc.id}
-                        onClick={() => setSelectedDoc(doc)}
-                        className="w-full flex items-center gap-2 px-5 py-3 hover:bg-muted/50 transition-colors cursor-pointer overflow-hidden text-left"
-                      >
-                        {getDocIcon(doc.type)}
-                        <span className="text-sm text-foreground truncate flex-1 min-w-0">{doc.nom_fichier || ""}</span>
-                        <span className="text-xs text-muted-foreground shrink-0 ml-auto pl-2 tabular-nums whitespace-nowrap">
-                          {formatDateShort(doc.date_reception)}
-                        </span>
-                      </button>
-                    ))
-                  )}
+                  ) : sortedDocs.map((doc) => (
+                    <button key={doc.id} onClick={() => setSelectedDoc(doc)}
+                      className="w-full flex items-center gap-2 px-5 py-3 hover:bg-muted/50 transition-colors text-left">
+                      {getDocIcon(doc.type)}
+                      <span className="text-sm text-foreground truncate flex-1 min-w-0">{doc.nom_fichier || ""}</span>
+                      {doc.taille && <span className="text-xs text-muted-foreground shrink-0">{doc.taille}</span>}
+                      <span className="text-xs text-muted-foreground shrink-0 ml-auto pl-2 tabular-nums whitespace-nowrap">{formatDateShort(doc.date_reception)}</span>
+                    </button>
+                  ))}
                 </div>
               </ScrollArea>
-            </div>
+            )}
+
+            {activeTab === "echeances" && (
+              <div className="divide-y divide-border">
+                {echeances.length === 0 ? (
+                  <p className="text-sm text-muted-foreground p-5">Aucune échéance</p>
+                ) : echeances.map((ech) => {
+                  const echDate = new Date(ech.date);
+                  const daysUntil = Math.ceil((echDate.getTime() - Date.now()) / 86400000);
+                  const dateStr = echDate.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+                  return (
+                    <div key={ech.id} className="flex items-start gap-4 px-5 py-3.5">
+                      <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap w-24 shrink-0 pt-0.5">{dateStr}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground">{ech.label}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Source : {ech.source}</p>
+                      </div>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${
+                        ech.status === "depassee" ? "bg-red-100 text-red-700" :
+                        ech.status === "proche" ? "bg-orange-100 text-orange-700" :
+                        "bg-emerald-100 text-emerald-700"
+                      }`}>
+                        {ech.status === "depassee" ? "Dépassée" : ech.status === "proche" ? `J-${Math.abs(daysUntil)}` : `dans ${daysUntil}j`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
 
       <AnimatePresence>
-        {selectedEmail ? <EmailDrawer email={selectedEmail} onClose={() => setSelectedEmail(null)} showDossierLink={false} /> : null}
+        {selectedEmail ? <EmailDrawer email={selectedEmail} onClose={() => setSelectedEmail(null)} showDossierLink={false} context="dossier" /> : null}
       </AnimatePresence>
 
       <Dialog open={!!selectedDoc} onOpenChange={(open) => !open && setSelectedDoc(null)}>

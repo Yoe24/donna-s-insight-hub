@@ -32,9 +32,9 @@ import { apiGet, apiPublicGet } from "@/lib/api";
 import { toast } from "sonner";
 
 const navItems = [
-  { title: "Briefing", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Fil d'actualité", url: "/fil", icon: Mail },
-  { title: "Configurez-moi", url: "/configuration", icon: Settings },
+  { title: "Briefing", subtitle: "Votre journée en un coup d'œil", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Fil d'actualité", subtitle: "Les emails analysés par Donna", url: "/fil", icon: Mail, tourId: "fil" },
+  { title: "Configurez-moi", subtitle: "Personnalisez votre assistante", url: "/configuration", icon: Settings },
 ];
 
 const DOMAINES = [
@@ -173,7 +173,7 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {navItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
+                  <SidebarMenuItem key={item.title} {...((item as any).tourId ? { "data-tour": (item as any).tourId } : {})}>
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.url}
@@ -182,7 +182,12 @@ export function AppSidebar() {
                         activeClassName="bg-sidebar-accent/80 text-sidebar-accent-foreground font-medium"
                       >
                         <item.icon className="mr-3 h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
+                        {!collapsed && (
+                          <div>
+                            <span>{item.title}</span>
+                            {item.subtitle && <p className="text-[10px] text-muted-foreground leading-none mt-0.5">{item.subtitle}</p>}
+                          </div>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -191,7 +196,7 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <SidebarGroup>
+          <SidebarGroup data-tour="dossiers">
             {!collapsed && (
               <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/70 px-3">
                 Dossiers
