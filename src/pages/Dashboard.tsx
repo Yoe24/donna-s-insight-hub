@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, RefreshCw, ChevronRight, FileText } from "lucide-react";
+import { Loader2, RefreshCw, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -66,6 +66,27 @@ function getDossierDomain(d: BriefingDossier): string {
   return d.domain || d.domaine || "";
 }
 
+function formatMailDate(dateStr: string): string {
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "";
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    const hhmm = `${date.getHours()}h${String(date.getMinutes()).padStart(2, '0')}`;
+    if (diffHours < 1) return `Il y a ${Math.max(1, Math.floor(diffMs / 60000))} min`;
+    if (diffHours < 24 && date.getDate() === now.getDate()) return `Aujourd'hui, ${hhmm}`;
+    if (diffDays < 2) return `Hier, ${hhmm}`;
+    if (diffDays < 7) {
+      const jours = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+      return `${jours[date.getDay()]}, ${hhmm}`;
+    }
+    const mois = ['jan.', 'fév.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    return `${date.getDate()} ${mois[date.getMonth()]}, ${hhmm}`;
+  } catch { return ""; }
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [briefing, setBriefing] = useState<BriefingData | null>(null);
@@ -97,9 +118,9 @@ const Dashboard = () => {
     { id: "todo-9", text: "Répondre au courrier du notaire (Famille Roux)", dossier: "Roux · Immobilier", dossier_id: "4", type: "reponse", done: true, date: daysAgoTodo(22), hasDraft: true, draftPreview: "Maître,\n\nEn réponse à votre courrier du 1er mars concernant l'acte de vente, je vous confirme les réserves de mes clients.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
     { id: "todo-10", text: "Vérifier la conformité du bail commercial (Dupont)", dossier: "Dupont · Litige commercial", dossier_id: "1", type: "lecture", done: true, date: daysAgoTodo(26), hasDraft: false, draftPreview: null, attachmentSummary: null },
   ]);
-  const [expandedTodoId, setExpandedTodoId] = useState<string | null>(null);
   const [showPjList, setShowPjList] = useState(false);
   const dossiersRef = useRef<HTMLDivElement>(null);
+  const [highlightDossierId, setHighlightDossierId] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -426,6 +447,7 @@ const Dashboard = () => {
                       onClick={() => handleDossierClick(d)}
                       onEmailClick={(email) => handleEmailClick(d, email)}
                       onViewFull={() => navigate(`/dossiers/${d.dossier_id}`)}
+                      highlighted={highlightDossierId === d.dossier_id}
                     />
                   ))}
                 </div>
@@ -452,67 +474,38 @@ const Dashboard = () => {
                   {sortedTodos.length === 0 ? (
                     <p className="text-sm text-muted-foreground p-5 text-center">Aucune tâche pour cette période</p>
                   ) : sortedTodos.map((item) => (
-                    <div key={item.id} className={`transition-all duration-200 ${item.done ? "opacity-40" : ""}`}>
-                      <div className="flex items-start gap-3 px-5 py-3.5">
-                        {/* Checkbox */}
-                        <button
-                          onClick={() => {
-                            setTodoItems((prev) => prev.map((t) => t.id === item.id ? { ...t, done: !t.done } : t));
-                            if (!item.done) { setExpandedTodoId(null); toast.success("Tâche complétée"); }
-                          }}
-                          className={`mt-0.5 h-[18px] w-[18px] rounded border flex items-center justify-center shrink-0 transition-colors ${item.done ? "bg-primary border-primary" : "border-muted-foreground/30 hover:border-primary/50"}`}
+                    <div
+                      key={item.id}
+                      className={`flex items-start gap-3 py-3.5 transition-all duration-200 ${item.done ? "opacity-40" : ""}`}
+                      onMouseEnter={() => setHighlightDossierId(item.dossier_id)}
+                      onMouseLeave={() => setHighlightDossierId(null)}
+                    >
+                      <button
+                        onClick={() => {
+                          setTodoItems((prev) => prev.map((t) => t.id === item.id ? { ...t, done: !t.done } : t));
+                          if (!item.done) toast.success("✓ Tâche complétée");
+                        }}
+                        className={`mt-0.5 h-[18px] w-[18px] rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${item.done ? "bg-emerald-500 border-emerald-500" : "border-muted-foreground/30 hover:border-primary/50"}`}
+                      >
+                        {item.done && <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <a
+                          href={`/dossiers/${item.dossier_id}`}
+                          className={`text-sm text-foreground leading-relaxed block ${item.done ? "line-through" : "hover:text-primary transition-colors"}`}
                         >
-                          {item.done && <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                        </button>
-                        {/* Text — clickable to expand */}
-                        <div className="flex-1 min-w-0">
-                          <button
-                            onClick={() => !item.done && setExpandedTodoId(expandedTodoId === item.id ? null : item.id)}
-                            className={`text-sm text-foreground leading-relaxed text-left w-full ${item.done ? "line-through" : "hover:text-primary transition-colors cursor-pointer"}`}
-                            disabled={item.done}
-                          >
-                            {item.text}
-                            {item.hasDraft && !item.done && (
-                              <span className="ml-2 inline-flex items-center bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 text-[10px] px-2 py-0.5 rounded-full font-medium">Brouillon prêt</span>
-                            )}
-                          </button>
-                          <div className="flex items-center gap-2 mt-1">
-                            <a href={`/dossiers/${item.dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">{item.dossier}</a>
-                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-                              item.type === "reponse" ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200" :
-                              item.type === "relance" ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200" :
-                              item.type === "action" ? "bg-red-50 text-red-700 ring-1 ring-red-200" :
-                              "bg-gray-50 text-gray-600 ring-1 ring-gray-200"
-                            }`}>{item.type === "reponse" ? "Réponse" : item.type === "relance" ? "Relance" : item.type === "action" ? "Action" : "À lire"}</span>
-                          </div>
+                          {item.text}
+                        </a>
+                        <div className="flex items-center gap-2 mt-1">
+                          <a href={`/dossiers/${item.dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">{item.dossier}</a>
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                            item.type === "reponse" ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200" :
+                            item.type === "relance" ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200" :
+                            item.type === "action" ? "bg-red-50 text-red-700 ring-1 ring-red-200" :
+                            "bg-gray-50 text-gray-600 ring-1 ring-gray-200"
+                          }`}>{item.type === "reponse" ? "Réponse" : item.type === "relance" ? "Relance" : item.type === "action" ? "Action" : "À lire"}</span>
                         </div>
                       </div>
-                      {/* Expanded detail panel */}
-                      {expandedTodoId === item.id && !item.done && (
-                        <div className="px-5 pb-4 pl-12">
-                          <div className="rounded-xl bg-muted/30 p-4 space-y-3">
-                            {item.hasDraft && item.draftPreview ? (
-                              <>
-                                <p className="text-xs font-medium text-muted-foreground">Brouillon proposé par Donna</p>
-                                <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">{item.draftPreview}</p>
-                                <div className="flex items-center gap-2">
-                                  <button onClick={() => { navigator.clipboard.writeText(item.draftPreview || ""); toast.success("Copié !"); }} className="text-xs text-muted-foreground hover:text-foreground border border-border rounded-md px-2.5 py-1 transition-colors">Copier</button>
-                                </div>
-                              </>
-                            ) : item.attachmentSummary ? (
-                              <>
-                                <p className="text-xs font-medium text-muted-foreground">Résumé de la pièce</p>
-                                <p className="text-sm text-foreground/80 leading-relaxed">{item.attachmentSummary}</p>
-                              </>
-                            ) : (
-                              <p className="text-xs text-muted-foreground">Cliquez sur le dossier pour travailler sur cette tâche.</p>
-                            )}
-                            <a href={`/dossiers/${item.dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1">
-                              Dossier : {item.dossier} →
-                            </a>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -557,121 +550,61 @@ function DossierLine({
   onClick,
   onEmailClick,
   onViewFull,
+  highlighted,
 }: {
   dossier: BriefingDossier;
   dossierEmails: DossierLineEmail[];
   onClick: () => void;
   onEmailClick: (email: DossierLineEmail) => void;
   onViewFull: () => void;
+  highlighted?: boolean;
 }) {
-  const hasEmails = dossierEmails.length > 0;
   const displayEmails = dossierEmails.slice(0, MAX_STACKED_EMAILS);
   const extraCount = dossierEmails.length - MAX_STACKED_EMAILS;
 
-  // No fetched emails yet — show narrative fallback
-  if (!hasEmails) {
-    const narrativeText = d.emails_narrative || "";
-    const narrative = narrativeText.length > 90 ? narrativeText.slice(0, 87) + "…" : narrativeText;
-
-    return (
-      <div
-        onClick={onClick}
-        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted/40 cursor-pointer transition-colors group"
-      >
-        <div className="flex-1 min-w-0 truncate">
-          <span className="text-sm text-foreground">
-            <span className="font-medium">{getDossierName(d)}</span>
-            <span className="text-muted-foreground">{getDossierDomain(d) ? ` · ${getDossierDomain(d)}` : ""}</span>
-            {narrative && (
-              <>
-                <span className="text-muted-foreground"> · </span>
-                <span className="text-foreground/70">"{narrative}"</span>
-              </>
-            )}
-          </span>
-        </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-      </div>
-    );
-  }
-
-  // Single email — compact
-  if (dossierEmails.length === 1) {
-    const email = dossierEmails[0];
-    const resumeText = email.resume || email.objet || "";
-    const shortResume = resumeText.length > 80 ? resumeText.slice(0, 77) + "…" : resumeText;
-
-    return (
-      <div className="rounded-lg">
-        <button
-          onClick={onClick}
-          className="w-full flex items-center gap-3 px-4 py-3 cursor-pointer group text-left rounded-t-lg hover:bg-muted/40 transition-colors"
-        >
-          <div className="flex-1 min-w-0 truncate">
-            <span className="text-sm text-foreground">
-              <span className="font-medium">{getDossierName(d)}</span>
-              <span className="text-muted-foreground">{getDossierDomain(d) ? ` · ${getDossierDomain(d)}` : ""}</span>
-            </span>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-        </button>
-        <button
-          onClick={() => onEmailClick(email)}
-          className="w-full text-left pl-8 pr-4 py-2 mb-1 rounded-b-lg hover:bg-primary/5 transition-colors cursor-pointer group/email"
-        >
-          <span className="text-xs text-muted-foreground leading-relaxed group-hover/email:text-foreground transition-colors">
-            <span className="text-foreground/50">→</span>{" "}
-            <span className="text-foreground/70">"{shortResume}"</span>{" "}
-            <span className="text-muted-foreground/60">({formatShortDate(email.created_at)})</span>
-          </span>
-        </button>
-      </div>
-    );
-  }
-
-  // Multiple emails — stacked with individually clickable rows
   return (
-    <div className="rounded-lg">
+    <div className={`transition-colors duration-300 rounded-xl ${highlighted ? "bg-primary/5" : ""}`}>
+      {/* Dossier header */}
       <button
         onClick={onClick}
-        className="w-full flex items-center gap-3 px-4 py-3 cursor-pointer group text-left rounded-t-lg hover:bg-muted/40 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-muted/30 rounded-xl transition-colors group"
       >
-        <div className="flex-1 min-w-0">
-          <span className="text-sm text-foreground">
-            <span className="font-medium">{getDossierName(d)}</span>
-            <span className="text-muted-foreground">{getDossierDomain(d) ? ` · ${getDossierDomain(d)}` : ""}</span>
-          </span>
-        </div>
-        <span className="text-xs text-muted-foreground shrink-0">{dossierEmails.length} emails</span>
-        <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <span className="text-sm text-foreground">
+          <span className="font-semibold">{getDossierName(d)}</span>
+          <span className="text-muted-foreground"> · {getDossierDomain(d)}</span>
+        </span>
+        <span className="text-xs text-muted-foreground shrink-0">{dossierEmails.length} email{dossierEmails.length > 1 ? 's' : ''}</span>
       </button>
-      <div className="pl-4 pr-4 pb-1 space-y-0.5">
-        {displayEmails.map((email) => {
-          const resumeText = email.resume || email.objet || "";
-          const shortResume = resumeText.length > 70 ? resumeText.slice(0, 67) + "…" : resumeText;
-          return (
-            <button
-              key={email.id}
-              onClick={() => onEmailClick(email)}
-              className="block w-full text-left pl-4 pr-2 py-1.5 rounded-md hover:bg-primary/5 transition-colors cursor-pointer group/email"
-            >
-              <span className="text-xs text-muted-foreground leading-relaxed group-hover/email:text-foreground transition-colors">
-                <span className="text-foreground/50">→</span>{" "}
-                <span className="text-foreground/70">"{shortResume}"</span>{" "}
-                <span className="text-muted-foreground/60">({formatShortDate(email.created_at)})</span>
-              </span>
+
+      {/* Emails — inbox style */}
+      {displayEmails.length > 0 && (
+        <div className="border-t border-border/20">
+          {displayEmails.map((email, idx) => {
+            const name = email.expediteur || "";
+            const resume = email.resume || "";
+            const shortResume = resume.length > 80 ? resume.slice(0, 77) + "…" : resume;
+            return (
+              <button
+                key={email.id}
+                onClick={() => onEmailClick(email)}
+                className={`w-full text-left px-5 py-3 hover:bg-muted/30 transition-colors duration-200 cursor-pointer ${idx < displayEmails.length - 1 ? "border-b border-border/20" : ""}`}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-sm font-medium text-foreground truncate">{name}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{formatMailDate(email.created_at)}</span>
+                </div>
+                <p className="text-sm text-foreground mt-0.5 truncate">{email.objet}</p>
+                {shortResume && <p className="text-xs text-muted-foreground mt-0.5 truncate">{shortResume}</p>}
+              </button>
+            );
+          })}
+          {extraCount > 0 && (
+            <button onClick={onViewFull} className="w-full text-left px-5 py-2 text-xs text-primary hover:underline">
+              et {extraCount} autre{extraCount > 1 ? "s" : ""} → Voir le dossier
             </button>
-          );
-        })}
-        {extraCount > 0 && (
-          <button
-            onClick={() => onViewFull()}
-            className="block pl-4 py-1.5 text-xs text-emerald hover:underline"
-          >
-            et {extraCount} autre{extraCount > 1 ? "s" : ""} → Voir le dossier complet
-          </button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
