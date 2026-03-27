@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, RefreshCw, FileText, Mail, Folder } from "lucide-react";
+import { Loader2, RefreshCw, FileText, Mail, Folder, CheckCircle, Filter, Paperclip } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EmailListInline } from "@/components/EmailListInline";
 import { toast } from "sonner";
@@ -128,16 +128,16 @@ const Dashboard = () => {
   const daysAgoTodo = (d: number) => new Date(_now - d * 86400000).toISOString();
 
   const [todoItems, setTodoItems] = useState([
-    { id: "todo-1", text: "Répondre à Jean-Pierre Martin sur les points de l'entretien préalable", dossier: "Martin · Droit du travail", dossier_id: "2", type: "reponse", done: false, date: hoursAgoTodo(2), hasDraft: true, draftPreview: "Maître,\n\nFaisant suite à votre email concernant le 2e entretien préalable de rupture conventionnelle, je vous confirme que les points suivants pourront être abordés :\n\n1. Indemnité supra-légale (proposition à 12 000 €)\n2. Clause de non-concurrence (levée demandée)\n3. Solde de tout compte et certificat de travail\n\nJe reste à votre disposition.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-2", text: "Vérifier la mise en demeure reçue de BTP Pro", dossier: "Dupont · Litige commercial", dossier_id: "1", type: "lecture", done: false, date: hoursAgoTodo(5), hasDraft: false, draftPreview: null, attachmentSummary: "Mise en demeure de BTP Pro datée du 25 mars, contestation de la non-conformité des travaux, demande de paiement de 45 000 € sous 15 jours." },
-    { id: "todo-3", text: "Relancer Claire Dubois pour les pièces manquantes", dossier: "Dubois · Litige immobilier", dossier_id: "5", type: "relance", done: false, date: hoursAgoTodo(8), hasDraft: true, draftPreview: "Madame Dubois,\n\nJe me permets de revenir vers vous concernant les documents que nous attendons pour compléter votre dossier avant l'audience du 15 avril :\n\n- PV de la dernière assemblée générale\n- Relevés de charges 2024-2025\n\nMerci de me les transmettre dès que possible.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-4", text: "Consulter le rapport d'expertise Famille Roux", dossier: "Roux · Immobilier", dossier_id: "4", type: "lecture", done: true, date: daysAgoTodo(2), hasDraft: false, draftPreview: null, attachmentSummary: "Rapport d'expertise du 20 mars concluant à des malfaçons sur la toiture et l'étanchéité. Montant estimé des réparations : 28 000 €." },
-    { id: "todo-5", text: "Répondre à Alice Bernard sur la procédure de divorce", dossier: "Bernard · Droit de la famille", dossier_id: "6", type: "reponse", done: true, date: daysAgoTodo(3), hasDraft: true, draftPreview: "Chère Madame Bernard,\n\nSuite à notre échange, je vous confirme que la requête en divorce a bien été déposée auprès du tribunal.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-6", text: "Préparer les pièces pour l'audience TGI (Dubois)", dossier: "Dubois · Litige immobilier", dossier_id: "5", type: "action", done: true, date: daysAgoTodo(5), hasDraft: false, draftPreview: null, attachmentSummary: null },
-    { id: "todo-7", text: "Analyser le contrat de travail de Jean-Pierre Martin", dossier: "Martin · Droit du travail", dossier_id: "2", type: "lecture", done: true, date: daysAgoTodo(12), hasDraft: false, draftPreview: null, attachmentSummary: "CDI signé le 15 mars 2019, clause de non-concurrence sur 12 mois, indemnité de 40% du salaire." },
-    { id: "todo-8", text: "Envoyer la mise en demeure à TechCorp", dossier: "Martin · Droit du travail", dossier_id: "2", type: "reponse", done: true, date: daysAgoTodo(17), hasDraft: true, draftPreview: "Madame, Monsieur,\n\nPar la présente, je vous mets en demeure de procéder au paiement des heures supplémentaires dues à M. Martin.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-9", text: "Répondre au courrier du notaire (Famille Roux)", dossier: "Roux · Immobilier", dossier_id: "4", type: "reponse", done: true, date: daysAgoTodo(22), hasDraft: true, draftPreview: "Maître,\n\nEn réponse à votre courrier du 1er mars concernant l'acte de vente, je vous confirme les réserves de mes clients.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-10", text: "Vérifier la conformité du bail commercial (Dupont)", dossier: "Dupont · Litige commercial", dossier_id: "1", type: "lecture", done: true, date: daysAgoTodo(26), hasDraft: false, draftPreview: null, attachmentSummary: null },
+    { id: "todo-1", text: "Répondre à Jean-Pierre Martin sur les points de l'entretien préalable", dossier: "Martin · Droit du travail", dossier_id: "2", email_id: "e5", type: "reponse", done: false, date: hoursAgoTodo(2), hasDraft: true, draftPreview: "Maître,\n\nFaisant suite à votre email concernant le 2e entretien préalable de rupture conventionnelle, je vous confirme que les points suivants pourront être abordés :\n\n1. Indemnité supra-légale (proposition à 12 000 €)\n2. Clause de non-concurrence (levée demandée)\n3. Solde de tout compte et certificat de travail\n\nJe reste à votre disposition.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-2", text: "Vérifier la mise en demeure reçue de BTP Pro", dossier: "Dupont · Litige commercial", dossier_id: "1", email_id: "e3", type: "lecture", done: false, date: hoursAgoTodo(5), hasDraft: false, draftPreview: null, attachmentSummary: "Mise en demeure de BTP Pro datée du 25 mars, contestation de la non-conformité des travaux, demande de paiement de 45 000 € sous 15 jours." },
+    { id: "todo-3", text: "Relancer Claire Dubois pour les pièces manquantes", dossier: "Dubois · Litige immobilier", dossier_id: "5", email_id: "e20", type: "relance", done: false, date: hoursAgoTodo(8), hasDraft: true, draftPreview: "Madame Dubois,\n\nJe me permets de revenir vers vous concernant les documents que nous attendons pour compléter votre dossier avant l'audience du 15 avril :\n\n- PV de la dernière assemblée générale\n- Relevés de charges 2024-2025\n\nMerci de me les transmettre dès que possible.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-4", text: "Consulter le rapport d'expertise Famille Roux", dossier: "Roux · Immobilier", dossier_id: "4", email_id: "e7", type: "lecture", done: true, date: daysAgoTodo(2), hasDraft: false, draftPreview: null, attachmentSummary: "Rapport d'expertise du 20 mars concluant à des malfaçons sur la toiture et l'étanchéité. Montant estimé des réparations : 28 000 €." },
+    { id: "todo-5", text: "Répondre à Alice Bernard sur la procédure de divorce", dossier: "Bernard · Droit de la famille", dossier_id: "6", email_id: "e22", type: "reponse", done: true, date: daysAgoTodo(3), hasDraft: true, draftPreview: "Chère Madame Bernard,\n\nSuite à notre échange, je vous confirme que la requête en divorce a bien été déposée auprès du tribunal.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-6", text: "Préparer les pièces pour l'audience TGI (Dubois)", dossier: "Dubois · Litige immobilier", dossier_id: "5", email_id: "e21", type: "action", done: true, date: daysAgoTodo(5), hasDraft: false, draftPreview: null, attachmentSummary: null },
+    { id: "todo-7", text: "Analyser le contrat de travail de Jean-Pierre Martin", dossier: "Martin · Droit du travail", dossier_id: "2", email_id: "e13", type: "lecture", done: true, date: daysAgoTodo(12), hasDraft: false, draftPreview: null, attachmentSummary: "CDI signé le 15 mars 2019, clause de non-concurrence sur 12 mois, indemnité de 40% du salaire." },
+    { id: "todo-8", text: "Envoyer la mise en demeure à TechCorp", dossier: "Martin · Droit du travail", dossier_id: "2", email_id: "e6", type: "reponse", done: true, date: daysAgoTodo(17), hasDraft: true, draftPreview: "Madame, Monsieur,\n\nPar la présente, je vous mets en demeure de procéder au paiement des heures supplémentaires dues à M. Martin.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-9", text: "Répondre au courrier du notaire (Famille Roux)", dossier: "Roux · Immobilier", dossier_id: "4", email_id: "e18", type: "reponse", done: true, date: daysAgoTodo(22), hasDraft: true, draftPreview: "Maître,\n\nEn réponse à votre courrier du 1er mars concernant l'acte de vente, je vous confirme les réserves de mes clients.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-10", text: "Vérifier la conformité du bail commercial (Dupont)", dossier: "Dupont · Litige commercial", dossier_id: "1", email_id: "e1", type: "lecture", done: true, date: daysAgoTodo(26), hasDraft: false, draftPreview: null, attachmentSummary: null },
   ]);
   const [expandedCard, setExpandedCard] = useState<"emails" | "pj" | null>(null);
   const dossiersRef = useRef<HTMLDivElement>(null);
@@ -289,6 +289,35 @@ const Dashboard = () => {
     setPanelEmails(reordered);
   };
 
+  /** Open EmailDrawer by mock email ID */
+  const openEmailById = (emailId: string) => {
+    const mockEmail = mockAllEmails.find((e) => e.id === emailId);
+    if (!mockEmail) return;
+    setSelectedEmail({
+      id: mockEmail.id,
+      expediteur: `${mockEmail.expediteur} <${mockEmail.email}>`,
+      objet: mockEmail.objet,
+      resume: mockEmail.resume,
+      brouillon: mockEmail.brouillon_mock,
+      pipeline_step: "pret_a_reviser",
+      contexte_choisi: "",
+      statut: "traite",
+      created_at: mockEmail.date,
+      updated_at: mockEmail.date,
+      contenu: mockEmail.corps_original,
+      dossier_id: mockEmail.dossier_id,
+      dossier_name: mockEmail.dossier_nom ? `${mockEmail.dossier_nom} - ${mockEmail.dossier_domaine}` : null,
+      from_email: mockEmail.email,
+      email_type: mockEmail.email_type,
+      attachments: mockEmail.pieces_jointes.map((pj, i) => ({
+        id: `${mockEmail.id}-att-${i}`,
+        filename: pj.nom,
+        type: pj.type_mime.includes("pdf") ? "pdf" : pj.type_mime.includes("image") ? "image" : "other",
+        size: pj.taille,
+      })),
+    } as any);
+  };
+
   const handleGenerate = async () => {
     setGenerating(true);
     try {
@@ -411,23 +440,43 @@ const Dashboard = () => {
 
         {adjustedStats && (
           <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="mb-10">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Votre boîte mail alexandra@cabinet-fernandez.fr a reçu{" "}
-              <button
-                onClick={() => setExpandedCard(expandedCard === "emails" ? null : "emails")}
-                className={`font-medium transition-colors ${expandedCard === "emails" ? "text-primary" : "text-foreground hover:text-primary"} underline underline-offset-2 decoration-primary/30 cursor-pointer`}
-              >
-                {adjustedStats.total} emails
-              </button>.{" "}
-              {adjustedStats.dossier_emails} sont liés à vos dossiers, {adjustedStats.general_emails} ont été filtrés par Donna.{" "}
-              <button
-                onClick={() => setExpandedCard(expandedCard === "pj" ? null : "pj")}
-                className={`font-medium transition-colors ${expandedCard === "pj" ? "text-primary" : "text-foreground hover:text-primary"} underline underline-offset-2 decoration-primary/30 cursor-pointer`}
-              >
-                {adjustedStats.attachments_count} {adjustedStats.attachments_count === 1 ? "pièce jointe a été extraite" : "pièces jointes ont été extraites"}
-              </button>{" "}
-              et {adjustedStats.attachments_count === 1 ? "résumée" : "résumées"}.
-            </p>
+            <p className="text-xs text-muted-foreground mb-3">alexandra@cabinet-fernandez.fr</p>
+            <div className="rounded-xl bg-muted/40 p-4 space-y-2">
+              <div className="flex items-center gap-3">
+                <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  <button
+                    onClick={() => setExpandedCard(expandedCard === "emails" ? null : "emails")}
+                    className={`font-semibold transition-colors cursor-pointer hover:underline ${expandedCard === "emails" ? "text-primary" : "text-foreground hover:text-primary"}`}
+                  >
+                    {adjustedStats.total} emails
+                  </button>{" "}reçus
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-4 w-4 text-muted-foreground shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">{adjustedStats.dossier_emails}</span> traités par Donna · liés à vos dossiers
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">{adjustedStats.general_emails}</span> filtrés · newsletters, notifications
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  <button
+                    onClick={() => setExpandedCard(expandedCard === "pj" ? null : "pj")}
+                    className={`font-semibold transition-colors cursor-pointer hover:underline ${expandedCard === "pj" ? "text-primary" : "text-foreground hover:text-primary"}`}
+                  >
+                    {adjustedStats.attachments_count} {adjustedStats.attachments_count === 1 ? "pièce jointe" : "pièces jointes"}
+                  </button>{" "}{adjustedStats.attachments_count === 1 ? "extraite et résumée" : "extraites et résumées"}
+                </p>
+              </div>
+            </div>
 
             {/* Inline expandable list — toggled by clicking on "X emails" or "X pièces jointes" */}
             <AnimatePresence>
@@ -593,14 +642,14 @@ const Dashboard = () => {
                         {item.done && <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                       </button>
                       <div className="flex-1 min-w-0">
-                        <a
-                          href={`/dossiers/${item.dossier_id}`}
-                          className={`text-sm text-foreground leading-relaxed block ${item.done ? "line-through" : "hover:text-primary transition-colors"}`}
+                        <button
+                          onClick={() => openEmailById(item.email_id)}
+                          className={`text-sm text-foreground leading-relaxed block text-left w-full ${item.done ? "line-through" : "hover:text-primary transition-colors"}`}
                         >
                           {item.text}
-                        </a>
+                        </button>
                         <div className="flex items-center gap-2 mt-1">
-                          <a href={`/dossiers/${item.dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">{item.dossier}</a>
+                          <span className="text-xs text-muted-foreground">{item.dossier}</span>
                           <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
                             item.type === "reponse" ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200" :
                             item.type === "relance" ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200" :
@@ -609,6 +658,10 @@ const Dashboard = () => {
                           }`}>{item.type === "reponse" ? "Réponse" : item.type === "relance" ? "Relance" : item.type === "action" ? "Action" : "À lire"}</span>
                         </div>
                       </div>
+                      <Mail
+                        className="h-4 w-4 text-muted-foreground/50 shrink-0 mt-0.5 cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => openEmailById(item.email_id)}
+                      />
                     </div>
                   ))}
                 </div>
