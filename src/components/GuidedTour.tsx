@@ -13,22 +13,17 @@ const STEPS: Step[] = [
   {
     target: "briefing",
     title: "Votre briefing quotidien",
-    text: "Chaque matin, Donna résume vos dossiers. Voyez d'un coup d'œil ce qui a bougé et cochez vos tâches au fil de la journée.",
-  },
-  {
-    target: "fil",
-    title: "Le travail de Donna",
-    text: "Voyez tous les emails que Donna a analysés et classés. C'est votre boîte mail intelligente.",
+    text: "Chaque matin, Donna résume vos dossiers et prépare votre to-do list. Les brouillons de réponse sont déjà prêts — vous n'avez qu'à relire et envoyer.",
   },
   {
     target: "dossiers",
     title: "Vos dossiers clients",
-    text: "Chaque dossier regroupe les échanges, documents et échéances d'un client. Cliquez pour travailler sur une affaire.",
+    text: "Chaque dossier regroupe les échanges, documents et échéances d'un client. Tout est visible d'un coup — pas besoin de chercher.",
   },
   {
     target: null,
-    title: "Donna rédige pour vous",
-    text: "Ouvrez n'importe quel email et cliquez « Générer une réponse ». Donna rédige un brouillon dans votre style. Vous relisez et envoyez.",
+    title: "5 minutes au lieu de 2h30",
+    text: "Ouvrez Donna le matin, parcourez votre briefing, cochez vos tâches. Donna fait le travail, vous gardez le contrôle.",
   },
 ];
 

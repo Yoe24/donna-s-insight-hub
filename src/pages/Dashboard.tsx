@@ -5,12 +5,12 @@
  * In real mode, fetches from API using the active user_id.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, RefreshCw, ChevronRight } from "lucide-react";
+import { Loader2, RefreshCw, ChevronRight, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -81,17 +81,25 @@ const Dashboard = () => {
   // Cache of emails per dossier for inline display
   const [dossierEmailsMap, setDossierEmailsMap] = useState<Record<string, DossierLineEmail[]>>({});
 
-  const [todoItems, setTodoItems] = useState([
-    { id: "todo-1", text: "Répondre à Jean-Pierre Martin sur les points de l'entretien préalable", dossier: "Martin - Droit du travail", dossier_id: "2", type: "reponse", done: false },
-    { id: "todo-2", text: "Vérifier la mise en demeure reçue de BTP Pro (dossier Dupont)", dossier: "Dupont - Litige commercial", dossier_id: "1", type: "lecture", done: false },
-    { id: "todo-3", text: "Relancer Claire Dubois pour les pièces manquantes", dossier: "Dubois - Litige immobilier", dossier_id: "5", type: "relance", done: false },
-    { id: "todo-4", text: "Consulter le rapport d'expertise Famille Roux", dossier: "Roux - Immobilier", dossier_id: "4", type: "lecture", done: true },
-  ]);
+  const _now = Date.now();
+  const hoursAgoTodo = (h: number) => new Date(_now - h * 3600000).toISOString();
+  const daysAgoTodo = (d: number) => new Date(_now - d * 86400000).toISOString();
 
-  const toggleTodo = (id: string) => {
-    setTodoItems((prev) => prev.map((t) => t.id === id ? { ...t, done: !t.done } : t));
-    toast.success("Tâche mise à jour");
-  };
+  const [todoItems, setTodoItems] = useState([
+    { id: "todo-1", text: "Répondre à Jean-Pierre Martin sur les points de l'entretien préalable", dossier: "Martin · Droit du travail", dossier_id: "2", type: "reponse", done: false, date: hoursAgoTodo(2), hasDraft: true, draftPreview: "Maître,\n\nFaisant suite à votre email concernant le 2e entretien préalable de rupture conventionnelle, je vous confirme que les points suivants pourront être abordés :\n\n1. Indemnité supra-légale (proposition à 12 000 €)\n2. Clause de non-concurrence (levée demandée)\n3. Solde de tout compte et certificat de travail\n\nJe reste à votre disposition.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-2", text: "Vérifier la mise en demeure reçue de BTP Pro", dossier: "Dupont · Litige commercial", dossier_id: "1", type: "lecture", done: false, date: hoursAgoTodo(5), hasDraft: false, draftPreview: null, attachmentSummary: "Mise en demeure de BTP Pro datée du 25 mars, contestation de la non-conformité des travaux, demande de paiement de 45 000 € sous 15 jours." },
+    { id: "todo-3", text: "Relancer Claire Dubois pour les pièces manquantes", dossier: "Dubois · Litige immobilier", dossier_id: "5", type: "relance", done: false, date: hoursAgoTodo(8), hasDraft: true, draftPreview: "Madame Dubois,\n\nJe me permets de revenir vers vous concernant les documents que nous attendons pour compléter votre dossier avant l'audience du 15 avril :\n\n- PV de la dernière assemblée générale\n- Relevés de charges 2024-2025\n\nMerci de me les transmettre dès que possible.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-4", text: "Consulter le rapport d'expertise Famille Roux", dossier: "Roux · Immobilier", dossier_id: "4", type: "lecture", done: true, date: daysAgoTodo(2), hasDraft: false, draftPreview: null, attachmentSummary: "Rapport d'expertise du 20 mars concluant à des malfaçons sur la toiture et l'étanchéité. Montant estimé des réparations : 28 000 €." },
+    { id: "todo-5", text: "Répondre à Alice Bernard sur la procédure de divorce", dossier: "Bernard · Droit de la famille", dossier_id: "6", type: "reponse", done: true, date: daysAgoTodo(3), hasDraft: true, draftPreview: "Chère Madame Bernard,\n\nSuite à notre échange, je vous confirme que la requête en divorce a bien été déposée auprès du tribunal.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-6", text: "Préparer les pièces pour l'audience TGI (Dubois)", dossier: "Dubois · Litige immobilier", dossier_id: "5", type: "action", done: true, date: daysAgoTodo(5), hasDraft: false, draftPreview: null, attachmentSummary: null },
+    { id: "todo-7", text: "Analyser le contrat de travail de Jean-Pierre Martin", dossier: "Martin · Droit du travail", dossier_id: "2", type: "lecture", done: true, date: daysAgoTodo(12), hasDraft: false, draftPreview: null, attachmentSummary: "CDI signé le 15 mars 2019, clause de non-concurrence sur 12 mois, indemnité de 40% du salaire." },
+    { id: "todo-8", text: "Envoyer la mise en demeure à TechCorp", dossier: "Martin · Droit du travail", dossier_id: "2", type: "reponse", done: true, date: daysAgoTodo(17), hasDraft: true, draftPreview: "Madame, Monsieur,\n\nPar la présente, je vous mets en demeure de procéder au paiement des heures supplémentaires dues à M. Martin.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-9", text: "Répondre au courrier du notaire (Famille Roux)", dossier: "Roux · Immobilier", dossier_id: "4", type: "reponse", done: true, date: daysAgoTodo(22), hasDraft: true, draftPreview: "Maître,\n\nEn réponse à votre courrier du 1er mars concernant l'acte de vente, je vous confirme les réserves de mes clients.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-10", text: "Vérifier la conformité du bail commercial (Dupont)", dossier: "Dupont · Litige commercial", dossier_id: "1", type: "lecture", done: true, date: daysAgoTodo(26), hasDraft: false, draftPreview: null, attachmentSummary: null },
+  ]);
+  const [expandedTodoId, setExpandedTodoId] = useState<string | null>(null);
+  const [showPjList, setShowPjList] = useState(false);
+  const dossiersRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -286,6 +294,19 @@ const Dashboard = () => {
 
   const periodLabel = period === "24h" ? "dans les dernières 24 heures" : period === "7j" ? "ces 7 derniers jours" : "ces 30 derniers jours";
 
+  const filteredTodos = todoItems.filter((t) => {
+    const todoDate = new Date(t.date).getTime();
+    const now = Date.now();
+    if (period === "24h") return now - todoDate < 24 * 3600000;
+    if (period === "7j") return now - todoDate < 7 * 24 * 3600000;
+    return now - todoDate < 30 * 24 * 3600000;
+  });
+  // Sort: undone first, then by date desc
+  const sortedTodos = [...filteredTodos].sort((a, b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -351,27 +372,45 @@ const Dashboard = () => {
             <div className="text-sm text-foreground/80 leading-relaxed space-y-1">
               <p>
                 Vous avez reçu{" "}
-                <a href="/fil?tab=emails" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                <button onClick={() => dossiersRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} className="underline underline-offset-2 hover:text-foreground transition-colors">
                   <strong>{adjustedStats.total} emails</strong>
-                </a>{" "}
+                </button>{" "}
                 {periodLabel}.
               </p>
               <p>
                 <strong>{adjustedStats.dossier_emails}</strong> liés à vos dossiers · <strong>{adjustedStats.general_emails}</strong> autres emails (newsletters, notifications…)
               </p>
               <p>
-                <a href="/fil?tab=pj" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                <button onClick={() => setShowPjList(!showPjList)} className="underline underline-offset-2 hover:text-foreground transition-colors">
                   <strong>{adjustedStats.attachments_count} {adjustedStats.attachments_count === 1 ? "pièce jointe" : "pièces jointes"}</strong>
-                </a>{" "}
+                </button>{" "}
                 {adjustedStats.attachments_count === 1 ? "extraite" : "extraites"}
               </p>
             </div>
           </motion.div>
         )}
 
+        {showPjList && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="rounded-2xl border border-border bg-card shadow-sm p-5 mb-6 overflow-hidden">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Pièces jointes reçues</h3>
+            <div className="space-y-3">
+              {getEmailsForPeriod(period).filter(e => e.pieces_jointes.length > 0).flatMap(e => e.pieces_jointes.map((pj, i) => (
+                <div key={`${e.id}-${i}`} className="flex items-start gap-2">
+                  <FileText className="h-4 w-4 text-red-500/70 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-sm text-foreground">{pj.nom}</p>
+                    <p className="text-xs text-muted-foreground truncate">{pj.resume_ia}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{e.dossier_nom ? `Dossier : ${e.dossier_nom}` : ""}</p>
+                  </div>
+                </div>
+              )))}
+            </div>
+          </motion.div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left — Dossiers actifs */}
-          <div>
+          <div ref={dossiersRef}>
             {activeDossiers.length > 0 && (
               <motion.section {...fadeIn} transition={{ delay: 0.1 }}>
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
@@ -405,29 +444,74 @@ const Dashboard = () => {
             <div>
               <motion.section {...fadeIn} transition={{ delay: 0.12 }}>
                 <div className="flex items-baseline justify-between mb-3">
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">À faire aujourd'hui</h2>
-                  <span className="text-xs text-muted-foreground">{todoItems.filter((t) => !t.done).length} restantes</span>
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">To-do list</h2>
+                  <span className="text-xs text-muted-foreground">{sortedTodos.filter((t) => !t.done).length} restantes</span>
                 </div>
                 <div className="rounded-2xl border border-border bg-card shadow-sm divide-y divide-border">
-                  {todoItems.map((item) => (
-                    <div key={item.id} className={`flex items-start gap-3 px-5 py-3.5 transition-all duration-200 ${item.done ? "opacity-40" : ""}`}>
-                      <button
-                        onClick={() => toggleTodo(item.id)}
-                        className={`mt-0.5 h-4.5 w-4.5 rounded border flex items-center justify-center shrink-0 transition-colors ${item.done ? "bg-primary border-primary" : "border-muted-foreground/30 hover:border-primary/50"}`}
-                      >
-                        {item.done && <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm text-foreground leading-relaxed ${item.done ? "line-through" : ""}`}>{item.text}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <a href={`/dossiers/${item.dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">{item.dossier}</a>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-                            item.type === "reponse" ? "bg-orange-100 text-orange-700" :
-                            item.type === "relance" ? "bg-amber-100 text-amber-700" :
-                            "bg-muted text-muted-foreground"
-                          }`}>{item.type === "reponse" ? "Réponse" : item.type === "relance" ? "Relance" : "À lire"}</span>
+                  {sortedTodos.length === 0 ? (
+                    <p className="text-sm text-muted-foreground p-5 text-center">Aucune tâche pour cette période</p>
+                  ) : sortedTodos.map((item) => (
+                    <div key={item.id} className={`transition-all duration-200 ${item.done ? "opacity-40" : ""}`}>
+                      <div className="flex items-start gap-3 px-5 py-3.5">
+                        {/* Checkbox */}
+                        <button
+                          onClick={() => {
+                            setTodoItems((prev) => prev.map((t) => t.id === item.id ? { ...t, done: !t.done } : t));
+                            if (!item.done) { setExpandedTodoId(null); toast.success("Tâche complétée"); }
+                          }}
+                          className={`mt-0.5 h-[18px] w-[18px] rounded border flex items-center justify-center shrink-0 transition-colors ${item.done ? "bg-primary border-primary" : "border-muted-foreground/30 hover:border-primary/50"}`}
+                        >
+                          {item.done && <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                        </button>
+                        {/* Text — clickable to expand */}
+                        <div className="flex-1 min-w-0">
+                          <button
+                            onClick={() => !item.done && setExpandedTodoId(expandedTodoId === item.id ? null : item.id)}
+                            className={`text-sm text-foreground leading-relaxed text-left w-full ${item.done ? "line-through" : "hover:text-primary transition-colors cursor-pointer"}`}
+                            disabled={item.done}
+                          >
+                            {item.text}
+                            {item.hasDraft && !item.done && (
+                              <span className="ml-2 inline-flex items-center bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full font-medium">Brouillon prêt</span>
+                            )}
+                          </button>
+                          <div className="flex items-center gap-2 mt-1">
+                            <a href={`/dossiers/${item.dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">{item.dossier}</a>
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                              item.type === "reponse" ? "bg-orange-100 text-orange-700" :
+                              item.type === "relance" ? "bg-amber-100 text-amber-700" :
+                              item.type === "action" ? "bg-red-100 text-red-700" :
+                              "bg-muted text-muted-foreground"
+                            }`}>{item.type === "reponse" ? "Réponse" : item.type === "relance" ? "Relance" : item.type === "action" ? "Action" : "À lire"}</span>
+                          </div>
                         </div>
                       </div>
+                      {/* Expanded detail panel */}
+                      {expandedTodoId === item.id && !item.done && (
+                        <div className="px-5 pb-4 pl-12">
+                          <div className="rounded-xl bg-muted/30 p-4 space-y-3">
+                            {item.hasDraft && item.draftPreview ? (
+                              <>
+                                <p className="text-xs font-medium text-muted-foreground">Brouillon proposé par Donna</p>
+                                <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">{item.draftPreview}</p>
+                                <div className="flex items-center gap-2">
+                                  <button onClick={() => { navigator.clipboard.writeText(item.draftPreview || ""); toast.success("Copié !"); }} className="text-xs text-muted-foreground hover:text-foreground border border-border rounded-md px-2.5 py-1 transition-colors">Copier</button>
+                                </div>
+                              </>
+                            ) : item.attachmentSummary ? (
+                              <>
+                                <p className="text-xs font-medium text-muted-foreground">Résumé de la pièce</p>
+                                <p className="text-sm text-foreground/80 leading-relaxed">{item.attachmentSummary}</p>
+                              </>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">Cliquez sur le dossier pour travailler sur cette tâche.</p>
+                            )}
+                            <a href={`/dossiers/${item.dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1">
+                              Dossier : {item.dossier} →
+                            </a>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

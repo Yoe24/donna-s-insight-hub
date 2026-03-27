@@ -33,7 +33,8 @@ import { toast } from "sonner";
 
 const navItems = [
   { title: "Briefing", subtitle: "Votre journée en un coup d'œil", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Fil d'actualité", subtitle: "Les emails analysés par Donna", url: "/fil", icon: Mail, tourId: "fil" },
+  // TODO: Réactiver le Fil d'actualité post-MVP
+  // { title: "Fil d'actualité", subtitle: "Les emails analysés par Donna", url: "/fil", icon: Mail, tourId: "fil" },
   { title: "Configurez-moi", subtitle: "Personnalisez votre assistante", url: "/configuration", icon: Settings },
 ];
 
