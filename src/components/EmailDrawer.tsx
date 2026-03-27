@@ -27,7 +27,10 @@ interface EmailDrawerProps {
 export function EmailDrawer({ email, onClose, showDossierLink = true, context = "briefing" }: EmailDrawerProps) {
   const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
+  // Pre-fill draft if already generated (from backend pipeline or mock)
+  const preExistingDraft = (email as any).brouillon || null;
   const [draftText, setDraftText] = useState<string | null>(null);
+  const [draftPreLoaded, setDraftPreLoaded] = useState(false);
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftEditable, setDraftEditable] = useState(false);
   const [dossierDocs, setDossierDocs] = useState<any[]>([]);
@@ -90,6 +93,13 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
   };
 
   const handleGenerateDraft = async () => {
+    // If a pre-existing draft from pipeline/mock exists, show it instantly
+    if (preExistingDraft && !draftPreLoaded) {
+      setDraftPreLoaded(true);
+      setDraftText(preExistingDraft);
+      return;
+    }
+
     if (isDemo()) {
       const mockDraft = (email as any).brouillon || (email as any).brouillon_mock;
       if (mockDraft) {
@@ -270,6 +280,8 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Génération en cours…</>
                 ) : draftText ? (
                   "Réponse générée ✓"
+                ) : preExistingDraft && !draftPreLoaded ? (
+                  "Brouillon prêt — Voir"
                 ) : (
                   "Générer une réponse"
                 )}

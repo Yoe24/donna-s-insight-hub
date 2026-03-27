@@ -128,16 +128,16 @@ const Dashboard = () => {
   const daysAgoTodo = (d: number) => new Date(_now - d * 86400000).toISOString();
 
   const [todoItems, setTodoItems] = useState([
-    { id: "todo-1", text: "Répondre à Jean-Pierre Martin sur les points de l'entretien préalable", dossier: "Martin · Droit du travail", dossier_id: "2", email_id: "e5", type: "reponse", done: false, date: hoursAgoTodo(2), hasDraft: true, draftPreview: "Maître,\n\nFaisant suite à votre email concernant le 2e entretien préalable de rupture conventionnelle, je vous confirme que les points suivants pourront être abordés :\n\n1. Indemnité supra-légale (proposition à 12 000 €)\n2. Clause de non-concurrence (levée demandée)\n3. Solde de tout compte et certificat de travail\n\nJe reste à votre disposition.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-2", text: "Vérifier la mise en demeure reçue de BTP Pro", dossier: "Dupont · Litige commercial", dossier_id: "1", email_id: "e3", type: "lecture", done: false, date: hoursAgoTodo(5), hasDraft: false, draftPreview: null, attachmentSummary: "Mise en demeure de BTP Pro datée du 25 mars, contestation de la non-conformité des travaux, demande de paiement de 45 000 € sous 15 jours." },
-    { id: "todo-3", text: "Relancer Claire Dubois pour les pièces manquantes", dossier: "Dubois · Litige immobilier", dossier_id: "5", email_id: "e20", type: "relance", done: false, date: hoursAgoTodo(8), hasDraft: true, draftPreview: "Madame Dubois,\n\nJe me permets de revenir vers vous concernant les documents que nous attendons pour compléter votre dossier avant l'audience du 15 avril :\n\n- PV de la dernière assemblée générale\n- Relevés de charges 2024-2025\n\nMerci de me les transmettre dès que possible.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-4", text: "Consulter le rapport d'expertise Famille Roux", dossier: "Roux · Immobilier", dossier_id: "4", email_id: "e7", type: "lecture", done: true, date: daysAgoTodo(2), hasDraft: false, draftPreview: null, attachmentSummary: "Rapport d'expertise du 20 mars concluant à des malfaçons sur la toiture et l'étanchéité. Montant estimé des réparations : 28 000 €." },
-    { id: "todo-5", text: "Répondre à Alice Bernard sur la procédure de divorce", dossier: "Bernard · Droit de la famille", dossier_id: "6", email_id: "e22", type: "reponse", done: true, date: daysAgoTodo(3), hasDraft: true, draftPreview: "Chère Madame Bernard,\n\nSuite à notre échange, je vous confirme que la requête en divorce a bien été déposée auprès du tribunal.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-6", text: "Préparer les pièces pour l'audience TGI (Dubois)", dossier: "Dubois · Litige immobilier", dossier_id: "5", email_id: "e21", type: "action", done: true, date: daysAgoTodo(5), hasDraft: false, draftPreview: null, attachmentSummary: null },
-    { id: "todo-7", text: "Analyser le contrat de travail de Jean-Pierre Martin", dossier: "Martin · Droit du travail", dossier_id: "2", email_id: "e13", type: "lecture", done: true, date: daysAgoTodo(12), hasDraft: false, draftPreview: null, attachmentSummary: "CDI signé le 15 mars 2019, clause de non-concurrence sur 12 mois, indemnité de 40% du salaire." },
-    { id: "todo-8", text: "Envoyer la mise en demeure à TechCorp", dossier: "Martin · Droit du travail", dossier_id: "2", email_id: "e6", type: "reponse", done: true, date: daysAgoTodo(17), hasDraft: true, draftPreview: "Madame, Monsieur,\n\nPar la présente, je vous mets en demeure de procéder au paiement des heures supplémentaires dues à M. Martin.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-9", text: "Répondre au courrier du notaire (Famille Roux)", dossier: "Roux · Immobilier", dossier_id: "4", email_id: "e18", type: "reponse", done: true, date: daysAgoTodo(22), hasDraft: true, draftPreview: "Maître,\n\nEn réponse à votre courrier du 1er mars concernant l'acte de vente, je vous confirme les réserves de mes clients.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-10", text: "Vérifier la conformité du bail commercial (Dupont)", dossier: "Dupont · Litige commercial", dossier_id: "1", email_id: "e1", type: "lecture", done: true, date: daysAgoTodo(26), hasDraft: false, draftPreview: null, attachmentSummary: null },
+    { id: "todo-1", text: "Répondre à Jean-Pierre Martin sur les points de l'entretien préalable", dossier: "Martin · Droit du travail", dossier_id: "2", email_id: "e5", type: "reponse", done: false, date: hoursAgoTodo(2), hasDraft: true, urgency: "echeance" as const, draftPreview: "Maître,\n\nFaisant suite à votre email concernant le 2e entretien préalable de rupture conventionnelle, je vous confirme que les points suivants pourront être abordés :\n\n1. Indemnité supra-légale (proposition à 12 000 €)\n2. Clause de non-concurrence (levée demandée)\n3. Solde de tout compte et certificat de travail\n\nJe reste à votre disposition.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-2", text: "Vérifier la mise en demeure reçue de BTP Pro", dossier: "Dupont · Litige commercial", dossier_id: "1", email_id: "e3", type: "lecture", done: false, date: hoursAgoTodo(5), hasDraft: false, urgency: "prioritaire" as const, draftPreview: null, attachmentSummary: "Mise en demeure de BTP Pro datée du 25 mars, contestation de la non-conformité des travaux, demande de paiement de 45 000 € sous 15 jours." },
+    { id: "todo-3", text: "Relancer Claire Dubois pour les pièces manquantes", dossier: "Dubois · Litige immobilier", dossier_id: "5", email_id: "e20", type: "relance", done: false, date: hoursAgoTodo(8), hasDraft: true, urgency: "echeance" as const, draftPreview: "Madame Dubois,\n\nJe me permets de revenir vers vous concernant les documents que nous attendons pour compléter votre dossier avant l'audience du 15 avril :\n\n- PV de la dernière assemblée générale\n- Relevés de charges 2024-2025\n\nMerci de me les transmettre dès que possible.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-4", text: "Consulter le rapport d'expertise Famille Roux", dossier: "Roux · Immobilier", dossier_id: "4", email_id: "e7", type: "lecture", done: true, date: daysAgoTodo(2), hasDraft: false, urgency: null, draftPreview: null, attachmentSummary: "Rapport d'expertise du 20 mars concluant à des malfaçons sur la toiture et l'étanchéité. Montant estimé des réparations : 28 000 €." },
+    { id: "todo-5", text: "Répondre à Alice Bernard sur la procédure de divorce", dossier: "Bernard · Droit de la famille", dossier_id: "6", email_id: "e22", type: "reponse", done: true, date: daysAgoTodo(3), hasDraft: true, urgency: null, draftPreview: "Chère Madame Bernard,\n\nSuite à notre échange, je vous confirme que la requête en divorce a bien été déposée auprès du tribunal.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-6", text: "Préparer les pièces pour l'audience TGI (Dubois)", dossier: "Dubois · Litige immobilier", dossier_id: "5", email_id: "e21", type: "action", done: true, date: daysAgoTodo(5), hasDraft: false, urgency: "echeance" as const, draftPreview: null, attachmentSummary: null },
+    { id: "todo-7", text: "Analyser le contrat de travail de Jean-Pierre Martin", dossier: "Martin · Droit du travail", dossier_id: "2", email_id: "e13", type: "lecture", done: true, date: daysAgoTodo(12), hasDraft: false, urgency: null, draftPreview: null, attachmentSummary: "CDI signé le 15 mars 2019, clause de non-concurrence sur 12 mois, indemnité de 40% du salaire." },
+    { id: "todo-8", text: "Envoyer la mise en demeure à TechCorp", dossier: "Martin · Droit du travail", dossier_id: "2", email_id: "e6", type: "reponse", done: true, date: daysAgoTodo(17), hasDraft: true, urgency: "prioritaire" as const, draftPreview: "Madame, Monsieur,\n\nPar la présente, je vous mets en demeure de procéder au paiement des heures supplémentaires dues à M. Martin.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-9", text: "Répondre au courrier du notaire (Famille Roux)", dossier: "Roux · Immobilier", dossier_id: "4", email_id: "e18", type: "reponse", done: true, date: daysAgoTodo(22), hasDraft: true, urgency: null, draftPreview: "Maître,\n\nEn réponse à votre courrier du 1er mars concernant l'acte de vente, je vous confirme les réserves de mes clients.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
+    { id: "todo-10", text: "Vérifier la conformité du bail commercial (Dupont)", dossier: "Dupont · Litige commercial", dossier_id: "1", email_id: "e1", type: "lecture", done: true, date: daysAgoTodo(26), hasDraft: false, urgency: null, draftPreview: null, attachmentSummary: null },
   ]);
   const [expandedCard, setExpandedCard] = useState<"emails" | "pj" | null>(null);
   const dossiersRef = useRef<HTMLDivElement>(null);
@@ -370,6 +370,20 @@ const Dashboard = () => {
     ? getEmailsForPeriod(period).filter((e) => e.dossier_id === null)
     : [];
 
+  // Narrative phrase: identify urgent/actionable emails for the period
+  const narrativePhrase = (() => {
+    if (!isDemo()) return null;
+    const periodEmails = getEmailsForPeriod(period);
+    const actionable = periodEmails.filter(
+      (e) => e.dossier_id !== null && (e.email_type === "demande" || e.email_type === "relance" || e.email_type === "convocation")
+    );
+    if (actionable.length === 0) return "Rien d'urgent ce matin. Donna a tout trié pour vous.";
+    const top = actionable.slice(0, 2);
+    const subjects = top.map((e) => `${e.objet.toLowerCase()} (${e.dossier_nom})`);
+    if (subjects.length === 1) return `Ce matin, un sujet demande votre attention : ${subjects[0]}.`;
+    return `Ce matin, ${subjects.length} sujets demandent votre attention : ${subjects[0]} et ${subjects[1]}.`;
+  })();
+
   const filteredTodos = todoItems.filter((t) => {
     const todoDate = new Date(t.date).getTime();
     const now = Date.now();
@@ -377,9 +391,19 @@ const Dashboard = () => {
     if (period === "7j") return now - todoDate < 7 * 24 * 3600000;
     return now - todoDate < 30 * 24 * 3600000;
   });
-  // Sort: undone first, then by date desc
+  // Sort: undone first, then by priority (reponse+draft > lecture > relance), then by date desc
+  const todoPriority = (t: typeof todoItems[0]) => {
+    if (t.done) return 10;
+    if (t.type === "reponse" && t.hasDraft) return 0;
+    if (t.type === "reponse") return 1;
+    if (t.type === "action") return 2;
+    if (t.type === "lecture") return 3;
+    return 4; // relance
+  };
   const sortedTodos = [...filteredTodos].sort((a, b) => {
-    if (a.done !== b.done) return a.done ? 1 : -1;
+    const pa = todoPriority(a);
+    const pb = todoPriority(b);
+    if (pa !== pb) return pa - pb;
     return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
 
@@ -437,6 +461,13 @@ const Dashboard = () => {
             </button>
           ))}
         </motion.div>
+
+        {/* Narrative phrase — first thing the lawyer reads */}
+        {narrativePhrase && (
+          <motion.div {...fadeIn} transition={{ delay: 0.04 }} className="border-l-4 border-primary bg-primary/5 rounded-lg p-4 mb-6">
+            <p className="text-base text-foreground font-medium">{narrativePhrase}</p>
+          </motion.div>
+        )}
 
         {adjustedStats && (
           <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="mb-10">
@@ -633,9 +664,17 @@ const Dashboard = () => {
                       onMouseLeave={() => setHighlightDossierId(null)}
                     >
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setTodoItems((prev) => prev.map((t) => t.id === item.id ? { ...t, done: !t.done } : t));
-                          if (!item.done) toast.success("✓ Tâche complétée");
+                          if (!item.done) {
+                            const remaining = sortedTodos.filter((t) => !t.done && t.id !== item.id).length;
+                            if (remaining === 0) {
+                              toast.success("Bravo, tout est traité ! Donna est fière de vous.");
+                            } else {
+                              toast.success(`Fait ! Plus que ${remaining} tâche${remaining > 1 ? "s" : ""} pour aujourd'hui.`);
+                            }
+                          }
                         }}
                         className={`mt-0.5 h-[18px] w-[18px] rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${item.done ? "bg-emerald-500 border-emerald-500" : "border-muted-foreground/30 hover:border-primary/50"}`}
                       >
@@ -648,7 +687,7 @@ const Dashboard = () => {
                         >
                           {item.text}
                         </button>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <span className="text-xs text-muted-foreground">{item.dossier}</span>
                           <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
                             item.type === "reponse" ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200" :
@@ -656,7 +695,18 @@ const Dashboard = () => {
                             item.type === "action" ? "bg-red-50 text-red-700 ring-1 ring-red-200" :
                             "bg-gray-50 text-gray-600 ring-1 ring-gray-200"
                           }`}>{item.type === "reponse" ? "Réponse" : item.type === "relance" ? "Relance" : item.type === "action" ? "Action" : "À lire"}</span>
+                          {item.hasDraft && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-primary/10 text-primary inline-flex items-center gap-1">
+                              <FileText className="h-3 w-3" /> Brouillon prêt
+                            </span>
+                          )}
                         </div>
+                        {!item.done && item.urgency === "echeance" && (
+                          <p className="text-[10px] text-orange-600 mt-0.5">Échéance proche</p>
+                        )}
+                        {!item.done && item.urgency === "prioritaire" && (
+                          <p className="text-[10px] text-red-600 mt-0.5">Prioritaire</p>
+                        )}
                       </div>
                       <Mail
                         className="h-4 w-4 text-muted-foreground/50 shrink-0 mt-0.5 cursor-pointer hover:text-primary transition-colors"

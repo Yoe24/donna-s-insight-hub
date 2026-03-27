@@ -224,6 +224,45 @@ const Index = () => {
           </div>
         </section>
 
+        {/* ───── SECTION — SÉCURITÉ (remonté après le hero) ───── */}
+        <section className="bg-background">
+          <div className="max-w-5xl mx-auto px-6 sm:px-10 lg:px-16 py-20 md:py-28 text-center">
+            <motion.h2
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              className="text-3xl sm:text-4xl font-serif font-bold text-foreground mb-12"
+            >
+              Conçue pour le secret professionnel
+            </motion.h2>
+
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              custom={1}
+              variants={fadeUp}
+              className="flex flex-wrap justify-center gap-8 sm:gap-12 mb-10"
+            >
+              {securityPoints.map((pt) => (
+                <div key={pt.label} className="flex items-center gap-3">
+                  <pt.icon className="h-5 w-5 text-foreground" />
+                  <span className="text-sm font-sans font-medium text-foreground">{pt.label}</span>
+                </div>
+              ))}
+            </motion.div>
+
+            <Link
+              to="/securite"
+              className="text-sm font-sans text-gray-600 hover:text-foreground transition-colors inline-flex items-center gap-1"
+            >
+              En savoir plus sur notre politique de sécurité
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </section>
+
         {/* ───── SECTION 2 — LE BRIEF DU MATIN ───── */}
         <section style={{ backgroundColor: "#F9FAFB" }}>
           <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 py-20 md:py-28">
@@ -408,45 +447,6 @@ const Index = () => {
             >
               — Témoignage d'une avocate en droit des affaires, Paris — nom partagé sur demande
             </motion.p>
-          </div>
-        </section>
-
-        {/* ───── SECTION 7 — SÉCURITÉ APERÇU ───── */}
-        <section className="bg-background">
-          <div className="max-w-5xl mx-auto px-6 sm:px-10 lg:px-16 py-20 md:py-28 text-center">
-            <motion.h2
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              className="text-3xl sm:text-4xl font-serif font-bold text-foreground mb-12"
-            >
-              Conçue pour le secret professionnel
-            </motion.h2>
-
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              custom={1}
-              variants={fadeUp}
-              className="flex flex-wrap justify-center gap-8 sm:gap-12 mb-10"
-            >
-              {securityPoints.map((pt) => (
-                <div key={pt.label} className="flex items-center gap-3">
-                  <pt.icon className="h-5 w-5 text-foreground" />
-                  <span className="text-sm font-sans font-medium text-foreground">{pt.label}</span>
-                </div>
-              ))}
-            </motion.div>
-
-            <Link
-              to="/securite"
-              className="text-sm font-sans text-gray-600 hover:text-foreground transition-colors inline-flex items-center gap-1"
-            >
-              En savoir plus sur notre politique de sécurité
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
           </div>
         </section>
 
