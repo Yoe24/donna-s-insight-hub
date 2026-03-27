@@ -34,6 +34,14 @@
 - Onboarding banner sur le Dashboard en mode démo (OnboardingBanner.tsx)
 - Skeleton loaders : délai 300-400ms en démo pour afficher les skeletons existants
 
+## Workflow simplifié — todo interactive (27 mars 2026)
+- Fil d'actualité masqué de la sidebar (commenté, route /fil conservée)
+- To-do list: 10 tâches mockées avec dates, filtrées par période 24h/7j/30j
+- Clic texte tâche → expand brouillon Donna ou résumé PJ, bouton Copier
+- Badge "Brouillon prêt" sur tâches avec draft
+- Stats "X emails" → scroll vers dossiers, "Y PJ" → panneau PJ expandable
+- Tour guidé 3 étapes (briefing, dossiers, conclusion "5min au lieu de 2h30")
+
 ## Layout V3 — deux colonnes (27 mars 2026)
 - Dashboard max-w-5xl : dossiers actifs (gauche) + todo list (droite) en grid 2 colonnes
 - DossierDetail max-w-5xl : Échanges (3/5) + Documents (2/5) côte à côte, Échéances pleine largeur dessous
