@@ -34,6 +34,14 @@
 - Onboarding banner sur le Dashboard en mode démo (OnboardingBanner.tsx)
 - Skeleton loaders : délai 300-400ms en démo pour afficher les skeletons existants
 
+## Corrections finales V3 (27 mars 2026)
+- Drawer email élargi: sm:w-[65%] sm:max-w-2xl (avant sm:max-w-md)
+- Streaming brouillon: effet typing progressif avec curseur ▌ clignotant
+- Sidebar: barre verticale border-l-[3px] border-foreground sur page active
+- Chat Donna: couleur bg-foreground (noir), réponses mockées en démo
+- Briefing: 4 cartes KPI (emails, dossiers, PJ, minutes gagnées) en grid
+- Configuration: "Paramètres avancés" fusionné dans "Personnaliser Donna", progression X/3
+
 ## Todo simplifiée + inbox style (27 mars 2026)
 - Todo: expand panels supprimés, simple checklist avec checkbox circulaire
 - Clic texte tâche → navigue vers le dossier (plus d'expand)
