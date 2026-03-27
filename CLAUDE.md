@@ -34,6 +34,15 @@
 - Onboarding banner sur le Dashboard en mode démo (OnboardingBanner.tsx)
 - Skeleton loaders : délai 300-400ms en démo pour afficher les skeletons existants
 
+## Refonte premium — design final (27 mars 2026)
+- Cards: border-border/60 bg-white shadow ultra-légère, p-6 partout
+- Section titles: text-[11px] tracking-[0.15em] uppercase (harmonisé partout)
+- Badges: bg-*-50 + ring-1 ring-*-200 (style premium avec ring fin coloré)
+- Greeting: 3 lignes séparées (nom 2xl, date sm, stats xs)
+- Stats: "filtrés par Donna", "extraites et résumées"
+- Dividers: divide-border/40 (ultra fin)
+- Tour guidé: overlay bg-black/60, ring-white/20
+
 ## Workflow simplifié — todo interactive (27 mars 2026)
 - Fil d'actualité masqué de la sidebar (commenté, route /fil conservée)
 - To-do list: 10 tâches mockées avec dates, filtrées par période 24h/7j/30j
