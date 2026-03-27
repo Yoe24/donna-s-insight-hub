@@ -160,7 +160,7 @@ const FilActualite = () => {
   const [error, setError] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const rawTab = searchParams.get("tab");
+  const rawTab = searchParams.get("tab") || searchParams.get("filter");
   const activeTab: TabId = rawTab === "emails" || rawTab === "pj" || rawTab === "relances" ? rawTab : "tous";
 
   const setActiveTab = (tab: TabId) => {
@@ -352,6 +352,13 @@ const FilActualite = () => {
             </button>
           ))}
         </div>
+
+        {(searchParams.get("filter") || searchParams.get("tab")) && (
+          <div className="bg-primary/5 text-sm text-foreground rounded-xl px-4 py-2 mb-4 flex items-center justify-between">
+            <span>Filtre actif : {activeTab === "emails" ? "Clients" : activeTab === "pj" ? "Pièces jointes" : activeTab === "relances" ? "Autre" : "Tous"}</span>
+            <button onClick={() => { setSearchParams({}); }} className="text-xs text-primary underline">Voir tout</button>
+          </div>
+        )}
 
         {(activeTab === "tous" || activeTab === "emails") && (
           <>

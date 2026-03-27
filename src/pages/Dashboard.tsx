@@ -78,7 +78,6 @@ const Dashboard = () => {
   const [panelEmails, setPanelEmails] = useState<DossierEmail[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [showTour, setShowTour] = useState(false);
-  const [highlightMode, setHighlightMode] = useState<null | "emails" | "pj">(null);
   // Cache of emails per dossier for inline display
   const [dossierEmailsMap, setDossierEmailsMap] = useState<Record<string, DossierLineEmail[]>>({});
 
@@ -290,7 +289,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="max-w-3xl mx-auto space-y-6 pt-8">
+        <div className="max-w-5xl mx-auto space-y-6 pt-8">
           <Skeleton className="h-7 w-72" />
           <Skeleton className="h-20 rounded-xl mt-6" />
           <Skeleton className="h-4 w-32 mt-8" />
@@ -303,7 +302,7 @@ const Dashboard = () => {
   if (notFound || !briefing) {
     return (
       <DashboardLayout>
-        <div className="max-w-3xl mx-auto text-center py-24">
+        <div className="max-w-5xl mx-auto text-center py-24">
           <Loader2 className={`h-7 w-7 mx-auto mb-4 text-muted-foreground ${generating ? "animate-spin" : ""}`} />
           <p className="text-lg font-serif text-foreground mb-1">Donna prépare votre briefing…</p>
           <p className="text-sm text-muted-foreground mb-6">Votre résumé de situation sera prêt dans quelques instants.</p>
@@ -318,7 +317,7 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto pb-24" data-tour="briefing">
+      <div className="max-w-5xl mx-auto pb-24" data-tour="briefing">
         <motion.div {...fadeIn} className="pt-8 pb-4">
           <p className="text-lg font-serif text-foreground">
             {greeting}{nomAvocat ? ` ${nomAvocat}` : ""} — <span className="capitalize">{dateStr}</span>
@@ -352,90 +351,90 @@ const Dashboard = () => {
             <div className="text-sm text-foreground/80 leading-relaxed space-y-1">
               <p>
                 Vous avez reçu{" "}
-                <button onClick={() => setHighlightMode(highlightMode === "emails" ? null : "emails")} className={`underline underline-offset-2 hover:text-foreground transition-colors ${highlightMode === "emails" ? "text-primary font-semibold" : ""}`}>
+                <a href="/fil?tab=emails" className="underline underline-offset-2 hover:text-foreground transition-colors">
                   <strong>{adjustedStats.total} emails</strong>
-                </button>{" "}
+                </a>{" "}
                 {periodLabel}.
               </p>
               <p>
                 <strong>{adjustedStats.dossier_emails}</strong> liés à vos dossiers · <strong>{adjustedStats.general_emails}</strong> autres emails (newsletters, notifications…)
               </p>
               <p>
-                <button onClick={() => setHighlightMode(highlightMode === "pj" ? null : "pj")} className={`underline underline-offset-2 hover:text-foreground transition-colors ${highlightMode === "pj" ? "text-primary font-semibold" : ""}`}>
+                <a href="/fil?tab=pj" className="underline underline-offset-2 hover:text-foreground transition-colors">
                   <strong>{adjustedStats.attachments_count} {adjustedStats.attachments_count === 1 ? "pièce jointe" : "pièces jointes"}</strong>
-                </button>{" "}
+                </a>{" "}
                 {adjustedStats.attachments_count === 1 ? "extraite" : "extraites"}
               </p>
-              {highlightMode && (
-                <p className="text-xs text-primary mt-1">
-                  {highlightMode === "emails" ? "Emails" : "Pièces jointes"} mis en surbrillance · <button onClick={() => setHighlightMode(null)} className="underline">Réinitialiser</button>
-                </p>
-              )}
             </div>
           </motion.div>
         )}
 
-        {isDemo() && (
-          <motion.section {...fadeIn} transition={{ delay: 0.08 }} className="mb-8">
-            <div className="flex items-baseline justify-between mb-3">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">À faire aujourd'hui</h2>
-              <span className="text-xs text-muted-foreground">{todoItems.filter((t) => !t.done).length} tâches restantes</span>
-            </div>
-            <div className="rounded-2xl border border-border bg-card shadow-sm divide-y divide-border">
-              {todoItems.map((item) => (
-                <div key={item.id} className={`flex items-start gap-3 px-5 py-3.5 transition-all duration-200 ${item.done ? "opacity-40" : ""}`}>
-                  <button
-                    onClick={() => toggleTodo(item.id)}
-                    className={`mt-0.5 h-4.5 w-4.5 rounded border flex items-center justify-center shrink-0 transition-colors ${item.done ? "bg-primary border-primary" : "border-muted-foreground/30 hover:border-primary/50"}`}
-                  >
-                    {item.done && <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm text-foreground leading-relaxed ${item.done ? "line-through" : ""}`}>{item.text}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <a href={`/dossiers/${item.dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">{item.dossier}</a>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-                        item.type === "reponse" ? "bg-orange-100 text-orange-700" :
-                        item.type === "relance" ? "bg-amber-100 text-amber-700" :
-                        "bg-muted text-muted-foreground"
-                      }`}>{item.type === "reponse" ? "Réponse" : item.type === "relance" ? "Relance" : "À lire"}</span>
-                    </div>
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left — Dossiers actifs */}
+          <div>
+            {activeDossiers.length > 0 && (
+              <motion.section {...fadeIn} transition={{ delay: 0.1 }}>
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                  Dossiers actifs
+                </h2>
+                <div className="rounded-2xl border border-border bg-card shadow-sm p-5 space-y-1">
+                  {activeDossiers.map((d) => (
+                    <DossierLine
+                      key={d.dossier_id}
+                      dossier={d}
+                      dossierEmails={dossierEmailsMap[d.dossier_id] || []}
+                      onClick={() => handleDossierClick(d)}
+                      onEmailClick={(email) => handleEmailClick(d, email)}
+                      onViewFull={() => navigate(`/dossiers/${d.dossier_id}`)}
+                    />
+                  ))}
                 </div>
-              ))}
+              </motion.section>
+            )}
+            {activeDossiers.length === 0 && (
+              <div className="py-10 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Aucune activité dans les {PERIOD_LABELS[period].startsWith("24") ? "dernières " : "derniers "}{PERIOD_LABELS[period]}.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Right — Todo list */}
+          {isDemo() && (
+            <div>
+              <motion.section {...fadeIn} transition={{ delay: 0.12 }}>
+                <div className="flex items-baseline justify-between mb-3">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">À faire aujourd'hui</h2>
+                  <span className="text-xs text-muted-foreground">{todoItems.filter((t) => !t.done).length} restantes</span>
+                </div>
+                <div className="rounded-2xl border border-border bg-card shadow-sm divide-y divide-border">
+                  {todoItems.map((item) => (
+                    <div key={item.id} className={`flex items-start gap-3 px-5 py-3.5 transition-all duration-200 ${item.done ? "opacity-40" : ""}`}>
+                      <button
+                        onClick={() => toggleTodo(item.id)}
+                        className={`mt-0.5 h-4.5 w-4.5 rounded border flex items-center justify-center shrink-0 transition-colors ${item.done ? "bg-primary border-primary" : "border-muted-foreground/30 hover:border-primary/50"}`}
+                      >
+                        {item.done && <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm text-foreground leading-relaxed ${item.done ? "line-through" : ""}`}>{item.text}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <a href={`/dossiers/${item.dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">{item.dossier}</a>
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                            item.type === "reponse" ? "bg-orange-100 text-orange-700" :
+                            item.type === "relance" ? "bg-amber-100 text-amber-700" :
+                            "bg-muted text-muted-foreground"
+                          }`}>{item.type === "reponse" ? "Réponse" : item.type === "relance" ? "Relance" : "À lire"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.section>
             </div>
-          </motion.section>
-        )}
-
-        {activeDossiers.length > 0 && (
-          <motion.section {...fadeIn} transition={{ delay: 0.1 }} className="mb-10">
-            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              Dossiers actifs
-            </h2>
-            <div className={`space-y-1 transition-all duration-300 ${highlightMode === "emails" ? "bg-primary/5 rounded-xl border-l-2 border-primary/30 pl-2" : highlightMode === "pj" ? "opacity-60" : ""}`}>
-              {activeDossiers.map((d) => (
-                <DossierLine
-                  key={d.dossier_id}
-                  dossier={d}
-                  dossierEmails={dossierEmailsMap[d.dossier_id] || []}
-                  onClick={() => handleDossierClick(d)}
-                  onEmailClick={(email) => handleEmailClick(d, email)}
-                  onViewFull={() => navigate(`/dossiers/${d.dossier_id}`)}
-                />
-              ))}
-            </div>
-          </motion.section>
-        )}
-
-        {activeDossiers.length === 0 && (
-          <motion.div {...fadeIn} transition={{ delay: 0.1 }} className="mb-10 py-10 text-center">
-            <p className="text-sm text-muted-foreground">
-              Aucune activité dans les {PERIOD_LABELS[period].startsWith("24") ? "dernières " : "derniers "}{PERIOD_LABELS[period]}.
-            </p>
-          </motion.div>
-        )}
-
-        {/* TODO: Réactiver la section EN ATTENTE quand le workflow de priorisation sera défini */}
+          )}
+        </div>
 
       </div>
 
