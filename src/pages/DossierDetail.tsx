@@ -10,7 +10,7 @@ import { useParams, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, File, Mail, Image, RefreshCw } from "lucide-react";
+import { ArrowLeft, FileText, File, Mail, Image, RefreshCw, MoreHorizontal, Pencil, Tag, Archive, ArrowRightLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { Email } from "@/hooks/useEmails";
@@ -22,6 +22,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ApiDossierEmail {
   id: string;
@@ -173,11 +182,16 @@ const DossierDetailPage = () => {
   const [error, setError] = useState(false);
   const [resumeExpanded, setResumeExpanded] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<DossierDocument | null>(null);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [showDomaineDialog, setShowDomaineDialog] = useState(false);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
 
   const fetchDossier = useCallback(async () => {
     if (!id) return;
 
     if (isDemo()) {
+      await new Promise((r) => setTimeout(r, 350));
       const mockDossier = mockBriefing.content.dossiers.find((d) => d.dossier_id === id);
       if (!mockDossier) { setError(true); setLoading(false); return; }
 
@@ -318,9 +332,33 @@ const DossierDetailPage = () => {
                 ) : null}
               </div>
             </div>
-            <div className="text-right text-xs text-muted-foreground space-y-0.5 shrink-0">
-              {lastExchangeDate !== "—" && <p>Dernier échange : {lastExchangeDate}</p>}
-              <p>{sortedEmails.length} emails · {sortedDocs.length} documents</p>
+            <div className="flex items-start gap-2 shrink-0">
+              <div className="text-right text-xs text-muted-foreground space-y-0.5">
+                {lastExchangeDate !== "—" && <p>Dernier échange : {lastExchangeDate}</p>}
+                <p>{sortedEmails.length} emails · {sortedDocs.length} documents</p>
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-muted transition-colors">
+                    <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => { setRenameValue(dossier.name); setShowRenameDialog(true); }}>
+                    <Pencil className="h-3.5 w-3.5 mr-2" /> Renommer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowDomaineDialog(true)}>
+                    <Tag className="h-3.5 w-3.5 mr-2" /> Changer le domaine
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toast.info("Fusion disponible après connexion Gmail")}>
+                    <ArrowRightLeft className="h-3.5 w-3.5 mr-2" /> Fusionner avec…
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setShowArchiveDialog(true)}>
+                    <Archive className="h-3.5 w-3.5 mr-2" /> Archiver
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </motion.div>
@@ -440,6 +478,63 @@ const DossierDetailPage = () => {
           </p>
         </DialogContent>
       </Dialog>
+
+      {/* Rename dialog */}
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Renommer le dossier</DialogTitle>
+          </DialogHeader>
+          <Input value={renameValue} onChange={(e) => setRenameValue(e.target.value)} />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setShowRenameDialog(false)}>Annuler</Button>
+            <Button size="sm" onClick={() => {
+              if (dossier && renameValue.trim()) {
+                setDossier({ ...dossier, name: renameValue.trim() });
+                toast.success("Dossier renommé");
+              }
+              setShowRenameDialog(false);
+            }}>Renommer</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change domain dialog */}
+      <Dialog open={showDomaineDialog} onOpenChange={setShowDomaineDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Changer le domaine</DialogTitle>
+          </DialogHeader>
+          <Select onValueChange={(val) => {
+            if (dossier) setDossier({ ...dossier, domain: val });
+            toast.success("Domaine mis à jour");
+            setShowDomaineDialog(false);
+          }}>
+            <SelectTrigger><SelectValue placeholder={dossier?.domain || "Choisir un domaine"} /></SelectTrigger>
+            <SelectContent>
+              {["Droit du travail", "Droit de la famille", "Droit immobilier", "Droit commercial", "Droit pénal", "Autre"].map((d) => (
+                <SelectItem key={d} value={d}>{d}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </DialogContent>
+      </Dialog>
+
+      {/* Archive confirmation */}
+      <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archiver ce dossier ?</AlertDialogTitle>
+            <AlertDialogDescription>Le dossier sera déplacé dans les archives. Vous pourrez le restaurer plus tard.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { toast.success("Dossier archivé"); setShowArchiveDialog(false); }}>
+              Archiver
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

@@ -22,6 +22,7 @@ import { mockBriefing, mockDossierEmails, mockConfig, getEmailsForPeriod, mockAl
 import { isDemo } from "@/lib/auth";
 import { EmailDrawer } from "@/components/EmailDrawer";
 import { AnimatePresence } from "framer-motion";
+import { OnboardingBanner } from "@/components/OnboardingBanner";
 import type { Email } from "@/hooks/useEmails";
 
 const fadeIn = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } };
@@ -92,6 +93,7 @@ const Dashboard = () => {
 
   const fetchBriefing = useCallback(async () => {
     if (isDemo()) {
+      await new Promise((r) => setTimeout(r, 400));
       setBriefing(mockBriefing);
       setNotFound(false);
       setLoading(false);
@@ -298,7 +300,8 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto pb-16">
-        <motion.div {...fadeIn} className="pt-8 pb-4">
+        {isDemo() && <div className="pt-8"><OnboardingBanner /></div>}
+        <motion.div {...fadeIn} className={isDemo() ? "pb-4" : "pt-8 pb-4"}>
           <p className="text-lg font-serif text-foreground">
             {greeting}{nomAvocat ? ` ${nomAvocat}` : ""} — <span className="capitalize">{dateStr}</span>
           </p>

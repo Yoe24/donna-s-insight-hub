@@ -193,6 +193,7 @@ const FilActualite = () => {
     try {
       let normalized: FlatEmail[];
       if (isDemo()) {
+        await new Promise((r) => setTimeout(r, 300));
         // Convert mockAllEmails to FlatEmail shape
         normalized = mockAllEmails.map((item) => ({
           id: item.id,
