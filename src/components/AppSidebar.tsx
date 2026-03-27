@@ -180,7 +180,7 @@ export function AppSidebar() {
                         to={item.url}
                         end
                         className="hover:bg-sidebar-accent/50 rounded-lg px-3 py-2 text-sm font-sans text-sidebar-foreground transition-colors duration-200"
-                        activeClassName="bg-sidebar-accent/80 text-sidebar-accent-foreground font-medium border-l-[3px] border-foreground"
+                        activeClassName="bg-primary/10 text-sidebar-accent-foreground font-medium border-l-2 border-primary"
                       >
                         <item.icon className="mr-3 h-4 w-4" />
                         {!collapsed && (

@@ -10,7 +10,9 @@ import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, RefreshCw, FileText } from "lucide-react";
+import { Loader2, RefreshCw, FileText, Mail, Folder } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { EmailListInline } from "@/components/EmailListInline";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -118,7 +120,7 @@ const Dashboard = () => {
     { id: "todo-9", text: "Répondre au courrier du notaire (Famille Roux)", dossier: "Roux · Immobilier", dossier_id: "4", type: "reponse", done: true, date: daysAgoTodo(22), hasDraft: true, draftPreview: "Maître,\n\nEn réponse à votre courrier du 1er mars concernant l'acte de vente, je vous confirme les réserves de mes clients.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
     { id: "todo-10", text: "Vérifier la conformité du bail commercial (Dupont)", dossier: "Dupont · Litige commercial", dossier_id: "1", type: "lecture", done: true, date: daysAgoTodo(26), hasDraft: false, draftPreview: null, attachmentSummary: null },
   ]);
-  const [showPjList, setShowPjList] = useState(false);
+  const [expandedCard, setExpandedCard] = useState<"emails" | "pj" | null>(null);
   const dossiersRef = useRef<HTMLDivElement>(null);
   const [highlightDossierId, setHighlightDossierId] = useState<string | null>(null);
 
@@ -315,6 +317,11 @@ const Dashboard = () => {
 
   const periodLabel = period === "24h" ? "dans les dernières 24 heures" : period === "7j" ? "ces 7 derniers jours" : "ces 30 derniers jours";
 
+  // Emails filtered by Donna (newsletters, spam, notifications — not linked to a dossier)
+  const filteredEmails = isDemo()
+    ? getEmailsForPeriod(period).filter((e) => e.dossier_id === null)
+    : [];
+
   const filteredTodos = todoItems.filter((t) => {
     const todoDate = new Date(t.date).getTime();
     const now = Date.now();
@@ -367,7 +374,7 @@ const Dashboard = () => {
           <p className="text-sm text-muted-foreground mt-1 capitalize">{dateStr}</p>
           {adjustedStats && (
             <p className="text-xs text-muted-foreground mt-1">
-              {adjustedStats.total} emails traités · {adjustedStats.temps_gagne_minutes}min gagnées
+              Votre boîte mail alexandra@cabinet-fernandez.fr a reçu {adjustedStats.total} emails · {adjustedStats.temps_gagne_minutes}min gagnées
             </p>
           )}
         </motion.div>
@@ -392,8 +399,8 @@ const Dashboard = () => {
           <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="mb-10">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <button
-                onClick={() => dossiersRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                className="rounded-2xl border border-border/60 bg-white p-4 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:bg-muted/30 transition-colors cursor-pointer"
+                onClick={() => setExpandedCard(expandedCard === "emails" ? null : "emails")}
+                className={`rounded-2xl border p-4 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:bg-muted/30 hover:shadow-md transition-all duration-200 cursor-pointer ${expandedCard === "emails" ? "border-primary/40 bg-primary/5" : "border-border/60 bg-white"}`}
               >
                 <p className="text-2xl font-semibold text-foreground">{adjustedStats.total}</p>
                 <p className="text-[11px] text-muted-foreground mt-1">emails reçus</p>
@@ -403,8 +410,8 @@ const Dashboard = () => {
                 <p className="text-[11px] text-muted-foreground mt-1">dossiers actifs</p>
               </div>
               <button
-                onClick={() => setShowPjList(!showPjList)}
-                className="rounded-2xl border border-border/60 bg-white p-4 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:bg-muted/30 transition-colors cursor-pointer"
+                onClick={() => setExpandedCard(expandedCard === "pj" ? null : "pj")}
+                className={`rounded-2xl border p-4 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:bg-muted/30 hover:shadow-md transition-all duration-200 cursor-pointer ${expandedCard === "pj" ? "border-primary/40 bg-primary/5" : "border-border/60 bg-white"}`}
               >
                 <p className="text-2xl font-semibold text-foreground">{adjustedStats.attachments_count}</p>
                 <p className="text-[11px] text-muted-foreground mt-1">pièces jointes</p>
@@ -417,24 +424,42 @@ const Dashboard = () => {
             <p className="text-xs text-muted-foreground mt-3">
               {adjustedStats.dossier_emails} liés à vos dossiers · {adjustedStats.general_emails} filtrés par Donna · {adjustedStats.attachments_count} {adjustedStats.attachments_count === 1 ? "pièce jointe extraite et résumée" : "pièces jointes extraites et résumées"}
             </p>
-          </motion.div>
-        )}
 
-        {showPjList && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6 mb-6 overflow-hidden">
-            <h3 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Pièces jointes reçues</h3>
-            <div className="space-y-3">
-              {getEmailsForPeriod(period).filter(e => e.pieces_jointes.length > 0).flatMap(e => e.pieces_jointes.map((pj, i) => (
-                <div key={`${e.id}-${i}`} className="flex items-start gap-2">
-                  <FileText className="h-4 w-4 text-red-500/70 shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <p className="text-sm text-foreground">{pj.nom}</p>
-                    <p className="text-xs text-muted-foreground truncate">{pj.resume_ia}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{e.dossier_nom ? `Dossier : ${e.dossier_nom}` : ""}</p>
-                  </div>
-                </div>
-              )))}
-            </div>
+            {/* Inline expandable list — always renders BELOW the 4 cards */}
+            <AnimatePresence>
+              {expandedCard && isDemo() && (
+                <EmailListInline
+                  emails={getEmailsForPeriod(period)}
+                  mode={expandedCard}
+                  onEmailClick={(mockEmail) => {
+                    setExpandedCard(null);
+                    setSelectedEmail({
+                      id: mockEmail.id,
+                      expediteur: `${mockEmail.expediteur} <${mockEmail.email}>`,
+                      objet: mockEmail.objet,
+                      resume: mockEmail.resume,
+                      brouillon: mockEmail.brouillon_mock,
+                      pipeline_step: mockEmail.dossier_id ? "pret_a_reviser" : "ignore",
+                      contexte_choisi: "",
+                      statut: mockEmail.dossier_id ? "traite" : "ignore",
+                      created_at: mockEmail.date,
+                      updated_at: mockEmail.date,
+                      contenu: mockEmail.corps_original,
+                      dossier_id: mockEmail.dossier_id,
+                      dossier_name: mockEmail.dossier_nom ? `${mockEmail.dossier_nom} - ${mockEmail.dossier_domaine}` : null,
+                      from_email: mockEmail.email,
+                      email_type: mockEmail.email_type,
+                      attachments: mockEmail.pieces_jointes.map((pj, i) => ({
+                        id: `${mockEmail.id}-att-${i}`,
+                        filename: pj.nom,
+                        type: pj.type_mime.includes("pdf") ? "pdf" : pj.type_mime.includes("image") ? "image" : "other",
+                        size: pj.taille,
+                      })),
+                    } as any);
+                  }}
+                />
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
 
@@ -452,7 +477,7 @@ const Dashboard = () => {
                       key={d.dossier_id}
                       dossier={d}
                       dossierEmails={dossierEmailsMap[d.dossier_id] || []}
-                      onClick={() => handleDossierClick(d)}
+                      onClick={() => navigate(`/dossiers/${d.dossier_id}`)}
                       onEmailClick={(email) => handleEmailClick(d, email)}
                       onViewFull={() => navigate(`/dossiers/${d.dossier_id}`)}
                       highlighted={highlightDossierId === d.dossier_id}
@@ -467,6 +492,68 @@ const Dashboard = () => {
                   Aucune activité dans les {PERIOD_LABELS[period].startsWith("24") ? "dernières " : "derniers "}{PERIOD_LABELS[period]}.
                 </p>
               </div>
+            )}
+
+            {/* Autres — emails filtrés par Donna */}
+            {filteredEmails.length > 0 && (
+              <motion.section {...fadeIn} transition={{ delay: 0.15 }} className="mt-8">
+                <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">
+                  Autres ({filteredEmails.length})
+                </h2>
+                <div className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] divide-y divide-border/20">
+                  {filteredEmails.map((email) => {
+                    const filterReason = email.category === "newsletter" ? "Newsletter" : email.category === "spam" ? "Publicité" : "Notification système";
+                    const shortResume = email.resume.length > 90 ? email.resume.slice(0, 87) + "…" : email.resume;
+                    return (
+                      <button
+                        key={email.id}
+                        onClick={() => {
+                          setSelectedEmail({
+                            id: email.id,
+                            expediteur: `${email.expediteur} <${email.email}>`,
+                            objet: email.objet,
+                            resume: email.resume,
+                            brouillon: email.brouillon_mock,
+                            pipeline_step: "ignore",
+                            contexte_choisi: "",
+                            statut: "ignore",
+                            created_at: email.date,
+                            updated_at: email.date,
+                            contenu: email.corps_original,
+                            email_type: email.email_type,
+                            from_email: email.from_email,
+                          } as any);
+                        }}
+                        className="w-full text-left px-5 py-3 hover:bg-muted/30 transition-colors duration-200 cursor-pointer"
+                      >
+                        <div className="flex items-baseline justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <span className="text-sm font-medium text-foreground truncate">{email.expediteur}</span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <TooltipProvider delayDuration={200}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium bg-gray-50 text-gray-500 ring-1 ring-gray-200 cursor-default">
+                                    Filtré par Donna
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="left">
+                                  <p className="text-xs">{filterReason} — pas lié à un dossier client</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <span className="text-xs text-muted-foreground">{formatMailDate(email.date)}</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-foreground mt-0.5 truncate">{email.objet}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">{shortResume}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.section>
             )}
           </div>
 
@@ -572,19 +659,20 @@ function DossierLine({
 
   return (
     <div className={`transition-colors duration-300 rounded-xl ${highlighted ? "bg-primary/5" : ""}`}>
-      {/* Dossier header */}
+      {/* Dossier header — grey background + colored left border + folder icon */}
       <button
         onClick={onClick}
-        className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-muted/30 rounded-xl transition-colors group"
+        className="w-full flex items-center justify-between px-4 py-2.5 text-left bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group border-l-[3px] border-primary/60"
       >
-        <span className="text-sm text-foreground">
+        <span className="text-sm text-foreground flex items-center gap-2">
+          <Folder className="h-4 w-4 text-primary/70 shrink-0" />
           <span className="font-semibold">{getDossierName(d)}</span>
-          <span className="text-muted-foreground"> · {getDossierDomain(d)}</span>
+          <span className="text-muted-foreground">· {getDossierDomain(d)}</span>
         </span>
         <span className="text-xs text-muted-foreground shrink-0">{dossierEmails.length} email{dossierEmails.length > 1 ? 's' : ''}</span>
       </button>
 
-      {/* Emails — inbox style */}
+      {/* Emails — indented with mail icon */}
       {displayEmails.length > 0 && (
         <div className="border-t border-border/20">
           {displayEmails.map((email, idx) => {
@@ -595,19 +683,24 @@ function DossierLine({
               <button
                 key={email.id}
                 onClick={() => onEmailClick(email)}
-                className={`w-full text-left px-5 py-3 hover:bg-muted/30 transition-colors duration-200 cursor-pointer ${idx < displayEmails.length - 1 ? "border-b border-border/20" : ""}`}
+                className={`w-full text-left pl-6 pr-5 py-3 hover:bg-muted/30 transition-colors duration-200 cursor-pointer ${idx < displayEmails.length - 1 ? "border-b border-border/20" : ""}`}
               >
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-medium text-foreground truncate">{name}</span>
-                  <span className="text-xs text-muted-foreground shrink-0">{formatMailDate(email.created_at)}</span>
+                <div className="flex items-start gap-2.5">
+                  <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-1" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-sm font-medium text-foreground truncate">{name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{formatMailDate(email.created_at)}</span>
+                    </div>
+                    <p className="text-sm text-foreground mt-0.5 truncate">{email.objet}</p>
+                    {shortResume && <p className="text-xs text-muted-foreground mt-0.5 truncate">{shortResume}</p>}
+                  </div>
                 </div>
-                <p className="text-sm text-foreground mt-0.5 truncate">{email.objet}</p>
-                {shortResume && <p className="text-xs text-muted-foreground mt-0.5 truncate">{shortResume}</p>}
               </button>
             );
           })}
           {extraCount > 0 && (
-            <button onClick={onViewFull} className="w-full text-left px-5 py-2 text-xs text-primary hover:underline">
+            <button onClick={onViewFull} className="w-full text-left pl-6 pr-5 py-2 text-xs text-primary hover:underline">
               et {extraCount} autre{extraCount > 1 ? "s" : ""} → Voir le dossier
             </button>
           )}

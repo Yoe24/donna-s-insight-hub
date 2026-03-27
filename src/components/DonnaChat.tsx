@@ -11,6 +11,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { apiPost } from "@/lib/api";
 import { isDemo } from "@/lib/auth";
+import { mockAllEmails, getEmailsForPeriod } from "@/lib/mock-briefing";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -35,14 +36,68 @@ const MAX_MESSAGES = 50;
 const MAX_HISTORY = 20;
 
 function getMockChatResponse(question: string): string {
-  const q = question.toLowerCase();
-  if (q.includes("martin") || q.includes("dossier"))
-    return "Le dossier Jean-Pierre Martin concerne une rupture conventionnelle avec TechCorp SA. M. Martin a 7 ans d'ancienneté. L'indemnité légale proposée (8 400 €) est jugée insuffisante. Le 2e entretien préalable est prévu dans quelques jours.";
-  if (q.includes("urgent") || q.includes("aujourd'hui") || q.includes("faire"))
-    return "Vous avez 3 actions à traiter aujourd'hui :\n\n1. **Répondre à Jean-Pierre Martin** sur les points de l'entretien préalable\n2. **Vérifier la mise en demeure** de BTP Pro (dossier Dupont)\n3. **Relancer Claire Dubois** pour les pièces manquantes";
-  if (q.includes("brouillon") || q.includes("réponse") || q.includes("génér"))
-    return "Je peux générer un brouillon de réponse pour n'importe quel email. Cliquez sur un email dans votre briefing, puis sur « Générer une réponse ». Je rédigerai dans votre style avec votre signature.";
-  return "Je suis Donna, votre assistante juridique. En mode démo, je peux répondre à quelques questions. Essayez : « Quelles sont mes urgences aujourd'hui ? » ou « Où en est le dossier Martin ? »";
+  const q = question.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  // --- 1. Dossier-specific questions ---
+  if (q.includes("dupont") || q.includes("btp")) {
+    const emails = mockAllEmails.filter((e) => e.dossier_id === "1");
+    const recent = emails.slice(0, 3);
+    return `**Dossier Marie Dupont — Litige commercial**\n\nMme Dupont est en litige avec BTP Pro pour des travaux non conformes. Une mise en demeure a été envoyée le 2 mars.\n\n**Derniers emails (${emails.length} au total) :**\n${recent.map((e) => `- **${e.expediteur}** : ${e.objet}`).join("\n")}\n\n**Prochaine étape :** Si BTP Pro ne répond pas avant l'expiration du délai, engager une procédure judiciaire devant le Tribunal de commerce.`;
+  }
+
+  if (q.includes("martin") || q.includes("techcorp") || q.includes("rupture")) {
+    const emails = mockAllEmails.filter((e) => e.dossier_id === "2");
+    const recent = emails.slice(0, 3);
+    return `**Dossier Jean-Pierre Martin — Droit du travail**\n\nM. Martin (7 ans d'ancienneté chez TechCorp SA) négocie une rupture conventionnelle. L'indemnité légale proposée (8 400 €) est jugée insuffisante.\n\n**Derniers emails (${emails.length} au total) :**\n${recent.map((e) => `- **${e.expediteur}** : ${e.objet}`).join("\n")}\n\n**Prochaines étapes :**\n- 2e entretien préalable dans quelques jours\n- Négocier l'indemnité supra-légale (objectif : 3 mois de salaire brut)\n- Demander la levée de la clause de non-concurrence`;
+  }
+
+  if (q.includes("roux") || q.includes("succession") || q.includes("immobilier")) {
+    const emails = mockAllEmails.filter((e) => e.dossier_id === "4");
+    return `**Dossier Famille Roux — Immobilier**\n\nExpertise judiciaire en cours sur un bien au 45 avenue des Lilas. L'expert Philippe Renard a révélé un affaissement de 4 cm des fondations.\n\n**${emails.length} emails au dossier.** Chiffrage réparations révisé à 92 500 € HT.\n\n**Prochaine étape :** Attendre le rapport définitif et préparer les conclusions.`;
+  }
+
+  if (q.includes("dubois") || q.includes("copropriete")) {
+    const emails = mockAllEmails.filter((e) => e.dossier_id === "5");
+    return `**Dossier Claire Dubois — Litige immobilier**\n\nLitige de copropriété. ${emails.length} emails au dossier.\n\n**Action en attente :** Relancer Mme Dubois pour les pièces manquantes (PV d'AG et relevés de charges 2024-2025) avant l'audience.`;
+  }
+
+  if (q.includes("bernard") || q.includes("divorce")) {
+    const emails = mockAllEmails.filter((e) => e.dossier_id === "6");
+    return `**Dossier Alice Bernard — Droit de la famille**\n\nProcédure de divorce en cours. La requête a été déposée auprès du tribunal. ${emails.length} emails au dossier.\n\n**Prochaine étape :** Attendre la convocation à l'audience de conciliation.`;
+  }
+
+  // Generic "dossier" question
+  if (q.includes("dossier")) {
+    return "J'ai 6 dossiers actifs en ce moment :\n\n1. **Marie Dupont** — Litige commercial (BTP Pro)\n2. **Jean-Pierre Martin** — Droit du travail (TechCorp)\n3. **Famille Roux** — Immobilier (expertise)\n4. **Claire Dubois** — Litige copropriété\n5. **Alice Bernard** — Droit de la famille\n6. **Notaire Me Blanchard** — Succession\n\nDemandez-moi des détails sur un dossier en particulier !";
+  }
+
+  // --- 2. Emails today / briefing ---
+  if (q.includes("email") || q.includes("mail") || q.includes("briefing") || q.includes("aujourd") || q.includes("recu")) {
+    const todayEmails = getEmailsForPeriod("24h");
+    const clientEmails = todayEmails.filter((e) => e.dossier_id !== null);
+    const filteredEmails = todayEmails.filter((e) => e.dossier_id === null);
+    return `**Emails des dernières 24h : ${todayEmails.length} reçus**\n\n- **${clientEmails.length} liés à vos dossiers** :\n${clientEmails.slice(0, 5).map((e) => `  - ${e.expediteur} : *${e.objet}*`).join("\n")}\n- **${filteredEmails.length} filtrés** (newsletters, notifications)\n\nVoulez-vous que je détaille un email en particulier ?`;
+  }
+
+  // --- 3. Attachments / documents ---
+  if (q.includes("piece") || q.includes("pj") || q.includes("document") || q.includes("jointe") || q.includes("fichier")) {
+    const recentWithPj = mockAllEmails.filter((e) => e.pieces_jointes.length > 0).slice(0, 5);
+    const totalPj = recentWithPj.reduce((acc, e) => acc + e.pieces_jointes.length, 0);
+    return `**${totalPj} pièces jointes récentes :**\n\n${recentWithPj.flatMap((e) => e.pieces_jointes.map((pj) => `- **${pj.nom}** (${pj.taille}) — ${e.dossier_nom || "Non classé"}\n  _${pj.resume_ia.slice(0, 100)}${pj.resume_ia.length > 100 ? "…" : ""}_`)).join("\n")}\n\nCliquez sur une pièce jointe dans le briefing pour voir le résumé complet.`;
+  }
+
+  // --- 4. Deadlines / urgent ---
+  if (q.includes("echeance") || q.includes("deadline") || q.includes("urgent") || q.includes("priorite") || q.includes("faire") || q.includes("traiter")) {
+    return "**Actions prioritaires :**\n\n1. **Répondre à Jean-Pierre Martin** sur les points de l'entretien préalable — *2e entretien dans quelques jours*\n2. **Vérifier la mise en demeure** de BTP Pro — *délai expirant le 2 avril* (dossier Dupont)\n3. **Relancer Claire Dubois** pour les pièces manquantes — *audience prochaine*\n4. **Analyser le complément d'expertise** de Philippe Renard — *chiffrage révisé à 92 500 €* (dossier Roux)\n\n**Échéances à venir :**\n- 2 avril : expiration délai mise en demeure BTP Pro\n- Mi-avril : audience TGI (dossier Dubois)\n- Fin avril : dépôt conclusions (dossier Roux)";
+  }
+
+  // --- 5. Draft / response generation ---
+  if (q.includes("brouillon") || q.includes("reponse") || q.includes("gener") || q.includes("redige")) {
+    return "Je peux générer un brouillon de réponse pour n'importe quel email.\n\n**Comment faire :**\n1. Cliquez sur un email dans votre briefing ou dans un dossier\n2. Cliquez sur **« Générer une réponse »**\n3. Je rédige dans votre style avec votre signature\n4. Vous pouvez modifier le texte avant de l'envoyer\n\nEssayez avec le dernier email de Jean-Pierre Martin !";
+  }
+
+  // --- 6. Fallback ---
+  return "Je peux vous aider sur vos dossiers, emails et échéances. Essayez par exemple :\n\n- « Où en est le dossier Martin ? »\n- « Quels emails aujourd'hui ? »\n- « Quelles sont mes pièces jointes récentes ? »\n- « Quelles sont mes urgences ? »\n- « Comment générer un brouillon ? »";
 }
 
 function loadMessages(): ChatMessage[] {
@@ -122,7 +177,7 @@ export default function DonnaChat() {
     }
 
     if (isDemo()) {
-      await new Promise((r) => setTimeout(r, 800 + Math.random() * 400));
+      await new Promise((r) => setTimeout(r, 1000 + Math.random() * 1000));
       const response = getMockChatResponse(text);
       setMessages(prev => [...prev, { role: "assistant", content: response, timestamp: Date.now() }]);
       setIsLoading(false);

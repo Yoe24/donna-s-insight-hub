@@ -147,7 +147,20 @@ const Configuration = () => {
       <DashboardLayout>
         <div className="max-w-xl mx-auto py-8 sm:py-12 px-4">
           <h1 className="text-xl font-serif font-bold text-foreground mb-2">Configurez-moi</h1>
-          <p className="text-sm text-muted-foreground mb-8">{completedSections}/3 sections complétées</p>
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-sm text-muted-foreground">{completedSections}/3 sections complétées</p>
+              <p className="text-xs text-muted-foreground">{Math.round((completedSections / 3) * 100)}%</p>
+            </div>
+            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  completedSections / 3 < 0.5 ? "bg-red-500" : completedSections / 3 < 0.8 ? "bg-orange-500" : "bg-emerald-500"
+                }`}
+                style={{ width: `${(completedSections / 3) * 100}%` }}
+              />
+            </div>
+          </div>
 
           <Accordion type="multiple" defaultValue={["connexion", "profil"]} className="space-y-3">
 

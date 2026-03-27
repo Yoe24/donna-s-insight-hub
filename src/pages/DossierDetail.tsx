@@ -197,25 +197,33 @@ const DossierDetailPage = () => {
       if (!mockDossier) { setError(true); setLoading(false); return; }
 
       const rawEmails = mockDossierEmails[id] || [];
-      const demoEmails: DossierEmail[] = rawEmails.map((e) => ({
-        id: e.id,
-        expediteur: buildSender(e.expediteur, e.email),
-        objet: e.objet,
-        resume: e.resume || "",
-        brouillon: null,
-        pipeline_step: "pret_a_reviser",
-        contexte_choisi: "",
-        statut: "traite",
-        created_at: (() => {
-          const m = mockAllEmails.find((me) => me.id === e.id);
-          return m ? m.date : e.date || "";
-        })(),
-        updated_at: (() => {
-          const m = mockAllEmails.find((me) => me.id === e.id);
-          return m ? m.date : e.date || "";
-        })(),
-        from_email: e.email || "",
-      }));
+      const demoEmails: DossierEmail[] = rawEmails.map((e) => {
+        const fullMock = mockAllEmails.find((me) => me.id === e.id);
+        return {
+          id: e.id,
+          expediteur: buildSender(e.expediteur, e.email),
+          objet: e.objet,
+          resume: e.resume || "",
+          brouillon: fullMock?.brouillon_mock || null,
+          brouillon_mock: fullMock?.brouillon_mock || null,
+          pipeline_step: "pret_a_reviser",
+          contexte_choisi: "",
+          statut: "traite",
+          created_at: fullMock ? fullMock.date : e.date || "",
+          updated_at: fullMock ? fullMock.date : e.date || "",
+          from_email: e.email || "",
+          contenu: fullMock?.corps_original || "",
+          email_type: fullMock?.email_type || "informatif",
+          dossier_id: fullMock?.dossier_id || id,
+          dossier_name: fullMock?.dossier_nom ? `${fullMock.dossier_nom} - ${fullMock.dossier_domaine}` : null,
+          attachments: (fullMock?.pieces_jointes || []).map((pj, i) => ({
+            id: `${e.id}-att-${i}`,
+            filename: pj.nom,
+            type: pj.type_mime.includes("pdf") ? "pdf" : pj.type_mime.includes("image") ? "image" : "other",
+            size: pj.taille,
+          })),
+        } as any;
+      });
 
       const demoDocs: DossierDocument[] = rawEmails.flatMap((e, i) =>
         (e.pieces_jointes || []).map((pj, j) => ({
@@ -442,13 +450,23 @@ const DossierDetailPage = () => {
                         <p className="text-sm text-foreground">{ech.label}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">Source : {ech.source}</p>
                       </div>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                        ech.status === "depassee" ? "bg-red-50 text-red-700 ring-1 ring-red-200" :
-                        ech.status === "proche" ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200" :
-                        "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                      }`}>
-                        {ech.status === "depassee" ? "Dépassée" : ech.status === "proche" ? `J-${Math.abs(daysUntil)}` : `dans ${daysUntil}j`}
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                          ech.status === "depassee" ? "bg-red-50 text-red-700 ring-1 ring-red-200" :
+                          ech.status === "proche" ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200" :
+                          "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                        }`}>
+                          {ech.status === "depassee" ? "Dépassée" : ech.status === "proche" ? `J-${Math.abs(daysUntil)}` : `dans ${daysUntil}j`}
+                        </span>
+                        {ech.status === "depassee" && (
+                          <button
+                            onClick={() => toast.success("Brouillon de relance généré")}
+                            className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/10 text-primary ring-1 ring-primary/20 hover:bg-primary/20 transition-colors"
+                          >
+                            Relancer
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

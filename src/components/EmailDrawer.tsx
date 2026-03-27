@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { X, Copy, FileText, Loader2, Paperclip, Pencil, ChevronRight } from "lucide-react";
+import { ArrowLeft, Copy, FileText, Loader2, Paperclip, Pencil, ChevronRight, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Select removed — feedback uses inline buttons now
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -38,11 +38,13 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
   const [displayedDraft, setDisplayedDraft] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
 
+  // Resolve mock email for metadata
+  const mockEmail = isDemo() ? mockAllEmails.find((e) => e.id === email.id) : null;
+
   useEffect(() => {
     const emailAttachments = Array.isArray((email as any).attachments) ? (email as any).attachments : [];
 
     if (emailAttachments.length > 0) {
-      const mockEmail = isDemo() ? mockAllEmails.find((e) => e.id === email.id) : null;
       setDossierDocs(
         emailAttachments.map((attachment: any, index: number) => {
           const mockPj = mockEmail?.pieces_jointes?.[index];
@@ -82,8 +84,8 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
   }, [email]);
 
   const handleFeedback = async (action: "parfait" | "modifier" | "erreur") => {
-    if (isDemo()) { setFeedbackGiven(action); toast.success("Feedback envoyé"); return; }
-    try { await updateStatus(email.id, action); setFeedbackGiven(action); toast.success("Feedback envoyé"); }
+    if (isDemo()) { setFeedbackGiven(action); toast.success("Merci pour votre retour"); return; }
+    try { await updateStatus(email.id, action); setFeedbackGiven(action); toast.success("Merci pour votre retour"); }
     catch { toast.error("Erreur lors de l'envoi du feedback"); }
   };
 
@@ -94,7 +96,6 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
         setDraftLoading(true);
         await new Promise((r) => setTimeout(r, 600));
         setDraftLoading(false);
-        // Stream the draft progressively
         setIsStreaming(true);
         setDisplayedDraft("");
         let idx = 0;
@@ -119,14 +120,23 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
     finally { setDraftLoading(false); }
   };
 
+  // Date formatting — Gmail style "27 mars 2026 à 14:32"
   const formattedDate = (() => {
-    try { return format(new Date(email.created_at), "d MMMM yyyy, HH'h'mm", { locale: fr }); }
+    try { return format(new Date(email.created_at), "d MMMM yyyy 'à' HH:mm", { locale: fr }); }
     catch { return ""; }
   })();
 
+  // Email metadata — from mock or parsed from expediteur
+  const fromEmail = mockEmail?.from_email || (() => {
+    const name = (email.expediteur || "Expéditeur inconnu").replace(/<[^>]+>/, "").trim();
+    const match = (email.expediteur || "").match(/<([^>]+)>/);
+    return match ? `${name} <${match[1]}>` : name;
+  })();
+  const toEmail = mockEmail?.to_email || "alexandra@cabinet-fernandez.fr";
+  const ccEmail = mockEmail?.cc_email || (email as any).cc_email || null;
+
+  // Sender name for subject area
   const senderName = (email.expediteur || "Expéditeur inconnu").replace(/<[^>]+>/, "").trim();
-  const emailMatch = (email.expediteur || "").match(/<([^>]+)>/);
-  const senderEmail = emailMatch ? emailMatch[1] : null;
 
   // Badge
   const emailType = (email as any).email_type || ((email as any).classification?.needs_response ? "demande" : "informatif");
@@ -141,188 +151,205 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Full-screen overlay */}
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-50 bg-black/30"
-        onClick={onClose}
-      />
-
-      {/* Drawer */}
-      <motion.div
+        className="fixed inset-0 z-50 bg-background"
         role="dialog" aria-modal="true" aria-label={`Email : ${email.objet || "Sans objet"}`}
-        initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[65%] sm:max-w-2xl bg-background shadow-xl rounded-l-2xl overflow-y-auto"
       >
-        <div className="p-6">
-          <h1 className="sr-only">Détail de l'email : {email.objet || "Sans objet"}</h1>
-
-          {/* Close */}
-          <div className="flex justify-end mb-6">
+        <div className="h-full flex flex-col">
+          {/* Top bar — Back button */}
+          <div className="border-b border-border/60 px-4 sm:px-8 py-3 flex items-center gap-4 shrink-0">
             <button
               onClick={onClose}
-              aria-label="Fermer"
-              className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <X className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" />
+              Retour
             </button>
-          </div>
-
-          {/* Badge */}
-          <div className="mb-4">
+            <div className="flex-1" />
             <span className={`inline-flex items-center rounded-full text-[10px] px-2.5 py-0.5 font-semibold ${badge.className}`}>
               {badge.label}
             </span>
           </div>
 
-          {/* Sender */}
-          <p className="text-base font-medium text-foreground">{senderName}</p>
-          {senderEmail && <p className="text-xs text-muted-foreground mt-0.5">{senderEmail}</p>}
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-3xl mx-auto px-4 sm:px-8 py-6">
+              <h1 className="sr-only">Détail de l'email : {email.objet || "Sans objet"}</h1>
 
-          {/* Subject + date */}
-          <h2 className="text-lg font-semibold text-foreground leading-snug mt-4 mb-0.5">{email.objet || "Sans objet"}</h2>
-          <p className="text-xs text-muted-foreground mb-6">{formattedDate}</p>
+              {/* Subject */}
+              <h2 className="text-xl font-semibold text-foreground leading-snug mb-4">{email.objet || "Sans objet"}</h2>
 
-          <div className="border-t border-border mb-6" />
-
-          {/* Résumé Donna */}
-          {email.resume && (
-            <div className="mb-6">
-              <h3 className="text-xs font-medium text-muted-foreground mb-2">Résumé Donna</h3>
-              <div className="rounded-xl bg-muted/30 p-4">
-                <p className="text-sm text-foreground/85 whitespace-pre-line leading-relaxed">{email.resume}</p>
+              {/* Gmail-style email metadata header */}
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-sm text-foreground">
+                      <span className="font-medium text-muted-foreground">De : </span>
+                      {fromEmail}
+                    </p>
+                    <p className="text-sm text-foreground">
+                      <span className="font-medium text-muted-foreground">À : </span>
+                      {toEmail}
+                    </p>
+                    {ccEmail && (
+                      <p className="text-sm text-foreground">
+                        <span className="font-medium text-muted-foreground">CC : </span>
+                        {ccEmail}
+                      </p>
+                    )}
+                    <p className="text-sm text-muted-foreground">{formattedDate}</p>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Pièces jointes */}
-          {dossierDocs.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
-                <Paperclip className="h-3.5 w-3.5" /> Pièces jointes
-              </h3>
-              <div className="space-y-1.5">
-                {dossierDocs.map((doc: any, idx: number) => {
-                  const isPdf = doc.type?.toLowerCase()?.includes("pdf") || doc.nom_fichier?.endsWith(".pdf");
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => setSelectedAttachment(doc)}
-                      className="flex items-center gap-2.5 w-full text-left rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
-                    >
-                      <FileText className={`h-4 w-4 shrink-0 ${isPdf ? "text-red-500/70" : "text-blue-500/70"}`} />
-                      <span className="text-sm text-foreground truncate flex-1">{doc.nom_fichier}</span>
-                      {doc.taille && <span className="text-[10px] text-muted-foreground shrink-0">{doc.taille}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Dossier rattaché */}
-          {showDossierLink && (email as any).dossier_id && (
-            <div className="mb-6">
-              <h3 className="text-xs font-medium text-muted-foreground mb-2">Dossier rattaché</h3>
-              <a
-                href={`/dossiers/${(email as any).dossier_id}`}
-                className="text-sm text-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
-              >
-                {dossierName || "Dossier"}
-                <ChevronRight className="h-3 w-3 text-muted-foreground" />
-              </a>
-            </div>
-          )}
-
-          <div className="border-t border-border mb-6" />
-
-          {/* Generate draft — primary action */}
-          <Button
-            className={context === "fil" ? "mb-3" : "w-full mb-3"}
-            variant={context === "fil" ? "outline" : "default"}
-            onClick={handleGenerateDraft}
-            disabled={draftLoading || isStreaming || (!!draftText && !draftLoading)}
-          >
-            {draftLoading ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Génération en cours…</>
-            ) : draftText ? (
-              "Réponse générée ✓"
-            ) : (
-              "Générer une réponse"
-            )}
-          </Button>
-          {context === "dossier" && !draftText && (
-            <p className="text-xs text-muted-foreground mb-3">Donna rédige dans votre style avec votre signature</p>
-          )}
-          {context === "fil" && (email as any).dossier_id && (
-            <a href={`/dossiers/${(email as any).dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors mb-3 block">
-              → Ouvrir le dossier pour travailler sur cet email
-            </a>
-          )}
-
-          {/* Draft response */}
-          {(draftText || isStreaming) && !draftLoading && (
-            <div className="rounded-xl bg-muted/30 p-4 mb-4 space-y-3">
-              {draftEditable ? (
-                <Textarea
-                  ref={textareaRef}
-                  value={draftText || ""}
-                  onChange={(e) => setDraftText(e.target.value)}
-                  className="min-h-[180px] text-sm leading-relaxed bg-background border-border"
-                />
-              ) : (
-                <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">
-                  {isStreaming ? displayedDraft : draftText}
-                  {isStreaming && <span className="animate-pulse text-primary">▌</span>}
-                </p>
+              {/* Résumé Donna — visually distinct from the metadata block */}
+              {email.resume && (
+                <div className="mb-6">
+                  <h3 className="text-xs font-medium text-muted-foreground mb-2">Résumé Donna</h3>
+                  <div className="rounded-xl bg-muted/30 p-4">
+                    <p className="text-sm text-foreground/85 whitespace-pre-line leading-relaxed">{email.resume}</p>
+                  </div>
+                </div>
               )}
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="text-xs" onClick={() => { navigator.clipboard.writeText(draftText || ""); toast.success("Copié !"); }} disabled={isStreaming}>
-                  <Copy className="h-3 w-3 mr-1" /> Copier
-                </Button>
-                {!draftEditable && (
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => { setDraftEditable(true); setTimeout(() => textareaRef.current?.focus(), 50); }} disabled={isStreaming}>
-                    <Pencil className="h-3 w-3 mr-1" /> Modifier
-                  </Button>
+
+              {/* Pièces jointes */}
+              {dossierDocs.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <Paperclip className="h-3.5 w-3.5" /> Pièces jointes
+                  </h3>
+                  <div className="space-y-1.5">
+                    {dossierDocs.map((doc: any, idx: number) => {
+                      const isPdf = doc.type?.toLowerCase()?.includes("pdf") || doc.nom_fichier?.endsWith(".pdf");
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => setSelectedAttachment(doc)}
+                          className="flex items-center gap-2.5 w-full text-left rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
+                        >
+                          <FileText className={`h-4 w-4 shrink-0 ${isPdf ? "text-red-500/70" : "text-blue-500/70"}`} />
+                          <span className="text-sm text-foreground truncate flex-1">{doc.nom_fichier}</span>
+                          {doc.taille && <span className="text-[10px] text-muted-foreground shrink-0">{doc.taille}</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Dossier rattaché */}
+              {showDossierLink && (email as any).dossier_id && (
+                <div className="mb-6">
+                  <h3 className="text-xs font-medium text-muted-foreground mb-2">Dossier rattaché</h3>
+                  <a
+                    href={`/dossiers/${(email as any).dossier_id}`}
+                    className="text-sm text-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+                  >
+                    {dossierName || "Dossier"}
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                  </a>
+                </div>
+              )}
+
+              <div className="border-t border-border mb-6" />
+
+              {/* Generate draft */}
+              <Button
+                className={context === "fil" ? "mb-3" : "w-full mb-3"}
+                variant={context === "fil" ? "outline" : "default"}
+                onClick={handleGenerateDraft}
+                disabled={draftLoading || isStreaming || (!!draftText && !draftLoading)}
+              >
+                {draftLoading ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Génération en cours…</>
+                ) : draftText ? (
+                  "Réponse générée ✓"
+                ) : (
+                  "Générer une réponse"
+                )}
+              </Button>
+              {context === "dossier" && !draftText && (
+                <p className="text-xs text-muted-foreground mb-3">Donna rédige dans votre style avec votre signature</p>
+              )}
+              {context === "fil" && (email as any).dossier_id && (
+                <a href={`/dossiers/${(email as any).dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors mb-3 block">
+                  → Ouvrir le dossier pour travailler sur cet email
+                </a>
+              )}
+
+              {/* Draft response */}
+              {(draftText || isStreaming) && !draftLoading && (
+                <div className="rounded-xl bg-muted/30 p-4 mb-4 space-y-3">
+                  {draftEditable ? (
+                    <Textarea
+                      ref={textareaRef}
+                      value={draftText || ""}
+                      onChange={(e) => setDraftText(e.target.value)}
+                      className="min-h-[180px] text-sm leading-relaxed bg-background border-border"
+                    />
+                  ) : (
+                    <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">
+                      {isStreaming ? displayedDraft : draftText}
+                      {isStreaming && <span className="animate-pulse text-primary">▌</span>}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="text-xs" onClick={() => { navigator.clipboard.writeText(draftText || ""); toast.success("Copié !"); }} disabled={isStreaming}>
+                      <Copy className="h-3 w-3 mr-1" /> Copier
+                    </Button>
+                    {!draftEditable && (
+                      <Button variant="outline" size="sm" className="text-xs" onClick={() => { setDraftEditable(true); setTimeout(() => textareaRef.current?.focus(), 50); }} disabled={isStreaming}>
+                        <Pencil className="h-3 w-3 mr-1" /> Modifier
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Email original */}
+              <Collapsible open={showOriginal} onOpenChange={setShowOriginal}>
+                <CollapsibleTrigger asChild>
+                  <button className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors mb-4 block">
+                    {showOriginal ? "Masquer" : "Voir"} l'email original
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="rounded-xl bg-muted/20 border border-border p-4 mb-4">
+                    <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed">
+                      {(email as any).contenu || email.resume || "Contenu non disponible."}
+                    </p>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Feedback */}
+              <div className="border-t border-border pt-4">
+                {feedbackGiven ? (
+                  <p className="text-xs text-muted-foreground">Merci pour votre retour</p>
+                ) : (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Ce résumé est-il utile ?</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleFeedback("parfait")} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 transition-colors">
+                        Parfait
+                      </button>
+                      <button onClick={() => handleFeedback("modifier")} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 transition-colors">
+                        À améliorer
+                      </button>
+                      <button onClick={() => handleFeedback("erreur")} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-colors">
+                        Incorrect
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
-          )}
-
-          {/* Email original — simple text link */}
-          <Collapsible open={showOriginal} onOpenChange={setShowOriginal}>
-            <CollapsibleTrigger asChild>
-              <button className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors mb-4 block">
-                {showOriginal ? "Masquer" : "Voir"} l'email original
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="rounded-xl bg-muted/20 border border-border p-4 mb-4">
-                <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed">
-                  {(email as any).contenu || email.resume || "Contenu non disponible."}
-                </p>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-
-          {/* Feedback — very discreet */}
-          <div className="border-t border-border pt-4">
-            {feedbackGiven ? (
-              <p className="text-xs text-muted-foreground">✓ Feedback envoyé</p>
-            ) : (
-              <Select onValueChange={(v) => { const m: Record<string, "parfait" | "modifier" | "erreur"> = { parfait: "parfait", modifier: "modifier", erreur: "erreur" }; if (m[v]) handleFeedback(m[v]); }}>
-                <SelectTrigger className="w-48 h-7 text-[11px] bg-transparent border-border text-muted-foreground">
-                  <SelectValue placeholder="Feedback…" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="parfait">Analyse pertinente</SelectItem>
-                  <SelectItem value="modifier">À améliorer</SelectItem>
-                  <SelectItem value="erreur">Incorrecte</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
           </div>
         </div>
       </motion.div>
