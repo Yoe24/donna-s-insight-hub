@@ -34,6 +34,11 @@
 - Onboarding banner sur le Dashboard en mode démo (OnboardingBanner.tsx)
 - Skeleton loaders : délai 300-400ms en démo pour afficher les skeletons existants
 
+## Fix focus states + refonte drawer (27 mars 2026)
+- --accent et --ring CSS corrigés : plus de fond noir sur hover/focus des boutons
+- EmailDrawer refait : avatar supprimé, "Générer une réponse" en bouton principal pleine largeur,
+  "Voir l'email original" en lien texte, feedback discret, drawer max-w-md rounded-l-2xl
+
 ## Bugs potentiels restants à vérifier
 - "Voir l'email complet" dans le drawer — vérifier que corps_original s'affiche bien (différent du résumé)
 - "Générer une réponse" — vérifier que le brouillon mock apparaît
