@@ -35,6 +35,8 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
   const [selectedAttachment, setSelectedAttachment] = useState<any>(null);
   const { updateStatus } = useUpdateEmailStatus();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [displayedDraft, setDisplayedDraft] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
 
   useEffect(() => {
     const emailAttachments = Array.isArray((email as any).attachments) ? (email as any).attachments : [];
@@ -91,8 +93,23 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
       if (mockDraft) {
         setDraftLoading(true);
         await new Promise((r) => setTimeout(r, 600));
-        setDraftText(mockDraft);
         setDraftLoading(false);
+        // Stream the draft progressively
+        setIsStreaming(true);
+        setDisplayedDraft("");
+        let idx = 0;
+        const interval = setInterval(() => {
+          const chunk = Math.floor(Math.random() * 3) + 3;
+          idx += chunk;
+          if (idx >= mockDraft.length) {
+            setDisplayedDraft(mockDraft);
+            setDraftText(mockDraft);
+            setIsStreaming(false);
+            clearInterval(interval);
+          } else {
+            setDisplayedDraft(mockDraft.substring(0, idx));
+          }
+        }, 20);
       } else { toast.info("Disponible avec Gmail connecté"); }
       return;
     }
@@ -137,7 +154,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
         role="dialog" aria-modal="true" aria-label={`Email : ${email.objet || "Sans objet"}`}
         initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        className="fixed right-0 top-0 bottom-0 z-50 w-full sm:max-w-md bg-background shadow-xl rounded-l-2xl overflow-y-auto"
+        className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[65%] sm:max-w-2xl bg-background shadow-xl rounded-l-2xl overflow-y-auto"
       >
         <div className="p-6">
           <h1 className="sr-only">Détail de l'email : {email.objet || "Sans objet"}</h1>
@@ -226,7 +243,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
             className={context === "fil" ? "mb-3" : "w-full mb-3"}
             variant={context === "fil" ? "outline" : "default"}
             onClick={handleGenerateDraft}
-            disabled={draftLoading || (!!draftText && !draftLoading)}
+            disabled={draftLoading || isStreaming || (!!draftText && !draftLoading)}
           >
             {draftLoading ? (
               <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Génération en cours…</>
@@ -246,24 +263,27 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
           )}
 
           {/* Draft response */}
-          {draftText && !draftLoading && (
+          {(draftText || isStreaming) && !draftLoading && (
             <div className="rounded-xl bg-muted/30 p-4 mb-4 space-y-3">
               {draftEditable ? (
                 <Textarea
                   ref={textareaRef}
-                  value={draftText}
+                  value={draftText || ""}
                   onChange={(e) => setDraftText(e.target.value)}
                   className="min-h-[180px] text-sm leading-relaxed bg-background border-border"
                 />
               ) : (
-                <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">{draftText}</p>
+                <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">
+                  {isStreaming ? displayedDraft : draftText}
+                  {isStreaming && <span className="animate-pulse text-primary">▌</span>}
+                </p>
               )}
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="text-xs" onClick={() => { navigator.clipboard.writeText(draftText); toast.success("Copié !"); }}>
+                <Button variant="outline" size="sm" className="text-xs" onClick={() => { navigator.clipboard.writeText(draftText || ""); toast.success("Copié !"); }} disabled={isStreaming}>
                   <Copy className="h-3 w-3 mr-1" /> Copier
                 </Button>
                 {!draftEditable && (
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => { setDraftEditable(true); setTimeout(() => textareaRef.current?.focus(), 50); }}>
+                  <Button variant="outline" size="sm" className="text-xs" onClick={() => { setDraftEditable(true); setTimeout(() => textareaRef.current?.focus(), 50); }} disabled={isStreaming}>
                     <Pencil className="h-3 w-3 mr-1" /> Modifier
                   </Button>
                 )}

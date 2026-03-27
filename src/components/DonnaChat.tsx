@@ -10,6 +10,7 @@ import { MessageCircle, X, ArrowUp } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { apiPost } from "@/lib/api";
+import { isDemo } from "@/lib/auth";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -33,6 +34,17 @@ const STORAGE_KEY = "donna_chat_history";
 const MAX_MESSAGES = 50;
 const MAX_HISTORY = 20;
 
+function getMockChatResponse(question: string): string {
+  const q = question.toLowerCase();
+  if (q.includes("martin") || q.includes("dossier"))
+    return "Le dossier Jean-Pierre Martin concerne une rupture conventionnelle avec TechCorp SA. M. Martin a 7 ans d'ancienneté. L'indemnité légale proposée (8 400 €) est jugée insuffisante. Le 2e entretien préalable est prévu dans quelques jours.";
+  if (q.includes("urgent") || q.includes("aujourd'hui") || q.includes("faire"))
+    return "Vous avez 3 actions à traiter aujourd'hui :\n\n1. **Répondre à Jean-Pierre Martin** sur les points de l'entretien préalable\n2. **Vérifier la mise en demeure** de BTP Pro (dossier Dupont)\n3. **Relancer Claire Dubois** pour les pièces manquantes";
+  if (q.includes("brouillon") || q.includes("réponse") || q.includes("génér"))
+    return "Je peux générer un brouillon de réponse pour n'importe quel email. Cliquez sur un email dans votre briefing, puis sur « Générer une réponse ». Je rédigerai dans votre style avec votre signature.";
+  return "Je suis Donna, votre assistante juridique. En mode démo, je peux répondre à quelques questions. Essayez : « Quelles sont mes urgences aujourd'hui ? » ou « Où en est le dossier Martin ? »";
+}
+
 function loadMessages(): ChatMessage[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -51,7 +63,7 @@ function saveMessages(messages: ChatMessage[]) {
 function TypingIndicator() {
   return (
     <div className="flex items-end gap-2">
-      <div className="w-8 h-8 rounded-full bg-[#6C63FF] flex items-center justify-center text-white text-sm font-semibold shrink-0">
+      <div className="w-8 h-8 rounded-full bg-foreground flex items-center justify-center text-white text-sm font-semibold shrink-0">
         D
       </div>
       <div className="bg-[#F3F4F6] rounded-2xl rounded-tl-sm px-4 py-3">
@@ -109,6 +121,14 @@ export default function DonnaChat() {
       textareaRef.current.style.height = "auto";
     }
 
+    if (isDemo()) {
+      await new Promise((r) => setTimeout(r, 800 + Math.random() * 400));
+      const response = getMockChatResponse(text);
+      setMessages(prev => [...prev, { role: "assistant", content: response, timestamp: Date.now() }]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const history = newMessages.slice(-MAX_HISTORY).map(({ role, content }) => ({ role, content }));
       const res = await apiPost<{ response: string }>("/api/chat", { message: text, history });
@@ -137,7 +157,7 @@ export default function DonnaChat() {
     <>
       <button
         onClick={() => { setIsOpen(o => !o); isFirstLoad.current = false; }}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[#6C63FF] text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-foreground text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer"
         aria-label="Ouvrir le chat Donna"
       >
         <MessageCircle size={26} />
@@ -170,14 +190,14 @@ export default function DonnaChat() {
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "items-end gap-2"}`}>
                   {msg.role === "assistant" && (
-                    <div className="w-8 h-8 rounded-full bg-[#6C63FF] flex items-center justify-center text-white text-sm font-semibold shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-foreground flex items-center justify-center text-white text-sm font-semibold shrink-0">
                       D
                     </div>
                   )}
                   <div
                     className={`max-w-[80%] px-4 py-3 text-sm leading-relaxed ${
                       msg.role === "user"
-                        ? "bg-[#6C63FF] text-white rounded-2xl rounded-tr-sm"
+                        ? "bg-foreground text-background rounded-2xl rounded-tr-sm"
                         : "bg-[#F3F4F6] text-gray-900 rounded-2xl rounded-tl-sm"
                     }`}
                   >
@@ -210,7 +230,7 @@ export default function DonnaChat() {
                   <button
                     onClick={sendMessage}
                     disabled={isLoading}
-                    className="w-8 h-8 rounded-full bg-[#6C63FF] text-white flex items-center justify-center shrink-0 hover:bg-[#5a52e0] transition-colors disabled:opacity-50 cursor-pointer"
+                    className="w-8 h-8 rounded-full bg-foreground text-white flex items-center justify-center shrink-0 hover:bg-foreground/80 transition-colors disabled:opacity-50 cursor-pointer"
                     aria-label="Envoyer"
                   >
                     <ArrowUp size={16} />

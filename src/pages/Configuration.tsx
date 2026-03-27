@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Mail, User, Wand2, Settings, X } from "lucide-react";
+import { Loader2, Mail, User, Wand2, X } from "lucide-react";
 import { apiGet, apiPut, apiPublicGet } from "@/lib/api";
 import { isDemoMode } from "@/hooks/useDemoMode";
 
@@ -129,7 +129,6 @@ const Configuration = () => {
     gmailConnected,
     nomComplet && signature,
     savedInstructions.length > 0,
-    true, // avancé toujours "complet"
   ].filter(Boolean).length;
 
   if (loadingConfig) {
@@ -148,7 +147,7 @@ const Configuration = () => {
       <DashboardLayout>
         <div className="max-w-xl mx-auto py-8 sm:py-12 px-4">
           <h1 className="text-xl font-serif font-bold text-foreground mb-2">Configurez-moi</h1>
-          <p className="text-sm text-muted-foreground mb-8">{completedSections}/4 sections complétées</p>
+          <p className="text-sm text-muted-foreground mb-8">{completedSections}/3 sections complétées</p>
 
           <Accordion type="multiple" defaultValue={["connexion", "profil"]} className="space-y-3">
 
@@ -271,18 +270,6 @@ const Configuration = () => {
                     </div>
                   )}
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-
-            {/* Section 4 — Avancé */}
-            <AccordionItem value="avance" className="rounded-2xl border border-border bg-card shadow-sm px-1">
-              <AccordionTrigger className="px-5 py-4 hover:no-underline">
-                <div className="flex items-center gap-3">
-                  <Settings className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Paramètres avancés</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-5 pb-5 space-y-4">
                 <div>
                   <Label className="text-xs text-muted-foreground">Fréquence du briefing</Label>
                   <Select value={frequenceBrief} onValueChange={setFrequenceBrief}>

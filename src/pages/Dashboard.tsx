@@ -388,27 +388,35 @@ const Dashboard = () => {
           ))}
         </motion.div>
 
-        {/* ── Rapport Donna — 3 lignes distinctes ── */}
         {adjustedStats && (
-          <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6 mb-10">
-            <div className="text-sm text-foreground/80 leading-relaxed space-y-1">
-              <p>
-                Vous avez reçu{" "}
-                <button onClick={() => dossiersRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} className="underline underline-offset-2 hover:text-foreground transition-colors">
-                  <strong>{adjustedStats.total} emails</strong>
-                </button>{" "}
-                {periodLabel}.
-              </p>
-              <p>
-                <strong>{adjustedStats.dossier_emails}</strong> liés à vos dossiers · <strong>{adjustedStats.general_emails}</strong> filtrés par Donna
-              </p>
-              <p>
-                <button onClick={() => setShowPjList(!showPjList)} className="underline underline-offset-2 hover:text-foreground transition-colors">
-                  <strong>{adjustedStats.attachments_count} {adjustedStats.attachments_count === 1 ? "pièce jointe" : "pièces jointes"}</strong>
-                </button>{" "}
-                {adjustedStats.attachments_count === 1 ? "extraite et résumée" : "extraites et résumées"}
-              </p>
+          <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="mb-10">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <button
+                onClick={() => dossiersRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                className="rounded-2xl border border-border/60 bg-white p-4 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:bg-muted/30 transition-colors cursor-pointer"
+              >
+                <p className="text-2xl font-semibold text-foreground">{adjustedStats.total}</p>
+                <p className="text-[11px] text-muted-foreground mt-1">emails reçus</p>
+              </button>
+              <div className="rounded-2xl border border-border/60 bg-white p-4 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                <p className="text-2xl font-semibold text-foreground">{adjustedStats.dossier_emails}</p>
+                <p className="text-[11px] text-muted-foreground mt-1">dossiers actifs</p>
+              </div>
+              <button
+                onClick={() => setShowPjList(!showPjList)}
+                className="rounded-2xl border border-border/60 bg-white p-4 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:bg-muted/30 transition-colors cursor-pointer"
+              >
+                <p className="text-2xl font-semibold text-foreground">{adjustedStats.attachments_count}</p>
+                <p className="text-[11px] text-muted-foreground mt-1">pièces jointes</p>
+              </button>
+              <div className="rounded-2xl border border-border/60 bg-white p-4 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                <p className="text-2xl font-semibold text-foreground">{adjustedStats.temps_gagne_minutes}<span className="text-base">min</span></p>
+                <p className="text-[11px] text-muted-foreground mt-1">gagnées</p>
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              {adjustedStats.dossier_emails} liés à vos dossiers · {adjustedStats.general_emails} filtrés par Donna · {adjustedStats.attachments_count} {adjustedStats.attachments_count === 1 ? "pièce jointe extraite et résumée" : "pièces jointes extraites et résumées"}
+            </p>
           </motion.div>
         )}
 
