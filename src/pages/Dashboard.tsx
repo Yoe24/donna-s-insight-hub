@@ -372,11 +372,6 @@ const Dashboard = () => {
             {greeting}{nomAvocat ? ` ${nomAvocat}` : ""}
           </p>
           <p className="text-sm text-muted-foreground mt-1 capitalize">{dateStr}</p>
-          {adjustedStats && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Votre boîte mail alexandra@cabinet-fernandez.fr a reçu {adjustedStats.total} emails · {adjustedStats.temps_gagne_minutes}min gagnées
-            </p>
-          )}
         </motion.div>
 
         <motion.div {...fadeIn} transition={{ delay: 0.03 }} className="flex gap-1.5 mb-6">
@@ -397,35 +392,25 @@ const Dashboard = () => {
 
         {adjustedStats && (
           <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="mb-10">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Votre boîte mail alexandra@cabinet-fernandez.fr a reçu{" "}
               <button
                 onClick={() => setExpandedCard(expandedCard === "emails" ? null : "emails")}
-                className={`rounded-2xl border p-4 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:bg-muted/30 hover:shadow-md transition-all duration-200 cursor-pointer ${expandedCard === "emails" ? "border-primary/40 bg-primary/5" : "border-border/60 bg-white"}`}
+                className={`font-medium transition-colors ${expandedCard === "emails" ? "text-primary" : "text-foreground hover:text-primary"} underline underline-offset-2 decoration-primary/30 cursor-pointer`}
               >
-                <p className="text-2xl font-semibold text-foreground">{adjustedStats.total}</p>
-                <p className="text-[11px] text-muted-foreground mt-1">emails reçus</p>
-              </button>
-              <div className="rounded-2xl border border-border/60 bg-white p-4 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-                <p className="text-2xl font-semibold text-foreground">{adjustedStats.dossier_emails}</p>
-                <p className="text-[11px] text-muted-foreground mt-1">dossiers actifs</p>
-              </div>
+                {adjustedStats.total} emails
+              </button>.{" "}
+              {adjustedStats.dossier_emails} sont liés à vos dossiers, {adjustedStats.general_emails} ont été filtrés par Donna.{" "}
               <button
                 onClick={() => setExpandedCard(expandedCard === "pj" ? null : "pj")}
-                className={`rounded-2xl border p-4 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:bg-muted/30 hover:shadow-md transition-all duration-200 cursor-pointer ${expandedCard === "pj" ? "border-primary/40 bg-primary/5" : "border-border/60 bg-white"}`}
+                className={`font-medium transition-colors ${expandedCard === "pj" ? "text-primary" : "text-foreground hover:text-primary"} underline underline-offset-2 decoration-primary/30 cursor-pointer`}
               >
-                <p className="text-2xl font-semibold text-foreground">{adjustedStats.attachments_count}</p>
-                <p className="text-[11px] text-muted-foreground mt-1">pièces jointes</p>
-              </button>
-              <div className="rounded-2xl border border-border/60 bg-white p-4 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-                <p className="text-2xl font-semibold text-foreground">{adjustedStats.temps_gagne_minutes}<span className="text-base">min</span></p>
-                <p className="text-[11px] text-muted-foreground mt-1">gagnées</p>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              {adjustedStats.dossier_emails} liés à vos dossiers · {adjustedStats.general_emails} filtrés par Donna · {adjustedStats.attachments_count} {adjustedStats.attachments_count === 1 ? "pièce jointe extraite et résumée" : "pièces jointes extraites et résumées"}
+                {adjustedStats.attachments_count} {adjustedStats.attachments_count === 1 ? "pièce jointe a été extraite" : "pièces jointes ont été extraites"}
+              </button>{" "}
+              et {adjustedStats.attachments_count === 1 ? "résumée" : "résumées"}.
             </p>
 
-            {/* Inline expandable list — always renders BELOW the 4 cards */}
+            {/* Inline expandable list — toggled by clicking on "X emails" or "X pièces jointes" */}
             <AnimatePresence>
               {expandedCard && isDemo() && (
                 <EmailListInline
@@ -608,6 +593,13 @@ const Dashboard = () => {
             </div>
           )}
         </div>
+
+        {/* Temps gagné — footer discret */}
+        {adjustedStats && (
+          <motion.p {...fadeIn} transition={{ delay: 0.2 }} className="text-xs text-muted-foreground text-center py-8">
+            Donna vous a fait économiser {adjustedStats.temps_gagne_minutes} minutes, soit environ {Math.round((adjustedStats.temps_gagne_minutes / 60) * 200)}€ à 200€/heure.
+          </motion.p>
+        )}
 
       </div>
 
