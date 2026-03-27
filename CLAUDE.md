@@ -28,6 +28,12 @@
 - Cards harmonisées : rounded-2xl + shadow-sm + bg-background partout
 - Hover states cohérents avec transition-colors duration-200
 
+## Composants UX v2 (27 mars 2026)
+- Page dossier : menu ⋯ avec Renommer / Changer domaine / Fusionner / Archiver (dialogs + toasts)
+- Page Configuration refaite : 4 sections Accordion (Connexion, Profil, Donna, Avancé), progression X/4
+- Onboarding banner sur le Dashboard en mode démo (OnboardingBanner.tsx)
+- Skeleton loaders : délai 300-400ms en démo pour afficher les skeletons existants
+
 ## Bugs potentiels restants à vérifier
 - "Voir l'email complet" dans le drawer — vérifier que corps_original s'affiche bien (différent du résumé)
 - "Générer une réponse" — vérifier que le brouillon mock apparaît
