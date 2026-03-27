@@ -34,6 +34,15 @@
 - Onboarding banner sur le Dashboard en mode démo (OnboardingBanner.tsx)
 - Skeleton loaders : délai 300-400ms en démo pour afficher les skeletons existants
 
+## Workflow démo optimisé (27 mars 2026)
+- MOD 1: Uniformisation visuelle 3 pages (max-w-3xl, titres, sections, cards)
+- MOD 2: To-do list "À FAIRE AUJOURD'HUI" dans le briefing (checkboxes, badges, compteur)
+- MOD 3: Page dossier refaite avec onglets Échanges/Documents/Échéances + résumé structuré + mockEcheances
+- MOD 4: Tour guidé interactif 4 étapes (GuidedTour.tsx + tour-state.ts, remplace OnboardingBanner)
+- MOD 5: Sous-titres navigation sidebar + data-tour attributes
+- MOD 6: Surlignage stats briefing (clic "X emails" / "Y PJ" → highlight dossiers)
+- MOD 7: Drawer contextuel (context prop: briefing/fil/dossier avec boutons adaptés)
+
 ## Fix focus states + refonte drawer (27 mars 2026)
 - --accent et --ring CSS corrigés : plus de fond noir sur hover/focus des boutons
 - EmailDrawer refait : avatar supprimé, "Générer une réponse" en bouton principal pleine largeur,
