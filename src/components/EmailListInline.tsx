@@ -1,6 +1,25 @@
 import { motion } from "framer-motion";
-import { Mail, FileText, Paperclip } from "lucide-react";
+import { Paperclip } from "lucide-react";
 import type { MockEmail } from "@/lib/mock-briefing";
+
+const AVATAR_COLORS = [
+  { bg: "bg-blue-100", text: "text-blue-700" },
+  { bg: "bg-emerald-100", text: "text-emerald-700" },
+  { bg: "bg-purple-100", text: "text-purple-700" },
+  { bg: "bg-orange-100", text: "text-orange-700" },
+  { bg: "bg-rose-100", text: "text-rose-700" },
+  { bg: "bg-teal-100", text: "text-teal-700" },
+];
+
+function getAvatarColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
+
+function getInitial(name: string): string {
+  return (name || "?").charAt(0).toUpperCase();
+}
 
 function formatMailDate(dateStr: string): string {
   try {
@@ -101,12 +120,10 @@ export function EmailListInline({ emails, onEmailClick, mode }: EmailListInlineP
               onClick={() => onEmailClick(email)}
               className="w-full text-left px-5 py-3 hover:bg-muted/30 transition-colors duration-200 cursor-pointer"
             >
-              <div className="flex items-start gap-2.5">
-                {email.pieces_jointes.length > 0 ? (
-                  <FileText className="h-4 w-4 text-red-500/70 shrink-0 mt-0.5" />
-                ) : (
-                  <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-1" />
-                )}
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-semibold ${getAvatarColor(email.expediteur).bg} ${getAvatarColor(email.expediteur).text}`}>
+                  {getInitial(email.expediteur)}
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-sm font-medium text-foreground truncate">{email.expediteur}</span>

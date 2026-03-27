@@ -30,6 +30,25 @@ import type { Email } from "@/hooks/useEmails";
 
 const fadeIn = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } };
 
+const AVATAR_COLORS = [
+  { bg: "bg-blue-100", text: "text-blue-700" },
+  { bg: "bg-emerald-100", text: "text-emerald-700" },
+  { bg: "bg-purple-100", text: "text-purple-700" },
+  { bg: "bg-orange-100", text: "text-orange-700" },
+  { bg: "bg-rose-100", text: "text-rose-700" },
+  { bg: "bg-teal-100", text: "text-teal-700" },
+];
+
+function getAvatarColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
+
+function getInitial(name: string): string {
+  return (name || "?").charAt(0).toUpperCase();
+}
+
 type PeriodFilter = "24h" | "7j" | "30j";
 
 const PERIOD_LABELS: Record<PeriodFilter, string> = {
@@ -511,29 +530,33 @@ const Dashboard = () => {
                         }}
                         className="w-full text-left px-5 py-3 hover:bg-muted/30 transition-colors duration-200 cursor-pointer"
                       >
-                        <div className="flex items-baseline justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            <span className="text-sm font-medium text-foreground truncate">{email.expediteur}</span>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-sm font-semibold ${getAvatarColor(email.expediteur).bg} ${getAvatarColor(email.expediteur).text}`}>
+                            {getInitial(email.expediteur)}
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <TooltipProvider delayDuration={200}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium bg-gray-50 text-gray-500 ring-1 ring-gray-200 cursor-default">
-                                    Filtré par Donna
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="left">
-                                  <p className="text-xs">{filterReason} — pas lié à un dossier client</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            <span className="text-xs text-muted-foreground">{formatMailDate(email.date)}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-baseline justify-between gap-2">
+                              <span className="text-sm font-medium text-foreground truncate">{email.expediteur}</span>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <TooltipProvider delayDuration={200}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium bg-gray-50 text-gray-500 ring-1 ring-gray-200 cursor-default">
+                                        Filtré par Donna
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left">
+                                      <p className="text-xs">{filterReason} — pas lié à un dossier client</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                                <span className="text-xs text-muted-foreground">{formatMailDate(email.date)}</span>
+                              </div>
+                            </div>
+                            <p className="text-sm text-foreground mt-0.5 truncate">{email.objet}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 truncate">{shortResume}</p>
                           </div>
                         </div>
-                        <p className="text-sm text-foreground mt-0.5 truncate">{email.objet}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 truncate">{shortResume}</p>
                       </button>
                     );
                   })}
@@ -677,8 +700,10 @@ function DossierLine({
                 onClick={() => onEmailClick(email)}
                 className={`w-full text-left pl-6 pr-5 py-3 hover:bg-muted/30 transition-colors duration-200 cursor-pointer ${idx < displayEmails.length - 1 ? "border-b border-border/20" : ""}`}
               >
-                <div className="flex items-start gap-2.5">
-                  <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-1" />
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-sm font-semibold ${getAvatarColor(name).bg} ${getAvatarColor(name).text}`}>
+                    {getInitial(name)}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="text-sm font-medium text-foreground truncate">{name}</span>
