@@ -716,3 +716,28 @@ const { data } = await supabase.from('table').select('*').eq('user_id', userId);
 - Toujours `store: false`
 - GPT-4o pour les tâches complexes (résumés, brouillons, briefs)
 - GPT-4o-mini pour les tâches simples (filtrage, classification, résumé PJ)
+
+## État du projet — 27 mars 2026 (fin de session)
+
+### Ce qui est TERMINÉ (mode démo)
+- Briefing : greeting 3 lignes, KPI en cartes, filtres 24h/7j/30j, dossiers actifs + to-do list en deux colonnes
+- To-do list : checklist simple, synchronisée avec les filtres temporels, cochage avec toast
+- Drawer email : 65% largeur, résumé Donna, PJ avec icônes, génération brouillon avec streaming, copier/modifier
+- Page dossier : carte résumé à points, échanges + documents côte à côte, échéances avec badges colorés, menu ⋯ (renommer, domaine, archiver, fusionner)
+- Page configuration : 3 sections accordéon (Connexion, Profil, Personnaliser Donna), progression X/3
+- Sidebar : sous-titres, indicateur "Donna à jour", barre verticale page active, fil d'actualité masqué
+- Tour guidé : 3 étapes, persiste en mémoire
+- Design : style premium noir & blanc, badges ring-1, cards shadow ultra-légère, typography harmonisée
+
+### Ce qui reste à faire (mode réel)
+- Vérifier que TOUS les hooks/composants ont le pattern if(isDemo()) { mocks } else { API }
+- La to-do list en mode réel : les tâches doivent venir du backend (emails avec needs_response=true ou urgency=high)
+- Les échéances en mode réel : pas encore de source backend, afficher "Aucune échéance détectée" pour l'instant
+- Le streaming du brouillon en mode réel : l'API renvoie le texte d'un coup, garder le streaming côté frontend
+- Tester le briefing avec de vrais emails (format de données API vs format mock)
+
+### Prochaine session
+- On travaille sur le BACKEND (/var/www/donna-api/)
+- Objectif : corriger les 6 failles de sécurité, nettoyer le legacy, activer le polling Gmail
+- Puis tester le pipeline complet avec un vrai compte Gmail
+- Puis onboarder la première utilisatrice (Alexandra, avocate)
