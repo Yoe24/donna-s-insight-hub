@@ -34,6 +34,14 @@
 - Onboarding banner sur le Dashboard en mode démo (OnboardingBanner.tsx)
 - Skeleton loaders : délai 300-400ms en démo pour afficher les skeletons existants
 
+## Layout V3 — deux colonnes (27 mars 2026)
+- Dashboard max-w-5xl : dossiers actifs (gauche) + todo list (droite) en grid 2 colonnes
+- DossierDetail max-w-5xl : Échanges (3/5) + Documents (2/5) côte à côte, Échéances pleine largeur dessous
+- Tabs supprimés de la page dossier — tout visible d'un coup
+- Stats briefing redirigent vers /fil?tab=emails ou /fil?tab=pj
+- FilActualite accepte ?filter= query param + bandeau "Filtre actif" avec "Voir tout"
+- highlightMode supprimé du briefing
+
 ## Workflow démo optimisé (27 mars 2026)
 - MOD 1: Uniformisation visuelle 3 pages (max-w-3xl, titres, sections, cards)
 - MOD 2: To-do list "À FAIRE AUJOURD'HUI" dans le briefing (checkboxes, badges, compteur)
