@@ -24,6 +24,7 @@ import MentionsLegales from "./pages/MentionsLegales";
 import NotFound from "./pages/NotFound";
 import FilActualite from "./pages/FilActualite";
 import DonnaChat from "./components/DonnaChat";
+import DashboardV6 from "./pages/DashboardV6";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +77,7 @@ const App = () => (
             <Route path="/fil" element={<ProtectedRoute><FilActualite /></ProtectedRoute>} />
             
             <Route path="/dossiers/:id" element={<ProtectedRoute><DossierDetail /></ProtectedRoute>} />
+            <Route path="/v6" element={<ProtectedRoute><DashboardV6 /></ProtectedRoute>} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
