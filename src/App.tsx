@@ -72,10 +72,11 @@ const App = () => (
             <Route path="/tarifs" element={<Tarifs />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/mentions-legales" element={<MentionsLegales />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardV6 /></ProtectedRoute>} />
+            <Route path="/dashboard-legacy" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="/fil" element={<ProtectedRoute><FilActualite /></ProtectedRoute>} />
-            
+
             <Route path="/dossiers/:id" element={<ProtectedRoute><DossierDetail /></ProtectedRoute>} />
             <Route path="/v6" element={<ProtectedRoute><DashboardV6 /></ProtectedRoute>} />
             <Route path="/onboarding" element={<Onboarding />} />

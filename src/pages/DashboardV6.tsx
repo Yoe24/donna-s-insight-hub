@@ -426,11 +426,11 @@ function ActionCard({
             aria-label={
               treated
                 ? "Email déjà traité"
-                : `Marquer comme traité : ${email.objet}`
+                : `Marquer comme fait : ${email.objet}`
             }
           >
             <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
-            {treated ? "Traité" : "Marquer traité"}
+            {treated ? "Fait ✓" : "Fait ✓"}
           </button>
         </div>
       </div>
@@ -454,7 +454,7 @@ function ActionCard({
               className="inline-flex items-center gap-1.5 bg-white border border-[#E5E5E5] text-[#1A1A1A] rounded-full px-3 py-1.5 text-xs font-medium shadow-sm dark:bg-zinc-800 dark:border-zinc-600 dark:text-white"
             >
               <Check className="w-3 h-3 text-[#F97316]" aria-hidden="true" />
-              Traité
+              Fait ✓
             </motion.span>
           </motion.div>
         )}
@@ -481,9 +481,9 @@ function TreatedByDonnaSection({ emails }: { emails: V4Email[] }) {
       >
         <h2
           id="donna-traites-title"
-          className="text-[10px] tracking-[0.15em] uppercase font-medium text-[#6B7280] flex-1"
+          className="text-[11px] tracking-[0.15em] uppercase font-medium text-[#6B7280] flex-1"
         >
-          Classés par Donna
+          Terminé
         </h2>
         <span
           className="text-[10px] text-[#6B7280] bg-[#F5F5F5] rounded-full px-2 py-0.5 dark:bg-zinc-800"
@@ -737,20 +737,128 @@ export default function DashboardV6() {
         setLoading(false);
         return;
       }
+
+      // --- Mode réel ---
       try {
-        const [briefData, configData] = await Promise.allSettled([
+        const [briefResult, emailsResult, configResult] = await Promise.allSettled([
           apiGet<any>("/api/briefs/today"),
+          apiGet<any[]>("/api/emails"),
           apiGet<{ nom_avocat?: string }>("/api/config"),
         ]);
-        setBriefing(v4Briefing); // fallback structuré
-        if (
-          configData.status === "fulfilled" &&
-          configData.value?.nom_avocat
-        ) {
-          setNomAvocat(configData.value.nom_avocat);
+
+        // Nom de l'avocate
+        if (configResult.status === "fulfilled" && configResult.value?.nom_avocat) {
+          setNomAvocat(configResult.value.nom_avocat);
         }
-      } catch {
-        setBriefing(v4Briefing);
+
+        const apiEmails: any[] = emailsResult.status === "fulfilled"
+          ? (emailsResult.value ?? [])
+          : [];
+
+        // Emails à traiter : pret_a_reviser + needs_response ou urgency high
+        const toDoEmails: V4Email[] = apiEmails
+          .filter(
+            (e) =>
+              e.pipeline_step === "pret_a_reviser" &&
+              (e.needs_response === true || e.urgency === "high")
+          )
+          .map((e): V4Email => ({
+            id: e.id,
+            expediteur: e.expediteur ?? "",
+            email_from: e.expediteur ?? "",
+            objet: e.objet ?? "",
+            resume: e.resume ?? "",
+            corps_original: e.metadata?.body ?? "",
+            date: e.created_at ?? new Date().toISOString(),
+            dossier_id: e.dossier_id ?? null,
+            dossier_nom: e.dossier_nom ?? null,
+            dossier_domaine: null,
+            urgency:
+              e.urgency === "high"
+                ? "haute"
+                : e.urgency === "medium"
+                ? "moyenne"
+                : "basse",
+            email_type: e.classification?.email_type ?? "informatif",
+            pieces_jointes: (e.attachments ?? []).map((a: any) => ({
+              nom: a.nom_fichier ?? a.nom ?? "document",
+              taille: "",
+              type_mime: a.type ?? "",
+              resume_ia: a.resume_ia ?? "",
+            })),
+            brouillon_mock: e.brouillon ?? null,
+          }));
+
+        // Emails traités : ignorés par Donna ou déjà dans pret_a_reviser sans action requise
+        const treatedEmails: V4Email[] = apiEmails
+          .filter((e) => e.pipeline_step === "ignore")
+          .slice(0, 20)
+          .map((e): V4Email => ({
+            id: e.id,
+            expediteur: e.expediteur ?? "",
+            email_from: e.expediteur ?? "",
+            objet: e.objet ?? "",
+            resume: e.resume ?? "",
+            corps_original: "",
+            date: e.created_at ?? new Date().toISOString(),
+            dossier_id: e.dossier_id ?? null,
+            dossier_nom: e.dossier_nom ?? null,
+            dossier_domaine: null,
+            urgency: "basse",
+            email_type: "informatif",
+            pieces_jointes: [],
+            brouillon_mock: null,
+            filtered_by_donna: true,
+          }));
+
+        // Narratif depuis le brief ou message par défaut
+        const briefContent = briefResult.status === "fulfilled"
+          ? briefResult.value?.content
+          : null;
+        const narrative =
+          briefContent?.executive_summary ??
+          "Donna a analysé vos emails. Voici ce qui requiert votre attention.";
+
+        // Dossiers depuis le brief
+        const dossiers: V4Dossier[] = (briefContent?.dossiers ?? []).map((d: any) => ({
+          id: d.dossier_id ?? d.id ?? "",
+          nom: d.nom ?? d.name ?? "",
+          domaine: d.domaine ?? "",
+          urgency:
+            d.urgency === "high" || d.urgency === "haute"
+              ? "haute"
+              : d.urgency === "medium" || d.urgency === "moyenne"
+              ? "moyenne"
+              : "basse",
+          email_ids: [],
+          resume_court: d.summary ?? d.resume_court ?? "",
+          dates_cles: d.dates_cles ?? [],
+        }));
+
+        const realBriefing: V4BriefingData = {
+          nom_avocat: configResult.status === "fulfilled"
+            ? (configResult.value?.nom_avocat ?? "Alexandra")
+            : "Alexandra",
+          date_briefing: new Date().toISOString(),
+          narrative,
+          emails_action: toDoEmails,
+          emails_traites: treatedEmails,
+          dossiers: dossiers.length > 0 ? dossiers : v4Briefing.dossiers,
+          stats: {
+            total_analyses: apiEmails.length,
+            action_required: toDoEmails.length,
+            auto_traites: treatedEmails.length,
+            temps_gagne_minutes: Math.round(apiEmails.length * 2.5),
+            brouillons_generes: apiEmails.filter((e) => e.brouillon).length,
+            streak_jours: 0,
+            brief_lu: true,
+          },
+        };
+
+        setBriefing(realBriefing);
+      } catch (err) {
+        console.error("DashboardV6 load error:", err);
+        setBriefing(v4Briefing); // fallback démo si tout échoue
       } finally {
         setLoading(false);
       }
@@ -764,7 +872,7 @@ export default function DashboardV6() {
       next.add(id);
       return next;
     });
-    toast.success("Traité", {
+    toast.success("Fait ✓", {
       description: "Donna a mis à jour votre progression.",
       duration: 1800,
     });
@@ -899,9 +1007,9 @@ export default function DashboardV6() {
               <div className="flex items-center justify-between mb-3">
                 <h2
                   id="action-title"
-                  className="text-[10px] tracking-[0.15em] uppercase font-medium text-[#6B7280]"
+                  className="text-[11px] tracking-[0.15em] uppercase font-medium text-[#6B7280]"
                 >
-                  A traiter
+                  To-do list
                 </h2>
                 {pendingCount > 0 && (
                   <span
@@ -948,7 +1056,7 @@ export default function DashboardV6() {
         >
           <h2
             id="dossiers-title"
-            className="text-[10px] tracking-[0.15em] uppercase font-medium text-[#6B7280] mb-3"
+            className="text-[11px] tracking-[0.15em] uppercase font-medium text-[#6B7280] mb-3"
           >
             Dossiers actifs
           </h2>
