@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Mail, User, Wand2, X } from "lucide-react";
-import { apiGet, apiPut, apiPublicGet } from "@/lib/api";
+import { Loader2, Mail, User, Wand2, X, AlertTriangle, CheckCircle2, Trash2, LogIn } from "lucide-react";
+import { apiGet, apiPut, apiPublicGet, apiDelete } from "@/lib/api";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { isDemoMode } from "@/hooks/useDemoMode";
 
 const Configuration = () => {
@@ -41,6 +42,9 @@ const Configuration = () => {
   // Section 4 — Avancé
   const [frequenceBrief, setFrequenceBrief] = useState("matin");
   const [langue, setLangue] = useState("fr");
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (isDemo) {
@@ -100,6 +104,19 @@ const Configuration = () => {
 
   const handleRemoveInstruction = (idx: number) => {
     setSavedInstructions((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await apiDelete("/api/account");
+      toast.success("Toutes vos données ont été supprimées");
+      setGmailConnected(false);
+      setShowDeleteDialog(false);
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    }
+    setDeleting(false);
   };
 
   const handleSave = async () => {
@@ -174,23 +191,31 @@ const Configuration = () => {
               </AccordionTrigger>
               <AccordionContent className="px-5 pb-5">
                 {gmailConnected ? (
-                  <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4">
-                    <p className="text-sm text-foreground">Connecté à votre boîte Gmail</p>
-                    <p className="text-xs text-muted-foreground mt-1">Donna analyse vos emails en continu</p>
+                  <div className="space-y-4">
+                    <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">Email connecté</p>
+                      </div>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">Donna analyse vos emails en continu</p>
+                    </div>
+                    <button
+                      onClick={() => setShowDeleteDialog(true)}
+                      className="flex items-center gap-2 text-xs text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors pt-1"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Supprimer mon compte et mes données
+                    </button>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <Button onClick={handleConnectGmail} disabled={connectingGmail || isDemo} className="w-full">
-                      {connectingGmail && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                      {isDemo ? "Disponible après inscription" : "Connecter Gmail"}
+                    <Button onClick={() => navigate("/login")} className="w-full" variant="default">
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Connecter mon email
                     </Button>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       Donna accède à vos emails en lecture seule. Vos données sont chiffrées et vous pouvez révoquer l'accès à tout moment.
                     </p>
-                    <div className="flex items-center gap-2 opacity-50">
-                      <span className="text-xs text-muted-foreground">Outlook</span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Bientôt</span>
-                    </div>
                   </div>
                 )}
               </AccordionContent>
@@ -316,6 +341,36 @@ const Configuration = () => {
             </Button>
           </div>
         </div>
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                Supprimer mon compte
+              </DialogTitle>
+              <DialogDescription className="text-left pt-2">
+                Cette action est irréversible. Toutes vos données seront définitivement supprimées :
+              </DialogDescription>
+            </DialogHeader>
+            <ul className="text-sm text-muted-foreground space-y-1.5 pl-4">
+              <li>• Tous vos emails analysés</li>
+              <li>• Tous vos dossiers clients</li>
+              <li>• Tous vos documents et pièces jointes</li>
+              <li>• Vos briefings</li>
+              <li>• Votre connexion email</li>
+            </ul>
+            <DialogFooter className="flex gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                Annuler
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteAccount} disabled={deleting}>
+                {deleting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Supprimer définitivement
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </DashboardLayout>
     </ErrorBoundary>
   );

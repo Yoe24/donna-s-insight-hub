@@ -81,3 +81,24 @@ export async function apiPut<T = any>(endpoint: string, body?: object): Promise<
   }
   return {} as T;
 }
+
+export async function apiDelete<T = any>(endpoint: string): Promise<T> {
+  const userId = getUserId();
+  const url = `${BASE_URL}${endpoint}` + (endpoint.includes('?') ? '&' : '?') + `user_id=${encodeURIComponent(userId)}`;
+
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => 'Unknown error');
+    throw new Error(`API DELETE ${endpoint} failed (${res.status}): ${errorText}`);
+  }
+
+  const contentType = res.headers.get('content-type');
+  if (contentType?.includes('application/json')) {
+    return res.json();
+  }
+  return {} as T;
+}
