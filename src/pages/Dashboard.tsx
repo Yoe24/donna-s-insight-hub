@@ -1,53 +1,95 @@
 /**
- * Dashboard — Briefing page
- *
- * In demo mode, uses local mock data (no API calls).
- * In real mode, fetches from API using the active user_id.
+ * Dashboard V2 — Briefing page
+ * Style : cartes visuelles Notion, mobile-first.
+ * En mode démo : données mock locales (mock-briefing-v2.ts), zéro appel API.
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, RefreshCw, FileText, Mail, Folder, CheckCircle, Filter, Paperclip } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { EmailListInline } from "@/components/EmailListInline";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Loader2,
+  RefreshCw,
+  Paperclip,
+  ChevronDown,
+  ChevronRight,
+  ArrowRight,
+  Sparkles,
+  Clock,
+  Mail,
+  FileCheck,
+  Filter,
+} from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { apiGet, apiPost } from "@/lib/api";
-import { BriefingDetailPanel, type DossierEmail } from "@/components/BriefingDetailPanel";
-import type { BriefingData, BriefingDossier, BriefingDossierEmail, PeriodStats } from "@/lib/mock-briefing";
-import { mockBriefing, mockDossierEmails, mockConfig, getEmailsForPeriod, mockAllEmails } from "@/lib/mock-briefing";
 import { isDemo } from "@/lib/auth";
 import { EmailDrawer } from "@/components/EmailDrawer";
-import { AnimatePresence } from "framer-motion";
 import { GuidedTour } from "@/components/GuidedTour";
 import { isTourCompleted } from "@/lib/tour-state";
 import type { Email } from "@/hooks/useEmails";
 
-const fadeIn = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } };
+// V2 mocks
+import {
+  mockBriefingV2,
+  v2EmailToDrawerEmail,
+  type V2Email,
+  type V2Dossier,
+  type V2FilteredEmail,
+  type V2UrgencyLevel,
+} from "@/lib/mock-briefing-v2";
 
-const AVATAR_COLORS = [
-  { bg: "bg-blue-100", text: "text-blue-700" },
-  { bg: "bg-emerald-100", text: "text-emerald-700" },
-  { bg: "bg-purple-100", text: "text-purple-700" },
-  { bg: "bg-orange-100", text: "text-orange-700" },
-  { bg: "bg-rose-100", text: "text-rose-700" },
-  { bg: "bg-teal-100", text: "text-teal-700" },
-];
+// Legacy mock imports for real-mode API fallback shape compatibility
+import { mockConfig } from "@/lib/mock-briefing";
 
-function getAvatarColor(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+// ---------------------------------------------------------------------------
+// Types (real-mode API shapes, simplified)
+// ---------------------------------------------------------------------------
+
+interface ApiBriefingDossier {
+  dossier_id: string;
+  nom?: string;
+  name?: string;
+  domaine?: string;
+  domain?: string;
+  needs_immediate_attention: boolean;
+  new_emails_count: number;
+  summary: string;
+  emails_narrative: string;
+  pieces_narrative: string | null;
+  dates_cles: string[];
+  deadline_days: number | null;
+  emails?: { id: string; expediteur?: string; objet?: string; resume?: string | null; created_at?: string }[];
 }
 
-function getInitial(name: string): string {
-  return (name || "?").charAt(0).toUpperCase();
+interface ApiBriefingData {
+  content: {
+    executive_summary: string;
+    stats: {
+      emails_analyzed: number;
+      emails_dossiers: number;
+      emails_generaux: number;
+      temps_gagne_minutes: number;
+      pieces_extraites: number;
+    };
+    dossiers: ApiBriefingDossier[];
+  };
 }
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 
 type PeriodFilter = "24h" | "7j" | "30j";
 
@@ -57,35 +99,44 @@ const PERIOD_LABELS: Record<PeriodFilter, string> = {
   "30j": "30 jours",
 };
 
-/** Lightweight email type for dossier lines — normalized from API fields */
-interface DossierLineEmail {
-  id: string;
-  expediteur: string;
-  objet: string;
-  resume: string | null;
-  created_at: string;
-}
+const URGENCY_COLORS: Record<V2UrgencyLevel, string> = {
+  urgent: "bg-red-500",
+  a_traiter: "bg-amber-400",
+  traite: "bg-emerald-500",
+};
 
-/** Normalize a briefing email (API shape) to DossierLineEmail */
-function normalizeBriefEmail(raw: BriefingDossierEmail, index: number): DossierLineEmail {
-  return {
-    id: raw.id || `brief-email-${index}`,
-    expediteur: raw.from_name || raw.expediteur || "",
-    objet: raw.subject || raw.objet || "",
-    resume: raw.summary || raw.resume || null,
-    created_at: raw.date || raw.created_at || "",
-  };
-}
+const URGENCY_LABELS: Record<V2UrgencyLevel, string> = {
+  urgent: "Urgent",
+  a_traiter: "À traiter",
+  traite: "Traité",
+};
 
-/** Get display name for a briefing dossier (API may use `name` or `nom`) */
-function getDossierName(d: BriefingDossier): string {
-  return d.name || d.nom || "";
-}
+const URGENCY_BADGE: Record<
+  V2UrgencyLevel,
+  { bg: string; text: string; ring: string }
+> = {
+  urgent: { bg: "bg-red-50", text: "text-red-700", ring: "ring-red-200" },
+  a_traiter: {
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    ring: "ring-amber-200",
+  },
+  traite: {
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    ring: "ring-emerald-200",
+  },
+};
 
-/** Get display domain for a briefing dossier */
-function getDossierDomain(d: BriefingDossier): string {
-  return d.domain || d.domaine || "";
-}
+const fadeIn = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.25 },
+};
+
+// ---------------------------------------------------------------------------
+// Helper: format relative date
+// ---------------------------------------------------------------------------
 
 function formatMailDate(dateStr: string): string {
   try {
@@ -95,54 +146,416 @@ function formatMailDate(dateStr: string): string {
     const diffMs = now.getTime() - date.getTime();
     const diffHours = diffMs / (1000 * 60 * 60);
     const diffDays = diffMs / (1000 * 60 * 60 * 24);
-    const hhmm = `${date.getHours()}h${String(date.getMinutes()).padStart(2, '0')}`;
-    if (diffHours < 1) return `Il y a ${Math.max(1, Math.floor(diffMs / 60000))} min`;
-    if (diffHours < 24 && date.getDate() === now.getDate()) return `Aujourd'hui, ${hhmm}`;
-    if (diffDays < 2) return `Hier, ${hhmm}`;
-    if (diffDays < 7) {
-      const jours = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
-      return `${jours[date.getDay()]}, ${hhmm}`;
-    }
-    const mois = ['jan.', 'fév.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
-    return `${date.getDate()} ${mois[date.getMonth()]}, ${hhmm}`;
-  } catch { return ""; }
+    const hhmm = `${date.getHours()}h${String(date.getMinutes()).padStart(2, "0")}`;
+    if (diffHours < 1)
+      return `il y a ${Math.max(1, Math.floor(diffMs / 60000))} min`;
+    if (diffHours < 24 && date.getDate() === now.getDate())
+      return `aujourd'hui ${hhmm}`;
+    if (diffDays < 2) return `hier ${hhmm}`;
+    const jours = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+    if (diffDays < 7) return `${jours[date.getDay()]} ${hhmm}`;
+    return format(date, "d MMM", { locale: fr });
+  } catch {
+    return "";
+  }
 }
+
+// ---------------------------------------------------------------------------
+// Sub-component: DossierCard V2
+// ---------------------------------------------------------------------------
+
+interface DossierCardProps {
+  dossier: V2Dossier;
+  onEmailClick: (email: V2Email) => void;
+  onViewDossier: () => void;
+}
+
+function DossierCard({ dossier, onEmailClick, onViewDossier }: DossierCardProps) {
+  const ub = URGENCY_BADGE[dossier.urgency];
+  const urgencyColor = URGENCY_COLORS[dossier.urgency];
+
+  // Emails to show inline (max 2 on mobile, all on wider)
+  const emailsToShow = dossier.emails.slice(0, 3);
+
+  return (
+    <article
+      className="relative flex rounded-2xl bg-card shadow-sm border border-border/60 overflow-hidden transition-shadow hover:shadow-md"
+      aria-label={`Dossier ${dossier.nom}`}
+    >
+      {/* Urgency strip on the left */}
+      <div
+        className={`w-1.5 shrink-0 ${urgencyColor}`}
+        aria-hidden="true"
+      />
+
+      <div className="flex-1 min-w-0 p-4 sm:p-5">
+        {/* Header row */}
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full ring-1 ${ub.bg} ${ub.text} ${ub.ring} uppercase tracking-wide`}
+              >
+                {URGENCY_LABELS[dossier.urgency]}
+              </span>
+              <Badge
+                variant="outline"
+                className="text-[10px] px-2 py-0 h-5 font-normal text-muted-foreground"
+              >
+                {dossier.domaine}
+              </Badge>
+            </div>
+            <h3 className="mt-1.5 text-base font-semibold text-foreground leading-tight">
+              {dossier.nom}
+            </h3>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onViewDossier}
+            className="shrink-0 h-8 text-xs text-muted-foreground hover:text-primary gap-1 -mr-1 mt-0.5"
+            aria-label={`Voir le dossier ${dossier.nom}`}
+          >
+            Dossier
+            <ArrowRight className="h-3 w-3" />
+          </Button>
+        </div>
+
+        {/* Donna summary */}
+        <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+          {dossier.summary}
+        </p>
+
+        {/* Key dates */}
+        {dossier.dates_cles.length > 0 && (
+          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+            <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" aria-hidden="true" />
+            {dossier.dates_cles.map((d, i) => (
+              <span
+                key={i}
+                className="text-xs text-amber-700 dark:text-amber-400 font-medium"
+              >
+                {d}
+                {i < dossier.dates_cles.length - 1 ? " · " : ""}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <Separator className="my-3" />
+
+        {/* Email list */}
+        <div
+          className="space-y-2"
+          role="list"
+          aria-label={`Emails du dossier ${dossier.nom}`}
+        >
+          {emailsToShow.map((email) => (
+            <EmailRow
+              key={email.id}
+              email={email}
+              onClick={() => onEmailClick(email)}
+            />
+          ))}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-component: EmailRow inside a DossierCard
+// ---------------------------------------------------------------------------
+
+interface EmailRowProps {
+  email: V2Email;
+  onClick: () => void;
+}
+
+function EmailRow({ email, onClick }: EmailRowProps) {
+  return (
+    <div
+      role="listitem"
+      className="group rounded-xl border border-border/40 bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer p-3"
+      onClick={onClick}
+      onKeyDown={(e) => e.key === "Enter" && onClick()}
+      tabIndex={0}
+      aria-label={`Email : ${email.objet}`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          {/* Sender + date */}
+          <div className="flex items-baseline gap-2 justify-between">
+            <span className="text-xs font-semibold text-foreground truncate">
+              {email.expediteur}
+            </span>
+            <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+              {formatMailDate(email.date)}
+            </span>
+          </div>
+
+          {/* Subject */}
+          <p className="text-xs text-foreground/80 mt-0.5 truncate font-medium">
+            {email.objet}
+          </p>
+
+          {/* Donna summary — always visible */}
+          <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">
+            {email.resume}
+          </p>
+
+          {/* Attachments */}
+          {email.pieces_jointes.length > 0 && (
+            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+              {email.pieces_jointes.map((pj, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 text-[10px] text-muted-foreground bg-background rounded-md px-1.5 py-0.5 border border-border/50"
+                >
+                  <Paperclip className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+                  <span className="truncate max-w-[140px]">{pj.nom}</span>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Action buttons */}
+      <div
+        className="flex items-center gap-2 mt-2.5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-xs px-3 gap-1"
+          onClick={onClick}
+          aria-label={`Voir l'email : ${email.objet}`}
+        >
+          <Mail className="h-3 w-3" aria-hidden="true" />
+          Voir
+        </Button>
+        {email.brouillon_mock && (
+          <Button
+            size="sm"
+            variant="default"
+            className="h-7 text-xs px-3 gap-1 bg-[#1e3a5f] hover:bg-[#1e3a5f]/90 text-white"
+            onClick={onClick}
+            aria-label={`Brouillon prêt pour : ${email.objet}`}
+          >
+            <Sparkles className="h-3 w-3" aria-hidden="true" />
+            Brouillon prêt
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-component: Donna narrative card
+// ---------------------------------------------------------------------------
+
+interface NarrativeCardProps {
+  text: string;
+  stats: {
+    total_emails: number;
+    emails_dossiers: number;
+    emails_filtres: number;
+    pieces_jointes: number;
+    temps_gagne_minutes: number;
+  };
+}
+
+function NarrativeCard({ text, stats }: NarrativeCardProps) {
+  return (
+    <div className="rounded-2xl border border-[#1e3a5f]/20 bg-[#1e3a5f]/5 dark:bg-[#1e3a5f]/10 p-4 sm:p-5">
+      {/* Donna header */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="h-8 w-8 rounded-full bg-[#1e3a5f] flex items-center justify-center shrink-0">
+          <Sparkles className="h-4 w-4 text-[#c9a84c]" aria-hidden="true" />
+        </div>
+        <span className="text-sm font-semibold text-[#1e3a5f] dark:text-foreground">
+          Donna
+        </span>
+      </div>
+
+      {/* Narrative text */}
+      <p className="text-sm text-foreground leading-relaxed">{text}</p>
+
+      {/* Stats pills */}
+      <div
+        className="flex flex-wrap gap-2 mt-4"
+        role="list"
+        aria-label="Statistiques du briefing"
+      >
+        <StatPill
+          icon={<Mail className="h-3 w-3" />}
+          label={`${stats.total_emails} emails`}
+        />
+        <StatPill
+          icon={<FileCheck className="h-3 w-3" />}
+          label={`${stats.emails_dossiers} classés`}
+        />
+        <StatPill
+          icon={<Filter className="h-3 w-3" />}
+          label={`${stats.emails_filtres} filtrés`}
+        />
+        {stats.pieces_jointes > 0 && (
+          <StatPill
+            icon={<Paperclip className="h-3 w-3" />}
+            label={`${stats.pieces_jointes} pièce${stats.pieces_jointes > 1 ? "s" : ""} jointe${stats.pieces_jointes > 1 ? "s" : ""}`}
+          />
+        )}
+        <StatPill
+          icon={<Clock className="h-3 w-3 text-[#c9a84c]" />}
+          label={`${stats.temps_gagne_minutes} min gagnées`}
+          highlight
+        />
+      </div>
+    </div>
+  );
+}
+
+function StatPill({
+  icon,
+  label,
+  highlight = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      role="listitem"
+      className={`inline-flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1 ${
+        highlight
+          ? "bg-[#c9a84c]/10 text-[#c9a84c] font-medium ring-1 ring-[#c9a84c]/30"
+          : "bg-background/80 text-muted-foreground border border-border/50"
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-component: Filtered emails section (collapsed by default)
+// ---------------------------------------------------------------------------
+
+interface FilteredEmailsSectionProps {
+  emails: V2FilteredEmail[];
+}
+
+function FilteredEmailsSection({ emails }: FilteredEmailsSectionProps) {
+  const [open, setOpen] = useState(false);
+
+  const reasonLabel: Record<V2FilteredEmail["reason"], string> = {
+    newsletter: "Newsletter",
+    spam: "Publicité",
+    notification: "Notification",
+  };
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger
+        className="flex items-center gap-2 w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+        aria-label={`Traités par Donna, ${emails.length} emails`}
+      >
+        <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+          Traités par Donna
+        </span>
+        <span className="text-[10px] text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 font-medium">
+          {emails.length}
+        </span>
+        {open ? (
+          <ChevronDown
+            className="h-3.5 w-3.5 text-muted-foreground ml-auto"
+            aria-hidden="true"
+          />
+        ) : (
+          <ChevronRight
+            className="h-3.5 w-3.5 text-muted-foreground ml-auto"
+            aria-hidden="true"
+          />
+        )}
+      </CollapsibleTrigger>
+
+      <CollapsibleContent>
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden mt-2"
+            >
+              <div
+                className="rounded-2xl border border-border/50 bg-card divide-y divide-border/30"
+                role="list"
+                aria-label="Emails filtrés par Donna"
+              >
+                {emails.map((e) => (
+                  <div
+                    key={e.id}
+                    role="listitem"
+                    className="flex items-center gap-3 px-4 py-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-xs font-medium text-foreground truncate">
+                          {e.expediteur}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground shrink-0">
+                          {formatMailDate(e.date)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {e.objet}
+                      </p>
+                      <p className="text-xs text-muted-foreground/70 mt-0.5 line-clamp-1">
+                        {e.resume}
+                      </p>
+                    </div>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-50 dark:bg-gray-900 text-gray-500 ring-1 ring-gray-200 dark:ring-gray-700 shrink-0">
+                      {reasonLabel[e.reason]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Dashboard component
+// ---------------------------------------------------------------------------
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [briefing, setBriefing] = useState<BriefingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [nomAvocat, setNomAvocat] = useState("");
   const [period, setPeriod] = useState<PeriodFilter>("24h");
-  const [selectedDossier, setSelectedDossier] = useState<BriefingDossier | null>(null);
-  const [panelEmails, setPanelEmails] = useState<DossierEmail[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [showTour, setShowTour] = useState(false);
-  // Cache of emails per dossier for inline display
-  const [dossierEmailsMap, setDossierEmailsMap] = useState<Record<string, DossierLineEmail[]>>({});
 
-  const _now = Date.now();
-  const hoursAgoTodo = (h: number) => new Date(_now - h * 3600000).toISOString();
-  const daysAgoTodo = (d: number) => new Date(_now - d * 86400000).toISOString();
+  // Real-mode API data
+  const [apiDossiers, setApiDossiers] = useState<ApiBriefingDossier[]>([]);
+  const [apiNarrative, setApiNarrative] = useState("");
+  const [apiStats, setApiStats] = useState<ApiBriefingData["content"]["stats"] | null>(null);
 
-  const [todoItems, setTodoItems] = useState([
-    { id: "todo-1", text: "Répondre à Jean-Pierre Martin sur les points de l'entretien préalable", dossier: "Martin · Droit du travail", dossier_id: "2", email_id: "e5", type: "reponse", done: false, date: hoursAgoTodo(2), hasDraft: true, urgency: "echeance" as const, draftPreview: "Maître,\n\nFaisant suite à votre email concernant le 2e entretien préalable de rupture conventionnelle, je vous confirme que les points suivants pourront être abordés :\n\n1. Indemnité supra-légale (proposition à 12 000 €)\n2. Clause de non-concurrence (levée demandée)\n3. Solde de tout compte et certificat de travail\n\nJe reste à votre disposition.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-2", text: "Vérifier la mise en demeure reçue de BTP Pro", dossier: "Dupont · Litige commercial", dossier_id: "1", email_id: "e3", type: "lecture", done: false, date: hoursAgoTodo(5), hasDraft: false, urgency: "prioritaire" as const, draftPreview: null, attachmentSummary: "Mise en demeure de BTP Pro datée du 25 mars, contestation de la non-conformité des travaux, demande de paiement de 45 000 € sous 15 jours." },
-    { id: "todo-3", text: "Relancer Claire Dubois pour les pièces manquantes", dossier: "Dubois · Litige immobilier", dossier_id: "5", email_id: "e20", type: "relance", done: false, date: hoursAgoTodo(8), hasDraft: true, urgency: "echeance" as const, draftPreview: "Madame Dubois,\n\nJe me permets de revenir vers vous concernant les documents que nous attendons pour compléter votre dossier avant l'audience du 15 avril :\n\n- PV de la dernière assemblée générale\n- Relevés de charges 2024-2025\n\nMerci de me les transmettre dès que possible.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-4", text: "Consulter le rapport d'expertise Famille Roux", dossier: "Roux · Immobilier", dossier_id: "4", email_id: "e7", type: "lecture", done: true, date: daysAgoTodo(2), hasDraft: false, urgency: null, draftPreview: null, attachmentSummary: "Rapport d'expertise du 20 mars concluant à des malfaçons sur la toiture et l'étanchéité. Montant estimé des réparations : 28 000 €." },
-    { id: "todo-5", text: "Répondre à Alice Bernard sur la procédure de divorce", dossier: "Bernard · Droit de la famille", dossier_id: "6", email_id: "e22", type: "reponse", done: true, date: daysAgoTodo(3), hasDraft: true, urgency: null, draftPreview: "Chère Madame Bernard,\n\nSuite à notre échange, je vous confirme que la requête en divorce a bien été déposée auprès du tribunal.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-6", text: "Préparer les pièces pour l'audience TGI (Dubois)", dossier: "Dubois · Litige immobilier", dossier_id: "5", email_id: "e21", type: "action", done: true, date: daysAgoTodo(5), hasDraft: false, urgency: "echeance" as const, draftPreview: null, attachmentSummary: null },
-    { id: "todo-7", text: "Analyser le contrat de travail de Jean-Pierre Martin", dossier: "Martin · Droit du travail", dossier_id: "2", email_id: "e13", type: "lecture", done: true, date: daysAgoTodo(12), hasDraft: false, urgency: null, draftPreview: null, attachmentSummary: "CDI signé le 15 mars 2019, clause de non-concurrence sur 12 mois, indemnité de 40% du salaire." },
-    { id: "todo-8", text: "Envoyer la mise en demeure à TechCorp", dossier: "Martin · Droit du travail", dossier_id: "2", email_id: "e6", type: "reponse", done: true, date: daysAgoTodo(17), hasDraft: true, urgency: "prioritaire" as const, draftPreview: "Madame, Monsieur,\n\nPar la présente, je vous mets en demeure de procéder au paiement des heures supplémentaires dues à M. Martin.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-9", text: "Répondre au courrier du notaire (Famille Roux)", dossier: "Roux · Immobilier", dossier_id: "4", email_id: "e18", type: "reponse", done: true, date: daysAgoTodo(22), hasDraft: true, urgency: null, draftPreview: "Maître,\n\nEn réponse à votre courrier du 1er mars concernant l'acte de vente, je vous confirme les réserves de mes clients.\n\nCordialement,\nMe Alexandra Fernandez", attachmentSummary: null },
-    { id: "todo-10", text: "Vérifier la conformité du bail commercial (Dupont)", dossier: "Dupont · Litige commercial", dossier_id: "1", email_id: "e1", type: "lecture", done: true, date: daysAgoTodo(26), hasDraft: false, urgency: null, draftPreview: null, attachmentSummary: null },
-  ]);
-  const [expandedCard, setExpandedCard] = useState<"emails" | "pj" | null>(null);
-  const dossiersRef = useRef<HTMLDivElement>(null);
-  const [highlightDossierId, setHighlightDossierId] = useState<string | null>(null);
-
+  // Handle user_id param (real mode)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const userId = params.get("user_id");
@@ -151,25 +564,35 @@ const Dashboard = () => {
       localStorage.setItem("donna_demo_mode", "false");
       params.delete("user_id");
       const newSearch = params.toString();
-      window.history.replaceState({}, "", "/dashboard" + (newSearch ? `?${newSearch}` : ""));
+      window.history.replaceState(
+        {},
+        "",
+        "/dashboard" + (newSearch ? `?${newSearch}` : "")
+      );
     }
   }, []);
 
   const fetchBriefing = useCallback(async () => {
     if (isDemo()) {
-      await new Promise((r) => setTimeout(r, 400));
-      setBriefing(mockBriefing);
-      setNotFound(false);
+      await new Promise((r) => setTimeout(r, 350));
       setLoading(false);
+      setNotFound(false);
       return;
     }
     try {
-      const data = await apiGet<BriefingData>("/api/briefs/today");
-      setBriefing(data);
+      const data = await apiGet<ApiBriefingData>("/api/briefs/today");
+      if (data?.content?.dossiers) {
+        setApiDossiers(data.content.dossiers);
+        setApiNarrative(data.content.executive_summary ?? "");
+        setApiStats(data.content.stats ?? null);
+      }
       setNotFound(false);
     } catch (e: any) {
       if (e?.message?.includes("404")) setNotFound(true);
-      else { console.error(e); toast.error("Impossible de charger le briefing"); }
+      else {
+        console.error(e);
+        toast.error("Impossible de charger le briefing");
+      }
     } finally {
       setLoading(false);
     }
@@ -185,250 +608,118 @@ const Dashboard = () => {
       setNomAvocat(mockConfig.nom_avocat);
     } else {
       apiGet<{ nom_avocat?: string }>("/api/config")
-        .then((d) => { if (d?.nom_avocat) setNomAvocat(d.nom_avocat); })
+        .then((d) => {
+          if (d?.nom_avocat) setNomAvocat(d.nom_avocat);
+        })
         .catch(() => {});
     }
   }, [fetchBriefing]);
 
-  // Build dossierEmailsMap from mock data (filtered by period) or API
-  useEffect(() => {
-    if (!briefing) return;
-    const dossiers = briefing.content?.dossiers ?? [];
-
-    if (isDemo()) {
-      // In demo mode, filter emails by the selected period
-      const periodEmails = getEmailsForPeriod(period);
-      const newMap: Record<string, DossierLineEmail[]> = {};
-      dossiers.forEach((d) => {
-        const emails = periodEmails.filter((e) => e.dossier_id === d.dossier_id);
-        if (emails.length > 0) {
-          newMap[d.dossier_id] = emails.map((e, i) => normalizeBriefEmail({
-            id: e.id,
-            expediteur: e.expediteur,
-            objet: e.objet,
-            resume: e.resume,
-            created_at: e.date,
-          }, i));
-        }
-      });
-      setDossierEmailsMap(newMap);
-    } else {
-      // Real mode: use inline emails or fetch from API
-      dossiers.forEach((d) => {
-        if (dossierEmailsMap[d.dossier_id]) return;
-        const inlineEmails = d.emails || d.emails_recus || [];
-        if (inlineEmails.length > 0) {
-          const normalized = inlineEmails.map(normalizeBriefEmail);
-          setDossierEmailsMap((prev) => ({ ...prev, [d.dossier_id]: normalized }));
-        } else {
-          apiGet<any[]>(`/api/emails?dossier_id=${d.dossier_id}`)
-            .then((emails) => {
-              const normalized = (emails || []).map((e: any, i: number) => normalizeBriefEmail(e, i));
-              setDossierEmailsMap((prev) => ({ ...prev, [d.dossier_id]: normalized }));
-            })
-            .catch(() => {});
-        }
-      });
-    }
-  }, [briefing, period]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleDossierClick = (d: BriefingDossier) => {
-    setSelectedEmail(null);
-    setSelectedDossier(d);
-    const cached = dossierEmailsMap[d.dossier_id];
-    if (cached) {
-      setPanelEmails(cached as any);
-    } else if (isDemo()) {
-      setPanelEmails((mockDossierEmails[d.dossier_id] || []) as any);
-    } else {
-      apiGet<DossierEmail[]>(`/api/emails?dossier_id=${d.dossier_id}`)
-        .then((emails) => setPanelEmails(emails ?? []))
-        .catch(() => setPanelEmails([]));
-    }
-  };
-
-  /** Open EmailDrawer with a specific email */
-  const handleEmailClick = (_d: BriefingDossier, email: DossierLineEmail) => {
-    // Close any open dossier panel first
-    setSelectedDossier(null);
-
-    if (isDemo()) {
-      // Find the full mock email data by id
-      const mockEmail = mockAllEmails.find((e) => e.id === email.id);
-      if (mockEmail) {
-        setSelectedEmail({
-          id: mockEmail.id,
-          expediteur: `${mockEmail.expediteur} <${mockEmail.email}>`,
-          objet: mockEmail.objet,
-          resume: mockEmail.resume,
-          brouillon: mockEmail.brouillon_mock,
-          pipeline_step: "pret_a_reviser",
-          contexte_choisi: "",
-          statut: "traite",
-          created_at: mockEmail.date,
-          updated_at: mockEmail.date,
-          contenu: mockEmail.corps_original,
-          dossier_id: mockEmail.dossier_id,
-          dossier_name: mockEmail.dossier_nom ? `${mockEmail.dossier_nom} - ${mockEmail.dossier_domaine}` : null,
-          from_email: mockEmail.email,
-          email_type: mockEmail.email_type,
-          attachments: mockEmail.pieces_jointes.map((pj, i) => ({
-            id: `${mockEmail.id}-att-${i}`,
-            filename: pj.nom,
-            type: pj.type_mime.includes("pdf") ? "pdf" : pj.type_mime.includes("image") ? "image" : "other",
-            size: pj.taille,
-          })),
-        } as any);
-        return;
-      }
-    }
-    // Fallback for real mode: open BriefingDetailPanel with clicked email first
-    setSelectedDossier(_d);
-    const cached = dossierEmailsMap[_d.dossier_id] || [];
-    const reordered = [email, ...cached.filter((e) => e.id !== email.id)] as any;
-    setPanelEmails(reordered);
-  };
-
-  /** Open EmailDrawer by mock email ID */
-  const openEmailById = (emailId: string) => {
-    const mockEmail = mockAllEmails.find((e) => e.id === emailId);
-    if (!mockEmail) return;
-    setSelectedEmail({
-      id: mockEmail.id,
-      expediteur: `${mockEmail.expediteur} <${mockEmail.email}>`,
-      objet: mockEmail.objet,
-      resume: mockEmail.resume,
-      brouillon: mockEmail.brouillon_mock,
-      pipeline_step: "pret_a_reviser",
-      contexte_choisi: "",
-      statut: "traite",
-      created_at: mockEmail.date,
-      updated_at: mockEmail.date,
-      contenu: mockEmail.corps_original,
-      dossier_id: mockEmail.dossier_id,
-      dossier_name: mockEmail.dossier_nom ? `${mockEmail.dossier_nom} - ${mockEmail.dossier_domaine}` : null,
-      from_email: mockEmail.email,
-      email_type: mockEmail.email_type,
-      attachments: mockEmail.pieces_jointes.map((pj, i) => ({
-        id: `${mockEmail.id}-att-${i}`,
-        filename: pj.nom,
-        type: pj.type_mime.includes("pdf") ? "pdf" : pj.type_mime.includes("image") ? "image" : "other",
-        size: pj.taille,
-      })),
-    } as any);
-  };
-
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      if (isDemo()) {
-        // Simulate a short delay for demo UX
-        await new Promise((r) => setTimeout(r, 800));
-        setBriefing(mockBriefing);
-        setNotFound(false);
-      } else {
+      if (!isDemo()) {
         await apiPost("/api/briefs/generate");
       }
       toast.success("Briefing généré");
       setLoading(true);
       setNotFound(false);
       await fetchBriefing();
-    } catch { toast.error("Erreur lors de la génération"); }
-    finally { setGenerating(false); }
+    } catch {
+      toast.error("Erreur lors de la génération");
+    } finally {
+      setGenerating(false);
+    }
   };
 
+  /** Open EmailDrawer from a V2Email */
+  const handleEmailClick = (email: V2Email, dossier: V2Dossier) => {
+    if (isDemo()) {
+      setSelectedEmail(
+        v2EmailToDrawerEmail(email, dossier.nom, dossier.domaine) as any
+      );
+    }
+  };
+
+  // Greeting
   const now = new Date();
   const h = now.getHours();
   const greeting = h < 12 ? "Bonjour" : h < 18 ? "Bon après-midi" : "Bonsoir";
-  const dateStr = format(now, "EEEE d MMMM yyyy", { locale: fr });
+  const dateStr = format(now, "EEEE d MMMM", { locale: fr });
 
-  const dossiers = briefing?.content?.dossiers ?? [];
-  const attenteDossiers = (dossiers || []).filter((d) => d?.attente);
+  // Demo data
+  const demoDossiers = mockBriefingV2.dossiers;
+  const demoNarrative = mockBriefingV2.narrative;
+  const demoStats = mockBriefingV2.stats;
+  const demoFiltered = mockBriefingV2.filtered_emails;
 
-  const periodKey = period === "24h" ? "last_24h" : period === "7j" ? "last_7d" : "last_30d";
-  const activeDossierIds = briefing?.content?.emails_by_period?.[periodKey] ?? [];
-  const activeDossiers = dossiers
-    .filter((d) => {
-      const inlineCount = (d.emails || d.emails_recus || []).length;
-      return d.new_emails_count > 0 || inlineCount > 0;
-    })
-    .filter((d) => activeDossierIds.includes(d.dossier_id));
-
-  const periodStats = briefing?.content?.stats?.[periodKey] as PeriodStats | undefined;
-  const adjustedStats = periodStats ? {
-    total: periodStats.total,
-    dossier_emails: periodStats.dossier_emails,
-    general_emails: periodStats.general_emails,
-    attachments_count: periodStats.attachments_count,
-    temps_gagne_minutes: Math.round(periodStats.total * 5),
-  } : null;
-
-  const periodLabel = period === "24h" ? "dans les dernières 24 heures" : period === "7j" ? "ces 7 derniers jours" : "ces 30 derniers jours";
-
-  // Emails filtered by Donna (newsletters, spam, notifications — not linked to a dossier)
-  const filteredEmails = isDemo()
-    ? getEmailsForPeriod(period).filter((e) => e.dossier_id === null)
+  // Filter demo dossiers by period (simulate less data for 24h)
+  const filteredDemoDossiers = isDemo()
+    ? period === "24h"
+      ? demoDossiers.filter((d) => d.urgency === "urgent" || d.deadline_days !== null && d.deadline_days <= 7)
+      : period === "7j"
+      ? demoDossiers.filter((d) => d.urgency !== "traite")
+      : demoDossiers
     : [];
 
-  // Narrative phrase: identify urgent/actionable emails for the period
-  const narrativePhrase = (() => {
-    if (!isDemo()) return null;
-    const periodEmails = getEmailsForPeriod(period);
-    const actionable = periodEmails.filter(
-      (e) => e.dossier_id !== null && (e.email_type === "demande" || e.email_type === "relance" || e.email_type === "convocation")
-    );
-    if (actionable.length === 0) return "Rien d'urgent ce matin. Donna a tout trié pour vous.";
-    const top = actionable.slice(0, 2);
-    const subjects = top.map((e) => `${e.objet.toLowerCase()} (${e.dossier_nom})`);
-    if (subjects.length === 1) return `Ce matin, un sujet demande votre attention : ${subjects[0]}.`;
-    return `Ce matin, ${subjects.length} sujets demandent votre attention : ${subjects[0]} et ${subjects[1]}.`;
-  })();
+  // Urgency ordering: urgent first, then a_traiter
+  const sortedDossiers = [...filteredDemoDossiers].sort((a, b) => {
+    const order: Record<V2UrgencyLevel, number> = {
+      urgent: 0,
+      a_traiter: 1,
+      traite: 2,
+    };
+    return order[a.urgency] - order[b.urgency];
+  });
 
-  const filteredTodos = todoItems.filter((t) => {
-    const todoDate = new Date(t.date).getTime();
-    const now = Date.now();
-    if (period === "24h") return now - todoDate < 24 * 3600000;
-    if (period === "7j") return now - todoDate < 7 * 24 * 3600000;
-    return now - todoDate < 30 * 24 * 3600000;
-  });
-  // Sort: undone first, then by priority (reponse+draft > lecture > relance), then by date desc
-  const todoPriority = (t: typeof todoItems[0]) => {
-    if (t.done) return 10;
-    if (t.type === "reponse" && t.hasDraft) return 0;
-    if (t.type === "reponse") return 1;
-    if (t.type === "action") return 2;
-    if (t.type === "lecture") return 3;
-    return 4; // relance
-  };
-  const sortedTodos = [...filteredTodos].sort((a, b) => {
-    const pa = todoPriority(a);
-    const pb = todoPriority(b);
-    if (pa !== pb) return pa - pb;
-    return new Date(b.date).getTime() - new Date(a.date).getTime();
-  });
+  const urgentCount = sortedDossiers.filter((d) => d.urgency === "urgent").length;
+  const aTraiterCount = sortedDossiers.filter((d) => d.urgency === "a_traiter").length;
+  const pendingCount = urgentCount + aTraiterCount;
+
+  // ---------------------------------------------------------------------------
+  // Render states
+  // ---------------------------------------------------------------------------
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="max-w-5xl mx-auto space-y-6 pt-8">
-          <Skeleton className="h-7 w-72" />
-          <Skeleton className="h-20 rounded-xl mt-6" />
-          <Skeleton className="h-4 w-32 mt-8" />
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
+        <div className="max-w-2xl mx-auto px-4 pt-8 space-y-4" aria-label="Chargement du briefing">
+          <Skeleton className="h-7 w-56" />
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-28 rounded-2xl mt-6" />
+          <Skeleton className="h-4 w-24 mt-8" />
+          <Skeleton className="h-48 rounded-2xl" />
+          <Skeleton className="h-48 rounded-2xl" />
         </div>
       </DashboardLayout>
     );
   }
 
-  if (notFound || !briefing) {
+  if (notFound || (!isDemo() && apiDossiers.length === 0 && !loading)) {
     return (
       <DashboardLayout>
-        <div className="max-w-5xl mx-auto text-center py-24">
-          <Loader2 className={`h-7 w-7 mx-auto mb-4 text-muted-foreground ${generating ? "animate-spin" : ""}`} />
-          <p className="text-lg font-serif text-foreground mb-1">Donna prépare votre briefing…</p>
-          <p className="text-sm text-muted-foreground mb-6">Votre résumé de situation sera prêt dans quelques instants.</p>
-          <Button onClick={handleGenerate} disabled={generating} variant="outline" className="gap-2">
-            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+        <div className="max-w-2xl mx-auto px-4 text-center py-24">
+          <Loader2
+            className={`h-7 w-7 mx-auto mb-4 text-muted-foreground ${generating ? "animate-spin" : ""}`}
+            aria-hidden="true"
+          />
+          <p className="text-lg font-serif text-foreground mb-1">
+            Donna prépare votre briefing…
+          </p>
+          <p className="text-sm text-muted-foreground mb-6">
+            Votre résumé sera prêt dans quelques instants.
+          </p>
+          <Button
+            onClick={handleGenerate}
+            disabled={generating}
+            variant="outline"
+            className="gap-2"
+          >
+            {generating ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+            )}
             Générer le briefing
           </Button>
         </div>
@@ -436,24 +727,43 @@ const Dashboard = () => {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Main render
+  // ---------------------------------------------------------------------------
+
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto pb-24" data-tour="briefing">
-        <motion.div {...fadeIn} className="pt-10 pb-6">
+      <div
+        className="max-w-2xl mx-auto px-4 pb-24"
+        data-tour="briefing"
+      >
+        {/* ── Header ── */}
+        <motion.div {...fadeIn} className="pt-8 pb-4">
           <p className="text-2xl font-serif font-semibold text-foreground">
-            {greeting}{nomAvocat ? ` ${nomAvocat}` : ""}
+            {greeting}
+            {nomAvocat ? ` ${nomAvocat}` : ""}
           </p>
-          <p className="text-sm text-muted-foreground mt-1 capitalize">{dateStr}</p>
+          <p className="text-sm text-muted-foreground mt-0.5 capitalize">
+            {dateStr}
+          </p>
         </motion.div>
 
-        <motion.div {...fadeIn} transition={{ delay: 0.03 }} className="flex gap-1.5 mb-6">
+        {/* ── Period filter ── */}
+        <motion.div
+          {...fadeIn}
+          transition={{ delay: 0.05 }}
+          className="flex gap-1.5 mb-5"
+          role="group"
+          aria-label="Filtrer par période"
+        >
           {(["24h", "7j", "30j"] as PeriodFilter[]).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              aria-pressed={period === p}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 period === p
-                  ? "bg-emerald text-emerald-foreground"
+                  ? "bg-[#1e3a5f] text-white shadow-sm"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
@@ -462,372 +772,179 @@ const Dashboard = () => {
           ))}
         </motion.div>
 
-        {/* Narrative phrase — first thing the lawyer reads */}
-        {narrativePhrase && (
-          <motion.div {...fadeIn} transition={{ delay: 0.04 }} className="border-l-4 border-primary bg-primary/5 rounded-lg p-4 mb-6">
-            <p className="text-base text-foreground font-medium">{narrativePhrase}</p>
-          </motion.div>
-        )}
+        {/* ── Donna narrative card ── */}
+        <motion.div {...fadeIn} transition={{ delay: 0.08 }} className="mb-6">
+          <NarrativeCard
+            text={isDemo() ? demoNarrative : apiNarrative}
+            stats={
+              isDemo()
+                ? demoStats
+                : {
+                    total_emails: apiStats?.emails_analyzed ?? 0,
+                    emails_dossiers: apiStats?.emails_dossiers ?? 0,
+                    emails_filtres: apiStats?.emails_generaux ?? 0,
+                    pieces_jointes: apiStats?.pieces_extraites ?? 0,
+                    temps_gagne_minutes: apiStats?.temps_gagne_minutes ?? 0,
+                  }
+            }
+          />
+        </motion.div>
 
-        {adjustedStats && (
-          <motion.div {...fadeIn} transition={{ delay: 0.05 }} className="mb-10">
-            <p className="text-xs text-muted-foreground mb-3">alexandra@cabinet-fernandez.fr</p>
-            <div className="rounded-xl bg-muted/40 p-4 space-y-2">
-              <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                <p className="text-sm text-muted-foreground">
-                  <button
-                    onClick={() => setExpandedCard(expandedCard === "emails" ? null : "emails")}
-                    className={`font-semibold transition-colors cursor-pointer hover:underline ${expandedCard === "emails" ? "text-primary" : "text-foreground hover:text-primary"}`}
-                  >
-                    {adjustedStats.total} emails
-                  </button>{" "}reçus
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-4 w-4 text-muted-foreground shrink-0" />
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">{adjustedStats.dossier_emails}</span> traités par Donna · liés à vos dossiers
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">{adjustedStats.general_emails}</span> filtrés · newsletters, notifications
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
-                <p className="text-sm text-muted-foreground">
-                  <button
-                    onClick={() => setExpandedCard(expandedCard === "pj" ? null : "pj")}
-                    className={`font-semibold transition-colors cursor-pointer hover:underline ${expandedCard === "pj" ? "text-primary" : "text-foreground hover:text-primary"}`}
-                  >
-                    {adjustedStats.attachments_count} {adjustedStats.attachments_count === 1 ? "pièce jointe" : "pièces jointes"}
-                  </button>{" "}{adjustedStats.attachments_count === 1 ? "extraite et résumée" : "extraites et résumées"}
-                </p>
-              </div>
-            </div>
-
-            {/* Inline expandable list — toggled by clicking on "X emails" or "X pièces jointes" */}
-            <AnimatePresence>
-              {expandedCard && isDemo() && (
-                <EmailListInline
-                  emails={getEmailsForPeriod(period)}
-                  mode={expandedCard}
-                  onEmailClick={(mockEmail) => {
-                    setExpandedCard(null);
-                    setSelectedEmail({
-                      id: mockEmail.id,
-                      expediteur: `${mockEmail.expediteur} <${mockEmail.email}>`,
-                      objet: mockEmail.objet,
-                      resume: mockEmail.resume,
-                      brouillon: mockEmail.brouillon_mock,
-                      pipeline_step: mockEmail.dossier_id ? "pret_a_reviser" : "ignore",
-                      contexte_choisi: "",
-                      statut: mockEmail.dossier_id ? "traite" : "ignore",
-                      created_at: mockEmail.date,
-                      updated_at: mockEmail.date,
-                      contenu: mockEmail.corps_original,
-                      dossier_id: mockEmail.dossier_id,
-                      dossier_name: mockEmail.dossier_nom ? `${mockEmail.dossier_nom} - ${mockEmail.dossier_domaine}` : null,
-                      from_email: mockEmail.email,
-                      email_type: mockEmail.email_type,
-                      attachments: mockEmail.pieces_jointes.map((pj, i) => ({
-                        id: `${mockEmail.id}-att-${i}`,
-                        filename: pj.nom,
-                        type: pj.type_mime.includes("pdf") ? "pdf" : pj.type_mime.includes("image") ? "image" : "other",
-                        size: pj.taille,
-                      })),
-                    } as any);
-                  }}
-                />
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
-          {/* Left — Dossiers actifs */}
-          <div ref={dossiersRef}>
-            {activeDossiers.length > 0 && (
-              <motion.section {...fadeIn} transition={{ delay: 0.1 }}>
-                <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">
-                  Dossiers actifs
-                </h2>
-                <div className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6 space-y-1">
-                  {activeDossiers.map((d) => (
-                    <DossierLine
-                      key={d.dossier_id}
-                      dossier={d}
-                      dossierEmails={dossierEmailsMap[d.dossier_id] || []}
-                      onClick={() => navigate(`/dossiers/${d.dossier_id}`)}
-                      onEmailClick={(email) => handleEmailClick(d, email)}
-                      onViewFull={() => navigate(`/dossiers/${d.dossier_id}`)}
-                      highlighted={highlightDossierId === d.dossier_id}
-                    />
-                  ))}
-                </div>
-              </motion.section>
-            )}
-            {activeDossiers.length === 0 && (
-              <div className="py-10 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Aucune activité dans les {PERIOD_LABELS[period].startsWith("24") ? "dernières " : "derniers "}{PERIOD_LABELS[period]}.
-                </p>
-              </div>
-            )}
-
-            {/* Autres — emails filtrés par Donna */}
-            {filteredEmails.length > 0 && (
-              <motion.section {...fadeIn} transition={{ delay: 0.15 }} className="mt-8">
-                <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">
-                  Autres ({filteredEmails.length})
-                </h2>
-                <div className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] divide-y divide-border/20">
-                  {filteredEmails.map((email) => {
-                    const filterReason = email.category === "newsletter" ? "Newsletter" : email.category === "spam" ? "Publicité" : "Notification système";
-                    const shortResume = email.resume.length > 90 ? email.resume.slice(0, 87) + "…" : email.resume;
-                    return (
-                      <button
-                        key={email.id}
-                        onClick={() => {
-                          setSelectedEmail({
-                            id: email.id,
-                            expediteur: `${email.expediteur} <${email.email}>`,
-                            objet: email.objet,
-                            resume: email.resume,
-                            brouillon: email.brouillon_mock,
-                            pipeline_step: "ignore",
-                            contexte_choisi: "",
-                            statut: "ignore",
-                            created_at: email.date,
-                            updated_at: email.date,
-                            contenu: email.corps_original,
-                            email_type: email.email_type,
-                            from_email: email.from_email,
-                          } as any);
-                        }}
-                        className="w-full text-left px-5 py-3 hover:bg-muted/30 transition-colors duration-200 cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-sm font-semibold ${getAvatarColor(email.expediteur).bg} ${getAvatarColor(email.expediteur).text}`}>
-                            {getInitial(email.expediteur)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-baseline justify-between gap-2">
-                              <span className="text-sm font-medium text-foreground truncate">{email.expediteur}</span>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <TooltipProvider delayDuration={200}>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium bg-gray-50 text-gray-500 ring-1 ring-gray-200 cursor-default">
-                                        Filtré par Donna
-                                      </span>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="left">
-                                      <p className="text-xs">{filterReason} — pas lié à un dossier client</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                                <span className="text-xs text-muted-foreground">{formatMailDate(email.date)}</span>
-                              </div>
-                            </div>
-                            <p className="text-sm text-foreground mt-0.5 truncate">{email.objet}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5 truncate">{shortResume}</p>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </motion.section>
-            )}
-          </div>
-
-          {/* Right — Todo list */}
-          {isDemo() && (
-            <div>
-              <motion.section {...fadeIn} transition={{ delay: 0.12 }}>
-                <div className="flex items-baseline justify-between mb-3">
-                  <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">To-do list</h2>
-                  <span className="text-xs text-muted-foreground">{sortedTodos.filter((t) => !t.done).length} restantes</span>
-                </div>
-                <div className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6 divide-y divide-border/40">
-                  {sortedTodos.length === 0 ? (
-                    <p className="text-sm text-muted-foreground p-5 text-center">Aucune tâche pour cette période</p>
-                  ) : sortedTodos.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`flex items-start gap-3 py-3.5 transition-all duration-200 ${item.done ? "opacity-40" : ""}`}
-                      onMouseEnter={() => setHighlightDossierId(item.dossier_id)}
-                      onMouseLeave={() => setHighlightDossierId(null)}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setTodoItems((prev) => prev.map((t) => t.id === item.id ? { ...t, done: !t.done } : t));
-                          if (!item.done) {
-                            const remaining = sortedTodos.filter((t) => !t.done && t.id !== item.id).length;
-                            if (remaining === 0) {
-                              toast.success("Bravo, tout est traité ! Donna est fière de vous.");
-                            } else {
-                              toast.success(`Fait ! Plus que ${remaining} tâche${remaining > 1 ? "s" : ""} pour aujourd'hui.`);
-                            }
-                          }
-                        }}
-                        className={`mt-0.5 h-[18px] w-[18px] rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${item.done ? "bg-emerald-500 border-emerald-500" : "border-muted-foreground/30 hover:border-primary/50"}`}
-                      >
-                        {item.done && <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <button
-                          onClick={() => openEmailById(item.email_id)}
-                          className={`text-sm text-foreground leading-relaxed block text-left w-full ${item.done ? "line-through" : "hover:text-primary transition-colors"}`}
-                        >
-                          {item.text}
-                        </button>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          <span className="text-xs text-muted-foreground">{item.dossier}</span>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-                            item.type === "reponse" ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200" :
-                            item.type === "relance" ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200" :
-                            item.type === "action" ? "bg-red-50 text-red-700 ring-1 ring-red-200" :
-                            "bg-gray-50 text-gray-600 ring-1 ring-gray-200"
-                          }`}>{item.type === "reponse" ? "Réponse" : item.type === "relance" ? "Relance" : item.type === "action" ? "Action" : "À lire"}</span>
-                          {item.hasDraft && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-primary/10 text-primary inline-flex items-center gap-1">
-                              <FileText className="h-3 w-3" /> Brouillon prêt
-                            </span>
-                          )}
-                        </div>
-                        {!item.done && item.urgency === "echeance" && (
-                          <p className="text-[10px] text-orange-600 mt-0.5">Échéance proche</p>
-                        )}
-                        {!item.done && item.urgency === "prioritaire" && (
-                          <p className="text-[10px] text-red-600 mt-0.5">Prioritaire</p>
-                        )}
-                      </div>
-                      <Mail
-                        className="h-4 w-4 text-muted-foreground/50 shrink-0 mt-0.5 cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => openEmailById(item.email_id)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </motion.section>
-            </div>
+        {/* ── Section header ── */}
+        <motion.div
+          {...fadeIn}
+          transition={{ delay: 0.1 }}
+          className="flex items-center justify-between mb-3"
+        >
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+            À traiter
+          </h2>
+          {pendingCount > 0 && (
+            <Badge
+              variant="outline"
+              className="h-5 text-[10px] px-1.5 bg-red-50 text-red-700 border-red-200 font-semibold"
+            >
+              {pendingCount}
+            </Badge>
           )}
-        </div>
+        </motion.div>
 
-        {/* Temps gagné — footer discret */}
-        {adjustedStats && (
-          <motion.p {...fadeIn} transition={{ delay: 0.2 }} className="text-xs text-muted-foreground text-center py-8">
-            Donna vous a fait économiser {adjustedStats.temps_gagne_minutes} minutes, soit environ {Math.round((adjustedStats.temps_gagne_minutes / 60) * 200)}€ à 200€/heure.
+        {/* ── Dossier cards ── */}
+        {isDemo() ? (
+          sortedDossiers.length === 0 ? (
+            <motion.div
+              {...fadeIn}
+              transition={{ delay: 0.12 }}
+              className="rounded-2xl border border-border/50 bg-muted/20 py-12 text-center mb-6"
+            >
+              <p className="text-sm text-muted-foreground">
+                Aucune activité dans les {PERIOD_LABELS[period].startsWith("24") ? "dernières " : "derniers "}{PERIOD_LABELS[period]}.
+              </p>
+            </motion.div>
+          ) : (
+            <div
+              className="space-y-4 mb-8"
+              role="list"
+              aria-label="Dossiers à traiter"
+            >
+              {sortedDossiers.map((dossier, i) => (
+                <motion.div
+                  key={dossier.id}
+                  role="listitem"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 + i * 0.06 }}
+                >
+                  <DossierCard
+                    dossier={dossier}
+                    onEmailClick={(email) => handleEmailClick(email, dossier)}
+                    onViewDossier={() => navigate(`/dossiers/${dossier.id}`)}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          )
+        ) : (
+          /* Real mode: display API dossiers (simplified) */
+          <div className="space-y-4 mb-8" role="list" aria-label="Dossiers à traiter">
+            {apiDossiers
+              .filter((d) => d.needs_immediate_attention || (d.deadline_days ?? 999) <= 7)
+              .map((d, i) => (
+                <motion.div
+                  key={d.dossier_id}
+                  role="listitem"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 + i * 0.06 }}
+                  className="relative flex rounded-2xl bg-card shadow-sm border border-border/60 overflow-hidden"
+                >
+                  <div
+                    className={`w-1.5 shrink-0 ${d.needs_immediate_attention ? "bg-red-500" : "bg-amber-400"}`}
+                  />
+                  <div className="flex-1 p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span
+                          className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full ring-1 uppercase tracking-wide ${
+                            d.needs_immediate_attention
+                              ? "bg-red-50 text-red-700 ring-red-200"
+                              : "bg-amber-50 text-amber-700 ring-amber-200"
+                          }`}
+                        >
+                          {d.needs_immediate_attention ? "Urgent" : "À traiter"}
+                        </span>
+                        <h3 className="mt-1.5 text-base font-semibold text-foreground">
+                          {d.nom ?? d.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {d.domaine ?? d.domain}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/dossiers/${d.dossier_id}`)}
+                        className="shrink-0 h-8 text-xs text-muted-foreground hover:text-primary gap-1"
+                      >
+                        Dossier
+                        <ArrowRight className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                      {d.summary}
+                    </p>
+                    {d.dates_cles.length > 0 && (
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <Clock className="h-3.5 w-3.5 text-amber-500" />
+                        <span className="text-xs text-amber-700 font-medium">
+                          {d.dates_cles[0]}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+          </div>
+        )}
+
+        {/* ── Filtered emails (collapsed) ── */}
+        <motion.div {...fadeIn} transition={{ delay: 0.2 }} className="mt-2">
+          {isDemo() ? (
+            <FilteredEmailsSection emails={demoFiltered} />
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-4">
+              {apiStats?.emails_generaux ?? 0} emails filtrés par Donna (newsletters, notifications)
+            </p>
+          )}
+        </motion.div>
+
+        {/* ── Footer ── */}
+        {isDemo() && demoStats.temps_gagne_minutes > 0 && (
+          <motion.p
+            {...fadeIn}
+            transition={{ delay: 0.25 }}
+            className="text-xs text-muted-foreground text-center py-8"
+            aria-label={`Temps économisé : environ ${demoStats.temps_gagne_minutes} minutes`}
+          >
+            Donna vous a fait économiser ~{demoStats.temps_gagne_minutes} min, soit environ{" "}
+            {Math.round((demoStats.temps_gagne_minutes / 60) * 350)} € à 350 €/h.
           </motion.p>
         )}
-
       </div>
 
-      <BriefingDetailPanel
-        dossier={selectedDossier}
-        emails={panelEmails}
-        periodLabel={PERIOD_LABELS[period]}
-        onClose={() => setSelectedDossier(null)}
-      />
-
+      {/* ── EmailDrawer ── */}
       <AnimatePresence>
-        {selectedEmail && <EmailDrawer email={selectedEmail} onClose={() => setSelectedEmail(null)} />}
+        {selectedEmail && (
+          <EmailDrawer
+            email={selectedEmail}
+            onClose={() => setSelectedEmail(null)}
+          />
+        )}
       </AnimatePresence>
 
       {showTour && <GuidedTour onComplete={() => setShowTour(false)} />}
     </DashboardLayout>
   );
 };
-
-/* ── Single dossier line with clickable emails ── */
-
-const MAX_STACKED_EMAILS = 5;
-
-function formatShortDate(dateStr: string): string {
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "";
-    return format(d, "d MMM", { locale: fr });
-  } catch { return ""; }
-}
-
-function DossierLine({
-  dossier: d,
-  dossierEmails,
-  onClick,
-  onEmailClick,
-  onViewFull,
-  highlighted,
-}: {
-  dossier: BriefingDossier;
-  dossierEmails: DossierLineEmail[];
-  onClick: () => void;
-  onEmailClick: (email: DossierLineEmail) => void;
-  onViewFull: () => void;
-  highlighted?: boolean;
-}) {
-  const displayEmails = dossierEmails.slice(0, MAX_STACKED_EMAILS);
-  const extraCount = dossierEmails.length - MAX_STACKED_EMAILS;
-
-  return (
-    <div className={`transition-colors duration-300 rounded-xl ${highlighted ? "bg-primary/5" : ""}`}>
-      {/* Dossier header — grey background + colored left border + folder icon */}
-      <button
-        onClick={onClick}
-        className="w-full flex items-center justify-between px-4 py-2.5 text-left bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group border-l-[3px] border-primary/60"
-      >
-        <span className="text-sm text-foreground flex items-center gap-2">
-          <Folder className="h-4 w-4 text-primary/70 shrink-0" />
-          <span className="font-semibold">{getDossierName(d)}</span>
-          <span className="text-muted-foreground">· {getDossierDomain(d)}</span>
-        </span>
-        <span className="text-xs text-muted-foreground shrink-0">{dossierEmails.length} email{dossierEmails.length > 1 ? 's' : ''}</span>
-      </button>
-
-      {/* Emails — indented with mail icon */}
-      {displayEmails.length > 0 && (
-        <div className="border-t border-border/20">
-          {displayEmails.map((email, idx) => {
-            const name = email.expediteur || "";
-            const resume = email.resume || "";
-            const shortResume = resume.length > 80 ? resume.slice(0, 77) + "…" : resume;
-            return (
-              <button
-                key={email.id}
-                onClick={() => onEmailClick(email)}
-                className={`w-full text-left pl-6 pr-5 py-3 hover:bg-muted/30 transition-colors duration-200 cursor-pointer ${idx < displayEmails.length - 1 ? "border-b border-border/20" : ""}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-sm font-semibold ${getAvatarColor(name).bg} ${getAvatarColor(name).text}`}>
-                    {getInitial(name)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-sm font-medium text-foreground truncate">{name}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">{formatMailDate(email.created_at)}</span>
-                    </div>
-                    <p className="text-sm text-foreground mt-0.5 truncate">{email.objet}</p>
-                    {shortResume && <p className="text-xs text-muted-foreground mt-0.5 truncate">{shortResume}</p>}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-          {extraCount > 0 && (
-            <button onClick={onViewFull} className="w-full text-left pl-6 pr-5 py-2 text-xs text-primary hover:underline">
-              et {extraCount} autre{extraCount > 1 ? "s" : ""} → Voir le dossier
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default Dashboard;
