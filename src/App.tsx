@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import DashboardV4 from "./pages/DashboardV4";
+import DashboardV5 from "./pages/DashboardV5";
 import Configuration from "./pages/Configuration";
 
 import DossierDetail from "./pages/DossierDetail";
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="/mentions-legales" element={<MentionsLegales />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/v4" element={<ProtectedRoute><DashboardV4 /></ProtectedRoute>} />
+            <Route path="/v5" element={<ProtectedRoute><DashboardV5 /></ProtectedRoute>} />
 <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="/fil" element={<ProtectedRoute><FilActualite /></ProtectedRoute>} />
             
