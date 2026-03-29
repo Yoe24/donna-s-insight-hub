@@ -64,7 +64,7 @@ const Configuration = () => {
       try {
         const c = await apiGet<any>("/api/config").catch(() => null);
         if (c) {
-          setGmailConnected(!!c.refresh_token);
+          setGmailConnected(!!(c.gmail_connected ?? c.refresh_token));
           setNomComplet(c.nom_avocat || "");
           setCabinet(c.nom_cabinet || "");
           setSignature(c.signature || "");

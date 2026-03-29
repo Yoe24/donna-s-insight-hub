@@ -33,7 +33,7 @@ import {
 import { toast } from "sonner";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { EmailDrawer } from "@/components/EmailDrawer";
-import { isDemo } from "@/lib/auth";
+import { isDemo, getUserId } from "@/lib/auth";
 import { apiGet } from "@/lib/api";
 import {
   v4Briefing,
@@ -933,7 +933,19 @@ export default function DashboardV6() {
           resume_court: d.summary ?? d.resume_court ?? "",
           dates_cles: d.dates_cles ?? [],
         }));
-        setBriefDossiers(dossiers.length > 0 ? dossiers : v4Briefing.dossiers);
+        // Pas de fallback sur les mocks en mode réel — liste vide si pas encore de dossiers
+        setBriefDossiers(dossiers);
+
+        // Si 0 emails en mode réel → import non encore lancé, rediriger vers onboarding
+        if (apiEmails.length === 0) {
+          try {
+            await apiGet<any>("/api/import/status");
+          } catch {
+            // ignore
+          }
+          navigate("/onboarding?import=started&user_id=" + getUserId());
+          return;
+        }
 
         // Construire le briefing initial (24h)
         const filtered24h = filterByPeriod(apiEmails, "24h");
@@ -944,13 +956,31 @@ export default function DashboardV6() {
           filteredEmails: filtered24h,
           allEmails: apiEmails,
           narrative: briefContent?.executive_summary ?? null,
-          dossiers: dossiers.length > 0 ? dossiers : v4Briefing.dossiers,
+          dossiers,
           period: "24h",
         });
         setBriefing(realBriefing);
       } catch (err) {
         console.error("DashboardV6 load error:", err);
-        setBriefing(v4Briefing); // fallback démo si tout échoue
+        // En mode réel, état vide propre — pas de fallback sur les données mock
+        const avocat = nomAvocat || "Alexandra";
+        setBriefing({
+          nom_avocat: avocat,
+          date_briefing: new Date().toISOString(),
+          narrative: "Aucun dossier actif trouvé. Connectez votre boîte mail pour commencer.",
+          emails_action: [],
+          emails_traites: [],
+          dossiers: [],
+          stats: {
+            total_analyses: 0,
+            action_required: 0,
+            auto_traites: 0,
+            temps_gagne_minutes: 0,
+            streak_jours: 0,
+            brouillons_generes: 0,
+            brief_lu: false,
+          },
+        });
       } finally {
         setLoading(false);
       }
