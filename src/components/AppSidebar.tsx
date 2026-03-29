@@ -240,7 +240,14 @@ export function AppSidebar() {
                         <SidebarMenuItem key={dossier.id} className="group/dossier relative">
                           <SidebarMenuButton
                             isActive={active}
-                            onClick={() => { if (!isRenaming) navigate(`/dossiers/${dossier.id}`); }}
+                            onPointerDown={(e) => {
+                              // onPointerDown se déclenche avant les handlers internes
+                              // du composant Sidebar, évitant le double-clic
+                              if (!isRenaming && e.button === 0) {
+                                e.preventDefault();
+                                navigate(`/dossiers/${dossier.id}`);
+                              }
+                            }}
                             className={cn(
                               "w-full rounded-md px-2 py-2 text-sm font-sans transition-colors cursor-pointer",
                               active

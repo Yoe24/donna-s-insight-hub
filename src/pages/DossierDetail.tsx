@@ -34,6 +34,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface ApiDossierEmail {
   id: string;
+  // Format API réel (snake_case Supabase)
+  expediteur?: string;
+  objet?: string;
+  resume?: string;
+  created_at?: string;
+  // Format alternatif camelCase/alias
   from_name?: string;
   from_email?: string;
   subject?: string;
@@ -43,6 +49,12 @@ interface ApiDossierEmail {
 
 interface ApiDossierDocument {
   id?: string;
+  // Format API réel
+  nom_fichier?: string;
+  resume_ia?: string;
+  date_reception?: string;
+  storage_url?: string;
+  // Format alternatif
   filename?: string;
   type?: string;
   date?: string;
@@ -52,12 +64,19 @@ interface ApiDossierDocument {
 
 interface ApiDossierDetailData {
   id: string;
+  // Format API réel
+  nom_client?: string;
+  domaine?: string;
+  resume_situation?: string;
+  statut?: string;
+  // Format alternatif
   name?: string;
   domain?: string;
   summary?: string;
   status?: string;
   emails?: ApiDossierEmail[];
   documents?: ApiDossierDocument[];
+  dossier_documents?: ApiDossierDocument[];
 }
 
 interface DossierDocument {
@@ -134,17 +153,21 @@ function buildSender(fromName?: string, fromEmail?: string): string {
 }
 
 function normalizeEmail(email: ApiDossierEmail): DossierEmail {
+  // Priorité au format API réel (expediteur, objet, resume, created_at)
+  // Fallback sur les alias alternatifs
+  const rawExp = email.expediteur || buildSender(email.from_name, email.from_email);
+  const dateStr = email.created_at || email.date || "";
   return {
     id: email.id,
-    expediteur: buildSender(email.from_name, email.from_email),
-    objet: email.subject || "",
-    resume: email.summary || "",
+    expediteur: rawExp,
+    objet: email.objet || email.subject || "",
+    resume: email.resume || email.summary || "",
     brouillon: null,
     pipeline_step: "pret_a_reviser",
     contexte_choisi: "",
     statut: "traite",
-    created_at: email.date || "",
-    updated_at: email.date || "",
+    created_at: dateStr,
+    updated_at: dateStr,
     from_email: email.from_email || "",
   };
 }
@@ -152,23 +175,26 @@ function normalizeEmail(email: ApiDossierEmail): DossierEmail {
 function normalizeDocument(doc: ApiDossierDocument, index: number): DossierDocument {
   return {
     id: doc.id || `doc-${index}`,
-    nom_fichier: doc.filename || "",
-    type: doc.type || "",
-    summary: doc.summary || "",
-    date_reception: doc.date || "",
-    url: doc.url || "",
+    nom_fichier: doc.nom_fichier || doc.filename || "",
+    type: doc.type || (doc.nom_fichier || doc.filename || "").split(".").pop() || "",
+    summary: doc.resume_ia || doc.summary || "",
+    date_reception: doc.date_reception || doc.date || "",
+    url: doc.storage_url || doc.url || "",
   };
 }
 
 function normalizeDossier(data: ApiDossierDetailData): DossierDetailData {
+  // Supporte le format API réel (nom_client, domaine, resume_situation, statut)
+  // et le format alias alternatif (name, domain, summary, status)
+  const rawDocs = data.dossier_documents || data.documents || [];
   return {
     id: data.id,
-    name: data.name || "",
-    domain: data.domain || "",
-    summary: data.summary || "",
-    status: data.status || "",
+    name: data.nom_client || data.name || "",
+    domain: data.domaine || data.domain || "",
+    summary: data.resume_situation || data.summary || "",
+    status: data.statut || data.status || "actif",
     emails: (data.emails || []).map(normalizeEmail),
-    documents: (data.documents || []).map(normalizeDocument),
+    documents: rawDocs.map(normalizeDocument),
   };
 }
 
@@ -187,6 +213,7 @@ const DossierDetailPage = () => {
   const [renameValue, setRenameValue] = useState("");
 
   const echeances = isDemo() ? (mockEcheances[id || ""] || []) : [];
+  const showEcheancesSection = isDemo() ? echeances.length > 0 : true;
 
   const fetchDossier = useCallback(async () => {
     if (!id) return;
@@ -435,11 +462,13 @@ const DossierDetailPage = () => {
             </div>
           </div>
 
-          {echeances.length > 0 && (
+          {showEcheancesSection && (
             <div className="mt-6">
               <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Échéances</h2>
               <div className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] divide-y divide-border/40">
-                {echeances.map((ech) => {
+                {echeances.length === 0 ? (
+                  <p className="text-sm text-muted-foreground p-5">Aucune échéance détectée</p>
+                ) : echeances.map((ech) => {
                   const echDate = new Date(ech.date);
                   const daysUntil = Math.ceil((echDate.getTime() - Date.now()) / 86400000);
                   const dateStr = echDate.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });

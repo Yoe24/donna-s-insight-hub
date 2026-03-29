@@ -37,9 +37,9 @@ import { isDemo } from "@/lib/auth";
 import { apiGet } from "@/lib/api";
 import {
   v4Briefing,
-  findV4Email,
   type V4BriefingData,
   type V4Email,
+  type V4Dossier,
 } from "@/lib/mock-briefing-v4";
 import type { Email } from "@/hooks/useEmails";
 
@@ -698,6 +698,155 @@ function SkeletonLine({ w, h = "h-4" }: { w: string; h?: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// buildRealBriefing — construit un V4BriefingData depuis les données API brutes
+// ---------------------------------------------------------------------------
+
+function buildRealBriefing({
+  nomAvocat,
+  filteredEmails,
+  allEmails,
+  narrative,
+  dossiers,
+  period,
+}: {
+  nomAvocat: string;
+  filteredEmails: any[];
+  allEmails: any[];
+  narrative: string | null;
+  dossiers: V4Dossier[];
+  period: PeriodFilter;
+}): V4BriefingData {
+  // Emails à traiter : pret_a_reviser dans la période
+  // On inclut tous les emails pret_a_reviser — si needs_response/urgency sont vides,
+  // on affiche quand même pour ne pas laisser la liste vide
+  const readyEmails = filteredEmails.filter(
+    (e) => e.pipeline_step === "pret_a_reviser"
+  );
+
+  // Priorité aux emails nécessitant une action, puis tous les prêts
+  const actionCandidates = readyEmails.filter(
+    (e) => e.needs_response === true || e.urgency === "high" || e.urgency === "medium"
+  );
+  const toDoRaw = actionCandidates.length > 0 ? actionCandidates : readyEmails;
+  const toDoEmails: V4Email[] = toDoRaw.map(apiEmailToV4);
+
+  // Emails ignorés par Donna dans la période
+  const treatedEmails: V4Email[] = filteredEmails
+    .filter((e) => e.pipeline_step === "ignore")
+    .slice(0, 20)
+    .map((e): V4Email => ({
+      ...apiEmailToV4(e),
+      urgency: "basse",
+      email_type: "informatif",
+      pieces_jointes: [],
+      brouillon_mock: null,
+      filtered_by_donna: true,
+    }));
+
+  return {
+    nom_avocat: nomAvocat,
+    date_briefing: new Date().toISOString(),
+    narrative: buildNarrative(narrative, filteredEmails, period),
+    emails_action: toDoEmails,
+    emails_traites: treatedEmails,
+    dossiers,
+    stats: {
+      total_analyses: allEmails.length,
+      action_required: toDoEmails.length,
+      auto_traites: treatedEmails.length,
+      temps_gagne_minutes: Math.round(allEmails.length * 2.5),
+      brouillons_generes: allEmails.filter((e) => e.brouillon).length,
+      streak_jours: 0,
+      brief_lu: true,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Helpers — parsing expediteur
+// ---------------------------------------------------------------------------
+
+/** Parse "Nom Prénom <email@domain.com>" → "Nom Prénom". Si absent, retourne l'email brut. */
+function parseExpeditorName(raw: string): string {
+  if (!raw) return "";
+  const match = raw.match(/^([^<]+?)\s*</);
+  if (match) return match[1].trim();
+  // Pas de chevrons — retourner tel quel (peut être juste un email)
+  return raw.trim();
+}
+
+/** Filtre les emails API selon la période choisie */
+function filterByPeriod(emails: any[], period: PeriodFilter): any[] {
+  const now = Date.now();
+  const cutoffs: Record<PeriodFilter, number> = {
+    "24h": 24 * 3600 * 1000,
+    "7j": 7 * 24 * 3600 * 1000,
+    "30j": 30 * 24 * 3600 * 1000,
+  };
+  const cutoff = cutoffs[period];
+  return emails.filter((e) => {
+    const ts = e.created_at ? new Date(e.created_at).getTime() : 0;
+    return now - ts <= cutoff;
+  });
+}
+
+/** Construit le narratif selon la période et le nombre d'emails */
+function buildNarrative(
+  briefNarrative: string | null,
+  filteredEmails: any[],
+  period: PeriodFilter
+): string {
+  if (briefNarrative && period === "24h") return briefNarrative;
+  const count = filteredEmails.length;
+  const actionCount = filteredEmails.filter(
+    (e) => e.pipeline_step === "pret_a_reviser"
+  ).length;
+  const periodLabel =
+    period === "24h"
+      ? "Aujourd'hui"
+      : period === "7j"
+      ? "Cette semaine"
+      : "Ce mois";
+  if (count === 0)
+    return `${periodLabel}, aucun email n'a été reçu. Votre boîte est à jour.`;
+  return `${periodLabel}, Donna a analysé ${count} email${count > 1 ? "s" : ""}. ${
+    actionCount > 0
+      ? `${actionCount} requiert${actionCount > 1 ? "ent" : ""} votre attention.`
+      : "Tout est traité."
+  }`;
+}
+
+/** Convertit un email API brut en V4Email */
+function apiEmailToV4(e: any): V4Email {
+  return {
+    id: e.id,
+    expediteur: parseExpeditorName(e.expediteur ?? ""),
+    email_from: e.expediteur ?? "",
+    objet: e.objet ?? "",
+    resume: e.resume ?? "",
+    corps_original: e.metadata?.body ?? "",
+    date: e.created_at ?? new Date().toISOString(),
+    dossier_id: e.dossier_id ?? null,
+    dossier_nom: e.dossier_nom ?? null,
+    dossier_domaine: null,
+    urgency:
+      e.urgency === "high"
+        ? "haute"
+        : e.urgency === "medium"
+        ? "moyenne"
+        : "basse",
+    email_type: e.classification?.email_type ?? "informatif",
+    pieces_jointes: (e.attachments ?? []).map((a: any) => ({
+      nom: a.nom_fichier ?? a.nom ?? "document",
+      taille: "",
+      type_mime: a.type ?? "",
+      resume_ia: a.resume_ia ?? "",
+    })),
+    brouillon_mock: e.brouillon ?? null,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Main page — DashboardV6
 // ---------------------------------------------------------------------------
 
@@ -709,6 +858,11 @@ export default function DashboardV6() {
   const [treatedIds, setTreatedIds] = useState<Set<string>>(new Set());
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [nomAvocat, setNomAvocat] = useState("Alexandra");
+
+  // Données brutes API — stockées pour re-filtrer par période sans nouvel appel
+  const [allApiEmails, setAllApiEmails] = useState<any[]>([]);
+  const [briefNarrative, setBriefNarrative] = useState<string | null>(null);
+  const [briefDossiers, setBriefDossiers] = useState<V4Dossier[]>([]);
 
   // Capture user_id depuis URL (mode réel post-OAuth)
   useEffect(() => {
@@ -727,7 +881,7 @@ export default function DashboardV6() {
     }
   }, []);
 
-  // Chargement briefing
+  // Chargement initial des données API
   useEffect(() => {
     const load = async () => {
       if (isDemo()) {
@@ -755,69 +909,14 @@ export default function DashboardV6() {
           ? (emailsResult.value ?? [])
           : [];
 
-        // Emails à traiter : pret_a_reviser + needs_response ou urgency high
-        const toDoEmails: V4Email[] = apiEmails
-          .filter(
-            (e) =>
-              e.pipeline_step === "pret_a_reviser" &&
-              (e.needs_response === true || e.urgency === "high")
-          )
-          .map((e): V4Email => ({
-            id: e.id,
-            expediteur: e.expediteur ?? "",
-            email_from: e.expediteur ?? "",
-            objet: e.objet ?? "",
-            resume: e.resume ?? "",
-            corps_original: e.metadata?.body ?? "",
-            date: e.created_at ?? new Date().toISOString(),
-            dossier_id: e.dossier_id ?? null,
-            dossier_nom: e.dossier_nom ?? null,
-            dossier_domaine: null,
-            urgency:
-              e.urgency === "high"
-                ? "haute"
-                : e.urgency === "medium"
-                ? "moyenne"
-                : "basse",
-            email_type: e.classification?.email_type ?? "informatif",
-            pieces_jointes: (e.attachments ?? []).map((a: any) => ({
-              nom: a.nom_fichier ?? a.nom ?? "document",
-              taille: "",
-              type_mime: a.type ?? "",
-              resume_ia: a.resume_ia ?? "",
-            })),
-            brouillon_mock: e.brouillon ?? null,
-          }));
+        // Stocker les emails bruts pour le filtrage par période
+        setAllApiEmails(apiEmails);
 
-        // Emails traités : ignorés par Donna ou déjà dans pret_a_reviser sans action requise
-        const treatedEmails: V4Email[] = apiEmails
-          .filter((e) => e.pipeline_step === "ignore")
-          .slice(0, 20)
-          .map((e): V4Email => ({
-            id: e.id,
-            expediteur: e.expediteur ?? "",
-            email_from: e.expediteur ?? "",
-            objet: e.objet ?? "",
-            resume: e.resume ?? "",
-            corps_original: "",
-            date: e.created_at ?? new Date().toISOString(),
-            dossier_id: e.dossier_id ?? null,
-            dossier_nom: e.dossier_nom ?? null,
-            dossier_domaine: null,
-            urgency: "basse",
-            email_type: "informatif",
-            pieces_jointes: [],
-            brouillon_mock: null,
-            filtered_by_donna: true,
-          }));
-
-        // Narratif depuis le brief ou message par défaut
+        // Narratif depuis le brief
         const briefContent = briefResult.status === "fulfilled"
           ? briefResult.value?.content
           : null;
-        const narrative =
-          briefContent?.executive_summary ??
-          "Donna a analysé vos emails. Voici ce qui requiert votre attention.";
+        setBriefNarrative(briefContent?.executive_summary ?? null);
 
         // Dossiers depuis le brief
         const dossiers: V4Dossier[] = (briefContent?.dossiers ?? []).map((d: any) => ({
@@ -834,27 +933,20 @@ export default function DashboardV6() {
           resume_court: d.summary ?? d.resume_court ?? "",
           dates_cles: d.dates_cles ?? [],
         }));
+        setBriefDossiers(dossiers.length > 0 ? dossiers : v4Briefing.dossiers);
 
-        const realBriefing: V4BriefingData = {
-          nom_avocat: configResult.status === "fulfilled"
+        // Construire le briefing initial (24h)
+        const filtered24h = filterByPeriod(apiEmails, "24h");
+        const realBriefing = buildRealBriefing({
+          nomAvocat: configResult.status === "fulfilled"
             ? (configResult.value?.nom_avocat ?? "Alexandra")
             : "Alexandra",
-          date_briefing: new Date().toISOString(),
-          narrative,
-          emails_action: toDoEmails,
-          emails_traites: treatedEmails,
+          filteredEmails: filtered24h,
+          allEmails: apiEmails,
+          narrative: briefContent?.executive_summary ?? null,
           dossiers: dossiers.length > 0 ? dossiers : v4Briefing.dossiers,
-          stats: {
-            total_analyses: apiEmails.length,
-            action_required: toDoEmails.length,
-            auto_traites: treatedEmails.length,
-            temps_gagne_minutes: Math.round(apiEmails.length * 2.5),
-            brouillons_generes: apiEmails.filter((e) => e.brouillon).length,
-            streak_jours: 0,
-            brief_lu: true,
-          },
-        };
-
+          period: "24h",
+        });
         setBriefing(realBriefing);
       } catch (err) {
         console.error("DashboardV6 load error:", err);
@@ -865,6 +957,21 @@ export default function DashboardV6() {
     };
     load();
   }, []);
+
+  // Re-calculer le briefing quand la période change (mode réel uniquement)
+  useEffect(() => {
+    if (isDemo() || allApiEmails.length === 0) return;
+    const filtered = filterByPeriod(allApiEmails, period);
+    const updated = buildRealBriefing({
+      nomAvocat,
+      filteredEmails: filtered,
+      allEmails: allApiEmails,
+      narrative: briefNarrative,
+      dossiers: briefDossiers,
+      period,
+    });
+    setBriefing(updated);
+  }, [period]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTreat = (id: string) => {
     setTreatedIds((prev) => {
