@@ -53,10 +53,11 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
           const mockPj = mockEmail?.pieces_jointes?.[index];
           return {
             id: attachment.id || `${email.id}-att-${index}`,
-            nom_fichier: attachment.filename || attachment.name || mockPj?.nom || "",
+            nom_fichier: attachment.filename || attachment.name || attachment.nom_fichier || mockPj?.nom || "",
             type: attachment.type || "",
-            taille: attachment.size || mockPj?.taille || "",
-            resume_ia: mockPj?.resume_ia || "",
+            taille: attachment.size || attachment.taille || mockPj?.taille || "",
+            resume_ia: attachment.resume_ia || mockPj?.resume_ia || "",
+            storage_url: attachment.storage_url || attachment.url || null,
           };
         })
       );
@@ -76,9 +77,11 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
               .filter((doc: any) => !doc.email_id || doc.email_id === email.id)
               .map((doc: any, i: number) => ({
                 id: doc.id || `${email.id}-doc-${i}`,
-                nom_fichier: doc.filename || "",
+                nom_fichier: doc.filename || doc.nom_fichier || "",
                 type: doc.type || "",
-                taille: doc.size || "",
+                taille: doc.size || doc.taille || "",
+                storage_url: doc.storage_url || doc.url || null,
+                resume_ia: doc.resume_ia || "",
               }))
           );
         }
@@ -382,7 +385,21 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
               <p className="text-sm text-foreground/85 leading-relaxed">{selectedAttachment.resume_ia}</p>
             </div>
           )}
-          <p className="text-xs text-muted-foreground text-center pt-2">Téléchargement disponible après connexion Gmail</p>
+          {!isDemo() && selectedAttachment?.storage_url ? (
+            <a
+              href={selectedAttachment.storage_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 w-full text-xs font-medium text-foreground underline underline-offset-2 hover:text-primary transition-colors pt-2"
+              download={selectedAttachment?.nom_fichier}
+            >
+              Télécharger le fichier
+            </a>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center pt-2">
+              {isDemo() ? "Téléchargement disponible après connexion Gmail" : "Fichier non disponible"}
+            </p>
+          )}
         </DialogContent>
       </Dialog>
     </>

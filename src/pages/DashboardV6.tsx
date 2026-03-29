@@ -654,6 +654,49 @@ function PeriodTabs({
 }
 
 // ---------------------------------------------------------------------------
+// NarrativeBlock — narratif Donna avec troncature et markdown bold stripped
+// ---------------------------------------------------------------------------
+
+const NARRATIVE_MAX = 500;
+
+/** Supprime le markdown bold (**texte** → texte) du narratif API */
+function stripMarkdownBold(text: string): string {
+  return text.replace(/\*\*([^*]+)\*\*/g, "$1");
+}
+
+function NarrativeBlock({ narrative }: { narrative: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const cleaned = stripMarkdownBold(narrative);
+  const isTruncatable = cleaned.length > NARRATIVE_MAX;
+  const displayed =
+    isTruncatable && !expanded ? cleaned.slice(0, NARRATIVE_MAX).trimEnd() + "…" : cleaned;
+
+  return (
+    <motion.div
+      className="rounded-xl bg-[#FAFAFA] border border-[#E5E5E5] p-4 mb-6 overflow-hidden dark:bg-zinc-900/60 dark:border-zinc-700"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: 0.08 }}
+      role="region"
+      aria-label="Résumé de Donna"
+    >
+      <p className="text-[13px] text-[#1A1A1A] leading-relaxed dark:text-zinc-200 break-words">
+        {displayed}
+      </p>
+      {isTruncatable && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="mt-2 text-[12px] text-[#6B7280] underline underline-offset-2 hover:text-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A1A1A] focus-visible:ring-offset-1 rounded dark:hover:text-white"
+          aria-expanded={expanded}
+        >
+          {expanded ? "Voir moins" : "Voir plus"}
+        </button>
+      )}
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // AllDoneBanner — sobre, pas de gradient
 // ---------------------------------------------------------------------------
 
@@ -1106,18 +1149,7 @@ export default function DashboardV6() {
         </div>
 
         {/* ── Narratif Donna ── */}
-        <motion.div
-          className="rounded-xl bg-[#FAFAFA] border border-[#E5E5E5] p-4 mb-6 dark:bg-zinc-900/60 dark:border-zinc-700"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.08 }}
-          role="region"
-          aria-label="Résumé de Donna"
-        >
-          <p className="text-[13px] text-[#1A1A1A] leading-relaxed dark:text-zinc-200">
-            {briefing.narrative}
-          </p>
-        </motion.div>
+        <NarrativeBlock narrative={briefing.narrative} />
 
         {/* ── Emails à traiter ── */}
         <AnimatePresence mode="wait">
@@ -1233,10 +1265,12 @@ export default function DashboardV6() {
                         </p>
                         <p className="text-[11px] text-[#6B7280] truncate">
                           {dossier.domaine}
-                          {dossier.resume_court
-                            ? ` · ${dossier.resume_court}`
-                            : ""}
                         </p>
+                        {dossier.resume_court && (
+                          <p className="text-[11px] text-[#6B7280] line-clamp-2 break-words">
+                            {dossier.resume_court}
+                          </p>
+                        )}
                       </div>
                       {dossier.dates_cles.length > 0 && (
                         <span className="text-[10px] text-[#6B7280] flex-shrink-0 hidden sm:block">
