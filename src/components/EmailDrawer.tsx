@@ -96,10 +96,35 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
   };
 
   const handleGenerateDraft = async () => {
-    // If a pre-existing draft from pipeline/mock exists, show it instantly
+    // If a pre-existing draft from pipeline/mock exists
     if (preExistingDraft && !draftPreLoaded) {
       setDraftPreLoaded(true);
-      setDraftText(preExistingDraft);
+
+      // Check if full brouillon (with email draft response) already exists
+      if (preExistingDraft.includes('Brouillon de réponse')) {
+        setDraftText(preExistingDraft);
+        return;
+      }
+
+      // In demo mode, brouillon_mock IS the email draft — show as-is
+      if (isDemo()) {
+        setDraftText(preExistingDraft);
+        return;
+      }
+
+      // Real mode: only analysis exists — generate the actual email draft via API
+      setDraftLoading(true);
+      setDraftEditable(false);
+      try {
+        const data = await apiPost<{ draft: string }>(`/api/emails/${email.id}/draft`);
+        setDraftText(preExistingDraft + '\n\n---\nBrouillon de réponse :\n\n' + data.draft);
+      } catch {
+        // Show analysis at minimum, notify about draft failure
+        setDraftText(preExistingDraft);
+        toast.error("Impossible de générer le brouillon de réponse");
+      } finally {
+        setDraftLoading(false);
+      }
       return;
     }
 
