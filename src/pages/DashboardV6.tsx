@@ -85,6 +85,7 @@ function v4EmailToDrawerEmail(e: V4Email): Email {
     statut: "en_attente",
     created_at: e.date,
     updated_at: e.date,
+    email_type: e.email_type,
     ...(e.pieces_jointes.length > 0
       ? {
           attachments: e.pieces_jointes.map((pj) => ({
@@ -93,7 +94,7 @@ function v4EmailToDrawerEmail(e: V4Email): Email {
           })),
         }
       : {}),
-    ...(e.corps_original ? { corps_original: e.corps_original } : {}),
+    ...(e.corps_original ? { contenu: e.corps_original } : {}),
     ...(e.dossier_id
       ? { dossier_id: e.dossier_id, dossier_nom: e.dossier_nom }
       : {}),
