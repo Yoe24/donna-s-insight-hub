@@ -700,7 +700,7 @@ function NarrativeBlock({ narrative }: { narrative: string }) {
 // AllDoneBanner — sobre, pas de gradient
 // ---------------------------------------------------------------------------
 
-function AllDoneBanner() {
+function AllDoneBanner({ nomAvocat }: { nomAvocat?: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.97 }}
@@ -722,7 +722,7 @@ function AllDoneBanner() {
         Tout est traité
       </p>
       <p className="text-[13px] text-[#6B7280]">
-        Excellente session, Alexandra.
+        {nomAvocat ? `Excellente session, ${nomAvocat}.` : "Excellente session."}
       </p>
     </motion.div>
   );
@@ -1161,7 +1161,7 @@ export default function DashboardV6() {
               exit={{ opacity: 0 }}
               className="mb-6"
             >
-              <AllDoneBanner />
+              <AllDoneBanner nomAvocat={nomAvocat} />
             </motion.div>
           ) : (
             <motion.section
