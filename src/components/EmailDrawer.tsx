@@ -193,7 +193,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
               <h1 className="sr-only">Détail de l'email : {email.objet || "Sans objet"}</h1>
 
               {/* Subject */}
-              <h2 className="text-xl font-semibold text-foreground leading-snug mb-4">{email.objet || "Sans objet"}</h2>
+              <h2 className="text-xl font-semibold text-foreground leading-snug mb-4 line-clamp-2 break-words">{email.objet || "Sans objet"}</h2>
 
               {/* Gmail-style email metadata header */}
               <div className="rounded-xl border border-border/60 bg-muted/20 p-4 mb-6">
@@ -226,7 +226,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
                 <div className="mb-6">
                   <h3 className="text-xs font-medium text-muted-foreground mb-2">Résumé Donna</h3>
                   <div className="rounded-xl bg-muted/30 p-4">
-                    <p className="text-sm text-foreground/85 whitespace-pre-line leading-relaxed">{email.resume}</p>
+                    <p className="text-sm text-foreground/85 whitespace-pre-line leading-relaxed break-words">{email.resume}</p>
                   </div>
                 </div>
               )}
@@ -309,7 +309,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
                       className="min-h-[180px] text-sm leading-relaxed bg-background border-border"
                     />
                   ) : (
-                    <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">
+                    <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed break-words">
                       {isStreaming ? displayedDraft : draftText}
                       {isStreaming && <span className="animate-pulse text-primary">▌</span>}
                     </p>
@@ -336,7 +336,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="rounded-xl bg-muted/20 border border-border p-4 mb-4">
-                    <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed">
+                    <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed break-words">
                       {(email as any).contenu || email.resume || "Contenu non disponible."}
                     </p>
                   </div>

@@ -366,14 +366,35 @@ function ActionCard({
                 {formatRelativeDate(email.date)}
               </time>
             </div>
-            <h3 className="text-sm font-medium text-[#1A1A1A] leading-snug mt-0.5 line-clamp-2 dark:text-white">
+            <h3 className="text-sm font-medium text-[#1A1A1A] leading-snug mt-0.5 line-clamp-2 break-words dark:text-white">
               {email.objet}
             </h3>
+            {/* Badges urgence + brouillon */}
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              {email.urgency === "haute" && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-600 bg-red-50 rounded-full px-2 py-0.5 dark:bg-red-900/30 dark:text-red-400">
+                  <Flame className="w-2.5 h-2.5" aria-hidden="true" />
+                  Urgent
+                </span>
+              )}
+              {email.urgency === "moyenne" && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 bg-amber-50 rounded-full px-2 py-0.5 dark:bg-amber-900/30 dark:text-amber-400">
+                  <Clock className="w-2.5 h-2.5" aria-hidden="true" />
+                  Attention
+                </span>
+              )}
+              {email.brouillon_mock && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5 dark:bg-emerald-900/30 dark:text-emerald-400">
+                  <PenLine className="w-2.5 h-2.5" aria-hidden="true" />
+                  Brouillon prêt
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Résumé */}
-        <p className="text-[13px] text-[#6B7280] leading-relaxed line-clamp-3 mb-3.5">
+        <p className="text-[13px] text-[#6B7280] leading-relaxed line-clamp-3 break-words mb-3.5">
           {email.resume}
         </p>
 
@@ -760,11 +781,14 @@ function buildRealBriefing({
   period: PeriodFilter;
 }): V4BriefingData {
   // Emails à traiter : pret_a_reviser dans la période
-  // On inclut tous les emails pret_a_reviser — si needs_response/urgency sont vides,
-  // on affiche quand même pour ne pas laisser la liste vide
-  const readyEmails = filteredEmails.filter(
+  const readyInPeriod = filteredEmails.filter(
     (e) => e.pipeline_step === "pret_a_reviser"
   );
+
+  // Fallback : si aucun email pret_a_reviser dans la période, chercher dans tous les emails
+  const readyEmails = readyInPeriod.length > 0
+    ? readyInPeriod
+    : allEmails.filter((e) => e.pipeline_step === "pret_a_reviser").slice(0, 15);
 
   // Priorité aux emails nécessitant une action, puis tous les prêts
   const actionCandidates = readyEmails.filter(
@@ -789,7 +813,7 @@ function buildRealBriefing({
   return {
     nom_avocat: nomAvocat,
     date_briefing: new Date().toISOString(),
-    narrative: buildNarrative(narrative, filteredEmails, period),
+    narrative: buildNarrative(narrative, filteredEmails, period, dossiers),
     emails_action: toDoEmails,
     emails_traites: treatedEmails,
     dossiers,
@@ -837,24 +861,67 @@ function filterByPeriod(emails: any[], period: PeriodFilter): any[] {
 function buildNarrative(
   briefNarrative: string | null,
   filteredEmails: any[],
-  period: PeriodFilter
+  period: PeriodFilter,
+  dossiers: V4Dossier[] = []
 ): string {
   if (briefNarrative && period === "24h") return briefNarrative;
+
   const count = filteredEmails.length;
   const actionCount = filteredEmails.filter(
     (e) => e.pipeline_step === "pret_a_reviser"
   ).length;
-  const periodLabel =
-    period === "24h"
-      ? "Aujourd'hui"
-      : period === "7j"
-      ? "Cette semaine"
-      : "Ce mois";
-  if (count === 0)
-    return `${periodLabel}, aucun email n'a été reçu. Votre boîte est à jour.`;
-  return `${periodLabel}, Donna a analysé ${count} email${count > 1 ? "s" : ""}. ${
+  const ignoredCount = filteredEmails.filter(
+    (e) => e.pipeline_step === "ignore"
+  ).length;
+  const withDraftCount = filteredEmails.filter((e) => e.brouillon).length;
+
+  // Dossiers actifs touchés dans la période
+  const dossierIds = new Set(
+    filteredEmails.filter((e) => e.dossier_id).map((e) => e.dossier_id)
+  );
+  const activeDossierNames = dossiers
+    .filter((d) => dossierIds.has(d.id))
+    .map((d) => d.nom)
+    .slice(0, 4);
+
+  if (count === 0) {
+    if (period === "24h") return "Aujourd'hui, aucun email n'a été reçu. Votre boîte est à jour.";
+    if (period === "7j") return "Cette semaine, aucun email n'a été reçu. Profitez-en pour avancer sur vos dossiers.";
+    return "Ce mois, aucun email n'a été traité par Donna. Vérifiez que votre boîte Gmail est bien connectée.";
+  }
+
+  if (period === "7j") {
+    let text = `Cette semaine, Donna a analysé ${count} email${count > 1 ? "s" : ""} sur ${dossierIds.size} dossier${dossierIds.size > 1 ? "s" : ""}.`;
+    if (actionCount > 0)
+      text += ` ${actionCount} requièr${actionCount > 1 ? "ent" : "e"} votre attention.`;
+    if (ignoredCount > 0)
+      text += ` ${ignoredCount} email${ignoredCount > 1 ? "s" : ""} filtré${ignoredCount > 1 ? "s" : ""} automatiquement.`;
+    if (withDraftCount > 0)
+      text += ` ${withDraftCount} brouillon${withDraftCount > 1 ? "s" : ""} prêt${withDraftCount > 1 ? "s" : ""}.`;
+    if (activeDossierNames.length > 0)
+      text += ` Dossiers actifs : ${activeDossierNames.join(", ")}${activeDossierNames.length < dossierIds.size ? "…" : ""}.`;
+    return text;
+  }
+
+  if (period === "30j") {
+    let text = `Ce mois, Donna a traité ${count} email${count > 1 ? "s" : ""} répartis sur ${dossierIds.size} dossier${dossierIds.size > 1 ? "s" : ""}.`;
+    if (actionCount > 0)
+      text += ` ${actionCount} action${actionCount > 1 ? "s" : ""} en attente.`;
+    else
+      text += " Tous les emails ont été traités.";
+    if (ignoredCount > 0)
+      text += ` ${ignoredCount} email${ignoredCount > 1 ? "s ont été filtrés" : " a été filtré"} par Donna (spam, newsletters).`;
+    const tempsGagne = Math.round(count * 2.5);
+    text += ` Temps estimé gagné : ~${tempsGagne} min.`;
+    if (activeDossierNames.length > 0)
+      text += ` Dossiers actifs : ${activeDossierNames.join(", ")}${activeDossierNames.length < dossierIds.size ? "…" : ""}.`;
+    return text;
+  }
+
+  // Fallback 24h sans briefNarrative
+  return `Aujourd'hui, Donna a analysé ${count} email${count > 1 ? "s" : ""}. ${
     actionCount > 0
-      ? `${actionCount} requiert${actionCount > 1 ? "ent" : ""} votre attention.`
+      ? `${actionCount} requièr${actionCount > 1 ? "ent" : "e"} votre attention.`
       : "Tout est traité."
   }`;
 }
