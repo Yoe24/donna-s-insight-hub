@@ -526,9 +526,20 @@ const DossierDetailPage = () => {
               <p className="text-sm text-foreground/85 leading-relaxed">{selectedDoc.summary}</p>
             </div>
           )}
-          <p className="text-xs text-muted-foreground text-center pt-2">
-            Téléchargement disponible après connexion Gmail
-          </p>
+          {isDemo() ? (
+            <p className="text-xs text-muted-foreground text-center pt-2">
+              Téléchargement disponible après connexion Gmail
+            </p>
+          ) : selectedDoc?.url ? (
+            <a href={selectedDoc.url} target="_blank" rel="noopener noreferrer"
+              className="block text-xs text-primary text-center pt-2 hover:underline">
+              Télécharger le fichier
+            </a>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center pt-2">
+              Fichier non disponible
+            </p>
+          )}
         </DialogContent>
       </Dialog>
 

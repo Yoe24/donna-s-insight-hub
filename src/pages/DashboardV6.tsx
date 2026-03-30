@@ -900,7 +900,7 @@ export default function DashboardV6() {
   const [period, setPeriod] = useState<PeriodFilter>("24h");
   const [treatedIds, setTreatedIds] = useState<Set<string>>(new Set());
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
-  const [nomAvocat, setNomAvocat] = useState("Alexandra");
+  const [nomAvocat, setNomAvocat] = useState("");
 
   // Données brutes API — stockées pour re-filtrer par période sans nouvel appel
   const [allApiEmails, setAllApiEmails] = useState<any[]>([]);
@@ -994,8 +994,8 @@ export default function DashboardV6() {
         const filtered24h = filterByPeriod(apiEmails, "24h");
         const realBriefing = buildRealBriefing({
           nomAvocat: configResult.status === "fulfilled"
-            ? (configResult.value?.nom_avocat ?? "Alexandra")
-            : "Alexandra",
+            ? (configResult.value?.nom_avocat ?? "")
+            : "",
           filteredEmails: filtered24h,
           allEmails: apiEmails,
           narrative: briefContent?.executive_summary ?? null,
@@ -1006,7 +1006,7 @@ export default function DashboardV6() {
       } catch (err) {
         console.error("DashboardV6 load error:", err);
         // En mode réel, état vide propre — pas de fallback sur les données mock
-        const avocat = nomAvocat || "Alexandra";
+        const avocat = nomAvocat || "";
         setBriefing({
           nom_avocat: avocat,
           date_briefing: new Date().toISOString(),
