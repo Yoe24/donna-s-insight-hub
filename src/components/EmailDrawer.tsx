@@ -145,7 +145,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
     const match = (email.expediteur || "").match(/<([^>]+)>/);
     return match ? `${name} <${match[1]}>` : name;
   })();
-  const toEmail = mockEmail?.to_email || "alexandra@cabinet-fernandez.fr";
+  const toEmail = mockEmail?.to_email || (email as any).to_email || localStorage.getItem("donna_user_email") || "Moi";
   const ccEmail = mockEmail?.cc_email || (email as any).cc_email || null;
 
   // Sender name for subject area

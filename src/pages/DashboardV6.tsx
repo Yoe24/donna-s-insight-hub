@@ -928,21 +928,30 @@ function buildNarrative(
 
 /** Convertit un email API brut en V4Email */
 function apiEmailToV4(e: any): V4Email {
+  // Support both API formats (transformed: subject/summary/from_name and raw: objet/resume/expediteur)
+  const objet = e.objet ?? e.subject ?? "";
+  const resume = e.resume ?? e.summary ?? "";
+  const expediteur = e.expediteur ?? (e.from_name ? `${e.from_name} <${e.from_email ?? ""}>` : e.from_email ?? "");
+  const brouillon = e.brouillon ?? e.draft ?? null;
+  const createdAt = e.created_at ?? e.date ?? new Date().toISOString();
+  const dossierNom = e.dossier_nom ?? e.dossier_name ?? null;
+  const urgencyRaw = e.urgency ?? e.classification?.urgency ?? "low";
+
   return {
     id: e.id,
-    expediteur: parseExpeditorName(e.expediteur ?? ""),
-    email_from: e.expediteur ?? "",
-    objet: e.objet ?? "",
-    resume: e.resume ?? "",
+    expediteur: parseExpeditorName(expediteur),
+    email_from: expediteur,
+    objet,
+    resume,
     corps_original: e.metadata?.body ?? "",
-    date: e.created_at ?? new Date().toISOString(),
+    date: createdAt,
     dossier_id: e.dossier_id ?? null,
-    dossier_nom: e.dossier_nom ?? null,
-    dossier_domaine: null,
+    dossier_nom: dossierNom,
+    dossier_domaine: e.dossier_domaine ?? e.dossier_domain ?? null,
     urgency:
-      e.urgency === "high"
+      urgencyRaw === "high" || urgencyRaw === "haute"
         ? "haute"
-        : e.urgency === "medium"
+        : urgencyRaw === "medium" || urgencyRaw === "moyenne"
         ? "moyenne"
         : "basse",
     email_type: e.classification?.email_type ?? "informatif",
@@ -952,7 +961,7 @@ function apiEmailToV4(e: any): V4Email {
       type_mime: a.type ?? "",
       resume_ia: a.resume_ia ?? "",
     })),
-    brouillon_mock: e.brouillon ?? null,
+    brouillon_mock: brouillon,
   };
 }
 
