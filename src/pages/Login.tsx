@@ -43,8 +43,6 @@ const Login = () => {
   const { signIn } = useAuth();
   const emailRef = useRef<HTMLInputElement>(null);
 
-  const existingUserId = localStorage.getItem("donna_user_id");
-  const hasExistingSession = existingUserId && existingUserId !== DEMO_USER_ID;
 
   const handleStartDemo = () => {
     setUserId(DEMO_USER_ID);
@@ -211,15 +209,6 @@ const Login = () => {
               >
                 Essayer la démo →
               </button>
-
-              {hasExistingSession && (
-                <button
-                  onClick={() => navigate("/dashboard")}
-                  className="w-full min-h-[56px] rounded-xl border border-border bg-muted/50 text-foreground font-medium text-sm font-sans flex items-center justify-center gap-2 hover:bg-muted transition-colors"
-                >
-                  Accéder à mon tableau de bord →
-                </button>
-              )}
 
 
               {/* Separator + fallback login */}
