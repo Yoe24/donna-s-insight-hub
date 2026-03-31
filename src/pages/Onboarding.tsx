@@ -186,7 +186,45 @@ function ScanScreen() {
           Donna
         </motion.h2>
 
-        <div className="h-8 relative overflow-hidden">
+        {/* Live counters */}
+        <div className="grid grid-cols-3 gap-3 w-full">
+          <div className="text-center">
+            <motion.p
+              key={`emails-${status?.processed}`}
+              initial={{ scale: 1.2, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="text-2xl font-semibold text-foreground tabular-nums"
+            >
+              {status?.processed ?? 0}
+            </motion.p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">emails importés</p>
+          </div>
+          <div className="text-center">
+            <motion.p
+              key={`dossiers-${status?.dossiers_created}`}
+              initial={{ scale: 1.2, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="text-2xl font-semibold text-foreground tabular-nums"
+            >
+              {status?.dossiers_created ?? 0}
+            </motion.p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">affaires créées</p>
+          </div>
+          <div className="text-center">
+            <motion.p
+              key={`pj-${status?.attachments_count}`}
+              initial={{ scale: 1.2, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="text-2xl font-semibold text-foreground tabular-nums"
+            >
+              {status?.attachments_count ?? 0}
+            </motion.p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">pièces jointes</p>
+          </div>
+        </div>
+
+        {/* Status message */}
+        <div className="h-6 relative overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.p
               key={currentMessage}
@@ -194,7 +232,7 @@ function ScanScreen() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.4 }}
-              className="text-sm text-muted-foreground absolute inset-x-0"
+              className="text-xs text-muted-foreground absolute inset-x-0"
             >
               {currentMessage}
             </motion.p>
