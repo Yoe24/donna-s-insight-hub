@@ -1240,7 +1240,7 @@ export default function DashboardV6() {
           transition={{ duration: 0.3 }}
         >
           <h1 className="text-2xl font-semibold text-[#1A1A1A] leading-tight dark:text-white">
-            Bonjour{nomAvocat ? `, ${nomAvocat.split(" ")[0]}` : ""}
+            Bonjour{nomAvocat ? `, ${nomAvocat.split(" ")[0].charAt(0).toUpperCase() + nomAvocat.split(" ")[0].slice(1)}` : ""}
           </h1>
           <p className="text-[13px] text-[#6B7280] mt-1">
             {dateLabelCap}{userEmail ? <> · <span className="text-[#9CA3AF]">{userEmail}</span></> : null}
@@ -1297,7 +1297,8 @@ export default function DashboardV6() {
           transition={{ duration: 0.3, delay: 0.1 }}
         >
           {(() => {
-            const firstName = nomAvocat ? nomAvocat.split(" ")[0] : "";
+            const rawFirst = nomAvocat ? nomAvocat.split(" ")[0] : "";
+            const firstName = rawFirst ? rawFirst.charAt(0).toUpperCase() + rawFirst.slice(1) : "";
             const dossierNames = briefing.dossiers.map((d) => d.nom);
             const urgentEmails = actionEmails.filter((e) => e.urgency === "haute");
             const attentionEmails = actionEmails.filter((e) => e.urgency === "moyenne");
