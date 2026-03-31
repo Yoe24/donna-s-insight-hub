@@ -333,41 +333,27 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
                 </div>
               </div>
 
-              {/* Email body — factual in dossier context, résumé otherwise */}
-              {context === "dossier" ? (
-                <div className="mb-4">
-                  <p className="text-sm text-foreground/85 whitespace-pre-wrap leading-relaxed break-words">
-                    {(email as any).contenu || email.resume || "Contenu non disponible."}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {/* Résumé Donna — concis */}
-                  {email.resume && (
-                    <div className="mb-4">
-                      <h3 className="text-xs font-medium text-muted-foreground mb-1.5">Résumé</h3>
-                      <p className="text-sm text-foreground/85 leading-relaxed break-words line-clamp-3">{email.resume}</p>
+              {/* Aperçu Donna — collapsible summary like Gmail's Gemini */}
+              {email.resume && (email as any).contenu && email.resume !== (email as any).contenu && (
+                <Collapsible defaultOpen={false} className="mb-4">
+                  <CollapsibleTrigger className="flex items-center gap-2 w-full text-left rounded-lg border border-border/60 bg-muted/20 px-3 py-2 hover:bg-muted/30 transition-colors">
+                    <span className="text-[11px] font-medium text-muted-foreground">Aperçu Donna</span>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground ml-auto transition-transform [[data-state=open]_&]:rotate-90" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="px-3 py-2 text-xs text-muted-foreground leading-relaxed">
+                      {email.resume}
                     </div>
-                  )}
-
-                  {/* Email original — accessible en premier */}
-                  <Collapsible open={showOriginal} onOpenChange={setShowOriginal}>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="outline" size="sm" className="mb-4 text-xs w-full">
-                        <Mail className="h-3 w-3 mr-1.5" />
-                        {showOriginal ? "Masquer" : "Voir"} l'email complet
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="rounded-xl bg-muted/20 border border-border p-4 mb-4">
-                        <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed break-words">
-                          {(email as any).contenu || email.resume || "Contenu non disponible."}
-                        </p>
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </>
+                  </CollapsibleContent>
+                </Collapsible>
               )}
+
+              {/* Email body — always shown directly, like Gmail */}
+              <div className="mb-5">
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed break-words">
+                  {(email as any).contenu || email.resume || "Contenu non disponible."}
+                </p>
+              </div>
 
               {/* Pièces jointes */}
               {dossierDocs.length > 0 && (
@@ -465,29 +451,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
                 </div>
               )}
 
-              {/* Feedback — hidden in dossier context */}
-              {context !== "dossier" && (
-                <div className="border-t border-border pt-4">
-                  {feedbackGiven ? (
-                    <p className="text-xs text-muted-foreground">Merci pour votre retour</p>
-                  ) : (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2">Ce résumé est-il utile ?</p>
-                      <div className="flex gap-2">
-                        <button onClick={() => handleFeedback("parfait")} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 transition-colors">
-                          Parfait
-                        </button>
-                        <button onClick={() => handleFeedback("modifier")} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 transition-colors">
-                          À améliorer
-                        </button>
-                        <button onClick={() => handleFeedback("erreur")} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-colors">
-                          Incorrect
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Feedback supprimé — le retour se fait via le brouillon */}
               </>
               )}
             </div>
