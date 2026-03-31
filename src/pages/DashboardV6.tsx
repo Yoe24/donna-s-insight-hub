@@ -1224,7 +1224,7 @@ export default function DashboardV6() {
               {dateLabelCap}
             </p>
           </div>
-          <PeriodTabs period={period} onChange={setPeriod} />
+          {/* PeriodTabs retiré — briefing toujours 24h, la profondeur est dans les dossiers */}
         </motion.header>
 
         {/* ── Hero stats ── */}
