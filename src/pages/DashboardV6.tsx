@@ -362,26 +362,15 @@ function ActionCard({
                   Attention
                 </span>
               )}
-              {email.brouillon_mock && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5 dark:bg-emerald-900/30 dark:text-emerald-400">
-                  <PenLine className="w-2.5 h-2.5" aria-hidden="true" />
-                  Brouillon prêt
-                </span>
-              )}
             </div>
             {/* Contexte narratif — pourquoi cet email est dans la to-do */}
             <p className="text-[12px] text-[#6B7280] mt-1.5 leading-snug line-clamp-2">
               {email.resume
-                ? email.resume.length > 160 ? email.resume.substring(0, 157) + "…" : email.resume
+                ? email.resume.length > 200 ? email.resume.substring(0, 197) + "…" : email.resume
                 : email.urgency === "haute"
                 ? "Sujet urgent — à traiter en priorité"
                 : "À consulter et décider de la suite à donner"}
             </p>
-            {email.brouillon_mock && (
-              <p className="text-[11px] text-emerald-600/80 mt-1 font-medium">
-                Brouillon prêt — relisez et validez en 1 clic
-              </p>
-            )}
           </div>
         </div>
 
@@ -438,7 +427,7 @@ function ActionCard({
             }
           >
             <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
-            {treated ? "Fait ✓" : "Fait ✓"}
+            {treated ? "Mail envoyé" : "Mail envoyé"}
           </button>
         </div>
       </div>
