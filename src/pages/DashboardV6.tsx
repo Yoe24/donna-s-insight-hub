@@ -29,6 +29,9 @@ import {
   PenLine,
   BookOpen,
   Check,
+  FolderOpen,
+  Filter,
+  Inbox,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -193,13 +196,17 @@ function CircularProgress({
 // ---------------------------------------------------------------------------
 
 function HeroStatsCard({
-  stats,
-  treated,
-  total,
+  emailsRecus,
+  emailsDossiers,
+  emailsBruit,
+  actionsCreees,
+  actionsValidees,
 }: {
-  stats: V4BriefingData["stats"];
-  treated: number;
-  total: number;
+  emailsRecus: number;
+  emailsDossiers: number;
+  emailsBruit: number;
+  actionsCreees: number;
+  actionsValidees: number;
 }) {
   return (
     <motion.div
@@ -209,72 +216,43 @@ function HeroStatsCard({
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
       <div className="flex items-center gap-5">
-        {/* Cercle de progression */}
+        {/* Cercle de progression — actions validées / créées */}
         <div className="relative flex-shrink-0" aria-hidden="true">
-          <CircularProgress value={treated} max={total} size={72} stroke={5} />
+          <CircularProgress value={actionsValidees} max={actionsCreees} size={72} stroke={5} />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-lg font-semibold text-[#1A1A1A] leading-none dark:text-white tabular-nums">
-              {treated}
+              {actionsValidees}
             </span>
             <span className="text-[10px] text-[#6B7280] leading-none mt-0.5">
-              /{total}
+              /{actionsCreees}
             </span>
           </div>
         </div>
 
-        {/* Métriques */}
-        <div className="flex-1 min-w-0 space-y-2.5">
-          {/* Temps gagné */}
-          <div>
-            <p
-              className="text-[10px] tracking-[0.12em] uppercase text-[#6B7280] mb-0.5"
-              aria-label="Temps économisé aujourd'hui"
-            >
-              Temps économisé
-            </p>
-            <div className="flex items-baseline gap-1.5">
-              <AnimatedNumber
-                value={stats.temps_gagne_minutes}
-                className="text-2xl font-semibold text-[#1A1A1A] tabular-nums leading-none dark:text-white"
-              />
-              <span className="text-sm text-[#6B7280]">min</span>
-            </div>
-          </div>
-
-          {/* Métadonnées en ligne */}
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Emails traités */}
-            <span
-              className="inline-flex items-center gap-1 text-[11px] text-[#6B7280]"
-              aria-label={`${treated} emails traités sur ${total}`}
-            >
-              <Mail className="w-3 h-3" aria-hidden="true" />
-              {treated}/{total} traités
+        {/* Métriques clés */}
+        <div className="flex-1 min-w-0 space-y-2">
+          <p className="text-[10px] tracking-[0.12em] uppercase text-[#6B7280]">
+            Aujourd'hui
+          </p>
+          <div className="flex items-center gap-4 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 text-[12px] text-[#1A1A1A] font-medium dark:text-white">
+              <Inbox className="w-3.5 h-3.5 text-[#6B7280]" />
+              {emailsRecus} reçu{emailsRecus > 1 ? "s" : ""}
             </span>
-
-            {/* Streak */}
-            {stats.streak_jours >= 2 && (
-              <span
-                className="inline-flex items-center gap-1 text-[11px] text-[#F97316] font-medium"
-                aria-label={`Série de ${stats.streak_jours} jours`}
-              >
-                <Flame className="w-3 h-3" aria-hidden="true" />
-                {stats.streak_jours} jours
-              </span>
-            )}
-
-            {/* Brouillons */}
-            {stats.brouillons_generes > 0 && (
-              <span
-                className="inline-flex items-center gap-1 text-[11px] text-[#6B7280]"
-                aria-label={`${stats.brouillons_generes} brouillons`}
-              >
-                <PenLine className="w-3 h-3" aria-hidden="true" />
-                {stats.brouillons_generes} brouillon
-                {stats.brouillons_generes > 1 ? "s" : ""}
-              </span>
-            )}
+            <span className="inline-flex items-center gap-1.5 text-[12px] text-[#1A1A1A] font-medium dark:text-white">
+              <FolderOpen className="w-3.5 h-3.5 text-[#6B7280]" />
+              {emailsDossiers} dossier{emailsDossiers > 1 ? "s" : ""}
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-[12px] text-[#6B7280]">
+              <Filter className="w-3.5 h-3.5" />
+              {emailsBruit} filtré{emailsBruit > 1 ? "s" : ""}
+            </span>
           </div>
+          {actionsValidees > 0 && (
+            <p className="text-[11px] text-[#6B7280]">
+              ~{actionsValidees * 15} min économisées
+            </p>
+          )}
         </div>
       </div>
     </motion.div>
@@ -796,7 +774,19 @@ function buildRealBriefing({
     (e) => e.needs_response === true || e.urgency === "high" || e.urgency === "medium"
   );
   const toDoRaw = actionCandidates.length > 0 ? actionCandidates : readyEmails;
-  const toDoEmails: V4Email[] = toDoRaw.map(apiEmailToV4);
+
+  // Grouper par dossier, max 2 par dossier (les plus urgents en premier)
+  const urgencyOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
+  const sorted = [...toDoRaw].sort((a, b) => (urgencyOrder[a.urgency] ?? 2) - (urgencyOrder[b.urgency] ?? 2));
+  const perDossier = new Map<string, number>();
+  const limitedToDo = sorted.filter((e) => {
+    const key = e.dossier_id || "no-dossier";
+    const count = perDossier.get(key) || 0;
+    if (count >= 2) return false;
+    perDossier.set(key, count + 1);
+    return true;
+  });
+  const toDoEmails: V4Email[] = limitedToDo.map(apiEmailToV4);
 
   // Emails ignorés par Donna dans la période
   const treatedEmails: V4Email[] = filteredEmails
@@ -1154,10 +1144,11 @@ export default function DashboardV6() {
     navigate(`/dossiers/${dossierId}`);
 
   const actionEmails = briefing?.emails_action ?? [];
-  const treatedCount =
-    actionEmails.filter((e) => treatedIds.has(e.id)).length +
-    (briefing?.stats.auto_traites ?? 0);
-  const totalEmails = briefing?.stats.total_analyses ?? 0;
+  const actionsValidees = actionEmails.filter((e) => treatedIds.has(e.id)).length;
+  const actionsCreees = actionEmails.length;
+  const emailsRecus = briefing?.stats.total_analyses ?? 0;
+  const emailsBruit = briefing?.stats.auto_traites ?? 0;
+  const emailsDossiers = emailsRecus - emailsBruit;
   const allActionTreated =
     actionEmails.length > 0 &&
     actionEmails.every((e) => treatedIds.has(e.id));
@@ -1230,9 +1221,11 @@ export default function DashboardV6() {
         {/* ── Hero stats ── */}
         <div className="mb-6">
           <HeroStatsCard
-            stats={{ ...briefing.stats, auto_traites: treatedCount }}
-            treated={treatedCount}
-            total={totalEmails}
+            emailsRecus={emailsRecus}
+            emailsDossiers={emailsDossiers}
+            emailsBruit={emailsBruit}
+            actionsCreees={actionsCreees}
+            actionsValidees={actionsValidees}
           />
         </div>
 
