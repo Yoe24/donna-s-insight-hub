@@ -1352,25 +1352,7 @@ export default function DashboardV6() {
           </motion.section>
         )}
 
-        {/* ── Classés par Donna (collapsible) ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.3 }}
-          className="mb-6"
-        >
-          <TreatedByDonnaSection emails={briefing.emails_traites} />
-        </motion.div>
-
-        {/* ── Footer badges ── */}
-        <motion.footer
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.25, delay: 0.4 }}
-          aria-label="Accomplissements du jour"
-        >
-          <BadgesRow stats={{ ...briefing.stats, brief_lu: true }} />
-        </motion.footer>
+        {/* Classés par Donna + badges supprimés — accessible via sidebar */}
       </div>
 
       {/* ── Email Drawer (non modifié) ── */}
