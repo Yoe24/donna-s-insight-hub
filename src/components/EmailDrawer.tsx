@@ -228,6 +228,82 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
             <div className="max-w-3xl mx-auto px-4 sm:px-8 py-6">
               <h1 className="sr-only">Détail de l'email : {email.objet || "Sans objet"}</h1>
 
+              {/* ── DRAFT MODE: minimal view, just the draft ── */}
+              {initialMode === "draft" ? (
+                <>
+                  <h2 className="text-lg font-semibold text-foreground leading-snug mb-1 break-words">Brouillon de réponse</h2>
+                  <p className="text-xs text-muted-foreground mb-4">Re : {email.objet || "Sans objet"} — {fromEmail}</p>
+
+                  {draftLoading && (
+                    <div className="flex items-center justify-center gap-2 py-8">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Chargement du brouillon…</span>
+                    </div>
+                  )}
+
+                  {draftText && !draftLoading && (() => {
+                    // Extract only the draft part (after "---" separator or "Brouillon de réponse")
+                    const separatorIdx = draftText.indexOf('---');
+                    const brouillonIdx = draftText.indexOf('Brouillon de réponse');
+                    let draftOnly = draftText;
+                    if (brouillonIdx >= 0) {
+                      const afterLabel = draftText.substring(brouillonIdx);
+                      const colonIdx = afterLabel.indexOf(':');
+                      draftOnly = colonIdx >= 0 ? afterLabel.substring(colonIdx + 1).trim() : afterLabel.substring('Brouillon de réponse'.length).trim();
+                    } else if (separatorIdx >= 0) {
+                      draftOnly = draftText.substring(separatorIdx + 3).trim();
+                    }
+                    return (
+                      <div className="space-y-4">
+                        <Textarea
+                          ref={textareaRef}
+                          value={draftOnly}
+                          onChange={(e) => {
+                            // Reconstruct full text with updated draft
+                            const prefix = draftText.substring(0, draftText.length - (draftText.endsWith(draftOnly) ? draftOnly.length : 0));
+                            setDraftText(e.target.value);
+                          }}
+                          className="min-h-[280px] text-sm leading-relaxed bg-background border-border"
+                        />
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" className="text-xs" onClick={() => { navigator.clipboard.writeText(draftOnly); toast.success("Brouillon copié !"); }}>
+                            <Copy className="h-3 w-3 mr-1" /> Copier
+                          </Button>
+                        </div>
+
+                        {/* Feedback pour entraîner Donna */}
+                        <div className="border-t border-border pt-4">
+                          {feedbackGiven ? (
+                            <p className="text-sm text-muted-foreground">Merci ! Donna apprend de vos retours.</p>
+                          ) : (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-2.5">Ce brouillon vous convient ?</p>
+                              <div className="flex gap-2 flex-wrap">
+                                <button onClick={() => handleFeedback("parfait")} className="text-xs px-4 py-2 rounded-lg border border-border hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-colors font-medium">
+                                  Parfait
+                                </button>
+                                <button onClick={() => handleFeedback("modifier")} className="text-xs px-4 py-2 rounded-lg border border-border hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700 transition-colors font-medium">
+                                  Quelques modifications
+                                </button>
+                                <button onClick={() => handleFeedback("erreur")} className="text-xs px-4 py-2 rounded-lg border border-border hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-colors font-medium">
+                                  Erreurs
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {!draftText && !draftLoading && (
+                    <p className="text-sm text-muted-foreground py-8 text-center">Aucun brouillon disponible pour cet email.</p>
+                  )}
+                </>
+              ) : (
+              /* ── VIEW MODE: original layout ── */
+              <>
+
               {/* Subject */}
               <h2 className="text-xl font-semibold text-foreground leading-snug mb-4 line-clamp-2 break-words">{email.objet || "Sans objet"}</h2>
 
@@ -399,6 +475,8 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
                   </div>
                 )}
               </div>
+              </>
+              )}
             </div>
           </div>
         </div>
