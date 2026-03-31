@@ -163,6 +163,12 @@ const Configuration = () => {
     <ErrorBoundary>
       <DashboardLayout>
         <div className="max-w-xl mx-auto py-8 sm:py-12 px-4">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+          >
+            <span className="text-lg leading-none">&larr;</span> Retour au briefing
+          </button>
           <h1 className="text-xl font-serif font-bold text-foreground mb-2">Configurez-moi</h1>
           <div className="mb-8">
             <div className="flex items-center justify-between mb-1.5">

@@ -37,7 +37,7 @@ import { toast } from "sonner";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { EmailDrawer } from "@/components/EmailDrawer";
 import { isDemo, getUserId } from "@/lib/auth";
-import { apiGet } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
 import {
   v4Briefing,
   type V4BriefingData,
@@ -1018,6 +1018,14 @@ export default function DashboardV6() {
         // Stocker les emails bruts pour le filtrage par période
         setAllApiEmails(apiEmails);
 
+        // Restaurer les emails déjà traités (statut = 'traite' ou 'valide')
+        const alreadyTreated = apiEmails
+          .filter((e) => e.statut === "traite" || e.statut === "valide")
+          .map((e) => e.id);
+        if (alreadyTreated.length > 0) {
+          setTreatedIds(new Set(alreadyTreated));
+        }
+
         // Narratif depuis le brief
         const briefContent = briefResult.status === "fulfilled"
           ? briefResult.value?.content
@@ -1125,10 +1133,26 @@ export default function DashboardV6() {
       next.add(id);
       return next;
     });
+    // Persist in DB
+    if (!isDemo()) {
+      apiPost(`/api/emails/${id}/status`, { statut: 'traite' }).catch(() => {});
+    }
     toast.success("Fait ✓", {
       description: "Donna a mis à jour votre progression.",
       duration: 1800,
     });
+  };
+
+  const handleUntreate = (id: string) => {
+    setTreatedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    if (!isDemo()) {
+      apiPost(`/api/emails/${id}/status`, { statut: 'en_attente' }).catch(() => {});
+    }
+    toast.success("Remis en to-do");
   };
 
   const [drawerMode, setDrawerMode] = useState<"view" | "draft">("view");
@@ -1296,7 +1320,37 @@ export default function DashboardV6() {
           )}
         </AnimatePresence>
 
-        {/* Dossiers actifs supprimé — accessible via la sidebar */}
+        {/* ── Archivé — tâches validées ── */}
+        {actionEmails.filter((e) => treatedIds.has(e.id)).length > 0 && (
+          <motion.section
+            className="mb-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.15 }}
+          >
+            <h2 className="text-[11px] tracking-[0.15em] uppercase font-medium text-[#6B7280] mb-3">
+              Validées aujourd'hui
+              <span className="ml-2 text-[#D1D5DB] tabular-nums">{actionEmails.filter((e) => treatedIds.has(e.id)).length}</span>
+            </h2>
+            <div className="rounded-xl border border-[#E5E5E5] bg-white overflow-hidden dark:bg-zinc-900 dark:border-zinc-700 divide-y divide-[#E5E5E5] dark:divide-zinc-700">
+              {actionEmails.filter((e) => treatedIds.has(e.id)).map((email) => (
+                <div key={email.id} className="flex items-center gap-3 px-4 py-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[#6B7280] truncate line-through decoration-[#D1D5DB]">{email.objet}</p>
+                    <p className="text-[10px] text-[#D1D5DB]">{email.dossier_nom}</p>
+                  </div>
+                  <button
+                    onClick={() => handleUntreate(email.id)}
+                    className="text-[10px] text-[#6B7280] hover:text-[#1A1A1A] transition-colors px-2 py-1 rounded border border-[#E5E5E5] hover:border-[#1A1A1A] dark:hover:text-white dark:hover:border-white"
+                  >
+                    Remettre
+                  </button>
+                </div>
+              ))}
+            </div>
+          </motion.section>
+        )}
 
         {/* ── Classés par Donna (collapsible) ── */}
         <motion.div
