@@ -333,30 +333,41 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
                 </div>
               </div>
 
-              {/* Résumé Donna — concis */}
-              {email.resume && (
+              {/* Email body — factual in dossier context, résumé otherwise */}
+              {context === "dossier" ? (
                 <div className="mb-4">
-                  <h3 className="text-xs font-medium text-muted-foreground mb-1.5">Résumé</h3>
-                  <p className="text-sm text-foreground/85 leading-relaxed break-words line-clamp-3">{email.resume}</p>
+                  <p className="text-sm text-foreground/85 whitespace-pre-wrap leading-relaxed break-words">
+                    {(email as any).contenu || email.resume || "Contenu non disponible."}
+                  </p>
                 </div>
-              )}
+              ) : (
+                <>
+                  {/* Résumé Donna — concis */}
+                  {email.resume && (
+                    <div className="mb-4">
+                      <h3 className="text-xs font-medium text-muted-foreground mb-1.5">Résumé</h3>
+                      <p className="text-sm text-foreground/85 leading-relaxed break-words line-clamp-3">{email.resume}</p>
+                    </div>
+                  )}
 
-              {/* Email original — accessible en premier */}
-              <Collapsible open={showOriginal} onOpenChange={setShowOriginal}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="outline" size="sm" className="mb-4 text-xs w-full">
-                    <Mail className="h-3 w-3 mr-1.5" />
-                    {showOriginal ? "Masquer" : "Voir"} l'email complet
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="rounded-xl bg-muted/20 border border-border p-4 mb-4">
-                    <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed break-words">
-                      {(email as any).contenu || email.resume || "Contenu non disponible."}
-                    </p>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+                  {/* Email original — accessible en premier */}
+                  <Collapsible open={showOriginal} onOpenChange={setShowOriginal}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="outline" size="sm" className="mb-4 text-xs w-full">
+                        <Mail className="h-3 w-3 mr-1.5" />
+                        {showOriginal ? "Masquer" : "Voir"} l'email complet
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="rounded-xl bg-muted/20 border border-border p-4 mb-4">
+                        <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed break-words">
+                          {(email as any).contenu || email.resume || "Contenu non disponible."}
+                        </p>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </>
+              )}
 
               {/* Pièces jointes */}
               {dossierDocs.length > 0 && (
@@ -454,27 +465,29 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
                 </div>
               )}
 
-              {/* Feedback */}
-              <div className="border-t border-border pt-4">
-                {feedbackGiven ? (
-                  <p className="text-xs text-muted-foreground">Merci pour votre retour</p>
-                ) : (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2">Ce résumé est-il utile ?</p>
-                    <div className="flex gap-2">
-                      <button onClick={() => handleFeedback("parfait")} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 transition-colors">
-                        Parfait
-                      </button>
-                      <button onClick={() => handleFeedback("modifier")} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 transition-colors">
-                        À améliorer
-                      </button>
-                      <button onClick={() => handleFeedback("erreur")} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-colors">
-                        Incorrect
-                      </button>
+              {/* Feedback — hidden in dossier context */}
+              {context !== "dossier" && (
+                <div className="border-t border-border pt-4">
+                  {feedbackGiven ? (
+                    <p className="text-xs text-muted-foreground">Merci pour votre retour</p>
+                  ) : (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">Ce résumé est-il utile ?</p>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleFeedback("parfait")} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 transition-colors">
+                          Parfait
+                        </button>
+                        <button onClick={() => handleFeedback("modifier")} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 transition-colors">
+                          À améliorer
+                        </button>
+                        <button onClick={() => handleFeedback("erreur")} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-colors">
+                          Incorrect
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
               </>
               )}
             </div>

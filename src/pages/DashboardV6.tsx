@@ -1052,8 +1052,9 @@ export default function DashboardV6() {
         // Pas de fallback sur les mocks en mode réel — liste vide si pas encore de dossiers
         setBriefDossiers(dossiers);
 
-        // Si 0 emails en mode réel → import non encore lancé, rediriger vers onboarding
-        if (apiEmails.length === 0) {
+        // Si 0 emails en mode réel ET l'appel API a réussi → import non encore lancé, rediriger vers onboarding
+        // Si l'appel API a échoué, on reste sur le dashboard avec un état vide (pas de redirect)
+        if (emailsResult.status === "fulfilled" && apiEmails.length === 0) {
           try {
             await apiGet<any>("/api/import/status");
           } catch {
