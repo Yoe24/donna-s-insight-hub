@@ -372,11 +372,6 @@ function ActionCard({
           </div>
         </div>
 
-        {/* Résumé */}
-        <p className="text-[13px] text-[#6B7280] leading-relaxed line-clamp-3 break-words mb-3.5">
-          {email.resume}
-        </p>
-
         {/* PJ — pills sobre */}
         {email.pieces_jointes.length > 0 && (
           <div
@@ -1136,10 +1131,15 @@ export default function DashboardV6() {
     });
   };
 
-  const handleView = (email: V4Email) =>
+  const [drawerMode, setDrawerMode] = useState<"view" | "draft">("view");
+  const handleView = (email: V4Email) => {
+    setDrawerMode("view");
     setSelectedEmail(v4EmailToDrawerEmail(email));
-  const handleDraft = (email: V4Email) =>
+  };
+  const handleDraft = (email: V4Email) => {
+    setDrawerMode("draft");
     setSelectedEmail(v4EmailToDrawerEmail(email));
+  };
   const handleDossierNav = (dossierId: string) =>
     navigate(`/dossiers/${dossierId}`);
 
@@ -1296,79 +1296,7 @@ export default function DashboardV6() {
           )}
         </AnimatePresence>
 
-        {/* ── Dossiers actifs ── */}
-        <motion.section
-          aria-labelledby="dossiers-title"
-          className="mb-6"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
-          <h2
-            id="dossiers-title"
-            className="text-[11px] tracking-[0.15em] uppercase font-medium text-[#6B7280] mb-3"
-          >
-            Dossiers actifs
-          </h2>
-
-          <div className="rounded-xl border border-[#E5E5E5] bg-white overflow-hidden dark:bg-zinc-900 dark:border-zinc-700">
-            <ul
-              className="divide-y divide-[#E5E5E5] dark:divide-zinc-700"
-              role="list"
-            >
-              {briefing.dossiers.map((dossier, i) => {
-                const urgencyDot = {
-                  haute: "bg-red-500",
-                  moyenne: "bg-amber-400",
-                  basse: "bg-[#D1D5DB]",
-                } as const;
-
-                return (
-                  <motion.li
-                    key={dossier.id}
-                    initial={{ opacity: 0, x: -6 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.2, delay: 0.22 + i * 0.04 }}
-                    role="listitem"
-                  >
-                    <button
-                      onClick={() => handleDossierNav(dossier.id)}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#FAFAFA] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A1A1A] focus-visible:ring-inset dark:hover:bg-zinc-800"
-                      aria-label={`Ouvrir le dossier ${dossier.nom} — ${dossier.domaine}`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${urgencyDot[dossier.urgency]}`}
-                        aria-hidden="true"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#1A1A1A] truncate dark:text-white">
-                          {dossier.nom}
-                        </p>
-                        <p className="text-[11px] text-[#6B7280] truncate">
-                          {dossier.domaine}
-                        </p>
-                        {dossier.resume_court && (
-                          <p className="text-[11px] text-[#6B7280] line-clamp-2 break-words">
-                            {dossier.resume_court}
-                          </p>
-                        )}
-                      </div>
-                      {dossier.dates_cles.length > 0 && (
-                        <span className="text-[10px] text-[#6B7280] flex-shrink-0 hidden sm:block">
-                          {dossier.dates_cles[0].replace(/^[^:]+:\s*/, "")}
-                        </span>
-                      )}
-                      <ChevronRight
-                        className="w-3.5 h-3.5 text-[#D1D5DB] flex-shrink-0"
-                        aria-hidden="true"
-                      />
-                    </button>
-                  </motion.li>
-                );
-              })}
-            </ul>
-          </div>
-        </motion.section>
+        {/* Dossiers actifs supprimé — accessible via la sidebar */}
 
         {/* ── Classés par Donna (collapsible) ── */}
         <motion.div
@@ -1399,6 +1327,7 @@ export default function DashboardV6() {
             onClose={() => setSelectedEmail(null)}
             showDossierLink
             context="briefing"
+            initialMode={drawerMode}
           />
         )}
       </AnimatePresence>

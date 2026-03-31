@@ -22,9 +22,10 @@ interface EmailDrawerProps {
   onClose: () => void;
   showDossierLink?: boolean;
   context?: "briefing" | "fil" | "dossier";
+  initialMode?: "view" | "draft";
 }
 
-export function EmailDrawer({ email, onClose, showDossierLink = true, context = "briefing" }: EmailDrawerProps) {
+export function EmailDrawer({ email, onClose, showDossierLink = true, context = "briefing", initialMode = "view" }: EmailDrawerProps) {
   const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
   // Pre-fill draft if already generated (from backend pipeline or mock)
@@ -40,6 +41,16 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [displayedDraft, setDisplayedDraft] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+
+  // Auto-trigger draft generation when opened in draft mode
+  const draftAutoTriggered = useRef(false);
+  useEffect(() => {
+    if (initialMode === "draft" && !draftAutoTriggered.current) {
+      draftAutoTriggered.current = true;
+      // Small delay to let component mount
+      setTimeout(() => handleGenerateDraft(), 100);
+    }
+  }, [initialMode]);
 
   // Resolve mock email for metadata
   const mockEmail = isDemo() ? mockAllEmails.find((e) => e.id === email.id) : null;
@@ -246,23 +257,38 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
                 </div>
               </div>
 
-              {/* Résumé Donna — visually distinct from the metadata block */}
+              {/* Résumé Donna — concis */}
               {email.resume && (
-                <div className="mb-6">
-                  <h3 className="text-xs font-medium text-muted-foreground mb-2">Résumé Donna</h3>
-                  <div className="rounded-xl bg-muted/30 p-4">
-                    <p className="text-sm text-foreground/85 whitespace-pre-line leading-relaxed break-words">{email.resume}</p>
-                  </div>
+                <div className="mb-4">
+                  <h3 className="text-xs font-medium text-muted-foreground mb-1.5">Résumé</h3>
+                  <p className="text-sm text-foreground/85 leading-relaxed break-words line-clamp-3">{email.resume}</p>
                 </div>
               )}
 
+              {/* Email original — accessible en premier */}
+              <Collapsible open={showOriginal} onOpenChange={setShowOriginal}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" size="sm" className="mb-4 text-xs w-full">
+                    <Mail className="h-3 w-3 mr-1.5" />
+                    {showOriginal ? "Masquer" : "Voir"} l'email complet
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="rounded-xl bg-muted/20 border border-border p-4 mb-4">
+                    <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed break-words">
+                      {(email as any).contenu || email.resume || "Contenu non disponible."}
+                    </p>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
               {/* Pièces jointes */}
               {dossierDocs.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                <div className="mb-4">
+                  <h3 className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
                     <Paperclip className="h-3.5 w-3.5" /> Pièces jointes
                   </h3>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     {dossierDocs.map((doc: any, idx: number) => {
                       const isPdf = doc.type?.toLowerCase()?.includes("pdf") || doc.nom_fichier?.endsWith(".pdf");
                       return (
@@ -273,7 +299,6 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
                         >
                           <FileText className={`h-4 w-4 shrink-0 ${isPdf ? "text-red-500/70" : "text-blue-500/70"}`} />
                           <span className="text-sm text-foreground truncate flex-1">{doc.nom_fichier}</span>
-                          {doc.taille && <span className="text-[10px] text-muted-foreground shrink-0">{doc.taille}</span>}
                         </button>
                       );
                     })}
@@ -283,44 +308,45 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
 
               {/* Dossier rattaché */}
               {showDossierLink && (email as any).dossier_id && (
-                <div className="mb-6">
-                  <h3 className="text-xs font-medium text-muted-foreground mb-2">Dossier rattaché</h3>
+                <div className="mb-4">
                   <a
                     href={`/dossiers/${(email as any).dossier_id}`}
-                    className="text-sm text-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+                    className="text-xs text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
                   >
-                    {dossierName || "Dossier"}
-                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    Dossier : {dossierName || "Voir"} <ChevronRight className="h-3 w-3" />
                   </a>
                 </div>
               )}
 
-              <div className="border-t border-border mb-6" />
+              <div className="border-t border-border mb-4" />
 
-              {/* Generate draft */}
-              <Button
-                className={context === "fil" ? "mb-3" : "w-full mb-3"}
-                variant={context === "fil" ? "outline" : "default"}
-                onClick={handleGenerateDraft}
-                disabled={draftLoading || isStreaming || (!!draftText && !draftLoading)}
-              >
-                {draftLoading ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Génération en cours…</>
-                ) : draftText ? (
-                  "Réponse générée ✓"
-                ) : preExistingDraft && !draftPreLoaded ? (
-                  "Brouillon prêt — Voir"
-                ) : (
-                  "Générer une réponse"
-                )}
-              </Button>
-              {context === "dossier" && !draftText && (
-                <p className="text-xs text-muted-foreground mb-3">Donna rédige dans votre style avec votre signature</p>
+              {/* Brouillon — section principale */}
+              {/* Generate draft button (hidden if already auto-triggered in draft mode) */}
+              {!(initialMode === "draft" && (draftText || draftLoading || isStreaming)) && (
+                <Button
+                  className="w-full mb-3"
+                  variant="default"
+                  onClick={handleGenerateDraft}
+                  disabled={draftLoading || isStreaming || (!!draftText && !draftLoading)}
+                >
+                  {draftLoading ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Génération en cours…</>
+                  ) : draftText ? (
+                    "Réponse générée ✓"
+                  ) : preExistingDraft && !draftPreLoaded ? (
+                    "Brouillon prêt — Voir"
+                  ) : (
+                    "Générer une réponse"
+                  )}
+                </Button>
               )}
-              {context === "fil" && (email as any).dossier_id && (
-                <a href={`/dossiers/${(email as any).dossier_id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors mb-3 block">
-                  → Ouvrir le dossier pour travailler sur cet email
-                </a>
+
+              {/* Draft loading indicator for auto-triggered draft mode */}
+              {initialMode === "draft" && draftLoading && (
+                <div className="flex items-center justify-center gap-2 py-4 mb-3">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Chargement du brouillon…</span>
+                </div>
               )}
 
               {/* Draft response */}
@@ -351,22 +377,6 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
                   </div>
                 </div>
               )}
-
-              {/* Email original */}
-              <Collapsible open={showOriginal} onOpenChange={setShowOriginal}>
-                <CollapsibleTrigger asChild>
-                  <button className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors mb-4 block">
-                    {showOriginal ? "Masquer" : "Voir"} l'email original
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="rounded-xl bg-muted/20 border border-border p-4 mb-4">
-                    <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed break-words">
-                      {(email as any).contenu || email.resume || "Contenu non disponible."}
-                    </p>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
 
               {/* Feedback */}
               <div className="border-t border-border pt-4">
