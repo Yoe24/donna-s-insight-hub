@@ -369,6 +369,14 @@ function ActionCard({
                 </span>
               )}
             </div>
+            {/* Action hint — what Donna suggests */}
+            <p className="text-[11px] text-[#9CA3AF] mt-1.5 leading-snug">
+              {email.brouillon_mock
+                ? "Donna a préparé une réponse — relisez et validez en 1 clic"
+                : email.urgency === "haute"
+                ? "Sujet urgent — à traiter en priorité"
+                : "À consulter et décider de la suite à donner"}
+            </p>
           </div>
         </div>
 
@@ -1281,28 +1289,57 @@ export default function DashboardV6() {
           </div>
         </motion.div>
 
-        {/* ── Narratif Donna — court et actionnable ── */}
+        {/* ── Narratif Donna — gamifié, personnalisé ── */}
         <motion.div
-          className="rounded-xl bg-[#FAFAFA] border border-[#E5E5E5] p-4 mb-6 dark:bg-zinc-900/60 dark:border-zinc-700"
+          className="rounded-xl bg-[#FAFAFA] border border-[#E5E5E5] p-5 mb-6 dark:bg-zinc-900/60 dark:border-zinc-700"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <p className="text-[13px] text-[#1A1A1A] leading-relaxed dark:text-zinc-200">
-            {(() => {
-              // Build a short, actionable narrative from the data
-              const dossierNames = briefing.dossiers.map((d) => d.nom);
-              const urgentCount = actionEmails.filter((e) => e.urgency === "haute").length;
-              let narrative = `Donna a analysé vos ${emailsRecus} emails et préparé ${actionsCreees} brouillons de réponse.`;
-              if (dossierNames.length > 0) {
-                narrative += ` ${urgentCount > 0 ? urgentCount + " sujet" + (urgentCount > 1 ? "s" : "") + " urgent" + (urgentCount > 1 ? "s" : "") : actionsCreees + " action" + (actionsCreees > 1 ? "s" : "")} sur ${dossierNames.length} dossier${dossierNames.length > 1 ? "s" : ""} : ${dossierNames.join(", ")}.`;
-              }
-              if (emailsBruit > 0) {
-                narrative += ` ${emailsBruit} email${emailsBruit > 1 ? "s" : ""} filtré${emailsBruit > 1 ? "s" : ""} automatiquement.`;
-              }
-              return narrative;
-            })()}
-          </p>
+          {(() => {
+            const firstName = nomAvocat ? nomAvocat.split(" ")[0] : "";
+            const dossierNames = briefing.dossiers.map((d) => d.nom);
+            const urgentEmails = actionEmails.filter((e) => e.urgency === "haute");
+            const attentionEmails = actionEmails.filter((e) => e.urgency === "moyenne");
+
+            return (
+              <div className="space-y-3">
+                <p className="text-[13px] text-[#1A1A1A] leading-relaxed dark:text-zinc-200">
+                  {firstName ? `${firstName}, ` : ""}j'ai trié vos <span className="font-semibold">{emailsRecus} emails</span> ce matin.
+                  {emailsBruit > 0 && <> {emailsBruit} {emailsBruit > 1 ? "étaient" : "était"} du bruit (newsletters, prospection) — je les ai filtrés pour vous.</>}
+                  {actionsCreees > 0 && <> <span className="font-semibold">{actionsCreees} brouillons de réponse</span> sont prêts, il ne vous reste qu'à valider.</>}
+                </p>
+
+                {/* Dossiers with context */}
+                {dossierNames.length > 0 && (
+                  <div className="space-y-1.5">
+                    {briefing.dossiers.map((d) => {
+                      const dossierActions = actionEmails.filter((e) => e.dossier_nom === d.nom);
+                      const isUrgent = dossierActions.some((e) => e.urgency === "haute");
+                      return (
+                        <div key={d.id} className="flex items-center gap-2">
+                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isUrgent ? "bg-red-500" : "bg-amber-400"}`} />
+                          <p className="text-[12px] text-[#1A1A1A] dark:text-zinc-300">
+                            <span className="font-medium">{d.nom}</span>
+                            {dossierActions.length > 0 && (
+                              <span className="text-[#6B7280]"> — {dossierActions.length} action{dossierActions.length > 1 ? "s" : ""} {dossierActions[0]?.objet ? `(${dossierActions[0].objet.substring(0, 40)}${dossierActions[0].objet.length > 40 ? "…" : ""})` : ""}</span>
+                            )}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {actionsCreees > 0 && actionsValidees === 0 && (
+                  <p className="text-[11px] text-[#6B7280] italic">Tout est prêt. Validez vos tâches ci-dessous pour que Donna apprenne de vos retours.</p>
+                )}
+                {actionsValidees > 0 && actionsValidees < actionsCreees && (
+                  <p className="text-[11px] text-emerald-600 font-medium">{actionsValidees}/{actionsCreees} tâches validées — encore {actionsCreees - actionsValidees} et c'est bouclé !</p>
+                )}
+              </div>
+            );
+          })()}
         </motion.div>
 
         {/* ── Emails à traiter ── */}
