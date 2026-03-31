@@ -38,6 +38,8 @@ interface ApiDossierEmail {
   expediteur?: string;
   objet?: string;
   resume?: string;
+  contenu?: string;
+  brouillon?: string | null;
   created_at?: string;
   // Format alternatif camelCase/alias
   from_name?: string;
@@ -162,7 +164,8 @@ function normalizeEmail(email: ApiDossierEmail): DossierEmail {
     expediteur: rawExp,
     objet: email.objet || email.subject || "",
     resume: email.resume || email.summary || "",
-    brouillon: null,
+    contenu: email.contenu || "",
+    brouillon: email.brouillon || null,
     pipeline_step: "pret_a_reviser",
     contexte_choisi: "",
     statut: "traite",
