@@ -263,7 +263,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
                             const prefix = draftText.substring(0, draftText.length - (draftText.endsWith(draftOnly) ? draftOnly.length : 0));
                             setDraftText(e.target.value);
                           }}
-                          className="min-h-[280px] text-sm leading-relaxed bg-background border-border"
+                          className="min-h-[280px] sm:min-h-[420px] text-sm leading-relaxed bg-background border-border"
                         />
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" className="text-xs" onClick={() => { navigator.clipboard.writeText(draftOnly); toast.success("Brouillon copié !"); }}>
@@ -495,9 +495,9 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
         </div>
       </motion.div>
 
-      {/* PJ Detail Dialog */}
+      {/* PJ Detail — split-screen: document + résumé */}
       <Dialog open={!!selectedAttachment} onOpenChange={(open) => !open && setSelectedAttachment(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <FileText className="h-4 w-4 text-muted-foreground" />
@@ -505,23 +505,80 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
             </DialogTitle>
             {selectedAttachment?.taille && <DialogDescription>{selectedAttachment.taille}</DialogDescription>}
           </DialogHeader>
-          {selectedAttachment?.resume_ia && (
-            <div className="rounded-lg bg-muted/40 p-4">
-              <p className="text-xs font-medium text-muted-foreground mb-1.5">Résumé Donna</p>
-              <p className="text-sm text-foreground/85 leading-relaxed">{selectedAttachment.resume_ia}</p>
+
+          <div className="flex flex-col sm:flex-row gap-4 min-h-[300px] sm:min-h-[500px]">
+            {/* Left — Document preview */}
+            <div className="flex-1 rounded-lg border border-border overflow-hidden bg-muted/20">
+              {!isDemo() && selectedAttachment?.storage_url ? (
+                (() => {
+                  const isPdf = selectedAttachment.nom_fichier?.toLowerCase().endsWith('.pdf');
+                  return isPdf ? (
+                    <iframe
+                      src={selectedAttachment.storage_url}
+                      className="w-full h-full min-h-[300px] sm:min-h-[500px]"
+                      title={selectedAttachment.nom_fichier}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full gap-3 p-6">
+                      <FileText className="h-12 w-12 text-muted-foreground/40" />
+                      <p className="text-sm text-muted-foreground">{selectedAttachment.nom_fichier}</p>
+                      <a
+                        href={selectedAttachment.storage_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-medium text-primary underline underline-offset-2"
+                        download={selectedAttachment.nom_fichier}
+                      >
+                        Télécharger pour visualiser
+                      </a>
+                    </div>
+                  );
+                })()
+              ) : (
+                <div className="flex items-center justify-center h-full p-6">
+                  <p className="text-xs text-muted-foreground">
+                    {isDemo() ? "Aperçu disponible après connexion Gmail" : "Document non disponible"}
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-          {!isDemo() && selectedAttachment?.storage_url ? (
-            <a
-              href={selectedAttachment.storage_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 w-full text-xs font-medium text-foreground underline underline-offset-2 hover:text-primary transition-colors pt-2"
-              download={selectedAttachment?.nom_fichier}
-            >
-              Télécharger le fichier
-            </a>
-          ) : (
+
+            {/* Right — Résumé IA */}
+            <div className="sm:w-[320px] flex-shrink-0 space-y-4">
+              {selectedAttachment?.resume_ia ? (
+                <div className="rounded-lg bg-muted/30 p-4">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Résumé Donna</p>
+                  <p className="text-sm text-foreground/85 leading-relaxed">{selectedAttachment.resume_ia}</p>
+                </div>
+              ) : (
+                <div className="rounded-lg bg-muted/20 p-4">
+                  <p className="text-xs text-muted-foreground">Aucun résumé disponible pour ce document.</p>
+                </div>
+              )}
+
+              {selectedAttachment?.contenu_extrait && (
+                <div className="rounded-lg bg-muted/20 p-4 max-h-[200px] overflow-y-auto">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Texte extrait</p>
+                  <p className="text-[11px] text-foreground/70 leading-relaxed whitespace-pre-wrap">{selectedAttachment.contenu_extrait.substring(0, 1000)}</p>
+                </div>
+              )}
+
+              {!isDemo() && selectedAttachment?.storage_url && (
+                <a
+                  href={selectedAttachment.storage_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 w-full text-xs font-medium text-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
+                  download={selectedAttachment?.nom_fichier}
+                >
+                  Télécharger le fichier
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Legacy fallback for no storage_url */}
+          {!selectedAttachment?.storage_url && !selectedAttachment?.resume_ia && (
             <p className="text-xs text-muted-foreground text-center pt-2">
               {isDemo() ? "Téléchargement disponible après connexion Gmail" : "Fichier non disponible"}
             </p>
