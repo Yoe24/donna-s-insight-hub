@@ -210,17 +210,17 @@ function HeroStatsCard({
 }) {
   return (
     <motion.div
-      className="rounded-xl bg-white border border-[#E5E5E5] p-5 dark:bg-zinc-900 dark:border-zinc-700"
+      className="rounded-xl bg-white border border-[#E5E5E5] p-4 sm:p-5 mb-5 dark:bg-zinc-900 dark:border-zinc-700"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-4 sm:gap-5">
         {/* Cercle de progression — actions validées / créées */}
         <div className="relative flex-shrink-0" aria-hidden="true">
-          <CircularProgress value={actionsValidees} max={actionsCreees} size={72} stroke={5} />
+          <CircularProgress value={actionsValidees} max={actionsCreees} size={80} stroke={5} />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-lg font-semibold text-[#1A1A1A] leading-none dark:text-white tabular-nums">
+            <span className="text-xl font-semibold text-[#1A1A1A] leading-none dark:text-white tabular-nums">
               {actionsValidees}
             </span>
             <span className="text-[10px] text-[#6B7280] leading-none mt-0.5">
@@ -230,26 +230,26 @@ function HeroStatsCard({
         </div>
 
         {/* Métriques clés */}
-        <div className="flex-1 min-w-0 space-y-2">
+        <div className="flex-1 min-w-0 space-y-1.5 sm:space-y-2">
           <p className="text-[10px] tracking-[0.12em] uppercase text-[#6B7280]">
             Aujourd'hui
           </p>
-          <div className="flex items-center gap-4 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 text-[12px] text-[#1A1A1A] font-medium dark:text-white">
-              <Inbox className="w-3.5 h-3.5 text-[#6B7280]" />
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+            <span className="inline-flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-[12px] text-[#1A1A1A] font-medium dark:text-white">
+              <Inbox className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#6B7280]" />
               {emailsRecus} reçu{emailsRecus > 1 ? "s" : ""}
             </span>
-            <span className="inline-flex items-center gap-1.5 text-[12px] text-[#1A1A1A] font-medium dark:text-white">
-              <FolderOpen className="w-3.5 h-3.5 text-[#6B7280]" />
-              {emailsDossiers} dossier{emailsDossiers > 1 ? "s" : ""} actif{emailsDossiers > 1 ? "s" : ""}
+            <span className="inline-flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-[12px] text-[#1A1A1A] font-medium dark:text-white">
+              <FolderOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#6B7280]" />
+              {emailsDossiers} dossier{emailsDossiers > 1 ? "s" : ""}
             </span>
-            <span className="inline-flex items-center gap-1.5 text-[12px] text-[#6B7280]">
-              <Filter className="w-3.5 h-3.5" />
+            <span className="inline-flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-[12px] text-[#6B7280]">
+              <Filter className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               {emailsBruit} filtré{emailsBruit > 1 ? "s" : ""}
             </span>
           </div>
           {actionsValidees > 0 && (
-            <p className="text-[11px] text-[#6B7280]">
+            <p className="text-[10px] sm:text-[11px] text-emerald-600 font-medium">
               ~{actionsValidees * 15} min économisées
             </p>
           )}
@@ -327,7 +327,7 @@ function ActionCard({
       className="relative rounded-xl bg-white border border-[#E5E5E5] overflow-hidden dark:bg-zinc-900 dark:border-zinc-700"
       aria-label={`Email de ${email.expediteur} : ${email.objet}`}
     >
-      <div className="p-4">
+      <div className="p-3 sm:p-4">
         {/* Header */}
         <div className="flex items-start gap-2 mb-2.5">
           <UrgencyDot urgency={email.urgency} />
@@ -345,7 +345,7 @@ function ActionCard({
                 {formatRelativeDate(email.date)}
               </time>
             </div>
-            <h3 className="text-sm font-medium text-[#1A1A1A] leading-snug mt-0.5 line-clamp-2 break-words dark:text-white">
+            <h3 className="text-[13px] sm:text-sm font-medium text-[#1A1A1A] leading-snug mt-0.5 line-clamp-2 break-words dark:text-white">
               {email.objet}
             </h3>
             {/* Badges urgence + brouillon */}
@@ -398,7 +398,7 @@ function ActionCard({
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => onView(email)}
-            className="inline-flex items-center gap-1.5 text-xs text-[#1A1A1A] bg-white border border-[#E5E5E5] rounded-full px-3 py-1.5 font-medium hover:border-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A1A1A] focus-visible:ring-offset-1 dark:bg-zinc-900 dark:text-white dark:border-zinc-600 dark:hover:border-white"
+            className="inline-flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs text-[#1A1A1A] bg-white border border-[#E5E5E5] rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 font-medium hover:border-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A1A1A] focus-visible:ring-offset-1 dark:bg-zinc-900 dark:text-white dark:border-zinc-600 dark:hover:border-white"
             aria-label={`Voir l'email : ${email.objet}`}
           >
             <Eye className="w-3 h-3" aria-hidden="true" />
@@ -408,7 +408,7 @@ function ActionCard({
           {email.brouillon_mock && (
             <button
               onClick={() => onDraft(email)}
-              className="inline-flex items-center gap-1.5 text-xs text-[#1A1A1A] bg-white border border-[#E5E5E5] rounded-full px-3 py-1.5 font-medium hover:border-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A1A1A] focus-visible:ring-offset-1 dark:bg-zinc-900 dark:text-white dark:border-zinc-600 dark:hover:border-white"
+              className="inline-flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs text-[#1A1A1A] bg-white border border-[#E5E5E5] rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 font-medium hover:border-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A1A1A] focus-visible:ring-offset-1 dark:bg-zinc-900 dark:text-white dark:border-zinc-600 dark:hover:border-white"
               aria-label={`Brouillon pour : ${email.objet}`}
             >
               <PenLine className="w-3 h-3" aria-hidden="true" />
@@ -419,7 +419,7 @@ function ActionCard({
           <button
             onClick={handleTreat}
             disabled={treated}
-            className="ml-auto inline-flex items-center gap-1.5 text-xs text-white bg-[#1A1A1A] rounded-full px-3 py-1.5 font-medium hover:bg-[#333] transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A1A1A] focus-visible:ring-offset-1 dark:bg-white dark:text-[#1A1A1A] dark:hover:bg-zinc-100"
+            className="ml-auto inline-flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs text-white bg-[#1A1A1A] rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 font-medium hover:bg-[#333] transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A1A1A] focus-visible:ring-offset-1 dark:bg-white dark:text-[#1A1A1A] dark:hover:bg-zinc-100"
             aria-label={
               treated
                 ? "Email déjà traité"
@@ -1225,7 +1225,7 @@ export default function DashboardV6() {
   return (
     <DashboardLayout>
       {/* Fond page — blanc pur */}
-      <div className="mx-auto max-w-xl pb-16">
+      <div className="mx-auto max-w-xl px-3 sm:px-0 pb-16">
         {/* ── En-tête — chaleureux ── */}
         <motion.header
           className="mb-5"
@@ -1233,59 +1233,26 @@ export default function DashboardV6() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <h1 className="text-2xl font-semibold text-[#1A1A1A] leading-tight dark:text-white">
+          <h1 className="text-xl sm:text-2xl font-semibold text-[#1A1A1A] leading-tight dark:text-white">
             Bonjour{nomAvocat ? `, ${nomAvocat.split(" ")[0].charAt(0).toUpperCase() + nomAvocat.split(" ")[0].slice(1)}` : ""}
           </h1>
-          <p className="text-[13px] text-[#6B7280] mt-1">
+          <p className="text-[12px] sm:text-[13px] text-[#6B7280] mt-1 truncate">
             {dateLabelCap}{userEmail ? <> · <span className="text-[#9CA3AF]">{userEmail}</span></> : null}
           </p>
         </motion.header>
 
-        {/* ── 3 mini-cards stats ── */}
-        <motion.div
-          className="grid grid-cols-3 gap-3 mb-5"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.05 }}
-        >
-          {/* Card 1 — Emails reçus */}
-          <div className="rounded-xl border border-[#E5E5E5] bg-white p-3.5 dark:bg-zinc-900 dark:border-zinc-700">
-            <p className="text-2xl font-semibold text-[#1A1A1A] dark:text-white tabular-nums">{emailsRecus}</p>
-            <p className="text-[11px] text-[#6B7280] mt-0.5">emails reçus</p>
-            <p className="text-[10px] text-[#9CA3AF] mt-1">{emailsDossiers} clients · {emailsBruit} filtrés</p>
-          </div>
-
-          {/* Card 2 — Dossiers actifs */}
-          <div className="rounded-xl border border-[#E5E5E5] bg-white p-3.5 dark:bg-zinc-900 dark:border-zinc-700">
-            <p className="text-2xl font-semibold text-[#1A1A1A] dark:text-white tabular-nums">{emailsDossiers}</p>
-            <p className="text-[11px] text-[#6B7280] mt-0.5">dossiers actifs</p>
-            <p className="text-[10px] text-[#9CA3AF] mt-1 truncate">
-              {briefing.dossiers.slice(0, 2).map((d) => d.nom).join(" · ") || "—"}
-            </p>
-          </div>
-
-          {/* Card 3 — Actions / progression */}
-          <div className="rounded-xl border border-[#E5E5E5] bg-white p-3.5 dark:bg-zinc-900 dark:border-zinc-700 relative overflow-hidden">
-            <p className="text-2xl font-semibold text-[#1A1A1A] dark:text-white tabular-nums">{actionsCreees}</p>
-            <p className="text-[11px] text-[#6B7280] mt-0.5">brouillons prêts</p>
-            <p className="text-[10px] mt-1">
-              <span className={actionsValidees > 0 ? "text-emerald-600 font-medium" : "text-[#9CA3AF]"}>
-                {actionsValidees}/{actionsCreees} validées
-              </span>
-            </p>
-            {/* Progress bar subtle */}
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#E5E5E5]">
-              <div
-                className="h-full bg-[#F97316] transition-all duration-500"
-                style={{ width: `${actionsCreees > 0 ? (actionsValidees / actionsCreees) * 100 : 0}%` }}
-              />
-            </div>
-          </div>
-        </motion.div>
+        {/* ── Cercle de progression animé ── */}
+        <HeroStatsCard
+          emailsRecus={emailsRecus}
+          emailsDossiers={emailsDossiers}
+          emailsBruit={emailsBruit}
+          actionsCreees={actionsCreees}
+          actionsValidees={actionsValidees}
+        />
 
         {/* ── Narratif Donna — gamifié, personnalisé ── */}
         <motion.div
-          className="rounded-xl bg-[#FAFAFA] border border-[#E5E5E5] p-5 mb-6 dark:bg-zinc-900/60 dark:border-zinc-700"
+          className="rounded-xl bg-[#FAFAFA] border border-[#E5E5E5] p-3.5 sm:p-5 mb-5 sm:mb-6 dark:bg-zinc-900/60 dark:border-zinc-700"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
