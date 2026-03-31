@@ -241,7 +241,7 @@ function HeroStatsCard({
             </span>
             <span className="inline-flex items-center gap-1.5 text-[12px] text-[#1A1A1A] font-medium dark:text-white">
               <FolderOpen className="w-3.5 h-3.5 text-[#6B7280]" />
-              {emailsDossiers} dossier{emailsDossiers > 1 ? "s" : ""}
+              {emailsDossiers} dossier{emailsDossiers > 1 ? "s" : ""} actif{emailsDossiers > 1 ? "s" : ""}
             </span>
             <span className="inline-flex items-center gap-1.5 text-[12px] text-[#6B7280]">
               <Filter className="w-3.5 h-3.5" />
@@ -1148,7 +1148,7 @@ export default function DashboardV6() {
   const actionsCreees = actionEmails.length;
   const emailsRecus = briefing?.stats.total_analyses ?? 0;
   const emailsBruit = briefing?.stats.auto_traites ?? 0;
-  const emailsDossiers = emailsRecus - emailsBruit;
+  const emailsDossiers = briefing?.dossiers?.length ?? 0;
   const allActionTreated =
     actionEmails.length > 0 &&
     actionEmails.every((e) => treatedIds.has(e.id));

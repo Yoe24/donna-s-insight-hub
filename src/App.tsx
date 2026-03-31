@@ -23,6 +23,7 @@ import Contact from "./pages/Contact";
 import MentionsLegales from "./pages/MentionsLegales";
 import NotFound from "./pages/NotFound";
 import FilActualite from "./pages/FilActualite";
+import EmailsAutres from "./pages/EmailsAutres";
 import DonnaChat from "./components/DonnaChat";
 import DashboardV6 from "./pages/DashboardV6";
 
@@ -76,6 +77,7 @@ const App = () => (
             <Route path="/dashboard-legacy" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="/fil" element={<ProtectedRoute><FilActualite /></ProtectedRoute>} />
+            <Route path="/emails-autres" element={<ProtectedRoute><EmailsAutres /></ProtectedRoute>} />
 
             <Route path="/dossiers/:id" element={<ProtectedRoute><DossierDetail /></ProtectedRoute>} />
             <Route path="/v6" element={<ProtectedRoute><DashboardV6 /></ProtectedRoute>} />
