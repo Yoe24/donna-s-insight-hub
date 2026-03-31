@@ -333,27 +333,43 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
                 </div>
               </div>
 
-              {/* Aperçu Donna — collapsible summary like Gmail's Gemini */}
-              {email.resume && (email as any).contenu && email.resume !== (email as any).contenu && (
-                <Collapsible defaultOpen={false} className="mb-4">
-                  <CollapsibleTrigger className="flex items-center gap-2 w-full text-left rounded-lg border border-border/60 bg-muted/20 px-3 py-2 hover:bg-muted/30 transition-colors">
-                    <span className="text-[11px] font-medium text-muted-foreground">Aperçu Donna</span>
-                    <ChevronRight className="h-3 w-3 text-muted-foreground ml-auto transition-transform [[data-state=open]_&]:rotate-90" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="px-3 py-2 text-xs text-muted-foreground leading-relaxed">
-                      {email.resume}
+              {/* ── BRIEFING context: Résumé Donna + voir l'original ── */}
+              {context === "briefing" && (
+                <>
+                  {email.resume && (
+                    <div className="mb-4">
+                      <h3 className="text-xs font-medium text-muted-foreground mb-1.5">Résumé Donna</h3>
+                      <div className="rounded-xl bg-muted/30 p-4">
+                        <p className="text-sm text-foreground/85 whitespace-pre-line leading-relaxed break-words">{email.resume}</p>
+                      </div>
                     </div>
-                  </CollapsibleContent>
-                </Collapsible>
+                  )}
+                  <Collapsible open={showOriginal} onOpenChange={setShowOriginal}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="outline" size="sm" className="mb-4 text-xs w-full">
+                        <Mail className="h-3 w-3 mr-1.5" />
+                        {showOriginal ? "Masquer" : "Voir"} l'email original
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="rounded-xl bg-muted/20 border border-border p-4 mb-4">
+                        <p className="text-sm text-foreground/70 whitespace-pre-wrap leading-relaxed break-words">
+                          {(email as any).contenu || email.resume || "Contenu non disponible."}
+                        </p>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </>
               )}
 
-              {/* Email body — always shown directly, like Gmail */}
-              <div className="mb-5">
-                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed break-words">
-                  {(email as any).contenu || email.resume || "Contenu non disponible."}
-                </p>
-              </div>
+              {/* ── DOSSIER + EMAILS AUTRES: email body direct (like Gmail) ── */}
+              {context !== "briefing" && (
+                <div className="mb-5">
+                  <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed break-words">
+                    {(email as any).contenu || email.resume || "Contenu non disponible."}
+                  </p>
+                </div>
+              )}
 
               {/* Pièces jointes */}
               {dossierDocs.length > 0 && (
@@ -393,9 +409,8 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
 
               <div className="border-t border-border mb-4" />
 
-              {/* Brouillon — section principale */}
-              {/* Generate draft button (hidden if already auto-triggered in draft mode) */}
-              {!(initialMode === "draft" && (draftText || draftLoading || isStreaming)) && (
+              {/* Brouillon — hidden for emails-autres (context=fil) */}
+              {context !== "fil" && !(initialMode === "draft" && (draftText || draftLoading || isStreaming)) && (
                 <Button
                   className="w-full mb-3"
                   variant="default"
