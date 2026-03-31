@@ -964,6 +964,7 @@ export default function DashboardV6() {
   const [treatedIds, setTreatedIds] = useState<Set<string>>(new Set());
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [nomAvocat, setNomAvocat] = useState("");
+  const [userEmail, setUserEmail] = useState("");
 
   // Données brutes API — stockées pour re-filtrer par période sans nouvel appel
   const [allApiEmails, setAllApiEmails] = useState<any[]>([]);
@@ -1007,8 +1008,9 @@ export default function DashboardV6() {
         ]);
 
         // Nom de l'avocate
-        if (configResult.status === "fulfilled" && configResult.value?.nom_avocat) {
-          setNomAvocat(configResult.value.nom_avocat);
+        if (configResult.status === "fulfilled") {
+          if (configResult.value?.nom_avocat) setNomAvocat(configResult.value.nom_avocat);
+          if (configResult.value?.user_email) setUserEmail(configResult.value.user_email);
         }
 
         const apiEmails: any[] = emailsResult.status === "fulfilled"
@@ -1221,40 +1223,86 @@ export default function DashboardV6() {
     <DashboardLayout>
       {/* Fond page — blanc pur */}
       <div className="mx-auto max-w-xl pb-16">
-        {/* ── En-tête ── */}
+        {/* ── En-tête — chaleureux ── */}
         <motion.header
-          className="flex items-start justify-between gap-3 mb-6"
+          className="mb-5"
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div>
-            <h1 className="text-2xl font-semibold text-[#1A1A1A] leading-tight dark:text-white">
-              {nomAvocat}
-            </h1>
-            <p
-              className="text-sm text-[#6B7280] mt-0.5 leading-none"
-              aria-live="polite"
-            >
-              {dateLabelCap}
-            </p>
-          </div>
-          {/* PeriodTabs retiré — briefing toujours 24h, la profondeur est dans les dossiers */}
+          <h1 className="text-2xl font-semibold text-[#1A1A1A] leading-tight dark:text-white">
+            Bonjour{nomAvocat ? `, ${nomAvocat.split(" ")[0]}` : ""}
+          </h1>
+          <p className="text-[13px] text-[#6B7280] mt-1">
+            {dateLabelCap}{userEmail ? <> · <span className="text-[#9CA3AF]">{userEmail}</span></> : null}
+          </p>
         </motion.header>
 
-        {/* ── Hero stats ── */}
-        <div className="mb-6">
-          <HeroStatsCard
-            emailsRecus={emailsRecus}
-            emailsDossiers={emailsDossiers}
-            emailsBruit={emailsBruit}
-            actionsCreees={actionsCreees}
-            actionsValidees={actionsValidees}
-          />
-        </div>
+        {/* ── 3 mini-cards stats ── */}
+        <motion.div
+          className="grid grid-cols-3 gap-3 mb-5"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+        >
+          {/* Card 1 — Emails reçus */}
+          <div className="rounded-xl border border-[#E5E5E5] bg-white p-3.5 dark:bg-zinc-900 dark:border-zinc-700">
+            <p className="text-2xl font-semibold text-[#1A1A1A] dark:text-white tabular-nums">{emailsRecus}</p>
+            <p className="text-[11px] text-[#6B7280] mt-0.5">emails reçus</p>
+            <p className="text-[10px] text-[#9CA3AF] mt-1">{emailsDossiers} clients · {emailsBruit} filtrés</p>
+          </div>
 
-        {/* ── Narratif Donna ── */}
-        <NarrativeBlock narrative={briefing.narrative} />
+          {/* Card 2 — Dossiers actifs */}
+          <div className="rounded-xl border border-[#E5E5E5] bg-white p-3.5 dark:bg-zinc-900 dark:border-zinc-700">
+            <p className="text-2xl font-semibold text-[#1A1A1A] dark:text-white tabular-nums">{emailsDossiers}</p>
+            <p className="text-[11px] text-[#6B7280] mt-0.5">dossiers actifs</p>
+            <p className="text-[10px] text-[#9CA3AF] mt-1 truncate">
+              {briefing.dossiers.slice(0, 2).map((d) => d.nom).join(" · ") || "—"}
+            </p>
+          </div>
+
+          {/* Card 3 — Actions / progression */}
+          <div className="rounded-xl border border-[#E5E5E5] bg-white p-3.5 dark:bg-zinc-900 dark:border-zinc-700 relative overflow-hidden">
+            <p className="text-2xl font-semibold text-[#1A1A1A] dark:text-white tabular-nums">{actionsCreees}</p>
+            <p className="text-[11px] text-[#6B7280] mt-0.5">brouillons prêts</p>
+            <p className="text-[10px] mt-1">
+              <span className={actionsValidees > 0 ? "text-emerald-600 font-medium" : "text-[#9CA3AF]"}>
+                {actionsValidees}/{actionsCreees} validées
+              </span>
+            </p>
+            {/* Progress bar subtle */}
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#E5E5E5]">
+              <div
+                className="h-full bg-[#F97316] transition-all duration-500"
+                style={{ width: `${actionsCreees > 0 ? (actionsValidees / actionsCreees) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ── Narratif Donna — court et actionnable ── */}
+        <motion.div
+          className="rounded-xl bg-[#FAFAFA] border border-[#E5E5E5] p-4 mb-6 dark:bg-zinc-900/60 dark:border-zinc-700"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <p className="text-[13px] text-[#1A1A1A] leading-relaxed dark:text-zinc-200">
+            {(() => {
+              // Build a short, actionable narrative from the data
+              const dossierNames = briefing.dossiers.map((d) => d.nom);
+              const urgentCount = actionEmails.filter((e) => e.urgency === "haute").length;
+              let narrative = `Donna a analysé vos ${emailsRecus} emails et préparé ${actionsCreees} brouillons de réponse.`;
+              if (dossierNames.length > 0) {
+                narrative += ` ${urgentCount > 0 ? urgentCount + " sujet" + (urgentCount > 1 ? "s" : "") + " urgent" + (urgentCount > 1 ? "s" : "") : actionsCreees + " action" + (actionsCreees > 1 ? "s" : "")} sur ${dossierNames.length} dossier${dossierNames.length > 1 ? "s" : ""} : ${dossierNames.join(", ")}.`;
+              }
+              if (emailsBruit > 0) {
+                narrative += ` ${emailsBruit} email${emailsBruit > 1 ? "s" : ""} filtré${emailsBruit > 1 ? "s" : ""} automatiquement.`;
+              }
+              return narrative;
+            })()}
+          </p>
+        </motion.div>
 
         {/* ── Emails à traiter ── */}
         <AnimatePresence mode="wait">
