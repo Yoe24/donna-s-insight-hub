@@ -369,14 +369,19 @@ function ActionCard({
                 </span>
               )}
             </div>
-            {/* Action hint — what Donna suggests */}
-            <p className="text-[11px] text-[#9CA3AF] mt-1.5 leading-snug">
-              {email.brouillon_mock
-                ? "Donna a préparé une réponse — relisez et validez en 1 clic"
+            {/* Contexte narratif — pourquoi cet email est dans la to-do */}
+            <p className="text-[12px] text-[#6B7280] mt-1.5 leading-snug line-clamp-2">
+              {email.resume
+                ? email.resume.length > 160 ? email.resume.substring(0, 157) + "…" : email.resume
                 : email.urgency === "haute"
                 ? "Sujet urgent — à traiter en priorité"
                 : "À consulter et décider de la suite à donner"}
             </p>
+            {email.brouillon_mock && (
+              <p className="text-[11px] text-emerald-600/80 mt-1 font-medium">
+                Brouillon prêt — relisez et validez en 1 clic
+              </p>
+            )}
           </div>
         </div>
 
