@@ -211,6 +211,7 @@ const DossierDetailPage = () => {
   const [showDomaineDialog, setShowDomaineDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [renameValue, setRenameValue] = useState("");
+  const [activeTab, setActiveTab] = useState<"resume" | "echanges" | "documents">("resume");
 
   const echeances = isDemo() ? (mockEcheances[id || ""] || []) : [];
   const showEcheancesSection = isDemo() ? echeances.length > 0 : true;
@@ -393,26 +394,77 @@ const DossierDetailPage = () => {
           </div>
         </motion.div>
 
-        {dossier.summary || dossier.domain ? (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6">
+        {/* ── Onglets : Résumé | Échanges | Pièces jointes ── */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6">
+          <div className="flex gap-1 border-b border-border/60 mb-5">
+            {(["resume", "echanges", "documents"] as const).map((tab) => {
+              const labels = { resume: "Résumé", echanges: "Échanges", documents: "Pièces jointes" };
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2.5 text-xs font-medium transition-colors border-b-2 -mb-px ${
+                    activeTab === tab
+                      ? "border-foreground text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {labels[tab]}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Tab: Résumé */}
+          {activeTab === "resume" && (
             <div className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6">
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Résumé du dossier</h3>
               <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm mb-4">
                 <div><span className="text-muted-foreground">Client :</span> <span className="text-foreground font-medium">{dossier.name}</span></div>
                 <div><span className="text-muted-foreground">Domaine :</span> <span className="text-foreground">{dossier.domain || "—"}</span></div>
+                <div><span className="text-muted-foreground">Échanges :</span> <span className="text-foreground">{sortedEmails.length}</span></div>
+                <div><span className="text-muted-foreground">Documents :</span> <span className="text-foreground">{sortedDocs.length}</span></div>
               </div>
-              {dossier.summary && (
-                <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{dossier.summary}</p>
+              {dossier.summary ? (
+                <div className="border-t border-border/40 pt-4 mt-2">
+                  <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{dossier.summary}</p>
+                </div>
+              ) : (
+                <div className="border-t border-border/40 pt-4 mt-2">
+                  <p className="text-xs text-muted-foreground mb-3">Points clés extraits des échanges :</p>
+                  <ul className="space-y-1.5">
+                    {sortedEmails.slice(0, 6).map((email) => (
+                      <li key={email.id} className="flex items-start gap-2 text-sm text-foreground/80">
+                        <span className="text-muted-foreground mt-0.5">—</span>
+                        <span>{email.objet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {sortedDocs.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-xs text-muted-foreground mb-2">Documents au dossier :</p>
+                      <ul className="space-y-1">
+                        {sortedDocs.map((doc) => (
+                          <li key={doc.id} className="flex items-center gap-2 text-sm text-foreground/80">
+                            <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <span>{doc.nom_fichier}</span>
+                            {doc.summary && <span className="text-xs text-muted-foreground">— {doc.summary}</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               )}
-              <p className="text-xs text-muted-foreground mt-3">
-                {lastExchangeDate !== "—" ? `Dernier échange : ${lastExchangeDate}` : ""} · {sortedEmails.length} échanges · {sortedDocs.length} documents
+              <p className="text-xs text-muted-foreground mt-4">
+                {lastExchangeDate !== "—" ? `Dernier échange : ${lastExchangeDate}` : ""}
               </p>
             </div>
-          </motion.div>
-        ) : null}
+          )}
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Tab: Échanges */}
+          {activeTab === "echanges" && (
+            <>
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Échanges — 3/5 width */}
             <div className="lg:col-span-3">
               <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Échanges</h2>
@@ -502,6 +554,30 @@ const DossierDetailPage = () => {
               </div>
             </div>
           )}
+          </>
+          )}
+
+          {/* Tab: Pièces jointes */}
+          {activeTab === "documents" && (
+            <div className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              <div className="divide-y divide-border/40">
+                {sortedDocs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground p-5">Aucune pièce jointe</p>
+                ) : sortedDocs.map((doc) => (
+                  <button key={doc.id} onClick={() => setSelectedDoc(doc)}
+                    className="w-full flex items-center gap-3 px-5 py-4 hover:bg-muted/50 transition-colors text-left">
+                    {getDocIcon(doc.type)}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">{doc.nom_fichier}</p>
+                      {doc.summary && <p className="text-xs text-muted-foreground mt-0.5">{doc.summary}</p>}
+                    </div>
+                    {doc.taille && <span className="text-xs text-muted-foreground shrink-0">{doc.taille}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
         </motion.div>
       </div>
 
