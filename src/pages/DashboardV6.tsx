@@ -1310,32 +1310,11 @@ export default function DashboardV6() {
                   {actionsCreees > 0 && <> <span className="font-semibold">{actionsCreees} brouillons de réponse</span> sont prêts, il ne vous reste qu'à valider.</>}
                 </p>
 
-                {/* Dossiers with context */}
-                {dossierNames.length > 0 && (
-                  <div className="space-y-1.5">
-                    {briefing.dossiers.map((d) => {
-                      const dossierActions = actionEmails.filter((e) => e.dossier_nom === d.nom);
-                      const isUrgent = dossierActions.some((e) => e.urgency === "haute");
-                      return (
-                        <div key={d.id} className="flex items-center gap-2">
-                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isUrgent ? "bg-red-500" : "bg-amber-400"}`} />
-                          <p className="text-[12px] text-[#1A1A1A] dark:text-zinc-300">
-                            <span className="font-medium">{d.nom}</span>
-                            {dossierActions.length > 0 && (
-                              <span className="text-[#6B7280]"> — {dossierActions.length} action{dossierActions.length > 1 ? "s" : ""} {dossierActions[0]?.objet ? `(${dossierActions[0].objet.substring(0, 40)}${dossierActions[0].objet.length > 40 ? "…" : ""})` : ""}</span>
-                            )}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {actionsCreees > 0 && actionsValidees === 0 && (
-                  <p className="text-[11px] text-[#6B7280] italic">Tout est prêt. Validez vos tâches ci-dessous pour que Donna apprenne de vos retours.</p>
+                {actionsCreees > 0 && (
+                  <p className="text-[11px] text-[#6B7280] italic">Tout est listé dans la to-do ci-dessous.</p>
                 )}
                 {actionsValidees > 0 && actionsValidees < actionsCreees && (
-                  <p className="text-[11px] text-emerald-600 font-medium">{actionsValidees}/{actionsCreees} tâches validées — encore {actionsCreees - actionsValidees} et c'est bouclé !</p>
+                  <p className="text-[11px] text-emerald-600 font-medium">{actionsValidees}/{actionsCreees} validées — encore {actionsCreees - actionsValidees} et c'est bouclé !</p>
                 )}
               </div>
             );

@@ -508,36 +508,60 @@ const DossierDetailPage = () => {
       </AnimatePresence>
 
       <Dialog open={!!selectedDoc} onOpenChange={(open) => !open && setSelectedDoc(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <FileText className="h-4 w-4 text-muted-foreground" />
               {selectedDoc?.nom_fichier}
             </DialogTitle>
-            {selectedDoc?.taille && (
-              <DialogDescription>{selectedDoc.taille}</DialogDescription>
-            )}
+            <DialogDescription className="sr-only">Aperçu du document</DialogDescription>
           </DialogHeader>
-          {selectedDoc?.summary && (
-            <div className="rounded-lg bg-muted/40 p-4">
-              <p className="text-xs font-medium text-muted-foreground mb-1.5">Résumé Donna</p>
-              <p className="text-sm text-foreground/85 leading-relaxed">{selectedDoc.summary}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-h-[400px]">
+            {/* Left: document preview */}
+            <div className="rounded-lg border border-border/60 bg-muted/20 flex items-center justify-center overflow-hidden">
+              {selectedDoc?.url ? (
+                selectedDoc.nom_fichier?.toLowerCase().endsWith(".pdf") ? (
+                  <iframe src={selectedDoc.url} className="w-full h-full min-h-[400px]" title={selectedDoc.nom_fichier} />
+                ) : selectedDoc.nom_fichier?.match(/\.(jpe?g|png|gif|webp)$/i) ? (
+                  <img src={selectedDoc.url} alt={selectedDoc.nom_fichier} className="max-w-full max-h-[400px] object-contain" />
+                ) : (
+                  <div className="text-center p-6">
+                    <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                    <a href={selectedDoc.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                      Télécharger le fichier
+                    </a>
+                  </div>
+                )
+              ) : (
+                <p className="text-sm text-muted-foreground">Document non disponible</p>
+              )}
             </div>
-          )}
-          {isDemo() ? (
-            <p className="text-xs text-muted-foreground text-center pt-2">
-              Téléchargement disponible après connexion Gmail
-            </p>
-          ) : selectedDoc?.url ? (
-            <a href={selectedDoc.url} target="_blank" rel="noopener noreferrer"
-              className="block text-xs text-primary text-center pt-2 hover:underline">
-              Télécharger le fichier
-            </a>
-          ) : (
-            <p className="text-xs text-muted-foreground text-center pt-2">
-              Fichier non disponible
-            </p>
-          )}
+            {/* Right: AI summary */}
+            <div className="flex flex-col gap-3">
+              {selectedDoc?.summary ? (
+                <>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Résumé Donna</p>
+                    <p className="text-sm text-foreground/85 leading-relaxed">{selectedDoc.summary}</p>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">Aucun résumé disponible pour ce document.</p>
+              )}
+              {isDemo() ? (
+                <p className="text-xs text-muted-foreground mt-auto">
+                  Téléchargement disponible après connexion Gmail
+                </p>
+              ) : selectedDoc?.url ? (
+                <a href={selectedDoc.url} target="_blank" rel="noopener noreferrer"
+                  className="text-xs text-primary hover:underline mt-auto">
+                  Télécharger le fichier
+                </a>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-auto">Fichier non disponible</p>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
