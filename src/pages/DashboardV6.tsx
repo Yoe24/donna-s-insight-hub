@@ -853,7 +853,8 @@ function filterByPeriod(emails: any[], period: PeriodFilter): any[] {
   };
   const cutoff = cutoffs[period];
   return emails.filter((e) => {
-    const ts = e.created_at ? new Date(e.created_at).getTime() : 0;
+    const raw = e.created_at || e.date;
+    const ts = raw ? new Date(raw).getTime() : 0;
     return now - ts <= cutoff;
   });
 }
