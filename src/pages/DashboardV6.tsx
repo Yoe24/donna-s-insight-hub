@@ -1070,6 +1070,11 @@ export default function DashboardV6() {
 
         // Construire le briefing initial (24h)
         const filtered24h = filterByPeriod(apiEmails, "24h");
+        // Filter dossiers to only those with emails in the 24h period
+        const activeDossierIds24h = new Set(
+          filtered24h.filter((e) => e.dossier_id).map((e) => e.dossier_id)
+        );
+        const activeDossiers24h = dossiers.filter((d) => activeDossierIds24h.has(d.id));
         const realBriefing = buildRealBriefing({
           nomAvocat: configResult.status === "fulfilled"
             ? (configResult.value?.nom_avocat ?? "")
@@ -1077,7 +1082,7 @@ export default function DashboardV6() {
           filteredEmails: filtered24h,
           allEmails: apiEmails,
           narrative: briefContent?.executive_summary ?? null,
-          dossiers,
+          dossiers: activeDossiers24h,
           period: "24h",
         });
         setBriefing(realBriefing);
@@ -1113,12 +1118,17 @@ export default function DashboardV6() {
   useEffect(() => {
     if (isDemo() || allApiEmails.length === 0) return;
     const filtered = filterByPeriod(allApiEmails, period);
+    // Filter dossiers to only those with emails in the selected period
+    const activeDossierIds = new Set(
+      filtered.filter((e) => e.dossier_id).map((e) => e.dossier_id)
+    );
+    const activeDossiers = briefDossiers.filter((d) => activeDossierIds.has(d.id));
     const updated = buildRealBriefing({
       nomAvocat,
       filteredEmails: filtered,
       allEmails: allApiEmails,
       narrative: briefNarrative,
-      dossiers: briefDossiers,
+      dossiers: activeDossiers,
       period,
     });
     setBriefing(updated);
