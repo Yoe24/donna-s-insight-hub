@@ -26,6 +26,7 @@ interface EmailDrawerProps {
 }
 
 export function EmailDrawer({ email, onClose, showDossierLink = true, context = "briefing", initialMode = "view" }: EmailDrawerProps) {
+  const [activeMode, setActiveMode] = useState<"view" | "draft">(initialMode);
   const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
   // Pre-fill draft if already generated (from backend pipeline or mock)
@@ -45,12 +46,12 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
   // Auto-trigger draft generation when opened in draft mode
   const draftAutoTriggered = useRef(false);
   useEffect(() => {
-    if (initialMode === "draft" && !draftAutoTriggered.current) {
+    if (activeMode === "draft" && !draftAutoTriggered.current) {
       draftAutoTriggered.current = true;
       // Small delay to let component mount
       setTimeout(() => handleGenerateDraft(), 100);
     }
-  }, [initialMode]);
+  }, [activeMode]);
 
   // Resolve mock email for metadata
   const mockEmail = isDemo() ? mockAllEmails.find((e) => e.id === email.id) : null;
@@ -229,7 +230,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
               <h1 className="sr-only">Détail de l'email : {email.objet || "Sans objet"}</h1>
 
               {/* ── DRAFT MODE: minimal view, just the draft ── */}
-              {initialMode === "draft" ? (
+              {activeMode === "draft" ? (
                 <>
                   <h2 className="text-lg font-semibold text-foreground leading-snug mb-1 break-words">Brouillon de réponse</h2>
                   <p className="text-xs text-muted-foreground mb-4">Re : {email.objet || "Sans objet"} — {fromEmail}</p>
@@ -410,11 +411,17 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
               <div className="border-t border-border mb-4" />
 
               {/* Brouillon — hidden for emails-autres (context=fil) */}
-              {context !== "fil" && !(initialMode === "draft" && (draftText || draftLoading || isStreaming)) && (
+              {context !== "fil" && !(activeMode === "draft" && (draftText || draftLoading || isStreaming)) && (
                 <Button
                   className="w-full mb-3"
                   variant="default"
-                  onClick={handleGenerateDraft}
+                  onClick={() => {
+                    if (context === "briefing" && preExistingDraft) {
+                      setActiveMode("draft");
+                    } else {
+                      handleGenerateDraft();
+                    }
+                  }}
                   disabled={draftLoading || isStreaming || (!!draftText && !draftLoading)}
                 >
                   {draftLoading ? (
@@ -430,7 +437,7 @@ export function EmailDrawer({ email, onClose, showDossierLink = true, context = 
               )}
 
               {/* Draft loading indicator for auto-triggered draft mode */}
-              {initialMode === "draft" && draftLoading && (
+              {activeMode === "draft" && draftLoading && (
                 <div className="flex items-center justify-center gap-2 py-4 mb-3">
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">Chargement du brouillon…</span>
