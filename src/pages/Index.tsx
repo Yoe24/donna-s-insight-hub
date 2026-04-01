@@ -122,7 +122,6 @@ const rotatingPhrases = [
   "trie vos mails.",
   "rédige vos réponses.",
   "classe vos dossiers.",
-  "ne prend jamais de vacances.",
 ];
 
 const Index = () => {
@@ -209,17 +208,46 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Right — abstract CSS visual */}
+            {/* Right — Dashboard demo mockup */}
             <div className="flex-1 w-full max-w-lg">
-              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden" style={{ background: "linear-gradient(135deg, #FFF5F0 0%, #F3E8FF 100%)" }}>
-                {/* Decorative geometric shapes */}
-                <div className="absolute top-[10%] right-[15%] w-40 h-40 rounded-full opacity-[0.15]" style={{ backgroundColor: "#8B5CF6", filter: "blur(40px)" }} />
-                <div className="absolute bottom-[15%] left-[10%] w-52 h-52 rounded-full opacity-[0.12]" style={{ backgroundColor: "#EC4899", filter: "blur(50px)" }} />
-                <div className="absolute top-[45%] left-[35%] w-28 h-28 rounded-full opacity-[0.10]" style={{ backgroundColor: "#8B5CF6", filter: "blur(30px)" }} />
-                <div className="absolute top-[20%] left-[20%] w-20 h-20 rounded-full border opacity-[0.15]" style={{ borderColor: "#8B5CF6" }} />
-                <div className="absolute bottom-[25%] right-[20%] w-32 h-32 rounded-full border opacity-[0.12]" style={{ borderColor: "#EC4899" }} />
-                <div className="absolute top-[60%] right-[35%] w-14 h-14 rounded-full border opacity-[0.10]" style={{ borderColor: "#8B5CF6" }} />
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                className="relative w-full rounded-xl overflow-hidden shadow-2xl border border-border/50"
+                style={{ aspectRatio: "4/3" }}
+              >
+                {/* Browser chrome bar */}
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f4f4f4] border-b border-border/50">
+                  <div className="flex gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
+                  </div>
+                  <div className="flex-1 mx-4">
+                    <div className="bg-white rounded-md px-3 py-1 text-[10px] text-muted-foreground font-sans text-center border border-border/30">
+                      donna-legal.com/dashboard
+                    </div>
+                  </div>
+                </div>
+                {/* Screenshot with auto-scroll animation */}
+                <div className="relative w-full overflow-hidden" style={{ height: "calc(100% - 36px)" }}>
+                  <img
+                    src="/demo-dashboard.png"
+                    alt="Donna dashboard"
+                    className="w-full object-cover object-top"
+                    style={{
+                      animation: "heroScroll 8s ease-in-out infinite alternate",
+                    }}
+                  />
+                </div>
+                <style>{`
+                  @keyframes heroScroll {
+                    0% { transform: translateY(0); }
+                    100% { transform: translateY(-20%); }
+                  }
+                `}</style>
+              </motion.div>
             </div>
           </div>
         </section>
