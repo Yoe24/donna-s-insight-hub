@@ -59,7 +59,7 @@ const APropos = () => {
               <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-8">Le constat</h2>
               <div className="font-sans text-left sm:text-center space-y-6" style={{ color: "#374151", fontSize: "1.1rem", lineHeight: 1.8 }}>
                 <p>
-                  Un avocat indépendant reçoit en moyenne 30 à 50 emails par jour. Chaque email doit être lu, compris, classé, et souvent suivi d'une réponse. C'est un travail invisible qui prend 2 à 3 heures par jour — du temps qui n'est ni facturé, ni consacré aux dossiers.
+                  Un avocat indépendant reçoit en moyenne 30 à 50 emails par jour. Chaque email doit être lu, compris, classé, et souvent suivi d'une réponse. C'est un travail invisible qui prend 2 à 3 heures par jour, du temps qui n'est ni facturé, ni consacré aux dossiers.
                 </p>
                 <p>
                   Les grands cabinets ont des assistantes, des secrétariats juridiques, des outils sur mesure. Les avocats indépendants, eux, font tout seuls.
@@ -106,7 +106,7 @@ const APropos = () => {
                   Donna est née d'une enquête menée auprès de cabinets indépendants et de petites structures de 3 à 6 avocats. Le même problème revenait partout : trop d'emails, pas assez de temps, et aucun outil adapté à leur réalité.
                 </p>
                 <p>
-                  Une équipe de juristes et d'ingénieurs convaincus que l'IA peut transformer le quotidien des avocats — sans jamais compromettre le secret professionnel — a décidé de construire ce que personne ne proposait : une employée numérique pensée pour le cabinet d'à côté, pas pour les géants du CAC 40.
+                  Une équipe de juristes et d'ingénieurs convaincus que l'IA peut transformer le quotidien des avocats, sans jamais compromettre le secret professionnel, a décidé de construire ce que personne ne proposait : une employée numérique pensée pour le cabinet d'à côté, pas pour les géants du CAC 40.
                 </p>
                 <p>
                   Chaque fonctionnalité est conçue avec des avocats en exercice. Chaque décision technique est guidée par un principe simple : si un avocat ne l'utiliserait pas au quotidien, on ne le construit pas.
