@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PageTransition } from "@/components/PageTransition";
 import { apiPublicGet } from "@/lib/api";
 import { getUserId, setUserId, isDemo } from "@/lib/auth";
-import heroBg from "@/assets/hero-bg.jpg";
+// hero-bg removed — clean dark panel instead
 
 const DEMO_USER_ID = "9082c497-0efe-401f-978a-e43cc149ff57";
 
@@ -87,57 +87,67 @@ const Login = () => {
   };
 
   const benefits = [
-    { icon: Mail, text: "Emails triés automatiquement à mesure qu'ils arrivent" },
-    { icon: Zap, text: "Résumés intelligents, prêts à lire" },
-    { icon: PenLine, text: "Brouillons de réponse en un clic" },
+    { icon: Mail, text: "Vos emails triés et classés par dossier" },
+    { icon: Zap, text: "Un briefing clair chaque matin" },
+    { icon: PenLine, text: "Des brouillons de réponse dans votre style" },
   ];
 
   return (
     <PageTransition>
       <div className="min-h-screen flex flex-col lg:flex-row">
-        {/* Left panel — testimonial + benefits */}
+        {/* Left panel — brand message + benefits */}
         <div
           className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 xl:p-16"
-          style={{
-            backgroundImage: `url(${heroBg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
+          style={{ backgroundColor: "#141414" }}
         >
-          <div className="absolute inset-0 bg-black/70" />
-
           <div className="relative z-10">
             <Link to="/">
               <h2 className="text-2xl font-serif font-bold tracking-tight text-white">Donna</h2>
             </Link>
           </div>
 
-          <div className="relative z-10 space-y-10">
+          <div className="relative z-10 space-y-10 max-w-md">
+            {/* Headline */}
             <div>
-              <p className="text-white/90 text-xl sm:text-2xl font-serif font-semibold leading-snug max-w-md">
-                « Donna a analysé 500 emails en 5 minutes. Je gagne 2h par jour. »
-              </p>
-              <p className="text-white/50 text-sm font-sans mt-3">
-                — Avocate, droit des affaires
+              <h3 className="text-white text-3xl xl:text-[2.5rem] font-serif font-bold leading-[1.2] mb-5">
+                5 minutes pour changer votre façon de travailler.
+              </h3>
+              <p className="text-white/60 text-base font-sans leading-relaxed">
+                Donna lit vos emails, classe vos dossiers et prépare vos réponses. Vous gardez le contrôle — elle fait le reste.
               </p>
             </div>
 
-            <div className="h-px bg-white/15" />
-
-            <div className="space-y-5">
-              {benefits.map((b, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                    <b.icon className="h-4 w-4 text-white/80" strokeWidth={1.5} />
+            {/* Glassmorphism card */}
+            <div
+              className="rounded-xl p-6"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <p className="text-white/80 text-sm font-sans leading-relaxed mb-4">
+                Rien à configurer, rien à apprendre. Connectez votre boîte mail, Donna commence immédiatement. Vos données restent les vôtres — chiffrées, hébergées en France, supprimables à tout moment.
+              </p>
+              <div className="space-y-3.5">
+                {benefits.map((b, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(94,71,209,0.2)" }}>
+                      <b.icon className="h-3.5 w-3.5 text-[#a78bfa]" strokeWidth={1.5} />
+                    </div>
+                    <p className="text-sm text-white/70 font-sans">{b.text}</p>
                   </div>
-                  <p className="text-sm text-white/70 font-sans leading-relaxed mt-1">{b.text}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
+
+            <p className="text-white/40 text-xs font-sans italic">
+              Gratuit pendant la phase de lancement. Sans engagement.
+            </p>
           </div>
 
           <div className="relative z-10">
-            <p className="text-xs text-white/30 font-sans">© 2026 Donna-Legal.ai</p>
+            <p className="text-xs text-white/20 font-sans">© 2026 Donna-Legal.ai</p>
           </div>
         </div>
 
