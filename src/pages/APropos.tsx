@@ -43,10 +43,10 @@ const APropos = () => {
                 Notre histoire
               </p>
               <h1 className="text-3xl sm:text-[3rem] font-serif font-bold text-foreground leading-[1.15] mb-6">
-                Donna est née d'une conversation avec une avocate.
+                Donna est née d'un constat de terrain.
               </h1>
               <p className="text-lg font-sans leading-relaxed max-w-[600px]" style={{ color: "#374151" }}>
-                En échangeant avec Me Alexandra Fernandez, avocate en droit des affaires à Paris, nous avons compris que le quotidien des avocats indépendants était noyé sous les emails. Donna est la réponse à ce problème.
+                En échangeant avec des dizaines d'avocats indépendants et de petits cabinets à travers la France, un même constat revenait sans cesse : le quotidien est noyé sous les emails. Donna est la réponse à ce problème.
               </p>
             </motion.div>
           </div>
@@ -89,44 +89,38 @@ const APropos = () => {
           </div>
         </section>
 
-        {/* Section 4 — Le Fondateur */}
+        {/* Section 4 — L'équipe */}
         <section className="py-20 sm:py-24 px-6" style={{ backgroundColor: "#F9FAFB" }}>
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-[700px] mx-auto">
             <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
               variants={fadeUp}
-              className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center"
             >
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-6">
-                  Qui est derrière Donna ?
-                </h2>
-                <div className="font-sans space-y-5" style={{ color: "#374151", fontSize: "1.1rem", lineHeight: 1.8 }}>
-                  <p>
-                    Donna a été créée par Yoel Tchata, entrepreneur passionné par l'intelligence artificielle appliquée aux métiers du droit.
-                  </p>
-                  <p>
-                    Convaincu que l'IA peut transformer le quotidien des professionnels du droit sans compromettre le secret professionnel, Yoel a conçu Donna en collaboration étroite avec des avocats en exercice pour garantir que chaque fonctionnalité répond à un vrai besoin du terrain.
-                  </p>
-                  <p className="font-semibold text-foreground">
-                    Donna n'est pas née dans un laboratoire. Elle est née dans un cabinet d'avocats.
-                  </p>
-                </div>
-                <a
-                  href="mailto:contact@donna-legal.ai"
-                  className="inline-block mt-6 text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  contact@donna-legal.ai
-                </a>
+              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-8 text-center">
+                Qui est derrière Donna ?
+              </h2>
+              <div className="font-sans space-y-6" style={{ color: "#374151", fontSize: "1.1rem", lineHeight: 1.8 }}>
+                <p>
+                  Donna est née d'une enquête menée auprès de cabinets indépendants et de petites structures de 3 à 6 avocats. Le même problème revenait partout : trop d'emails, pas assez de temps, et aucun outil adapté à leur réalité.
+                </p>
+                <p>
+                  Une équipe de juristes et d'ingénieurs convaincus que l'IA peut transformer le quotidien des avocats — sans jamais compromettre le secret professionnel — a décidé de construire ce que personne ne proposait : une employée numérique pensée pour le cabinet d'à côté, pas pour les géants du CAC 40.
+                </p>
+                <p>
+                  Chaque fonctionnalité est conçue avec des avocats en exercice. Chaque décision technique est guidée par un principe simple : si un avocat ne l'utiliserait pas au quotidien, on ne le construit pas.
+                </p>
+                <p className="font-semibold text-foreground">
+                  Donna n'est pas née dans un laboratoire. Elle est née dans un cabinet d'avocats.
+                </p>
               </div>
-
-              <div className="flex justify-center">
-                <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-muted flex items-center justify-center">
-                  <span className="text-4xl sm:text-5xl font-serif font-bold text-muted-foreground">YT</span>
-                </div>
-              </div>
+              <a
+                href="mailto:contact@donna-legal.ai"
+                className="inline-block mt-6 text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
+              >
+                contact@donna-legal.ai
+              </a>
             </motion.div>
           </div>
         </section>
