@@ -187,7 +187,7 @@ const Index = () => {
               <p
                 className="text-gray-700 text-base sm:text-lg leading-relaxed max-w-md mb-10"
               >
-                Vos 30 emails du matin résumés, triés et prêts à répondre — en 5&nbsp;minutes.
+                Vos 30 emails du matin résumés, triés et prêts à répondre en 5&nbsp;minutes.
               </p>
 
               <div
