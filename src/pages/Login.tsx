@@ -113,7 +113,7 @@ const Login = () => {
                 5 minutes pour changer votre façon de travailler.
               </h3>
               <p className="text-white/60 text-base font-sans leading-relaxed">
-                Donna lit vos emails, classe vos dossiers et prépare vos réponses. Vous gardez le contrôle — elle fait le reste.
+                Donna lit vos emails, classe vos dossiers et prépare vos réponses. Vous gardez le contrôle, elle fait le reste.
               </p>
             </div>
 
@@ -127,7 +127,7 @@ const Login = () => {
               }}
             >
               <p className="text-white/80 text-sm font-sans leading-relaxed mb-4">
-                Rien à configurer, rien à apprendre. Connectez votre boîte mail, Donna commence immédiatement. Vos données restent les vôtres — chiffrées, hébergées en France, supprimables à tout moment.
+                Rien à configurer, rien à apprendre. Connectez votre boîte mail, Donna commence immédiatement. Vos données restent les vôtres : chiffrées, hébergées en France, supprimables à tout moment.
               </p>
               <div className="space-y-3.5">
                 {benefits.map((b, i) => (

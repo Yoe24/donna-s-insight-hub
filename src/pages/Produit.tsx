@@ -56,7 +56,7 @@ const Produit = () => {
               numérique juridique
             </h1>
             <p className="text-base sm:text-lg font-sans text-muted-foreground max-w-lg mx-auto leading-relaxed">
-              Donna traite votre boîte mail 24/7. Elle lit, trie, résume et rédige — vous validez.
+              Donna traite votre boîte mail 24/7. Elle lit, trie, résume et rédige. Vous validez.
             </p>
           </motion.div>
         </section>

@@ -13,7 +13,7 @@ const MentionsLegales = () => {
           <div className="space-y-8 text-sm text-muted-foreground leading-relaxed">
             <section>
               <h2 className="text-lg font-serif font-bold text-foreground mb-2">Éditeur</h2>
-              <p>Donna-Legal.ai — Adresse : Sur demande — contact@donna-legal.ai</p>
+              <p>Donna-Legal.ai · Adresse : sur demande · contact@donna-legal.ai</p>
             </section>
 
             <section>

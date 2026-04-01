@@ -26,12 +26,12 @@ const pillars = [
   {
     icon: Lock,
     title: "Chiffrement systématique",
-    text: "Toutes les connexions sont protégées par HTTPS (TLS 1.2+). Les données sont chiffrées en transit et au repos. Les tokens d'accès à votre boîte mail sont sécurisés en base de données. Aucun mot de passe n'est stocké — l'authentification passe exclusivement par OAuth.",
+    text: "Toutes les connexions sont protégées par HTTPS (TLS 1.2+). Les données sont chiffrées en transit et au repos. Les tokens d'accès à votre boîte mail sont sécurisés en base de données. Aucun mot de passe n'est stocké. L'authentification passe exclusivement par OAuth.",
   },
   {
     icon: Trash2,
     title: "Suppression à la demande",
-    text: "Vous gardez le contrôle total de vos données. Déconnectez votre boîte mail, supprimez vos dossiers et vos emails traités, révoquez l'accès de Donna — tout cela en un clic, sans délai, sans justification.",
+    text: "Vous gardez le contrôle total de vos données. Déconnectez votre boîte mail, supprimez vos dossiers et vos emails traités, révoquez l'accès de Donna : tout cela en un clic, sans délai, sans justification.",
   },
   {
     icon: UserCheck,
@@ -80,7 +80,7 @@ const faqs = [
   },
   {
     q: "Donna peut-elle envoyer des emails en mon nom ?",
-    a: "Non. Donna fonctionne en lecture seule. Elle peut lire et résumer vos emails, mais elle ne peut ni envoyer, ni répondre, ni supprimer de messages. Les brouillons de réponse sont générés dans l'interface Donna — c'est vous qui copiez et envoyez manuellement.",
+    a: "Non. Donna fonctionne en lecture seule. Elle peut lire et résumer vos emails, mais elle ne peut ni envoyer, ni répondre, ni supprimer de messages. Les brouillons de réponse sont générés dans l'interface Donna. C'est vous qui copiez et envoyez manuellement.",
   },
   {
     q: "L'IA s'entraîne-t-elle sur mes dossiers ?",

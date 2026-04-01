@@ -73,7 +73,7 @@ const features = [
   {
     icon: Paperclip,
     title: "Analyse des pièces jointes",
-    text: "Contrats, factures, documents juridiques — Donna lit les PDF et les Word, en extrait l'essentiel et les rattache au bon dossier.",
+    text: "Contrats, factures, documents juridiques : Donna lit les PDF et les Word, en extrait l'essentiel et les rattache au bon dossier.",
   },
   {
     icon: ClipboardCheck,
@@ -463,7 +463,7 @@ const Index = () => {
               variants={fadeUp}
               className="text-xl sm:text-2xl lg:text-3xl font-serif italic leading-relaxed text-foreground mb-8"
             >
-              "Donna a changé ma façon de travailler. Je ne perds plus de temps à trier mes emails — je me concentre sur mes dossiers."
+              "Donna a changé ma façon de travailler. Je ne perds plus de temps à trier mes emails, je me concentre sur mes dossiers."
             </motion.blockquote>
             <motion.p
               initial="hidden"
@@ -473,7 +473,7 @@ const Index = () => {
               variants={fadeUp}
               className="text-gray-600 text-sm font-sans"
             >
-              — Témoignage d'une avocate en droit des affaires, Paris — nom partagé sur demande
+              Témoignage d'une avocate en droit des affaires, Paris. Nom partagé sur demande.
             </motion.p>
           </div>
         </section>
@@ -577,7 +577,7 @@ const Index = () => {
             </div>
           </div>
           <div className="max-w-7xl mx-auto px-6 sm:px-10 pb-8">
-            <p className="text-xs" style={{ color: "#4B5563" }}>© 2026 Donna-Legal.ai — Votre employée numérique juridique</p>
+            <p className="text-xs" style={{ color: "#4B5563" }}>© 2026 Donna-Legal.ai · Votre employée numérique juridique</p>
           </div>
         </footer>
 
