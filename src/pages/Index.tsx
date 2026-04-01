@@ -393,7 +393,7 @@ const Index = () => {
               variants={fadeUp}
               className="text-3xl sm:text-4xl font-serif font-bold text-foreground text-center mb-16"
             >
-              Recruter Donna prend 2&nbsp;minutes
+              Recruter Donna prend 5&nbsp;minutes
             </motion.h2>
 
             <div className="relative">

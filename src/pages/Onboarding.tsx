@@ -148,7 +148,9 @@ function ScanScreen() {
   const isError = status?.status === "error";
   const progress = status?.progress ?? 0;
   const messages = dynamicMessages();
-  const currentMessage = messages[messageIndex % messages.length];
+  const currentMessage = isDone
+    ? `${status?.processed ?? 0} emails détectés`
+    : messages[messageIndex % messages.length];
 
   if (isError) {
     return (
