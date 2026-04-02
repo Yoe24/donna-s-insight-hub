@@ -9,10 +9,9 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { PageTransition } from "@/components/PageTransition";
 import { apiPublicGet } from "@/lib/api";
-import { getUserId, setUserId, isDemo } from "@/lib/auth";
+
 // hero-bg removed — clean dark panel instead
 
-const DEMO_USER_ID = "9082c497-0efe-401f-978a-e43cc149ff57";
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 48 48" className="shrink-0">
@@ -44,11 +43,6 @@ const Login = () => {
   const emailRef = useRef<HTMLInputElement>(null);
 
 
-  const handleStartDemo = () => {
-    setUserId(DEMO_USER_ID);
-    localStorage.setItem("donna_demo_mode", "true");
-    navigate("/onboarding?demo=true");
-  };
 
   useEffect(() => {
     if (showFallback) emailRef.current?.focus();
@@ -211,14 +205,6 @@ const Login = () => {
                 </button>
                 <p className="text-xs text-muted-foreground text-center italic font-sans">Bientôt disponible</p>
               </div>
-
-              {/* Demo button */}
-              <button
-                onClick={handleStartDemo}
-                className="w-full min-h-[56px] rounded-xl border border-primary/30 bg-primary/5 text-primary font-medium text-sm font-sans flex items-center justify-center gap-2 hover:bg-primary/10 hover:border-primary/50 transition-colors"
-              >
-                Essayer la démo →
-              </button>
 
 
               {/* Separator + fallback login */}
