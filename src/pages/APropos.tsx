@@ -116,10 +116,10 @@ const APropos = () => {
                 </p>
               </div>
               <a
-                href="mailto:contact@donna-legal.ai"
+                href="mailto:donna@donna-legal.com"
                 className="inline-block mt-6 text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
               >
-                contact@donna-legal.ai
+                donna@donna-legal.com
               </a>
             </motion.div>
           </div>

@@ -13,10 +13,11 @@ export function PublicFooter() {
             <Link to="/securite" className="hover:text-foreground transition-colors">Sécurité</Link>
             <Link to="/a-propos" className="hover:text-foreground transition-colors">À propos</Link>
             <Link to="/mentions-legales" className="hover:text-foreground transition-colors">Mentions légales</Link>
+            <a href="mailto:donna@donna-legal.com" className="hover:text-foreground transition-colors">donna@donna-legal.com</a>
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-border">
-          <p className="text-xs text-muted-foreground">© 2026 Donna-Legal.ai</p>
+          <p className="text-xs text-muted-foreground">© 2026 Donna-Legal.com</p>
         </div>
       </div>
     </footer>

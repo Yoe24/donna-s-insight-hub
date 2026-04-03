@@ -141,7 +141,7 @@ const Login = () => {
           </div>
 
           <div className="relative z-10">
-            <p className="text-xs text-white/20 font-sans">© 2026 Donna-Legal.ai</p>
+            <p className="text-xs text-white/20 font-sans">© 2026 Donna-Legal.com</p>
           </div>
         </div>
 
@@ -280,7 +280,7 @@ const Login = () => {
                   Connexion OAuth sécurisée · Données hébergées en France
                 </p>
                 <Link to="/mentions-legales" className="text-[11px] text-muted-foreground/60 hover:text-foreground underline transition-colors font-sans">
-                  Politique de confidentialité
+                  Mentions légales
                 </Link>
               </div>
             </motion.div>

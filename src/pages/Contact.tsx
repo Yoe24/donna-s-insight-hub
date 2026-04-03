@@ -13,11 +13,17 @@ const Contact = () => {
             Contact
           </p>
           <h1 className="text-3xl sm:text-5xl font-serif font-bold text-foreground leading-tight mb-6">
-            Nous contacter
+            Contact
           </h1>
-          <p className="text-base sm:text-lg font-sans text-muted-foreground leading-relaxed">
-            Contenu à venir.
+          <p className="text-base sm:text-lg font-sans text-muted-foreground leading-relaxed mb-6">
+            Une question sur Donna ? Écrivez-nous.
           </p>
+          <a
+            href="mailto:donna@donna-legal.com"
+            className="text-base font-sans text-foreground hover:text-primary transition-colors underline"
+          >
+            donna@donna-legal.com
+          </a>
         </section>
         <PublicFooter />
         <ScrollToTop />
