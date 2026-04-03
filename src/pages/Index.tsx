@@ -210,7 +210,7 @@ const Index = () => {
             </div>
 
             {/* Right — Dashboard animé sans bordure */}
-            <div className="flex-1 w-full">
+            <div className="flex-1 w-full min-w-0 overflow-hidden">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
