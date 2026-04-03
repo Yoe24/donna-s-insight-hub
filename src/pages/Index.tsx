@@ -203,14 +203,14 @@ const Index = () => {
               </div>
           </div>
 
-          {/* Cinématique — large, coupée au fold pour inciter au scroll */}
-          <div className="max-w-5xl mx-auto px-6 sm:px-10">
+          {/* Cinématique — grande, presque plein écran, coupée au fold */}
+          <div className="max-w-6xl mx-auto px-4 sm:px-8">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
             >
-              <DashboardCinematic theme="light" chromeless={true} />
+              <DashboardCinematic theme="light" />
             </motion.div>
           </div>
         </section>

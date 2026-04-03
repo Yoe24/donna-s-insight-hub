@@ -1,4 +1,4 @@
-// Data for the DashboardCinematic animation (6-scene narrative)
+// Data for the DashboardCinematic animation (3-scene narrative, 36s)
 
 export const EMAILS = [
   { sender: "Tribunal de Paris", initials: "TP", color: "#2563EB", subject: "Convocation audience JAF — 15 avril 2026", time: "08:12", urgent: true },

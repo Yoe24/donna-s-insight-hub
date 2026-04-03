@@ -8,15 +8,19 @@ interface Props {
   chromeless?: boolean
 }
 
-const CYCLE_DURATION = 36 // 36s total — 3 scenes, 12s each
+const CYCLE_DURATION = 36 // 36s — 3 scenes, 12s each
+
+const DONNA_STATUS = [
+  "Donna trie vos emails...",
+  "Donna rédige un brouillon...",
+  "Donna prépare votre brief...",
+]
 
 const themes = {
   light: {
     bg: "#FFFFFF", sidebar: "#F9FAFB", card: "#F3F4F6", border: "#E5E7EB",
     text: "#111827", textMuted: "#6B7280", textLight: "#9CA3AF",
     accent: "#2563EB", accentBg: "#EFF6FF",
-    browserBg: "#F9FAFB", browserBar: "#E5E7EB",
-    dot1: "#FF5F57", dot2: "#FFBD2E", dot3: "#27C93F",
     success: "#10B981",
     chatUser: "#2563EB", chatDonna: "#F3F4F6",
   },
@@ -24,8 +28,6 @@ const themes = {
     bg: "#0F0F0F", sidebar: "#1A1A1A", card: "#1F1F1F", border: "#2A2A2A",
     text: "#F9FAFB", textMuted: "#9CA3AF", textLight: "#6B7280",
     accent: "#3B82F6", accentBg: "#0A1628",
-    browserBg: "#141414", browserBar: "#252525",
-    dot1: "#FF5F57", dot2: "#FFBD2E", dot3: "#27C93F",
     success: "#34D399",
     chatUser: "#3B82F6", chatDonna: "#1F1F1F",
   },
@@ -33,7 +35,7 @@ const themes = {
 
 type Theme = typeof themes.dark
 
-export default function DashboardCinematic({ theme = "dark", className = "", chromeless = false }: Props) {
+export default function DashboardCinematic({ theme = "dark", className = "" }: Props) {
   const [elapsed, setElapsed] = useState(0)
   const c = themes[theme]
 
@@ -51,36 +53,27 @@ export default function DashboardCinematic({ theme = "dark", className = "", chr
   const sceneTime = elapsed - (scene * 12)
 
   return (
-    <div className={className} style={{ width: "100%", maxWidth: 720, margin: "0 auto" }}>
-      {/* Browser Chrome */}
-      {!chromeless && (
-        <div style={{ background: c.browserBar, borderRadius: "12px 12px 0 0", padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ display: "flex", gap: 6 }}>
-            <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.dot1 }} />
-            <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.dot2 }} />
-            <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.dot3 }} />
-          </div>
-          <div style={{ flex: 1, background: theme === "dark" ? "#1A1A1A" : "#fff", borderRadius: 6, padding: "4px 12px", fontSize: 11, color: c.textLight, fontFamily: "ui-monospace, monospace" }}>
-            donna-legal.com/dashboard
-          </div>
-        </div>
-      )}
-
-      {/* Fixed-size dashboard container */}
+    <div className={className} style={{
+      width: "100%",
+      maxWidth: 1000,
+      margin: "0 auto",
+      borderRadius: 16,
+      overflow: "hidden",
+      boxShadow: "0 8px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)",
+      border: `1px solid ${c.border}`,
+    }}>
+      {/* Dashboard Container — tall */}
       <div style={{
         background: c.bg,
-        border: chromeless ? "none" : `1px solid ${c.border}`,
-        borderTop: chromeless ? "none" : "none",
-        borderRadius: chromeless ? 12 : "0 0 12px 12px",
-        overflow: "hidden",
-        height: 400,
+        height: 520,
         display: "flex",
         position: "relative",
+        overflow: "hidden",
       }}>
-        {/* Sidebar — always visible, fixed width */}
+        {/* Sidebar */}
         <Sidebar colors={c} scene={scene} elapsed={elapsed} />
 
-        {/* Main content — fixed area, scenes crossfade inside */}
+        {/* Main content */}
         <div style={{ flex: 1, minWidth: 0, overflow: "hidden", position: "relative" }}>
           <AnimatePresence mode="wait">
             {scene === 0 && <InboxScene key="inbox" colors={c} t={sceneTime} />}
@@ -88,53 +81,164 @@ export default function DashboardCinematic({ theme = "dark", className = "", chr
             {scene === 2 && <BriefingScene key="briefing" colors={c} t={sceneTime} />}
           </AnimatePresence>
         </div>
+
+        {/* Donna Avatar — the star of the show */}
+        <DonnaAvatar colors={c} scene={scene} sceneTime={sceneTime} />
       </div>
     </div>
   )
 }
 
-// ─── SIDEBAR (always same width, never animates size) ───
+// ─── DONNA AVATAR — Replaces cursor, shows it's an AI agent ───
+
+function DonnaAvatar({ colors: c, scene, sceneTime }: { colors: Theme; scene: number; sceneTime: number }) {
+  const status = DONNA_STATUS[scene]
+
+  // Position per scene — Donna moves to where she's working
+  const positions = [
+    { x: 340, y: 80 },   // Scene 0: near emails
+    { x: 300, y: 180 },  // Scene 1: near chat area
+    { x: 400, y: 100 },  // Scene 2: near briefing
+  ]
+  const pos = positions[scene]
+
+  // Donna moves slightly within each scene
+  const offsetY = Math.sin(sceneTime * 0.5) * 8
+  const pulseActive = (scene === 0 && sceneTime > 2 && sceneTime < 10) ||
+                      (scene === 1 && sceneTime > 1 && sceneTime < 8) ||
+                      (scene === 2 && sceneTime > 1 && sceneTime < 9)
+
+  return (
+    <motion.div
+      animate={{
+        x: pos.x,
+        y: pos.y + offsetY,
+        opacity: sceneTime > 0.5 ? 1 : 0,
+      }}
+      transition={{ type: "spring", damping: 25, stiffness: 120 }}
+      style={{
+        position: "absolute",
+        zIndex: 30,
+        pointerEvents: "none",
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+      }}
+    >
+      {/* Avatar circle */}
+      <motion.div
+        animate={{
+          boxShadow: pulseActive
+            ? ["0 0 0px #2563EB40", "0 0 24px #2563EB50", "0 0 0px #2563EB40"]
+            : "0 0 0px #2563EB40",
+        }}
+        transition={{ duration: 1.5, repeat: Infinity }}
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: "50%",
+          background: c.accent,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 13,
+          fontWeight: 700,
+          color: "#fff",
+          flexShrink: 0,
+          border: "2px solid #fff",
+        }}
+      >
+        D
+      </motion.div>
+
+      {/* Status pill */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={status}
+          initial={{ opacity: 0, x: -5 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 5 }}
+          transition={{ duration: 0.4 }}
+          style={{
+            background: "#fff",
+            padding: "5px 14px",
+            borderRadius: 20,
+            fontSize: 11,
+            fontWeight: 500,
+            color: c.accent,
+            whiteSpace: "nowrap",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
+            border: `1px solid ${c.border}`,
+          }}
+        >
+          {status}
+        </motion.div>
+      </AnimatePresence>
+    </motion.div>
+  )
+}
+
+// ─── SIDEBAR ───
 
 function Sidebar({ colors: c, scene, elapsed }: { colors: Theme; scene: number; elapsed: number }) {
   return (
     <div style={{
-      width: 150, minWidth: 150, maxWidth: 150,
+      width: 180, minWidth: 180, maxWidth: 180,
       background: c.sidebar,
       borderRight: `1px solid ${c.border}`,
-      padding: "16px 10px",
+      padding: "24px 14px",
       overflow: "hidden",
     }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: c.text, marginBottom: 4 }}>Donna</div>
-      <div style={{ fontSize: 10, color: scene >= 1 ? c.accent : c.success, marginBottom: 20 }}>
-        {scene === 0 ? "● En ligne" : scene === 1 ? "● En analyse..." : "● Brief prêt"}
+      <div style={{ fontSize: 16, fontWeight: 700, color: c.text, marginBottom: 4 }}>Donna</div>
+      <div style={{ fontSize: 11, color: c.success, marginBottom: 28 }}>
+        ● {scene === 0 ? "Analyse en cours" : scene === 1 ? "Rédaction" : "Brief prêt"}
       </div>
 
-      <div style={{ fontSize: 9, color: c.textLight, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
+      <div style={{ fontSize: 9, color: c.textLight, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 }}>
         Dossiers
       </div>
       {FOLDERS.map((f, i) => (
         <motion.div
           key={f.name}
           initial={{ opacity: 0, x: -15 }}
-          animate={{ opacity: elapsed > 2 + i * 1 ? 1 : 0, x: elapsed > 2 + i * 1 ? 0 : -15 }}
+          animate={{ opacity: elapsed > 2 + i * 1.2 ? 1 : 0, x: elapsed > 2 + i * 1.2 ? 0 : -15 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
           style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "6px 8px", borderRadius: 6, marginBottom: 3,
-            fontSize: 11, color: c.text,
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "8px 10px", borderRadius: 8, marginBottom: 4,
+            fontSize: 12, color: c.text,
             background: scene === 2 && i === 0 ? c.accentBg : "transparent",
           }}
         >
-          <div style={{ width: 6, height: 6, borderRadius: 2, background: f.color, flexShrink: 0 }} />
+          <div style={{ width: 8, height: 8, borderRadius: 3, background: f.color, flexShrink: 0 }} />
           <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
         </motion.div>
       ))}
+
+      {/* Bottom nav */}
+      <div style={{ marginTop: 32 }}>
+        {[
+          { label: "Inbox", active: scene === 0 },
+          { label: "Brouillons", active: scene === 1 },
+          { label: "Briefing", active: scene === 2 },
+        ].map(item => (
+          <motion.div
+            key={item.label}
+            animate={{
+              background: item.active ? c.accentBg : "transparent",
+              color: item.active ? c.accent : c.textMuted,
+            }}
+            style={{ fontSize: 12, padding: "7px 10px", borderRadius: 8, marginBottom: 2 }}
+          >
+            {item.label}
+          </motion.div>
+        ))}
+      </div>
     </div>
   )
 }
 
-// ─── SCENE 0: INBOX (0-12s) ───
-// Emails arrive slowly, one by one. Urgent badges highlight. Simple & airy.
+// ─── SCENE 0: INBOX ───
 
 function InboxScene({ colors: c, t }: { colors: Theme; t: number }) {
   return (
@@ -145,27 +249,25 @@ function InboxScene({ colors: c, t }: { colors: Theme; t: number }) {
       transition={{ duration: 0.6 }}
       style={{ height: "100%", display: "flex", flexDirection: "column" }}
     >
-      {/* Top bar */}
       <div style={{
-        padding: "14px 20px",
+        padding: "18px 24px",
         borderBottom: `1px solid ${c.border}`,
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <span style={{ fontSize: 14, fontWeight: 600, color: c.text }}>Boîte de réception</span>
+        <span style={{ fontSize: 16, fontWeight: 600, color: c.text }}>Boîte de réception</span>
         <motion.span
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: t > 7 ? 1 : 0, scale: t > 7 ? 1 : 0.8 }}
           transition={{ duration: 0.4 }}
           style={{
-            fontSize: 10, fontWeight: 600, color: "#fff",
-            background: c.accent, padding: "3px 10px", borderRadius: 10,
+            fontSize: 11, fontWeight: 600, color: "#fff",
+            background: c.accent, padding: "4px 12px", borderRadius: 12,
           }}
         >
           5 nouveaux
         </motion.span>
       </div>
 
-      {/* Emails — one every 1.5s, plenty of space */}
       <div style={{ flex: 1, overflow: "hidden" }}>
         {EMAILS.map((email, i) => (
           <motion.div
@@ -177,23 +279,23 @@ function InboxScene({ colors: c, t }: { colors: Theme; t: number }) {
             }}
             transition={{ duration: 0.6, ease: "easeOut" }}
             style={{
-              display: "flex", alignItems: "center", gap: 12,
-              padding: "12px 20px",
+              display: "flex", alignItems: "center", gap: 14,
+              padding: "14px 24px",
               borderBottom: `1px solid ${c.border}`,
               background: email.urgent && t > 9 ? c.accentBg : "transparent",
               transition: "background 0.5s ease",
             }}
           >
             <div style={{
-              width: 32, height: 32, borderRadius: "50%", background: email.color,
+              width: 36, height: 36, borderRadius: "50%", background: email.color,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0,
+              fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0,
             }}>
               {email.initials}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                fontSize: 12, fontWeight: 600, color: c.text,
+                fontSize: 13, fontWeight: 600, color: c.text,
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
               }}>
                 {email.sender}
@@ -201,20 +303,20 @@ function InboxScene({ colors: c, t }: { colors: Theme; t: number }) {
                   <motion.span
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    style={{ marginLeft: 8, fontSize: 9, color: "#EF4444", fontWeight: 700 }}
+                    style={{ marginLeft: 8, fontSize: 10, color: "#EF4444", fontWeight: 700 }}
                   >
                     URGENT
                   </motion.span>
                 )}
               </div>
               <div style={{
-                fontSize: 11, color: c.textMuted, marginTop: 1,
+                fontSize: 12, color: c.textMuted, marginTop: 2,
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
               }}>
                 {email.subject}
               </div>
             </div>
-            <div style={{ fontSize: 10, color: c.textLight, flexShrink: 0 }}>{email.time}</div>
+            <div style={{ fontSize: 11, color: c.textLight, flexShrink: 0 }}>{email.time}</div>
           </motion.div>
         ))}
       </div>
@@ -222,11 +324,9 @@ function InboxScene({ colors: c, t }: { colors: Theme; t: number }) {
   )
 }
 
-// ─── SCENE 1: CHAT + DRAFT (12-24s) ───
-// Donna chats, then a draft appears below. No side panels.
+// ─── SCENE 1: CHAT + DRAFT ───
 
 function ChatDraftScene({ colors: c, t }: { colors: Theme; t: number }) {
-  // Draft starts typing at t=7s
   const draftStart = 7
   const typedLength = t > draftStart ? Math.min(Math.floor((t - draftStart) * 8), DRAFT_TEXT.length) : 0
   const visibleDraft = DRAFT_TEXT.slice(0, typedLength)
@@ -240,24 +340,22 @@ function ChatDraftScene({ colors: c, t }: { colors: Theme; t: number }) {
       style={{ height: "100%", display: "flex", flexDirection: "column" }}
     >
       {/* Chat area */}
-      <div style={{ flex: 1, padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
-        {/* Chat header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+      <div style={{ flex: 1, padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
           <div style={{
-            width: 28, height: 28, borderRadius: "50%", background: c.accent,
+            width: 32, height: 32, borderRadius: "50%", background: c.accent,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11, fontWeight: 700, color: "#fff",
+            fontSize: 13, fontWeight: 700, color: "#fff",
           }}>
             D
           </div>
           <div>
-            <span style={{ fontSize: 12, fontWeight: 600, color: c.text }}>Donna</span>
-            <span style={{ fontSize: 9, color: c.success, marginLeft: 6 }}>● En ligne</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: c.text }}>Donna</span>
+            <span style={{ fontSize: 10, color: c.success, marginLeft: 8 }}>● En ligne</span>
           </div>
         </div>
 
-        {/* Chat messages — one every 2s, slow and clear */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {CHAT_MESSAGES.map((msg, i) => {
             const showAt = i * 2
             const isUser = msg.from === "user"
@@ -265,18 +363,15 @@ function ChatDraftScene({ colors: c, t }: { colors: Theme; t: number }) {
             return (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{
-                  opacity: t > showAt ? 1 : 0,
-                  y: t > showAt ? 0 : 10,
-                }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: t > showAt ? 1 : 0, y: t > showAt ? 0 : 12 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 style={{
-                  padding: "10px 14px",
-                  borderRadius: 14,
+                  padding: "12px 16px",
+                  borderRadius: 16,
                   background: isUser ? c.chatUser : c.chatDonna,
                   color: isUser ? "#fff" : c.text,
-                  fontSize: 12, lineHeight: 1.5,
+                  fontSize: 13, lineHeight: 1.6,
                   maxWidth: "80%",
                   alignSelf: isUser ? "flex-end" : "flex-start",
                 }}
@@ -288,24 +383,24 @@ function ChatDraftScene({ colors: c, t }: { colors: Theme; t: number }) {
         </div>
       </div>
 
-      {/* Draft preview — appears at t=7s, types slowly */}
+      {/* Draft */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: t > draftStart - 0.5 ? 1 : 0, y: t > draftStart - 0.5 ? 0 : 10 }}
         transition={{ duration: 0.5 }}
         style={{
           borderTop: `1px solid ${c.border}`,
-          padding: "12px 20px",
+          padding: "16px 24px",
           background: c.card,
         }}
       >
-        <div style={{ fontSize: 10, color: c.accent, fontWeight: 600, marginBottom: 6 }}>
+        <div style={{ fontSize: 11, color: c.accent, fontWeight: 600, marginBottom: 8 }}>
           ✎ Brouillon en cours...
         </div>
         <div style={{
-          fontSize: 11, color: c.text, lineHeight: 1.7,
+          fontSize: 13, color: c.text, lineHeight: 1.8,
           fontFamily: "ui-serif, Georgia, serif",
-          minHeight: 40,
+          minHeight: 50,
         }}>
           {visibleDraft}
           {typedLength < DRAFT_TEXT.length && typedLength > 0 && (
@@ -321,8 +416,7 @@ function ChatDraftScene({ colors: c, t }: { colors: Theme; t: number }) {
   )
 }
 
-// ─── SCENE 2: BRIEFING (24-36s) ───
-// Morning recap with stats. Clean, final, satisfying.
+// ─── SCENE 2: BRIEFING ───
 
 function BriefingScene({ colors: c, t }: { colors: Theme; t: number }) {
   return (
@@ -333,13 +427,12 @@ function BriefingScene({ colors: c, t }: { colors: Theme; t: number }) {
       transition={{ duration: 0.6 }}
       style={{ height: "100%", display: "flex", flexDirection: "column" }}
     >
-      {/* Greeting */}
-      <div style={{ padding: "20px 24px", borderBottom: `1px solid ${c.border}` }}>
+      <div style={{ padding: "24px 28px", borderBottom: `1px solid ${c.border}` }}>
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6 }}
-          style={{ fontSize: 15, fontWeight: 600, color: c.text }}
+          style={{ fontSize: 18, fontWeight: 600, color: c.text }}
         >
           {BRIEFING.greeting}
         </motion.div>
@@ -347,14 +440,13 @@ function BriefingScene({ colors: c, t }: { colors: Theme; t: number }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: t > 1 ? 1 : 0 }}
           transition={{ duration: 0.5 }}
-          style={{ fontSize: 12, color: c.textMuted, marginTop: 6, lineHeight: 1.5 }}
+          style={{ fontSize: 13, color: c.textMuted, marginTop: 8, lineHeight: 1.6 }}
         >
           {BRIEFING.summary}
         </motion.div>
       </div>
 
-      {/* Bullets — appear one by one */}
-      <div style={{ padding: "16px 24px", flex: 1 }}>
+      <div style={{ padding: "20px 28px", flex: 1 }}>
         {BRIEFING.bullets.map((b, i) => (
           <motion.div
             key={i}
@@ -362,22 +454,23 @@ function BriefingScene({ colors: c, t }: { colors: Theme; t: number }) {
             animate={{ opacity: t > 2.5 + i * 1.5 ? 1 : 0, x: t > 2.5 + i * 1.5 ? 0 : 12 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
             style={{
-              fontSize: 12, color: c.text, padding: "8px 0",
-              display: "flex", gap: 8, alignItems: "flex-start",
+              fontSize: 13, color: c.text, padding: "10px 0",
+              display: "flex", gap: 10, alignItems: "flex-start",
               borderBottom: `1px solid ${c.border}`,
+              lineHeight: 1.5,
             }}
           >
-            <span style={{ color: c.accent, fontWeight: 700, flexShrink: 0 }}>•</span>
-            <span style={{ lineHeight: 1.5 }}>{b}</span>
+            <span style={{ color: c.accent, fontWeight: 700, flexShrink: 0, fontSize: 14 }}>•</span>
+            <span>{b}</span>
           </motion.div>
         ))}
 
-        {/* Stats row */}
+        {/* Stats */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: t > 7 ? 1 : 0 }}
           transition={{ duration: 0.6 }}
-          style={{ display: "flex", gap: 24, marginTop: 24, justifyContent: "center" }}
+          style={{ display: "flex", gap: 32, marginTop: 32, justifyContent: "center" }}
         >
           {BRIEFING.stats.map((s, i) => (
             <motion.div
@@ -387,8 +480,8 @@ function BriefingScene({ colors: c, t }: { colors: Theme; t: number }) {
               transition={{ duration: 0.4 }}
               style={{ textAlign: "center" }}
             >
-              <div style={{ fontSize: 24, fontWeight: 700, color: c.accent }}>{s.value}</div>
-              <div style={{ fontSize: 10, color: c.textLight, marginTop: 2 }}>{s.label}</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: c.accent }}>{s.value}</div>
+              <div style={{ fontSize: 11, color: c.textLight, marginTop: 4 }}>{s.label}</div>
             </motion.div>
           ))}
         </motion.div>
@@ -400,10 +493,10 @@ function BriefingScene({ colors: c, t }: { colors: Theme; t: number }) {
         animate={{ opacity: t > 9 ? 1 : 0, scale: t > 9 ? 1 : 0.9 }}
         transition={{ type: "spring", damping: 20, stiffness: 200 }}
         style={{
-          position: "absolute", bottom: 20, right: 20,
-          padding: "10px 20px", borderRadius: 10,
+          position: "absolute", bottom: 24, right: 24,
+          padding: "12px 24px", borderRadius: 12,
           background: c.accent, color: "#fff",
-          fontSize: 13, fontWeight: 600,
+          fontSize: 14, fontWeight: 600,
           boxShadow: `0 4px 24px ${c.accent}30`,
         }}
       >
