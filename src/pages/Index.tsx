@@ -188,7 +188,7 @@ const Index = () => {
               <p
                 className="text-gray-700 text-base sm:text-lg leading-relaxed max-w-md mb-10"
               >
-                Vos 30 emails du matin résumés, triés et prêts à répondre en 5&nbsp;minutes.
+                Tous vos emails du matin résumés, triés et prêts à répondre en 5&nbsp;minutes.
               </p>
 
               <div
@@ -209,28 +209,14 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Right — Dashboard demo mockup */}
-            <div className="flex-1 w-full max-w-lg">
+            {/* Right — Dashboard animé sans bordure */}
+            <div className="flex-1 w-full">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.3 }}
-                className="relative w-full rounded-xl overflow-hidden shadow-2xl border border-border/50"
+                className="relative w-full"
               >
-                {/* Browser chrome bar */}
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f4f4f4] border-b border-border/50">
-                  <div className="flex gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
-                  </div>
-                  <div className="flex-1 mx-4">
-                    <div className="bg-white rounded-md px-3 py-1 text-[10px] text-muted-foreground font-sans text-center border border-border/30">
-                      donna-legal.com/dashboard
-                    </div>
-                  </div>
-                </div>
-                {/* Dashboard animé — remplace le screenshot statique */}
                 <DashboardCinematic theme="light" chromeless={true} />
               </motion.div>
             </div>
