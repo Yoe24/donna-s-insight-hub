@@ -85,14 +85,14 @@ interface ChatMessage {
 
 const WELCOME: ChatMessage = {
   role: "assistant",
-  content: `Bonjour Me Fernandez 👋\n\nJe suis Donna, votre assistante juridique. J'ai analysé vos emails ce matin et tout est prêt dans votre briefing.\n\nQue puis-je faire pour vous maintenant ?\n\n- *"Prépare-moi pour l'audience JAF du 15 avril"*\n- *"Où en est le dossier Tilleuls ?"*\n- *"Qu'est-ce que je risque d'oublier ?"*\n- *"Rédige la relance pour le greffe"*`,
+  content: `Alexandra, c'est Donna 👋\n\nJ'ai fait le tour de tes dossiers ce matin. Deux points qui méritent ton attention :\n\n⚡ **Audience JAF le 15 avril** — les conclusions adverses sont arrivées, j'ai préparé ta fiche. Il reste 12 jours.\n\n⚡ **SCI Tilleuls** — 3 mois d'impayés (12 600 €). La mise en demeure est prête, chaque jour de retard fragilise ta position.\n\nJe connais tes dossiers, tes échéances et tes pièces. Demande-moi ce que tu veux — même un truc que tu demanderais normalement à ton stagiaire.`,
   ts: Date.now(),
 }
 
 const SUGGESTIONS = [
   "Prépare-moi pour l'audience JAF",
-  "Où en est le dossier Tilleuls ?",
-  "Qu'est-ce que j'oublie ?",
+  "Montre-moi la situation Tilleuls",
+  "Qu'est-ce que je risque d'oublier ?",
   "Calcule les loyers impayés",
   "Rédige la relance Greffe Nanterre",
 ]
