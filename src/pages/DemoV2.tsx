@@ -578,7 +578,7 @@ export default function DemoV2() {
         <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px" : "32px 32px" }}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? 24 : 30, fontWeight: 400, color: TEXT, marginBottom: 4, letterSpacing: "-0.02em" }}>Bonjour, Alexandra</h1>
-            <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 24 }}>Jeudi 3 avril</p>
+            <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 24 }}>Je suis Donna, votre employée numérique · Jeudi 3 avril</p>
           </motion.div>
 
           <AnimatePresence>
@@ -611,9 +611,9 @@ export default function DemoV2() {
                 {showMessage && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
                     <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.7, marginBottom: 6 }}>
-                      Alexandra, j'ai trié vos <strong>12 emails</strong> ce matin. 9 étaient du bruit (newsletters, prospection) — je les ai filtrés pour vous. <strong>3 brouillons de réponse</strong> sont prêts, il ne vous reste qu'à valider.
+                      Bonjour Alexandra, c'est Donna. J'ai trié vos <strong>12 emails</strong> ce matin — 9 étaient du bruit (newsletters, prospection), je m'en suis occupée. Il vous reste <strong>3 brouillons de réponse</strong> à valider, tout est prêt.
                     </p>
-                    <p style={{ fontSize: 12, color: TEXT_MUTED, fontStyle: "italic" }}>Tout est listé dans la to-do ci-dessous.</p>
+                    <p style={{ fontSize: 12, color: TEXT_MUTED, fontStyle: "italic" }}>Votre to-do du jour est juste en dessous.</p>
                   </motion.div>
                 )}
               </AnimatePresence>
