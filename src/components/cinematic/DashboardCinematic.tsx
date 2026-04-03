@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { EMAILS, FOLDERS, DOSSIER, BRIEFING, DONNA_STATUS } from "./cinematic-data"
 
 interface Props {
   theme?: "light" | "dark"
@@ -8,513 +7,502 @@ interface Props {
   chromeless?: boolean
 }
 
-const CYCLE_DURATION = 36 // 36s — 3 scenes, 12s each
+// 4 scenes × ~8s = 32s cycle
+const CYCLE = 32
+const SCENES = [0, 8, 16, 24] // start times
 
-const themes = {
-  light: {
-    bg: "#FFFFFF", sidebar: "#F9FAFB", card: "#F3F4F6", border: "#E5E7EB",
-    text: "#111827", textMuted: "#6B7280", textLight: "#9CA3AF",
-    accent: "#2563EB", accentBg: "#EFF6FF",
-    success: "#10B981",
-  },
-  dark: {
-    bg: "#0F0F0F", sidebar: "#1A1A1A", card: "#1F1F1F", border: "#2A2A2A",
-    text: "#F9FAFB", textMuted: "#9CA3AF", textLight: "#6B7280",
-    accent: "#3B82F6", accentBg: "#0A1628",
-    success: "#34D399",
-  },
+const C = {
+  bg: "#FFFFFF", sidebar: "#F9FAFB", card: "#F3F4F6", border: "#E5E7EB",
+  text: "#111827", muted: "#6B7280", light: "#9CA3AF",
+  accent: "#2563EB", accentBg: "#EFF6FF",
+  green: "#10B981", red: "#EF4444",
 }
 
-type Theme = typeof themes.dark
-
-export default function DashboardCinematic({ theme = "dark", className = "" }: Props) {
-  const [elapsed, setElapsed] = useState(0)
-  const c = themes[theme]
+export default function DashboardCinematic({ className = "" }: Props) {
+  const [t, setT] = useState(0)
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setElapsed(prev => {
-        const next = prev + 0.1
-        return next >= CYCLE_DURATION ? 0 : next
-      })
-    }, 100)
+    const timer = setInterval(() => setT(p => (p + 0.1) % CYCLE), 100)
     return () => clearInterval(timer)
   }, [])
 
-  const scene = elapsed < 12 ? 0 : elapsed < 24 ? 1 : 2
-  const sceneTime = elapsed - (scene * 12)
+  const scene = t < 8 ? 0 : t < 16 ? 1 : t < 24 ? 2 : 3
+  const st = t - SCENES[scene] // scene-local time
 
   return (
     <div className={className} style={{
-      width: "100%",
-      maxWidth: 1000,
-      margin: "0 auto",
-      borderRadius: 16,
-      overflow: "hidden",
-      boxShadow: "0 8px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)",
-      border: `1px solid ${c.border}`,
+      width: "100%", maxWidth: 1000, margin: "0 auto",
+      borderRadius: 16, overflow: "hidden",
+      boxShadow: "0 8px 40px rgba(0,0,0,0.08)",
+      border: `1px solid ${C.border}`,
     }}>
-      <div style={{
-        background: c.bg,
-        height: 520,
-        display: "flex",
-        position: "relative",
-        overflow: "hidden",
-      }}>
-        <Sidebar colors={c} scene={scene} elapsed={elapsed} />
+      <div style={{ background: C.bg, height: 520, display: "flex", position: "relative", overflow: "hidden" }}>
+        {/* Sidebar */}
+        <div style={{
+          width: 180, minWidth: 180, background: C.sidebar,
+          borderRight: `1px solid ${C.border}`, padding: "20px 12px",
+          display: "flex", flexDirection: "column",
+        }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 2 }}>Donna</div>
+          <div style={{ fontSize: 10, color: C.green, marginBottom: 24 }}>
+            ● {scene === 0 ? "Nouveau mail reçu" : scene === 1 ? "Classement en cours" : scene === 2 ? "Dossier ouvert" : "Brouillon généré"}
+          </div>
 
+          <div style={{ fontSize: 9, color: C.light, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Dossiers</div>
+          {["Dupont c/ Dupont", "SCI Les Tilleuls", "Succession Martin"].map((name, i) => (
+            <motion.div
+              key={name}
+              animate={{
+                background: (scene >= 2 && i === 0) ? C.accentBg : "transparent",
+                scale: (scene === 1 && st > 5 && i === 0) ? [1, 1.04, 1] : 1,
+              }}
+              style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "7px 10px", borderRadius: 8, marginBottom: 3,
+                fontSize: 12, color: C.text,
+              }}
+            >
+              <div style={{ width: 7, height: 7, borderRadius: 3, background: ["#2563EB", "#3B82F6", "#F59E0B"][i] }} />
+              <span>{name}</span>
+            </motion.div>
+          ))}
+
+          <div style={{ marginTop: "auto" }}>
+            {["Inbox", "Dossiers", "Briefing"].map((label, i) => (
+              <motion.div
+                key={label}
+                animate={{
+                  background: (scene === 0 && i === 0) || (scene >= 1 && scene <= 2 && i === 1) || (scene === 3 && i === 2) ? C.accentBg : "transparent",
+                  color: (scene === 0 && i === 0) || (scene >= 1 && scene <= 2 && i === 1) || (scene === 3 && i === 2) ? C.accent : C.muted,
+                }}
+                style={{ fontSize: 12, padding: "7px 10px", borderRadius: 8, marginBottom: 2 }}
+              >
+                {label}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* Main content */}
         <div style={{ flex: 1, minWidth: 0, overflow: "hidden", position: "relative" }}>
           <AnimatePresence mode="wait">
-            {scene === 0 && <InboxScene key="inbox" colors={c} t={sceneTime} />}
-            {scene === 1 && <DossierScene key="dossier" colors={c} t={sceneTime} />}
-            {scene === 2 && <BriefingScene key="briefing" colors={c} t={sceneTime} />}
+            {scene === 0 && <SceneInbox key="s0" t={st} />}
+            {scene === 1 && <SceneDragDrop key="s1" t={st} />}
+            {scene === 2 && <SceneDossier key="s2" t={st} />}
+            {scene === 3 && <SceneBrouillon key="s3" t={st} />}
           </AnimatePresence>
         </div>
 
-        <DonnaAvatar colors={c} scene={scene} sceneTime={sceneTime} />
+        {/* Donna avatar */}
+        <DonnaAgent scene={scene} st={st} />
       </div>
     </div>
   )
 }
 
-// ─── DONNA AVATAR ───
+// ─── DONNA AGENT — moves, clicks, drags ───
 
-function DonnaAvatar({ colors: c, scene, sceneTime }: { colors: Theme; scene: number; sceneTime: number }) {
-  const status = DONNA_STATUS[scene]
+function DonnaAgent({ scene, st }: { scene: number; st: number }) {
+  // Donna's position and action per scene
+  let x = 400, y = 250, label = "", visible = true
 
-  const positions = [
-    { x: 340, y: 70 },   // Scene 0: near inbox emails
-    { x: 280, y: 90 },   // Scene 1: near dossier content
-    { x: 320, y: 130 },  // Scene 2: near brouillons
-  ]
-  const pos = positions[scene]
-  const offsetY = Math.sin(sceneTime * 0.5) * 6
-  const pulseActive = sceneTime > 2 && sceneTime < 10
+  if (scene === 0) {
+    // Watching inbox, then moves to email
+    x = st < 3 ? 500 : 440
+    y = st < 3 ? 60 : 100
+    label = st < 4 ? "Nouveau mail détecté..." : "Analyse du mail..."
+    visible = st > 1
+  } else if (scene === 1) {
+    // Drag email to dossier folder
+    if (st < 2) { x = 440; y = 100; label = "Ce mail concerne Dupont..." }
+    else if (st < 5) {
+      // Dragging animation: from email position to sidebar folder
+      const p = Math.min((st - 2) / 3, 1)
+      x = 440 - p * 380  // move left towards sidebar
+      y = 100 + p * 80   // move down towards folder
+      label = "Classement dans Dupont c/ Dupont"
+    } else {
+      x = 60; y = 180; label = "✓ Mail classé"
+    }
+  } else if (scene === 2) {
+    // Inside dossier, clicking around
+    x = st < 3 ? 300 : st < 6 ? 530 : 300
+    y = st < 3 ? 60 : st < 6 ? 150 : 200
+    label = st < 3 ? "Ouverture du dossier..." : st < 6 ? "Pièce jointe résumée" : "Dossier complet"
+  } else if (scene === 3) {
+    // Click briefing, then generate draft
+    if (st < 2) { x = 350; y = 60; label = "Retour au briefing..." }
+    else if (st < 4) { x = 400; y = 200; label = "Clic → Générer brouillon" }
+    else { x = 400; y = 250; label = "✓ Brouillon prêt à envoyer" }
+  }
+
+  if (!visible) return null
 
   return (
     <motion.div
-      animate={{
-        x: pos.x,
-        y: pos.y + offsetY,
-        opacity: sceneTime > 0.5 ? 1 : 0,
-      }}
-      transition={{ type: "spring", damping: 25, stiffness: 120 }}
+      animate={{ x, y }}
+      transition={{ type: "spring", damping: 20, stiffness: 100 }}
       style={{
-        position: "absolute",
-        zIndex: 30,
-        pointerEvents: "none",
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
+        position: "absolute", zIndex: 30, pointerEvents: "none",
+        display: "flex", alignItems: "center", gap: 8,
+        left: 180, // offset by sidebar width
       }}
     >
       <motion.div
         animate={{
-          boxShadow: pulseActive
-            ? ["0 0 0px #2563EB40", "0 0 20px #2563EB50", "0 0 0px #2563EB40"]
-            : "0 0 0px #2563EB40",
+          boxShadow: ["0 0 0px #2563EB40", "0 0 16px #2563EB50", "0 0 0px #2563EB40"],
         }}
-        transition={{ duration: 1.5, repeat: Infinity }}
+        transition={{ duration: 1.2, repeat: Infinity }}
         style={{
-          width: 32, height: 32, borderRadius: "50%",
-          background: c.accent,
+          width: 30, height: 30, borderRadius: "50%",
+          background: C.accent,
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 13, fontWeight: 700, color: "#fff",
-          flexShrink: 0, border: "2px solid #fff",
+          fontSize: 12, fontWeight: 700, color: "#fff",
+          border: "2px solid #fff",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         }}
       >
         D
       </motion.div>
+      <motion.div
+        key={label}
+        initial={{ opacity: 0, x: -4 }}
+        animate={{ opacity: 1, x: 0 }}
+        style={{
+          background: "#fff", padding: "4px 12px", borderRadius: 16,
+          fontSize: 11, fontWeight: 500, color: C.accent,
+          whiteSpace: "nowrap",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+          border: `1px solid ${C.border}`,
+        }}
+      >
+        {label}
+      </motion.div>
+    </motion.div>
+  )
+}
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={status}
-          initial={{ opacity: 0, x: -5 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 5 }}
-          transition={{ duration: 0.4 }}
-          style={{
-            background: "#fff",
-            padding: "5px 14px",
-            borderRadius: 20,
-            fontSize: 11,
-            fontWeight: 500,
-            color: c.accent,
-            whiteSpace: "nowrap",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
-            border: `1px solid ${c.border}`,
-          }}
-        >
-          {status}
-        </motion.div>
+// ─── SCENE 0: INBOX — new email arrives ───
+
+function SceneInbox({ t }: { t: number }) {
+  const emails = [
+    { initials: "TP", color: "#2563EB", sender: "Tribunal de Paris", subject: "Convocation audience JAF — 15 avril", time: "08:12", isNew: true },
+    { initials: "KB", color: "#3B82F6", sender: "Me Karim Benzara", subject: "RE: Conclusions — SCI Les Tilleuls", time: "08:34", isNew: false },
+    { initials: "CM", color: "#10B981", sender: "Cabinet Moreau", subject: "Pièces complémentaires dossier Dupont", time: "09:01", isNew: false },
+    { initials: "GN", color: "#EF4444", sender: "Greffe TGI Nanterre", subject: "Notification jugement n°2026/1847", time: "09:28", isNew: false },
+  ]
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}
+      style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "16px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 15, fontWeight: 600, color: C.text }}>Boîte de réception</span>
+      </div>
+
+      {/* Existing emails */}
+      {emails.slice(1).map((e, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 24px", borderBottom: `1px solid ${C.border}`, opacity: 0.6 }}>
+          <div style={{ width: 32, height: 32, borderRadius: "50%", background: e.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff" }}>{e.initials}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.sender}</div>
+            <div style={{ fontSize: 11, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.subject}</div>
+          </div>
+          <div style={{ fontSize: 10, color: C.light }}>{e.time}</div>
+        </div>
+      ))}
+
+      {/* NEW email slides in from top */}
+      <motion.div
+        initial={{ opacity: 0, y: -50, height: 0 }}
+        animate={{ opacity: t > 2 ? 1 : 0, y: t > 2 ? 0 : -50, height: t > 2 ? "auto" : 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        style={{
+          display: "flex", alignItems: "center", gap: 12, padding: "14px 24px",
+          borderBottom: `1px solid ${C.border}`,
+          background: t > 4 ? C.accentBg : "#FEF9C3",
+          overflow: "hidden", order: -1,
+        }}
+      >
+        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#2563EB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff" }}>TP</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
+            Tribunal de Paris
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: t > 2.5 ? 1 : 0 }}
+              style={{ marginLeft: 8, fontSize: 9, background: "#FEF3C7", color: "#92400E", padding: "1px 6px", borderRadius: 4, fontWeight: 600 }}
+            >
+              NOUVEAU
+            </motion.span>
+          </div>
+          <div style={{ fontSize: 12, color: C.muted }}>Convocation audience JAF — 15 avril</div>
+        </div>
+        <div style={{ fontSize: 10, color: C.light }}>À l'instant</div>
+      </motion.div>
+
+      {/* Donna's analysis appearing */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: t > 5 ? 1 : 0 }}
+        transition={{ duration: 0.4 }}
+        style={{ margin: "16px 24px", padding: "12px 16px", borderRadius: 10, background: C.accentBg, border: `1px solid rgba(37,99,235,0.15)` }}
+      >
+        <div style={{ fontSize: 11, color: C.accent, fontWeight: 600, marginBottom: 4 }}>Analyse de Donna :</div>
+        <div style={{ fontSize: 12, color: C.text, lineHeight: 1.6 }}>
+          Ce mail concerne le dossier <strong>Dupont c/ Dupont</strong>. Convocation JAF le 15 avril, salle 12. <span style={{ color: C.red, fontWeight: 600 }}>Urgent.</span>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ─── SCENE 1: DRAG & DROP — Donna moves email to folder ───
+
+function SceneDragDrop({ t }: { t: number }) {
+  const dragging = t > 2 && t < 5
+  const dropped = t > 5
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}
+      style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "16px 24px", borderBottom: `1px solid ${C.border}` }}>
+        <span style={{ fontSize: 15, fontWeight: 600, color: C.text }}>Boîte de réception</span>
+      </div>
+
+      {/* The email being dragged */}
+      <motion.div
+        animate={{
+          x: dragging ? -200 : 0,
+          y: dragging ? 60 : 0,
+          scale: dragging ? 0.9 : 1,
+          opacity: dropped ? 0 : 1,
+          rotate: dragging ? -2 : 0,
+        }}
+        transition={{ type: "spring", damping: 20, stiffness: 100 }}
+        style={{
+          display: "flex", alignItems: "center", gap: 12, padding: "14px 24px",
+          borderBottom: `1px solid ${C.border}`,
+          background: dragging ? "#EFF6FF" : "#FEF9C3",
+          boxShadow: dragging ? "0 8px 30px rgba(0,0,0,0.15)" : "none",
+          borderRadius: dragging ? 12 : 0,
+          zIndex: dragging ? 10 : 1,
+          position: "relative",
+        }}
+      >
+        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#2563EB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff" }}>TP</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Tribunal de Paris</div>
+          <div style={{ fontSize: 12, color: C.muted }}>Convocation audience JAF — 15 avril</div>
+        </div>
+      </motion.div>
+
+      {/* Remaining emails */}
+      {[
+        { initials: "KB", color: "#3B82F6", sender: "Me Karim Benzara", subject: "RE: Conclusions — SCI Les Tilleuls" },
+        { initials: "CM", color: "#10B981", sender: "Cabinet Moreau", subject: "Pièces complémentaires dossier Dupont" },
+      ].map((e, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 24px", borderBottom: `1px solid ${C.border}`, opacity: 0.5 }}>
+          <div style={{ width: 32, height: 32, borderRadius: "50%", background: e.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff" }}>{e.initials}</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, color: C.text }}>{e.sender}</div>
+            <div style={{ fontSize: 11, color: C.muted }}>{e.subject}</div>
+          </div>
+        </div>
+      ))}
+
+      {/* Success message after drop */}
+      <AnimatePresence>
+        {dropped && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ margin: "20px 24px", padding: "14px 18px", borderRadius: 10, background: "#ECFDF5", border: "1px solid #A7F3D0" }}
+          >
+            <div style={{ fontSize: 12, color: "#065F46", fontWeight: 600 }}>✓ Mail classé dans "Dupont c/ Dupont"</div>
+            <div style={{ fontSize: 11, color: "#047857", marginTop: 4 }}>Pièce jointe détectée → téléchargée et résumée</div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </motion.div>
   )
 }
 
-// ─── SIDEBAR ───
+// ─── SCENE 2: DOSSIER VIEW — like a drive, mails left, files right ───
 
-function Sidebar({ colors: c, scene, elapsed }: { colors: Theme; scene: number; elapsed: number }) {
-  const navItems = [
-    { label: "Inbox", active: scene === 0 },
-    { label: "Dossiers", active: scene === 1 },
-    { label: "Brouillons", active: scene === 2 },
-  ]
-
+function SceneDossier({ t }: { t: number }) {
   return (
-    <div style={{
-      width: 180, minWidth: 180, maxWidth: 180,
-      background: c.sidebar,
-      borderRight: `1px solid ${c.border}`,
-      padding: "24px 14px",
-      overflow: "hidden",
-    }}>
-      <div style={{ fontSize: 16, fontWeight: 700, color: c.text, marginBottom: 4 }}>Donna</div>
-      <div style={{ fontSize: 11, color: c.success, marginBottom: 28 }}>
-        ● {scene === 0 ? "Tri en cours" : scene === 1 ? "Organisation" : "Brouillons prêts"}
-      </div>
-
-      <div style={{ fontSize: 9, color: c.textLight, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 }}>
-        Dossiers
-      </div>
-      {FOLDERS.map((f, i) => (
-        <motion.div
-          key={f.name}
-          initial={{ opacity: 0, x: -15 }}
-          animate={{ opacity: elapsed > 2 + i * 1.2 ? 1 : 0, x: elapsed > 2 + i * 1.2 ? 0 : -15 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          style={{
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "8px 10px", borderRadius: 8, marginBottom: 4,
-            fontSize: 12, color: c.text,
-            background: scene === 1 && i === 0 ? c.accentBg : "transparent",
-          }}
-        >
-          <div style={{ width: 8, height: 8, borderRadius: 3, background: f.color, flexShrink: 0 }} />
-          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
-        </motion.div>
-      ))}
-
-      <div style={{ marginTop: 32 }}>
-        {navItems.map(item => (
-          <motion.div
-            key={item.label}
-            animate={{
-              background: item.active ? c.accentBg : "transparent",
-              color: item.active ? c.accent : c.textMuted,
-            }}
-            style={{ fontSize: 12, padding: "7px 10px", borderRadius: 8, marginBottom: 2 }}
-          >
-            {item.label}
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ─── SCENE 0: INBOX — "Donna trie vos emails" ───
-
-function InboxScene({ colors: c, t }: { colors: Theme; t: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.6 }}
-      style={{ height: "100%", display: "flex", flexDirection: "column" }}
-    >
-      <div style={{
-        padding: "18px 24px",
-        borderBottom: `1px solid ${c.border}`,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
-        <span style={{ fontSize: 16, fontWeight: 600, color: c.text }}>Boîte de réception</span>
-        <motion.span
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: t > 7 ? 1 : 0, scale: t > 7 ? 1 : 0.8 }}
-          transition={{ duration: 0.4 }}
-          style={{
-            fontSize: 11, fontWeight: 600, color: "#fff",
-            background: c.accent, padding: "4px 12px", borderRadius: 12,
-          }}
-        >
-          5 nouveaux
-        </motion.span>
-      </div>
-
-      <div style={{ flex: 1, overflow: "hidden" }}>
-        {EMAILS.map((email, i) => (
-          <motion.div
-            key={email.sender}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: t > i * 1.5 ? 1 : 0, y: t > i * 1.5 ? 0 : 15 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            style={{
-              display: "flex", alignItems: "center", gap: 14,
-              padding: "14px 24px",
-              borderBottom: `1px solid ${c.border}`,
-              background: email.urgent && t > 9 ? c.accentBg : "transparent",
-              transition: "background 0.5s ease",
-            }}
-          >
-            <div style={{
-              width: 36, height: 36, borderRadius: "50%", background: email.color,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0,
-            }}>
-              {email.initials}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontSize: 13, fontWeight: 600, color: c.text,
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              }}>
-                {email.sender}
-                {email.urgent && t > 8 && (
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    style={{ marginLeft: 8, fontSize: 10, color: "#EF4444", fontWeight: 700 }}
-                  >
-                    URGENT
-                  </motion.span>
-                )}
-              </div>
-              <div style={{
-                fontSize: 12, color: c.textMuted, marginTop: 2,
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              }}>
-                {email.subject}
-              </div>
-            </div>
-            <div style={{ fontSize: 11, color: c.textLight, flexShrink: 0 }}>{email.time}</div>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
-  )
-}
-
-// ─── SCENE 1: DOSSIER — "Donna organise vos dossiers" ───
-
-function DossierScene({ colors: c, t }: { colors: Theme; t: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.6 }}
-      style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}
-    >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}
+      style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Dossier header */}
-      <div style={{ padding: "18px 24px", borderBottom: `1px solid ${c.border}` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <div style={{ width: 10, height: 10, borderRadius: 3, background: "#2563EB" }} />
-          <span style={{ fontSize: 16, fontWeight: 700, color: c.text }}>{DOSSIER.name}</span>
-          <span style={{ fontSize: 11, color: c.textLight, marginLeft: 4 }}>{DOSSIER.type}</span>
-        </div>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: t > 1 ? 1 : 0 }}
-          transition={{ duration: 0.5 }}
-          style={{ fontSize: 12, color: c.textMuted, lineHeight: 1.6 }}
-        >
-          {DOSSIER.summary}
-        </motion.div>
+      <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 8, height: 8, borderRadius: 3, background: "#2563EB" }} />
+        <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Dupont c/ Dupont</span>
+        <span style={{ fontSize: 11, color: C.light }}>Droit de la famille</span>
       </div>
 
-      {/* Content: stats + files + recent emails */}
-      <div style={{ flex: 1, padding: "16px 24px", display: "flex", gap: 24, overflow: "hidden" }}>
-        {/* Left: Recent exchanges + files */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Stats row */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: t > 2 ? 1 : 0 }}
-            transition={{ duration: 0.5 }}
-            style={{ display: "flex", gap: 24, marginBottom: 20 }}
-          >
-            {Object.entries(DOSSIER.stats).map(([key, val], i) => (
-              <div key={key} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 22, fontWeight: 700, color: c.accent }}>{val}</div>
-                <div style={{ fontSize: 10, color: c.textLight, marginTop: 2 }}>{key}</div>
-              </div>
-            ))}
-          </motion.div>
-
-          {/* Recent exchanges */}
-          <div style={{ fontSize: 10, color: c.textLight, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-            Échanges récents
+      {/* Two columns: emails left, files right */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        {/* Left: emails */}
+        <div style={{ flex: 1, borderRight: `1px solid ${C.border}`, overflow: "hidden" }}>
+          <div style={{ padding: "10px 16px", fontSize: 10, color: C.light, textTransform: "uppercase", letterSpacing: 1, borderBottom: `1px solid ${C.border}` }}>
+            Échanges (12)
           </div>
-          {DOSSIER.recentEmails.map((email, i) => (
+          {[
+            { sender: "Tribunal de Paris", subject: "Convocation JAF", date: "Auj.", urgent: true, isNew: true },
+            { sender: "Cabinet Moreau", subject: "Pièces complémentaires", date: "Auj.", urgent: false, isNew: false },
+            { sender: "Me Benzara", subject: "Conclusions en réponse", date: "02/04", urgent: false, isNew: false },
+            { sender: "Jean-Pierre Martin", subject: "Documents demandés", date: "01/04", urgent: false, isNew: false },
+            { sender: "Greffe CPH Paris", subject: "Convocation conciliation", date: "25/03", urgent: false, isNew: false },
+          ].map((e, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, x: 15 }}
-              animate={{ opacity: t > 3 + i * 1 ? 1 : 0, x: t > 3 + i * 1 ? 0 : 15 }}
-              transition={{ duration: 0.4 }}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: t > 0.5 + i * 0.4 ? 1 : 0, x: t > 0.5 + i * 0.4 ? 0 : -10 }}
+              transition={{ duration: 0.3 }}
               style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "10px 12px", borderRadius: 8, marginBottom: 4,
-                background: email.urgent ? c.accentBg : "transparent",
-                border: `1px solid ${c.border}`,
+                padding: "10px 16px", borderBottom: `1px solid ${C.border}`,
+                background: e.isNew ? C.accentBg : "transparent",
+                display: "flex", alignItems: "center", gap: 8,
               }}
             >
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: c.text }}>
-                  {email.sender}
-                  {email.urgent && <span style={{ marginLeft: 6, fontSize: 9, color: "#EF4444", fontWeight: 700 }}>URGENT</span>}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: e.isNew ? 700 : 500, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {e.sender}
+                  {e.urgent && <span style={{ marginLeft: 6, fontSize: 9, color: C.red, fontWeight: 700 }}>URGENT</span>}
+                  {e.isNew && <span style={{ marginLeft: 6, fontSize: 9, color: C.accent, fontWeight: 700 }}>NOUVEAU</span>}
                 </div>
-                <div style={{ fontSize: 11, color: c.textMuted, marginTop: 1 }}>{email.subject}</div>
+                <div style={{ fontSize: 11, color: C.muted }}>{e.subject}</div>
               </div>
-              <div style={{ fontSize: 10, color: c.textLight }}>{email.date}</div>
+              <div style={{ fontSize: 10, color: C.light }}>{e.date}</div>
             </motion.div>
           ))}
         </div>
 
-        {/* Right: Files */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: t > 4 ? 1 : 0 }}
-          transition={{ duration: 0.5 }}
-          style={{ width: 220, flexShrink: 0 }}
-        >
-          <div style={{ fontSize: 10, color: c.textLight, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
-            Pièces jointes
+        {/* Right: files */}
+        <div style={{ width: 260, overflow: "hidden" }}>
+          <div style={{ padding: "10px 16px", fontSize: 10, color: C.light, textTransform: "uppercase", letterSpacing: 1, borderBottom: `1px solid ${C.border}` }}>
+            Pièces jointes (5)
           </div>
-          {DOSSIER.files.map((file, i) => (
+          {[
+            { name: "Convocation_JAF.pdf", type: "PDF", size: "156 Ko", isNew: true },
+            { name: "Conclusions_v2.docx", type: "DOC", size: "89 Ko", isNew: false },
+            { name: "Jugement_2026-1847.pdf", type: "PDF", size: "312 Ko", isNew: false },
+            { name: "Attestation_école.pdf", type: "PDF", size: "67 Ko", isNew: false },
+            { name: "Contrat_travail.pdf", type: "PDF", size: "245 Ko", isNew: false },
+          ].map((f, i) => (
             <motion.div
-              key={file.name}
+              key={f.name}
               initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: t > 5 + i * 0.6 ? 1 : 0, y: t > 5 + i * 0.6 ? 0 : 8 }}
+              animate={{ opacity: t > 2 + i * 0.5 ? 1 : 0, y: t > 2 + i * 0.5 ? 0 : 8 }}
               transition={{ duration: 0.3 }}
               style={{
                 display: "flex", alignItems: "center", gap: 10,
-                padding: "8px 10px", borderRadius: 8, marginBottom: 4,
-                border: `1px solid ${c.border}`,
+                padding: "10px 16px", borderBottom: `1px solid ${C.border}`,
+                background: f.isNew && t > 4 ? "#ECFDF5" : "transparent",
               }}
             >
               <div style={{
                 width: 28, height: 28, borderRadius: 6,
-                background: file.type === "PDF" ? "#EF444415" : "#2563EB15",
+                background: f.type === "PDF" ? "#EF444412" : "#2563EB12",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 8, fontWeight: 700,
-                color: file.type === "PDF" ? "#EF4444" : "#2563EB",
+                color: f.type === "PDF" ? C.red : C.accent,
               }}>
-                {file.type}
+                {f.type}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: c.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</div>
+                <div style={{ fontSize: 11, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</div>
+                <div style={{ fontSize: 9, color: C.light }}>{f.size}{f.isNew && <span style={{ marginLeft: 4, color: C.green, fontWeight: 600 }}>Résumée ✓</span>}</div>
               </div>
-              <div style={{ fontSize: 9, color: c.textLight }}>{file.date}</div>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </motion.div>
   )
 }
 
-// ─── SCENE 2: BRIEFING + BROUILLONS — "Donna crée vos brouillons" ───
+// ─── SCENE 3: BRIEFING + GENERATE DRAFT ───
 
-function BriefingScene({ colors: c, t }: { colors: Theme; t: number }) {
+function SceneBrouillon({ t }: { t: number }) {
+  const clickGenerate = t > 3
+  const draftReady = t > 5
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.6 }}
-      style={{ height: "100%", display: "flex", flexDirection: "column" }}
-    >
-      {/* Greeting */}
-      <div style={{ padding: "20px 24px", borderBottom: `1px solid ${c.border}` }}>
-        <div style={{ fontSize: 17, fontWeight: 600, color: c.text }}>{BRIEFING.greeting}</div>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: t > 0.8 ? 1 : 0 }}
-          style={{ fontSize: 13, color: c.textMuted, marginTop: 6 }}
-        >
-          {BRIEFING.summary}
-        </motion.div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}
+      style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <div style={{ padding: "16px 24px", borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ fontSize: 16, fontWeight: 600, color: C.text }}>Bonjour Me Fernandez,</div>
+        <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>1 nouveau mail classé, 1 brouillon à générer.</div>
       </div>
 
-      {/* Brouillons list */}
-      <div style={{ flex: 1, padding: "16px 24px", overflow: "hidden" }}>
-        <div style={{ fontSize: 10, color: c.textLight, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>
-          Brouillons prêts à envoyer
-        </div>
+      {/* Task card with generate button */}
+      <div style={{ padding: "16px 24px" }}>
+        <div style={{ fontSize: 10, color: C.light, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>TO-DO</div>
 
-        {BRIEFING.drafts.map((draft, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: t > 2 + i * 1.5 ? 1 : 0, y: t > 2 + i * 1.5 ? 0 : 12 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+        <div style={{
+          padding: "16px", borderRadius: 12,
+          border: `1px solid ${draftReady ? "#A7F3D0" : C.border}`,
+          background: draftReady ? "#ECFDF5" : C.bg,
+          transition: "all 0.4s ease",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Tribunal de Paris — Convocation JAF</div>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>Dossier Dupont c/ Dupont · Audience 15 avril</div>
+            </div>
+            <span style={{ fontSize: 9, color: C.red, fontWeight: 600, background: "#FEF2F2", padding: "2px 8px", borderRadius: 6 }}>Urgent</span>
+          </div>
+
+          {/* Generate button */}
+          <motion.button
+            animate={{
+              background: draftReady ? C.green : clickGenerate ? "#1D4ED8" : C.accent,
+              scale: clickGenerate && !draftReady ? [1, 0.95, 1] : 1,
+            }}
             style={{
-              padding: "14px 16px",
-              borderRadius: 10,
-              border: `1px solid ${c.border}`,
-              marginBottom: 10,
-              background: i === 0 && t > 8 ? c.accentBg : c.bg,
-              transition: "background 0.4s ease",
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "8px 16px", borderRadius: 8,
+              border: "none", color: "#fff", fontSize: 12, fontWeight: 600,
+              cursor: "default",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: c.text }}>{draft.recipient}</div>
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: t > 3 + i * 1.5 ? 1 : 0 }}
-                style={{
-                  fontSize: 10, fontWeight: 600,
-                  color: c.success,
-                  background: `${c.success}15`,
-                  padding: "2px 8px", borderRadius: 8,
-                }}
-              >
-                ✓ {draft.status}
-              </motion.span>
-            </div>
-            <div style={{ fontSize: 11, color: c.textMuted, marginBottom: 4 }}>{draft.subject}</div>
-            <div style={{ fontSize: 11, color: c.textLight, fontStyle: "italic", lineHeight: 1.5 }}>
-              {draft.preview}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Stats + badge */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: t > 8 ? 1 : 0 }}
-        transition={{ duration: 0.5 }}
-        style={{
-          padding: "12px 24px",
-          borderTop: `1px solid ${c.border}`,
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}
-      >
-        <div style={{ display: "flex", gap: 24 }}>
-          {BRIEFING.stats.map((s, i) => (
-            <div key={i}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: c.accent }}>{s.value}</span>
-              <span style={{ fontSize: 10, color: c.textLight, marginLeft: 4 }}>{s.label}</span>
-            </div>
-          ))}
+            {draftReady ? "✓ Brouillon prêt" : clickGenerate ? "Génération..." : "Générer le brouillon"}
+          </motion.button>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: t > 9 ? 1 : 0, scale: t > 9 ? 1 : 0.9 }}
-          transition={{ type: "spring", damping: 20, stiffness: 200 }}
-          style={{
-            padding: "8px 18px", borderRadius: 10,
-            background: c.accent, color: "#fff",
-            fontSize: 12, fontWeight: 600,
-          }}
-        >
-          ✓ Votre brief est prêt
-        </motion.div>
-      </motion.div>
+        {/* Draft preview appears */}
+        <AnimatePresence>
+          {draftReady && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              transition={{ duration: 0.5 }}
+              style={{
+                marginTop: 12, padding: "14px 16px", borderRadius: 10,
+                border: `1px solid ${C.border}`, background: C.card,
+                overflow: "hidden",
+              }}
+            >
+              <div style={{ fontSize: 10, color: C.accent, fontWeight: 600, marginBottom: 6 }}>✎ Brouillon généré</div>
+              <div style={{ fontSize: 12, color: C.text, lineHeight: 1.7, fontFamily: "ui-serif, Georgia, serif" }}>
+                Madame la Présidente,
+                <br /><br />
+                J'accuse réception de la convocation à l'audience du 15 avril 2026. Je confirme la présence de ma cliente, Mme Dupont...
+              </div>
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                <div style={{ fontSize: 11, color: C.accent, fontWeight: 600, padding: "4px 12px", borderRadius: 6, border: `1px solid ${C.accent}20`, background: C.accentBg, cursor: "default" }}>
+                  Relire
+                </div>
+                <div style={{ fontSize: 11, color: "#fff", fontWeight: 600, padding: "4px 12px", borderRadius: 6, background: C.green, cursor: "default" }}>
+                  Envoyer
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   )
 }
