@@ -381,11 +381,6 @@ function DonnaChatPanel({ isOpen, onToggle, isMobile }: { isOpen: boolean; onTog
             En ligne · Mode démo
           </div>
         </div>
-        {!isMobile && (
-          <div style={{ fontSize: 11, color: TEXT_LIGHT, background: "#F9FAFB", padding: "3px 8px", borderRadius: 6, border: `1px solid ${BORDER}` }}>
-            Cmd+K
-          </div>
-        )}
         <button
           onClick={onToggle}
           style={{
@@ -507,32 +502,18 @@ export default function DemoV2() {
   return (
     <div style={{ background: BG, color: TEXT, height: "100vh", fontFamily: "Inter, system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-      {/* Top bar */}
-      <div style={{ height: 40, background: "#F3F4F6", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", padding: "0 16px", gap: 8, flexShrink: 0 }}>
-        {isMobile ? (
-          <>
-            <button onClick={() => setSidebarOpen(o => !o)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}>
-              <Menu size={18} color={TEXT_MUTED} />
-            </button>
-            <div style={{ flex: 1, textAlign: "center", fontSize: 13, fontWeight: 600, color: TEXT }}>Donna</div>
-            <Link to="/v3" style={{ fontSize: 11, color: TEXT_LIGHT, textDecoration: "none", display: "flex", alignItems: "center", gap: 2 }}>
-              Landing <ChevronRight size={10} />
-            </Link>
-          </>
-        ) : (
-          <>
-            <div style={{ display: "flex", gap: 5 }}>
-              {["#FF5F57", "#FFBD2E", "#27C93F"].map((c, i) => <div key={i} style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />)}
-            </div>
-            <div style={{ flex: 1, maxWidth: 320, margin: "0 auto", background: "#FFFFFF", borderRadius: 4, padding: "3px 12px", fontSize: 11, color: TEXT_LIGHT, fontFamily: "ui-monospace, monospace", border: `1px solid ${BORDER}` }}>
-              donna-legal.com/dashboard
-            </div>
-            <Link to="/v3" style={{ fontSize: 11, color: TEXT_LIGHT, textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
-              Voir la landing <ChevronRight size={10} />
-            </Link>
-          </>
-        )}
-      </div>
+      {/* Top bar — mobile only (hamburger + title) */}
+      {isMobile && (
+        <div style={{ height: 40, background: "#F3F4F6", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", padding: "0 16px", gap: 8, flexShrink: 0 }}>
+          <button onClick={() => setSidebarOpen(o => !o)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}>
+            <Menu size={18} color={TEXT_MUTED} />
+          </button>
+          <div style={{ flex: 1, textAlign: "center", fontSize: 13, fontWeight: 600, color: TEXT }}>Donna</div>
+          <Link to="/v3" style={{ fontSize: 11, color: TEXT_LIGHT, textDecoration: "none", display: "flex", alignItems: "center", gap: 2 }}>
+            Landing <ChevronRight size={10} />
+          </Link>
+        </div>
+      )}
 
       {/* 3-column layout */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
