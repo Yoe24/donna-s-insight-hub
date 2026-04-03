@@ -9,7 +9,7 @@ interface Step {
   text: string;
 }
 
-const STEPS: Step[] = [
+const DEFAULT_STEPS: Step[] = [
   {
     target: "briefing",
     title: "Votre briefing",
@@ -27,7 +27,14 @@ const STEPS: Step[] = [
   },
 ];
 
-export function GuidedTour({ onComplete }: { onComplete: () => void }) {
+interface GuidedTourProps {
+  onComplete: () => void;
+  steps?: Step[];
+  onStepComplete?: () => void;
+}
+
+export function GuidedTour({ onComplete, steps, onStepComplete }: GuidedTourProps) {
+  const STEPS = steps || DEFAULT_STEPS;
   const [step, setStep] = useState(0);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
 
@@ -41,7 +48,6 @@ export function GuidedTour({ onComplete }: { onComplete: () => void }) {
     const el = document.querySelector(`[data-tour="${currentStep.target}"]`);
     if (!el) { setTooltipPos(null); return; }
     const rect = el.getBoundingClientRect();
-    // Position tooltip to the right of the element, or below if not enough space
     const left = Math.min(rect.right + 16, window.innerWidth - 380);
     const top = Math.max(rect.top, 60);
     setTooltipPos({ top, left });
@@ -53,12 +59,12 @@ export function GuidedTour({ onComplete }: { onComplete: () => void }) {
     return () => window.removeEventListener("resize", positionTooltip);
   }, [positionTooltip]);
 
-  // Add highlight to target element
   useEffect(() => {
     if (!currentStep.target) return;
     const el = document.querySelector(`[data-tour="${currentStep.target}"]`);
     if (!el) return;
     el.classList.add("relative", "z-[60]", "ring-4", "ring-white/20", "rounded-xl");
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
     return () => {
       el.classList.remove("relative", "z-[60]", "ring-4", "ring-white/20", "rounded-xl");
     };
@@ -67,14 +73,15 @@ export function GuidedTour({ onComplete }: { onComplete: () => void }) {
   const handleNext = () => {
     if (step < STEPS.length - 1) {
       setStep(step + 1);
+      onStepComplete?.();
     } else {
-      completeTour();
+      if (!steps) completeTour();
       onComplete();
     }
   };
 
   const handleSkip = () => {
-    completeTour();
+    if (!steps) completeTour();
     onComplete();
   };
 
@@ -99,6 +106,14 @@ export function GuidedTour({ onComplete }: { onComplete: () => void }) {
         style={tooltipPos ? { top: tooltipPos.top, left: tooltipPos.left } : { top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Donna avatar */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0">
+            D
+          </div>
+          <span className="text-xs text-muted-foreground">Donna vous fait visiter</span>
+        </div>
+
         <h3 className="text-base font-semibold text-foreground mb-2">{currentStep.title}</h3>
         <p className="text-sm text-muted-foreground leading-relaxed mb-5">{currentStep.text}</p>
 

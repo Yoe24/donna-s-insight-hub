@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Link } from "react-router-dom"
+import { GuidedTour } from "@/components/GuidedTour"
+import { isDemoTourCompleted, completeDemoTour } from "@/lib/tour-state"
 import {
   Settings, LayoutDashboard, Paperclip, Eye, Edit3, Send, ChevronRight, Mail,
   ArrowUp, MessageCircle, X, Menu, ArrowLeft, Copy, Check, FileText, Download,
@@ -880,10 +882,17 @@ export default function DemoV2() {
   // Dossier detail state
   const [selectedDossier, setSelectedDossier] = useState<typeof DOSSIERS[0] | null>(null)
 
+  // Guided tour
+  const [showTour, setShowTour] = useState(false)
+
   useEffect(() => {
     const t1 = setTimeout(() => { setDonnaTyping(false); setShowMessage(true) }, 2200)
     const t2 = setTimeout(() => setStatsVisible(true), 800)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
+    // Show tour after content loads (first visit only)
+    const t3 = setTimeout(() => {
+      if (!isDemoTourCompleted()) setShowTour(true)
+    }, 3000)
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
   }, [])
 
   useEffect(() => { if (!isMobile) setSidebarOpen(false) }, [isMobile])
@@ -943,7 +952,7 @@ export default function DemoV2() {
           <DossierDetailView dossier={selectedDossier} onClose={() => setSelectedDossier(null)} isMobile={isMobile} />
         ) : (
           <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px" : "32px 32px" }}>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <motion.div data-tour="briefing" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
               <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? 24 : 30, fontWeight: 400, color: TEXT, marginBottom: 4, letterSpacing: "-0.02em" }}>Bonjour, Alexandra</h1>
               <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 24 }}>Je suis Donna, votre employée numérique · Jeudi 3 avril</p>
             </motion.div>
@@ -989,7 +998,7 @@ export default function DemoV2() {
               )}
             </motion.div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div data-tour="todos" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.08em", textTransform: "uppercase" }}>TO-DO LIST</div>
               <span style={{ fontSize: 13, fontWeight: 600, color: URGENT }}>{TASKS.filter(t => t.urgent && !treatedIds.has(t.id)).length}</span>
             </div>
@@ -1018,9 +1027,11 @@ export default function DemoV2() {
         )}
 
         {/* Chat panel */}
-        <AnimatePresence mode="wait">
-          <DonnaChatPanel key={chatOpen ? "open" : "closed"} isOpen={chatOpen} onToggle={() => setChatOpen(o => !o)} isMobile={isMobile} />
-        </AnimatePresence>
+        <div data-tour="chat">
+          <AnimatePresence mode="wait">
+            <DonnaChatPanel key={chatOpen ? "open" : "closed"} isOpen={chatOpen} onToggle={() => setChatOpen(o => !o)} isMobile={isMobile} />
+          </AnimatePresence>
+        </div>
 
         {/* Mobile floating bubble */}
         {isMobile && !chatOpen && (
@@ -1040,6 +1051,43 @@ export default function DemoV2() {
             <EmailDrawer task={selectedTask} mode={drawerMode} onClose={() => setSelectedTask(null)} isMobile={isMobile} />
           )}
         </AnimatePresence>
+
+        {/* Guided tour */}
+        {showTour && (
+          <GuidedTour
+            steps={[
+              {
+                target: "briefing",
+                title: "Votre briefing quotidien",
+                text: "Chaque matin — ou à n'importe quelle heure — Donna a déjà lu tous vos emails. Elle résume l'essentiel et prépare votre journée. Donna travaille 24h/24, 7j/7.",
+              },
+              {
+                target: "dossiers",
+                title: "Vos dossiers organisés",
+                text: "Donna classe automatiquement chaque email dans le bon dossier client. Les spams sont filtrés, les pièces jointes téléchargées et résumées. Cliquez sur un dossier pour tout voir.",
+              },
+              {
+                target: "todos",
+                title: "Brouillons prêts à envoyer",
+                text: "Donna génère instantanément des brouillons de réponse à partir de ce qu'elle a lu. Cliquez sur « Brouillon » pour relire, modifier et envoyer en un clic.",
+              },
+              {
+                target: "chat",
+                title: "Posez vos questions à Donna",
+                text: "Besoin d'un détail sur un dossier ? D'un résumé d'une pièce jointe ? Donna connaît tout votre cabinet — posez-lui la question directement ici.",
+              },
+              {
+                target: null,
+                title: "Donna est proactive",
+                text: "Donna ne dort jamais. Quand un email arrive, elle le range, le résume et prépare la réponse. Vous gardez le contrôle — Donna fait le travail.",
+              },
+            ]}
+            onComplete={() => {
+              setShowTour(false)
+              completeDemoTour()
+            }}
+          />
+        )}
       </div>
     </div>
   )
@@ -1075,7 +1123,7 @@ function SidebarContent({ onDossierClick, activeDossierId }: { onDossierClick: (
           </div>
         </div>
       </div>
-      <div style={{ padding: "8px 16px", flex: 1 }}>
+      <div data-tour="dossiers" style={{ padding: "8px 16px", flex: 1 }}>
         <div style={{ fontSize: 10, fontWeight: 600, color: TEXT_LIGHT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Dossiers</div>
         {DOSSIERS.map((d, i) => (
           <motion.div key={d.name} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.08, duration: 0.4 }}
