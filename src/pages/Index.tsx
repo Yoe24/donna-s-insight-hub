@@ -210,7 +210,7 @@ const Index = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
             >
-              <DashboardCinematic theme="light" chromeless={false} />
+              <DashboardCinematic theme="light" chromeless={true} />
             </motion.div>
           </div>
         </section>
