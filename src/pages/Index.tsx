@@ -161,12 +161,10 @@ const Index = () => {
       <div className="min-h-screen flex flex-col" style={{ scrollBehavior: "smooth" }}>
         <PublicNavbar />
 
-        {/* ───── SECTION 1 — HERO ───── */}
+        {/* ───── SECTION 1 — HERO (centré, style Tandem) ───── */}
         <section className="bg-background">
-          <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 py-20 md:py-28 flex flex-col md:flex-row items-center gap-12 lg:gap-20">
-            {/* Left text */}
-            <div className="flex-1 max-w-xl">
-
+          {/* Texte centré */}
+          <div className="max-w-3xl mx-auto px-6 sm:px-10 pt-20 md:pt-28 pb-12 md:pb-16 text-center">
               <h1
                 className="text-3xl sm:text-4xl lg:text-[3.5rem] font-serif font-bold leading-[1.25] text-foreground mb-6"
               >
@@ -185,15 +183,11 @@ const Index = () => {
                 </AnimatePresence>
               </h1>
 
-              <p
-                className="text-gray-700 text-base sm:text-lg leading-relaxed max-w-md mb-10"
-              >
+              <p className="text-gray-600 text-base sm:text-lg leading-relaxed max-w-lg mx-auto mb-10">
                 Tous vos emails du matin résumés, triés et prêts à répondre en 5&nbsp;minutes.
               </p>
 
-              <div
-                className="flex flex-col sm:flex-row items-start gap-4"
-              >
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link to="/login">
                   <button className="bg-foreground text-background px-7 py-3.5 rounded-lg text-sm font-sans font-medium hover:opacity-90 hover:scale-105 transition-all duration-200 flex items-center gap-2">
                     Recruter Donna
@@ -207,19 +201,17 @@ const Index = () => {
                   Demander une démo
                 </button>
               </div>
-            </div>
+          </div>
 
-            {/* Right — Dashboard animé sans bordure */}
-            <div className="flex-1 w-full min-w-0 overflow-hidden">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                className="relative w-full"
-              >
-                <DashboardCinematic theme="light" chromeless={true} />
-              </motion.div>
-            </div>
+          {/* Cinématique — large, coupée au fold pour inciter au scroll */}
+          <div className="max-w-5xl mx-auto px-6 sm:px-10">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            >
+              <DashboardCinematic theme="light" chromeless={false} />
+            </motion.div>
           </div>
         </section>
 
