@@ -5,6 +5,7 @@ import { EMAILS, FOLDERS, BRIEFING, ANALYSIS_SUMMARY } from "./cinematic-data"
 interface Props {
   theme?: "light" | "dark"
   className?: string
+  chromeless?: boolean
 }
 
 const CYCLE_DURATION = 22000 // 22s total cycle
@@ -25,7 +26,7 @@ const themes = {
   },
 }
 
-export default function DashboardCinematic({ theme = "dark", className = "" }: Props) {
+export default function DashboardCinematic({ theme = "dark", className = "", chromeless = false }: Props) {
   const [cycle, setCycle] = useState(0)
   const c = themes[theme]
 
@@ -44,20 +45,22 @@ export default function DashboardCinematic({ theme = "dark", className = "" }: P
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {/* Browser Chrome */}
-          <div style={{ background: c.browserBar, borderRadius: "12px 12px 0 0", padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ display: "flex", gap: 6 }}>
-              <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.dot1 }} />
-              <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.dot2 }} />
-              <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.dot3 }} />
+          {/* Browser Chrome — hidden in chromeless mode */}
+          {!chromeless && (
+            <div style={{ background: c.browserBar, borderRadius: "12px 12px 0 0", padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ display: "flex", gap: 6 }}>
+                <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.dot1 }} />
+                <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.dot2 }} />
+                <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.dot3 }} />
+              </div>
+              <div style={{ flex: 1, background: theme === "dark" ? "#1A1A1A" : "#fff", borderRadius: 6, padding: "4px 12px", fontSize: 11, color: c.textLight, fontFamily: "ui-monospace, monospace" }}>
+                donna-legal.com/dashboard
+              </div>
             </div>
-            <div style={{ flex: 1, background: theme === "dark" ? "#1A1A1A" : "#fff", borderRadius: 6, padding: "4px 12px", fontSize: 11, color: c.textLight, fontFamily: "ui-monospace, monospace" }}>
-              donna-legal.com/dashboard
-            </div>
-          </div>
+          )}
 
           {/* Dashboard Content */}
-          <div style={{ background: c.bg, border: `1px solid ${c.border}`, borderTop: "none", borderRadius: "0 0 12px 12px", overflow: "hidden", height: 400, display: "flex", position: "relative" }}>
+          <div style={{ background: c.bg, border: chromeless ? "none" : `1px solid ${c.border}`, borderTop: "none", borderRadius: chromeless ? 12 : "0 0 12px 12px", overflow: "hidden", height: 400, display: "flex", position: "relative" }}>
 
             {/* Sidebar */}
             <div style={{ width: 160, background: c.sidebar, borderRight: `1px solid ${c.border}`, padding: "16px 10px", flexShrink: 0, overflow: "hidden" }}>
