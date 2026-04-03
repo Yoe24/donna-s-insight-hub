@@ -14,13 +14,33 @@ export const FOLDERS = [
   { name: "Succession Martin", count: 1, color: "#F59E0B" },
 ]
 
+// Scene 2: Dossier detail view
+export const DOSSIER = {
+  name: "Dupont c/ Dupont",
+  type: "Droit de la famille",
+  summary: "Procédure de divorce — mesures provisoires résidence des enfants. Audience JAF prévue le 15 avril 2026.",
+  stats: { emails: 12, documents: 5, drafts: 3 },
+  recentEmails: [
+    { sender: "Tribunal de Paris", subject: "Convocation JAF", date: "03/04", urgent: true },
+    { sender: "Cabinet Moreau", subject: "Pièces complémentaires", date: "03/04", urgent: false },
+    { sender: "Me Benzara", subject: "Conclusions en réponse", date: "02/04", urgent: false },
+  ],
+  files: [
+    { name: "Conclusions_v2.docx", type: "DOC", date: "02/04" },
+    { name: "Jugement_2026-1847.pdf", type: "PDF", date: "01/04" },
+    { name: "Convocation_JAF.pdf", type: "PDF", date: "03/04" },
+    { name: "Attestation_école.pdf", type: "PDF", date: "10/03" },
+  ],
+}
+
+// Scene 3: Briefing with ready drafts
 export const BRIEFING = {
   greeting: "Bonjour Me Fernandez,",
   summary: "5 emails ce matin. 2 urgents, 3 brouillons prêts.",
-  bullets: [
-    "Convocation audience JAF le 15 avril, salle 12",
-    "Conclusions Benzara à valider avant jeudi",
-    "Notification jugement Nanterre à télécharger",
+  drafts: [
+    { recipient: "Tribunal de Paris", subject: "Accusé de réception convocation JAF", status: "Prêt", preview: "Madame la Présidente, J'accuse réception de la convocation..." },
+    { recipient: "Cabinet Moreau", subject: "RE: Pièces complémentaires", status: "Prêt", preview: "Cher confrère, Je vous remercie pour l'envoi des pièces..." },
+    { recipient: "Sibel Bilge", subject: "RE: Rendez-vous succession", status: "Prêt", preview: "Madame, Suite à votre demande, je vous propose un..." },
   ],
   stats: [
     { label: "emails analysés", value: 5 },
@@ -29,26 +49,8 @@ export const BRIEFING = {
   ],
 }
 
-export const ANALYSIS_SUMMARY = "Email du Tribunal de Paris : convocation à l'audience JAF du 15 avril 2026 à 14h, salle 12. Objet : mesures provisoires résidence des enfants."
-
-export const CHAT_MESSAGES = [
-  { from: "donna" as const, text: "Convocation JAF le 15 avril à 14h, salle 12. Voulez-vous que je prépare un récapitulatif du dossier ?" },
-  { from: "user" as const, text: "Oui, prépare les conclusions" },
-  { from: "donna" as const, text: "C'est noté. Brouillon en cours..." },
-]
-
-export const TODOS = [
-  { text: "Relire conclusions Benzara", done: true },
-  { text: "Télécharger jugement Nanterre", done: true },
-  { text: "Préparer audience JAF 15/04", done: false },
-]
-
-export const DRAFT_TEXT = "Madame la Présidente,\n\nJ'ai l'honneur de vous adresser les présentes conclusions dans l'intérêt de Mme Dupont, dans le cadre de la procédure relative aux mesures provisoires..."
-
-export const DOSSIER_FILES = [
-  { name: "Conclusions_v2.docx", type: "doc", date: "02/04" },
-  { name: "Jugement_2026-1847.pdf", type: "pdf", date: "01/04" },
-  { name: "Convocation_JAF.pdf", type: "pdf", date: "03/04" },
-  { name: "PV_audience_mars.pdf", type: "pdf", date: "15/03" },
-  { name: "Attestation_école.pdf", type: "pdf", date: "10/03" },
+export const DONNA_STATUS = [
+  "Donna trie vos emails...",
+  "Donna organise vos dossiers...",
+  "Donna crée vos brouillons...",
 ]

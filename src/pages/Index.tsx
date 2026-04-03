@@ -187,18 +187,13 @@ const Index = () => {
                 Tous vos emails du matin résumés, triés et prêts à répondre en 5&nbsp;minutes.
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link to="/login">
-                  <button className="bg-foreground text-background px-7 py-3.5 rounded-lg text-sm font-sans font-medium hover:opacity-90 hover:scale-105 transition-all duration-200 flex items-center gap-2">
-                    Recruter Donna
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </Link>
+              <div className="flex justify-center">
                 <button
                   onClick={scrollToDemo}
-                  className="border border-border text-foreground px-7 py-3.5 rounded-lg text-sm font-sans font-medium hover:bg-muted hover:scale-105 transition-all duration-200"
+                  className="bg-foreground text-background px-12 py-4 rounded-lg text-sm font-sans font-medium hover:opacity-90 hover:scale-105 transition-all duration-200 flex items-center gap-2"
                 >
                   Demander une démo
+                  <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
           </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { EMAILS, FOLDERS, BRIEFING, CHAT_MESSAGES, DRAFT_TEXT } from "./cinematic-data"
+import { EMAILS, FOLDERS, DOSSIER, BRIEFING, DONNA_STATUS } from "./cinematic-data"
 
 interface Props {
   theme?: "light" | "dark"
@@ -10,26 +10,18 @@ interface Props {
 
 const CYCLE_DURATION = 36 // 36s — 3 scenes, 12s each
 
-const DONNA_STATUS = [
-  "Donna trie vos emails...",
-  "Donna rédige un brouillon...",
-  "Donna prépare votre brief...",
-]
-
 const themes = {
   light: {
     bg: "#FFFFFF", sidebar: "#F9FAFB", card: "#F3F4F6", border: "#E5E7EB",
     text: "#111827", textMuted: "#6B7280", textLight: "#9CA3AF",
     accent: "#2563EB", accentBg: "#EFF6FF",
     success: "#10B981",
-    chatUser: "#2563EB", chatDonna: "#F3F4F6",
   },
   dark: {
     bg: "#0F0F0F", sidebar: "#1A1A1A", card: "#1F1F1F", border: "#2A2A2A",
     text: "#F9FAFB", textMuted: "#9CA3AF", textLight: "#6B7280",
     accent: "#3B82F6", accentBg: "#0A1628",
     success: "#34D399",
-    chatUser: "#3B82F6", chatDonna: "#1F1F1F",
   },
 }
 
@@ -62,7 +54,6 @@ export default function DashboardCinematic({ theme = "dark", className = "" }: P
       boxShadow: "0 8px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)",
       border: `1px solid ${c.border}`,
     }}>
-      {/* Dashboard Container — tall */}
       <div style={{
         background: c.bg,
         height: 520,
@@ -70,43 +61,35 @@ export default function DashboardCinematic({ theme = "dark", className = "" }: P
         position: "relative",
         overflow: "hidden",
       }}>
-        {/* Sidebar */}
         <Sidebar colors={c} scene={scene} elapsed={elapsed} />
 
-        {/* Main content */}
         <div style={{ flex: 1, minWidth: 0, overflow: "hidden", position: "relative" }}>
           <AnimatePresence mode="wait">
             {scene === 0 && <InboxScene key="inbox" colors={c} t={sceneTime} />}
-            {scene === 1 && <ChatDraftScene key="chat" colors={c} t={sceneTime} />}
+            {scene === 1 && <DossierScene key="dossier" colors={c} t={sceneTime} />}
             {scene === 2 && <BriefingScene key="briefing" colors={c} t={sceneTime} />}
           </AnimatePresence>
         </div>
 
-        {/* Donna Avatar — the star of the show */}
         <DonnaAvatar colors={c} scene={scene} sceneTime={sceneTime} />
       </div>
     </div>
   )
 }
 
-// ─── DONNA AVATAR — Replaces cursor, shows it's an AI agent ───
+// ─── DONNA AVATAR ───
 
 function DonnaAvatar({ colors: c, scene, sceneTime }: { colors: Theme; scene: number; sceneTime: number }) {
   const status = DONNA_STATUS[scene]
 
-  // Position per scene — Donna moves to where she's working
   const positions = [
-    { x: 340, y: 80 },   // Scene 0: near emails
-    { x: 300, y: 180 },  // Scene 1: near chat area
-    { x: 400, y: 100 },  // Scene 2: near briefing
+    { x: 340, y: 70 },   // Scene 0: near inbox emails
+    { x: 280, y: 90 },   // Scene 1: near dossier content
+    { x: 320, y: 130 },  // Scene 2: near brouillons
   ]
   const pos = positions[scene]
-
-  // Donna moves slightly within each scene
-  const offsetY = Math.sin(sceneTime * 0.5) * 8
-  const pulseActive = (scene === 0 && sceneTime > 2 && sceneTime < 10) ||
-                      (scene === 1 && sceneTime > 1 && sceneTime < 8) ||
-                      (scene === 2 && sceneTime > 1 && sceneTime < 9)
+  const offsetY = Math.sin(sceneTime * 0.5) * 6
+  const pulseActive = sceneTime > 2 && sceneTime < 10
 
   return (
     <motion.div
@@ -125,33 +108,24 @@ function DonnaAvatar({ colors: c, scene, sceneTime }: { colors: Theme; scene: nu
         gap: 8,
       }}
     >
-      {/* Avatar circle */}
       <motion.div
         animate={{
           boxShadow: pulseActive
-            ? ["0 0 0px #2563EB40", "0 0 24px #2563EB50", "0 0 0px #2563EB40"]
+            ? ["0 0 0px #2563EB40", "0 0 20px #2563EB50", "0 0 0px #2563EB40"]
             : "0 0 0px #2563EB40",
         }}
         transition={{ duration: 1.5, repeat: Infinity }}
         style={{
-          width: 32,
-          height: 32,
-          borderRadius: "50%",
+          width: 32, height: 32, borderRadius: "50%",
           background: c.accent,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 13,
-          fontWeight: 700,
-          color: "#fff",
-          flexShrink: 0,
-          border: "2px solid #fff",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 13, fontWeight: 700, color: "#fff",
+          flexShrink: 0, border: "2px solid #fff",
         }}
       >
         D
       </motion.div>
 
-      {/* Status pill */}
       <AnimatePresence mode="wait">
         <motion.div
           key={status}
@@ -181,6 +155,12 @@ function DonnaAvatar({ colors: c, scene, sceneTime }: { colors: Theme; scene: nu
 // ─── SIDEBAR ───
 
 function Sidebar({ colors: c, scene, elapsed }: { colors: Theme; scene: number; elapsed: number }) {
+  const navItems = [
+    { label: "Inbox", active: scene === 0 },
+    { label: "Dossiers", active: scene === 1 },
+    { label: "Brouillons", active: scene === 2 },
+  ]
+
   return (
     <div style={{
       width: 180, minWidth: 180, maxWidth: 180,
@@ -191,7 +171,7 @@ function Sidebar({ colors: c, scene, elapsed }: { colors: Theme; scene: number; 
     }}>
       <div style={{ fontSize: 16, fontWeight: 700, color: c.text, marginBottom: 4 }}>Donna</div>
       <div style={{ fontSize: 11, color: c.success, marginBottom: 28 }}>
-        ● {scene === 0 ? "Analyse en cours" : scene === 1 ? "Rédaction" : "Brief prêt"}
+        ● {scene === 0 ? "Tri en cours" : scene === 1 ? "Organisation" : "Brouillons prêts"}
       </div>
 
       <div style={{ fontSize: 9, color: c.textLight, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 }}>
@@ -207,7 +187,7 @@ function Sidebar({ colors: c, scene, elapsed }: { colors: Theme; scene: number; 
             display: "flex", alignItems: "center", gap: 8,
             padding: "8px 10px", borderRadius: 8, marginBottom: 4,
             fontSize: 12, color: c.text,
-            background: scene === 2 && i === 0 ? c.accentBg : "transparent",
+            background: scene === 1 && i === 0 ? c.accentBg : "transparent",
           }}
         >
           <div style={{ width: 8, height: 8, borderRadius: 3, background: f.color, flexShrink: 0 }} />
@@ -215,13 +195,8 @@ function Sidebar({ colors: c, scene, elapsed }: { colors: Theme; scene: number; 
         </motion.div>
       ))}
 
-      {/* Bottom nav */}
       <div style={{ marginTop: 32 }}>
-        {[
-          { label: "Inbox", active: scene === 0 },
-          { label: "Brouillons", active: scene === 1 },
-          { label: "Briefing", active: scene === 2 },
-        ].map(item => (
+        {navItems.map(item => (
           <motion.div
             key={item.label}
             animate={{
@@ -238,7 +213,7 @@ function Sidebar({ colors: c, scene, elapsed }: { colors: Theme; scene: number; 
   )
 }
 
-// ─── SCENE 0: INBOX ───
+// ─── SCENE 0: INBOX — "Donna trie vos emails" ───
 
 function InboxScene({ colors: c, t }: { colors: Theme; t: number }) {
   return (
@@ -273,10 +248,7 @@ function InboxScene({ colors: c, t }: { colors: Theme; t: number }) {
           <motion.div
             key={email.sender}
             initial={{ opacity: 0, y: 15 }}
-            animate={{
-              opacity: t > i * 1.5 ? 1 : 0,
-              y: t > i * 1.5 ? 0 : 15,
-            }}
+            animate={{ opacity: t > i * 1.5 ? 1 : 0, y: t > i * 1.5 ? 0 : 15 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
             style={{
               display: "flex", alignItems: "center", gap: 14,
@@ -324,99 +296,126 @@ function InboxScene({ colors: c, t }: { colors: Theme; t: number }) {
   )
 }
 
-// ─── SCENE 1: CHAT + DRAFT ───
+// ─── SCENE 1: DOSSIER — "Donna organise vos dossiers" ───
 
-function ChatDraftScene({ colors: c, t }: { colors: Theme; t: number }) {
-  const draftStart = 7
-  const typedLength = t > draftStart ? Math.min(Math.floor((t - draftStart) * 8), DRAFT_TEXT.length) : 0
-  const visibleDraft = DRAFT_TEXT.slice(0, typedLength)
-
+function DossierScene({ colors: c, t }: { colors: Theme; t: number }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.6 }}
-      style={{ height: "100%", display: "flex", flexDirection: "column" }}
+      style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}
     >
-      {/* Chat area */}
-      <div style={{ flex: 1, padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+      {/* Dossier header */}
+      <div style={{ padding: "18px 24px", borderBottom: `1px solid ${c.border}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: "50%", background: c.accent,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 13, fontWeight: 700, color: "#fff",
-          }}>
-            D
-          </div>
-          <div>
-            <span style={{ fontSize: 14, fontWeight: 600, color: c.text }}>Donna</span>
-            <span style={{ fontSize: 10, color: c.success, marginLeft: 8 }}>● En ligne</span>
-          </div>
+          <div style={{ width: 10, height: 10, borderRadius: 3, background: "#2563EB" }} />
+          <span style={{ fontSize: 16, fontWeight: 700, color: c.text }}>{DOSSIER.name}</span>
+          <span style={{ fontSize: 11, color: c.textLight, marginLeft: 4 }}>{DOSSIER.type}</span>
         </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {CHAT_MESSAGES.map((msg, i) => {
-            const showAt = i * 2
-            const isUser = msg.from === "user"
-
-            return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: t > showAt ? 1 : 0, y: t > showAt ? 0 : 12 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                style={{
-                  padding: "12px 16px",
-                  borderRadius: 16,
-                  background: isUser ? c.chatUser : c.chatDonna,
-                  color: isUser ? "#fff" : c.text,
-                  fontSize: 13, lineHeight: 1.6,
-                  maxWidth: "80%",
-                  alignSelf: isUser ? "flex-end" : "flex-start",
-                }}
-              >
-                {msg.text}
-              </motion.div>
-            )
-          })}
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: t > 1 ? 1 : 0 }}
+          transition={{ duration: 0.5 }}
+          style={{ fontSize: 12, color: c.textMuted, lineHeight: 1.6 }}
+        >
+          {DOSSIER.summary}
+        </motion.div>
       </div>
 
-      {/* Draft */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: t > draftStart - 0.5 ? 1 : 0, y: t > draftStart - 0.5 ? 0 : 10 }}
-        transition={{ duration: 0.5 }}
-        style={{
-          borderTop: `1px solid ${c.border}`,
-          padding: "16px 24px",
-          background: c.card,
-        }}
-      >
-        <div style={{ fontSize: 11, color: c.accent, fontWeight: 600, marginBottom: 8 }}>
-          ✎ Brouillon en cours...
+      {/* Content: stats + files + recent emails */}
+      <div style={{ flex: 1, padding: "16px 24px", display: "flex", gap: 24, overflow: "hidden" }}>
+        {/* Left: Recent exchanges + files */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Stats row */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: t > 2 ? 1 : 0 }}
+            transition={{ duration: 0.5 }}
+            style={{ display: "flex", gap: 24, marginBottom: 20 }}
+          >
+            {Object.entries(DOSSIER.stats).map(([key, val], i) => (
+              <div key={key} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: c.accent }}>{val}</div>
+                <div style={{ fontSize: 10, color: c.textLight, marginTop: 2 }}>{key}</div>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* Recent exchanges */}
+          <div style={{ fontSize: 10, color: c.textLight, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+            Échanges récents
+          </div>
+          {DOSSIER.recentEmails.map((email, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: 15 }}
+              animate={{ opacity: t > 3 + i * 1 ? 1 : 0, x: t > 3 + i * 1 ? 0 : 15 }}
+              transition={{ duration: 0.4 }}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 12px", borderRadius: 8, marginBottom: 4,
+                background: email.urgent ? c.accentBg : "transparent",
+                border: `1px solid ${c.border}`,
+              }}
+            >
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: c.text }}>
+                  {email.sender}
+                  {email.urgent && <span style={{ marginLeft: 6, fontSize: 9, color: "#EF4444", fontWeight: 700 }}>URGENT</span>}
+                </div>
+                <div style={{ fontSize: 11, color: c.textMuted, marginTop: 1 }}>{email.subject}</div>
+              </div>
+              <div style={{ fontSize: 10, color: c.textLight }}>{email.date}</div>
+            </motion.div>
+          ))}
         </div>
-        <div style={{
-          fontSize: 13, color: c.text, lineHeight: 1.8,
-          fontFamily: "ui-serif, Georgia, serif",
-          minHeight: 50,
-        }}>
-          {visibleDraft}
-          {typedLength < DRAFT_TEXT.length && typedLength > 0 && (
-            <motion.span
-              animate={{ opacity: [1, 0] }}
-              transition={{ duration: 0.5, repeat: Infinity }}
-              style={{ borderLeft: `2px solid ${c.accent}`, marginLeft: 1 }}
-            />
-          )}
-        </div>
-      </motion.div>
+
+        {/* Right: Files */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: t > 4 ? 1 : 0 }}
+          transition={{ duration: 0.5 }}
+          style={{ width: 220, flexShrink: 0 }}
+        >
+          <div style={{ fontSize: 10, color: c.textLight, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
+            Pièces jointes
+          </div>
+          {DOSSIER.files.map((file, i) => (
+            <motion.div
+              key={file.name}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: t > 5 + i * 0.6 ? 1 : 0, y: t > 5 + i * 0.6 ? 0 : 8 }}
+              transition={{ duration: 0.3 }}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "8px 10px", borderRadius: 8, marginBottom: 4,
+                border: `1px solid ${c.border}`,
+              }}
+            >
+              <div style={{
+                width: 28, height: 28, borderRadius: 6,
+                background: file.type === "PDF" ? "#EF444415" : "#2563EB15",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 8, fontWeight: 700,
+                color: file.type === "PDF" ? "#EF4444" : "#2563EB",
+              }}>
+                {file.type}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: c.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</div>
+              </div>
+              <div style={{ fontSize: 9, color: c.textLight }}>{file.date}</div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
     </motion.div>
   )
 }
 
-// ─── SCENE 2: BRIEFING ───
+// ─── SCENE 2: BRIEFING + BROUILLONS — "Donna crée vos brouillons" ───
 
 function BriefingScene({ colors: c, t }: { colors: Theme; t: number }) {
   return (
@@ -427,80 +426,94 @@ function BriefingScene({ colors: c, t }: { colors: Theme; t: number }) {
       transition={{ duration: 0.6 }}
       style={{ height: "100%", display: "flex", flexDirection: "column" }}
     >
-      <div style={{ padding: "24px 28px", borderBottom: `1px solid ${c.border}` }}>
+      {/* Greeting */}
+      <div style={{ padding: "20px 24px", borderBottom: `1px solid ${c.border}` }}>
+        <div style={{ fontSize: 17, fontWeight: 600, color: c.text }}>{BRIEFING.greeting}</div>
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6 }}
-          style={{ fontSize: 18, fontWeight: 600, color: c.text }}
-        >
-          {BRIEFING.greeting}
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: t > 1 ? 1 : 0 }}
-          transition={{ duration: 0.5 }}
-          style={{ fontSize: 13, color: c.textMuted, marginTop: 8, lineHeight: 1.6 }}
+          animate={{ opacity: t > 0.8 ? 1 : 0 }}
+          style={{ fontSize: 13, color: c.textMuted, marginTop: 6 }}
         >
           {BRIEFING.summary}
         </motion.div>
       </div>
 
-      <div style={{ padding: "20px 28px", flex: 1 }}>
-        {BRIEFING.bullets.map((b, i) => (
+      {/* Brouillons list */}
+      <div style={{ flex: 1, padding: "16px 24px", overflow: "hidden" }}>
+        <div style={{ fontSize: 10, color: c.textLight, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>
+          Brouillons prêts à envoyer
+        </div>
+
+        {BRIEFING.drafts.map((draft, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: t > 2.5 + i * 1.5 ? 1 : 0, x: t > 2.5 + i * 1.5 ? 0 : 12 }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: t > 2 + i * 1.5 ? 1 : 0, y: t > 2 + i * 1.5 ? 0 : 12 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
             style={{
-              fontSize: 13, color: c.text, padding: "10px 0",
-              display: "flex", gap: 10, alignItems: "flex-start",
-              borderBottom: `1px solid ${c.border}`,
-              lineHeight: 1.5,
+              padding: "14px 16px",
+              borderRadius: 10,
+              border: `1px solid ${c.border}`,
+              marginBottom: 10,
+              background: i === 0 && t > 8 ? c.accentBg : c.bg,
+              transition: "background 0.4s ease",
             }}
           >
-            <span style={{ color: c.accent, fontWeight: 700, flexShrink: 0, fontSize: 14 }}>•</span>
-            <span>{b}</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: c.text }}>{draft.recipient}</div>
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: t > 3 + i * 1.5 ? 1 : 0 }}
+                style={{
+                  fontSize: 10, fontWeight: 600,
+                  color: c.success,
+                  background: `${c.success}15`,
+                  padding: "2px 8px", borderRadius: 8,
+                }}
+              >
+                ✓ {draft.status}
+              </motion.span>
+            </div>
+            <div style={{ fontSize: 11, color: c.textMuted, marginBottom: 4 }}>{draft.subject}</div>
+            <div style={{ fontSize: 11, color: c.textLight, fontStyle: "italic", lineHeight: 1.5 }}>
+              {draft.preview}
+            </div>
           </motion.div>
         ))}
-
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: t > 7 ? 1 : 0 }}
-          transition={{ duration: 0.6 }}
-          style={{ display: "flex", gap: 32, marginTop: 32, justifyContent: "center" }}
-        >
-          {BRIEFING.stats.map((s, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: t > 7.5 + i * 0.5 ? 1 : 0, scale: t > 7.5 + i * 0.5 ? 1 : 0.9 }}
-              transition={{ duration: 0.4 }}
-              style={{ textAlign: "center" }}
-            >
-              <div style={{ fontSize: 28, fontWeight: 700, color: c.accent }}>{s.value}</div>
-              <div style={{ fontSize: 11, color: c.textLight, marginTop: 4 }}>{s.label}</div>
-            </motion.div>
-          ))}
-        </motion.div>
       </div>
 
-      {/* Final badge */}
+      {/* Stats + badge */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: t > 9 ? 1 : 0, scale: t > 9 ? 1 : 0.9 }}
-        transition={{ type: "spring", damping: 20, stiffness: 200 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: t > 8 ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
         style={{
-          position: "absolute", bottom: 24, right: 24,
-          padding: "12px 24px", borderRadius: 12,
-          background: c.accent, color: "#fff",
-          fontSize: 14, fontWeight: 600,
-          boxShadow: `0 4px 24px ${c.accent}30`,
+          padding: "12px 24px",
+          borderTop: `1px solid ${c.border}`,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
         }}
       >
-        ✓ Votre brief est prêt
+        <div style={{ display: "flex", gap: 24 }}>
+          {BRIEFING.stats.map((s, i) => (
+            <div key={i}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: c.accent }}>{s.value}</span>
+              <span style={{ fontSize: 10, color: c.textLight, marginLeft: 4 }}>{s.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: t > 9 ? 1 : 0, scale: t > 9 ? 1 : 0.9 }}
+          transition={{ type: "spring", damping: 20, stiffness: 200 }}
+          style={{
+            padding: "8px 18px", borderRadius: 10,
+            background: c.accent, color: "#fff",
+            fontSize: 12, fontWeight: 600,
+          }}
+        >
+          ✓ Votre brief est prêt
+        </motion.div>
       </motion.div>
     </motion.div>
   )
