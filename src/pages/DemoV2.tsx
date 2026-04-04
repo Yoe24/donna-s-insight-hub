@@ -330,14 +330,26 @@ function TaskCard({ task, delay, onView, onDraft, onTreat, treated }: {
 }) {
   if (treated) {
     return (
-      <motion.div initial={{ opacity: 1, height: "auto" }} animate={{ opacity: 0.6, height: "auto" }} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, marginBottom: 12, padding: "14px 18px", background: "#F9FAFB", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <CheckCircle2 size={18} color={GREEN} />
-          <span style={{ fontSize: 13, color: TEXT_MUTED, textDecoration: "line-through" }}>{task.title}</span>
+      <motion.div
+        initial={{ opacity: 1 }} animate={{ opacity: 0.55 }}
+        transition={{ duration: 0.3 }}
+        style={{ border: `1px solid ${BORDER}`, borderRadius: 10, marginBottom: 12, overflow: "hidden", background: "#F9FAFB" }}
+      >
+        <div style={{ padding: "14px 18px 0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+            <div style={{ fontSize: 11, color: TEXT_MUTED }}><span style={{ color: TEXT_LIGHT, fontWeight: 500 }}>{task.dossier}</span>{" · "}{task.tribunal}</div>
+            <span style={{ fontSize: 11, color: TEXT_LIGHT, flexShrink: 0, marginLeft: 12 }}>{task.date}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <CheckCircle2 size={16} color={GREEN} />
+            <span style={{ fontSize: 14, fontWeight: 600, color: TEXT_MUTED, textDecoration: "line-through" }}>{task.title}</span>
+          </div>
         </div>
-        <button onClick={onTreat} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
-          Remettre à faire
-        </button>
+        <div style={{ padding: "10px 18px 14px", display: "flex", justifyContent: "flex-end", borderTop: `1px solid ${BORDER}` }}>
+          <button onClick={onTreat} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 6, border: `1px solid ${GREEN}30`, background: "#F0FDF4", color: GREEN, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
+            <CheckCircle2 size={13} /> Mail envoyé
+          </button>
+        </div>
       </motion.div>
     )
   }
@@ -371,8 +383,8 @@ function TaskCard({ task, delay, onView, onDraft, onTreat, treated }: {
           <button onClick={onView} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}><Eye size={13} /> Voir</button>
           <button onClick={onDraft} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}><Edit3 size={13} /> Brouillon</button>
         </div>
-        <button onClick={onTreat} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 6, border: `1px solid ${ACCENT}20`, background: ACCENT_BG, color: ACCENT, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
-          <CheckCircle2 size={13} /> Marquer fait
+        <button onClick={onTreat} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 6, border: `1px solid ${BORDER}`, background: "#FEF9EC", color: "#B45309", fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
+          <Clock size={13} /> Mail en attente
         </button>
       </div>
     </motion.div>
