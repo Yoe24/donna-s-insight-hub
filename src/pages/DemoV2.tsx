@@ -68,6 +68,11 @@ const DOSSIERS = [
       { id: "doc1f", name: "Captures_SMS_manager.jpg", type: "JPG", size: "2.1 Mo", date: "22 mars", resume: "Captures d'écran de SMS entre M. Martin et son manager M. Duval. Messages du 2 mars à 7h12 : 'Bonjour, je suis malade, je ne pourrai pas venir'. Réponse du manager : 'OK bon rétablissement'." },
       { id: "doc1g", name: "Simulation_indemnites.docx", type: "DOCX", size: "34 Ko", date: "12 mars", resume: "Estimation préparée par le cabinet : indemnité légale de licenciement (2 700€) + dommages-intérêts pour licenciement sans cause (6 à 12 mois de salaire, soit 19 200€ à 38 400€)." },
     ],
+    deadlines: [
+      { date: "22 avril 2026", label: "Audience bureau de conciliation", urgent: true },
+      { date: "15 avril 2026", label: "Date limite dépôt conclusions", urgent: true },
+      { date: "10 avril 2026", label: "Transmission pièces à l'adversaire", urgent: false },
+    ],
   },
   { id: "d2", initials: "MD", name: "Marie Dupont", type: "Litige commercial", color: "#7C3AED",
     summary: "Contentieux commercial avec la société TechnoPlus SARL. Factures impayées pour un montant de 34 200€. Mise en demeure envoyée le 20 mars. Délai de réponse expiré. Prochaine étape : assignation en référé-provision.",
@@ -93,6 +98,10 @@ const DOSSIERS = [
       { id: "doc4f", name: "PV_recette_F2025-118.pdf", type: "PDF", size: "78 Ko", date: "2 avril", resume: "PV de recette signé par M. Renaud le 15/12/2025. Prestation livraison SI complète. Mention : 'Conforme au cahier des charges'." },
       { id: "doc4g", name: "Kbis_TechnoPlus.pdf", type: "PDF", size: "210 Ko", date: "18 mars", resume: "Extrait Kbis au 18/03/2026. TechnoPlus SARL, RCS Paris B 812 345 678. Capital : 10 000€. Activité : services informatiques." },
       { id: "doc4h", name: "Contrat_prestation_conseil.pdf", type: "PDF", size: "1.8 Mo", date: "15 mars", resume: "Contrat cadre de prestation de conseil entre Dupont Consulting et TechnoPlus SARL. Durée : sept 2025 à fév 2026. Clause de paiement : 30 jours fin de mois." },
+    ],
+    deadlines: [
+      { date: "10 avril 2026", label: "Assignation en référé-provision", urgent: true },
+      { date: "8 avril 2026", label: "Réponse délai de paiement adverse", urgent: false },
     ],
   },
   { id: "d3", initials: "CD", name: "Claire Dubois", type: "Litige immobilier", color: "#059669",
@@ -120,6 +129,10 @@ const DOSSIERS = [
       { id: "doc5g", name: "Reponse_mairie_permis.pdf", type: "PDF", size: "45 Ko", date: "25 mars", resume: "Courrier de la mairie de Neuilly. Aucune déclaration préalable ni permis de construire déposé par M. Legrand pour le 12 avenue Peretti." },
       { id: "doc5h", name: "Reglement_copropriete.pdf", type: "PDF", size: "3.2 Mo", date: "10 mars", resume: "Règlement de copropriété. Art. 8 : travaux modifiant la structure nécessitent autorisation AG à majorité art. 25. Art. 9 : horaires travaux autorisés 9h-12h / 14h-18h en semaine." },
     ],
+    deadlines: [
+      { date: "15 avril 2026", label: "Médiation avec le syndic", urgent: false },
+      { date: "30 avril 2026", label: "Audience référé si médiation échoue", urgent: true },
+    ],
   },
   { id: "d4", initials: "FR", name: "Famille Roux", type: "Immobilier", color: "#D97706",
     summary: "Acquisition immobilière — compromis signé le 10 mars pour un bien à Neuilly (485 000€). Conditions suspensives : prêt bancaire (réponse attendue le 10 avril) + diagnostics techniques. Acte authentique prévu le 15 mai.",
@@ -146,6 +159,11 @@ const DOSSIERS = [
       { id: "doc6f", name: "Comparatif_prets.xlsx", type: "XLSX", size: "56 Ko", date: "26 mars", resume: "Comparatif 3 banques. BNP : 3,2% / 1 870€/mois. CA : 3,35% / 1 910€/mois. LCL : 3,45% / 1 935€/mois. Économie BNP vs LCL sur 25 ans : 19 500€." },
       { id: "doc6g", name: "Plan_appartement_T4.pdf", type: "PDF", size: "890 Ko", date: "5 mars", resume: "Plan du T4, 92m², 4e étage avec ascenseur. 3 chambres, séjour 28m², cuisine équipée, 2 SdB, balcon 8m², cave." },
       { id: "doc6h", name: "Devis_assurance_MMA.pdf", type: "PDF", size: "123 Ko", date: "25 mars", resume: "Assurance emprunteur MMA. Quotité 50/50. Cotisation : 85€/mois. Couverture : décès, PTIA, ITT 90j franchise. Tarif garanti 10 ans." },
+    ],
+    deadlines: [
+      { date: "15 mai 2026", label: "Signature acte authentique chez notaire", urgent: true },
+      { date: "20 avril 2026", label: "Retour offre de prêt BNP", urgent: false },
+      { date: "12 avril 2026", label: "Fin travaux désamiantage", urgent: false },
     ],
   },
   { id: "d5", initials: "AB", name: "Alice Bernard", type: "Droit de la famille", color: "#DC2626",
@@ -175,6 +193,10 @@ const DOSSIERS = [
       { id: "doc7g", name: "Projet_convention_divorce.docx", type: "DOCX", size: "89 Ko", date: "2 avril", resume: "Projet de convention. Garde alternée, pension 700€/mois, vente du bien et partage 50/50 de l'actif net, prestation compensatoire : non demandée." },
       { id: "doc7h", name: "Situation_pret_LCL.pdf", type: "PDF", size: "112 Ko", date: "15 mars", resume: "Tableau d'amortissement prêt LCL. Capital initial : 250 000€ en 2019. Restant dû : 145 000€. Mensualité : 980€. Fin : mars 2034." },
       { id: "doc7i", name: "Planning_garde_alternee.xlsx", type: "XLSX", size: "34 Ko", date: "1 avril", resume: "Planning proposé : semaines paires chez Mme Bernard, impaires chez M. Bernard. Vacances Noël : alternance annuelle. Été : 3 semaines chacun." },
+    ],
+    deadlines: [
+      { date: "25 avril 2026", label: "Signature convention de divorce", urgent: true },
+      { date: "18 avril 2026", label: "Réponse M. Bernard sur pension", urgent: false },
     ],
   },
 ]
@@ -678,6 +700,32 @@ function DossierDetailView({ dossier, onClose, isMobile }: {
           )}
         </div>
       </div>
+
+      {/* Échéances */}
+      {dossier.deadlines && dossier.deadlines.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+            <Calendar size={13} /> Échéances
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {dossier.deadlines.map((dl, i) => (
+              <div key={i} style={{
+                padding: "10px 16px", borderRadius: 8,
+                border: `1px solid ${dl.urgent ? "rgba(239,68,68,0.3)" : BORDER}`,
+                background: dl.urgent ? URGENT_BG : "#F9FAFB",
+                flex: "1 1 200px", minWidth: 200,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <Clock size={12} color={dl.urgent ? URGENT : TEXT_MUTED} />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: dl.urgent ? URGENT : TEXT }}>{dl.date}</span>
+                  {dl.urgent && <span style={{ fontSize: 9, fontWeight: 600, color: URGENT, background: "rgba(239,68,68,0.1)", padding: "1px 5px", borderRadius: 3 }}>URGENT</span>}
+                </div>
+                <div style={{ fontSize: 12, color: TEXT_MUTED }}>{dl.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Document preview modal */}
       <AnimatePresence>
