@@ -888,10 +888,8 @@ export default function DemoV2() {
   useEffect(() => {
     const t1 = setTimeout(() => { setDonnaTyping(false); setShowMessage(true) }, 2200)
     const t2 = setTimeout(() => setStatsVisible(true), 800)
-    // Show tour after content loads (first visit only)
-    const t3 = setTimeout(() => {
-      if (!isDemoTourCompleted()) setShowTour(true)
-    }, 3000)
+    // Show tour every time the page loads
+    const t3 = setTimeout(() => setShowTour(true), 3000)
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
   }, [])
 
