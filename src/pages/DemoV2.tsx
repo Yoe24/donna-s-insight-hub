@@ -1141,8 +1141,8 @@ export default function DemoV2() {
                 <div style={{ fontSize: 14, fontWeight: 600, color: ACCENT, marginBottom: 4 }}>Vous aimez ce que vous voyez ?</div>
                 <div style={{ fontSize: 13, color: TEXT_MUTED }}>Connectez votre vraie boîte mail — 14 jours gratuits, sans engagement.</div>
               </div>
-              <Link to="/onboarding" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", borderRadius: 8, background: ACCENT, color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none", flexShrink: 0 }}>
-                Commencer gratuitement <Send size={13} />
+              <Link to="/contact" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", borderRadius: 8, background: ACCENT, color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none", flexShrink: 0 }}>
+                Demander un essai gratuit <Send size={13} />
               </Link>
             </motion.div>
           </main>
@@ -1263,10 +1263,10 @@ function SidebarContent({ onDossierClick, activeDossierId }: { onDossierClick: (
         ))}
       </div>
       <div style={{ padding: "12px 16px", borderTop: `1px solid ${SIDEBAR_BORDER}` }}>
-        <div style={{ fontSize: 12, color: ACCENT, fontWeight: 500, marginBottom: 6, display: "flex", alignItems: "center", gap: 5 }}>
-          <Mail size={12} /> Connecter Gmail pour de vrais dossiers
-        </div>
-        <Link to="/login" style={{ fontSize: 12, color: TEXT_MUTED, textDecoration: "none" }}>← Déconnexion</Link>
+        <Link to="/contact" style={{ fontSize: 12, color: ACCENT, fontWeight: 500, marginBottom: 6, display: "flex", alignItems: "center", gap: 5, textDecoration: "none" }}>
+          <Mail size={12} /> Demander un essai gratuit
+        </Link>
+        <Link to="/" style={{ fontSize: 12, color: TEXT_MUTED, textDecoration: "none" }}>← Retour au site</Link>
       </div>
     </>
   )

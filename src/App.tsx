@@ -94,8 +94,8 @@ const App = () => (
             <Route path="/v3" element={<Suspense fallback={null}><LandingV3 /></Suspense>} />
             <Route path="/v4" element={<Suspense fallback={null}><LandingV4 /></Suspense>} />
             <Route path="/v5" element={<Suspense fallback={null}><LandingV5 /></Suspense>} />
-            <Route path="/demo" element={<Navigate to="/onboarding?demo=true" replace />} />
-            <Route path="/demo-v2" element={<Suspense fallback={null}><DemoV2 /></Suspense>} />
+            <Route path="/demo" element={<Suspense fallback={null}><DemoV2 /></Suspense>} />
+            <Route path="/demo-v2" element={<Navigate to="/demo" replace />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
