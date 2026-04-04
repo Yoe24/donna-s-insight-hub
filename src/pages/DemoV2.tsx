@@ -308,9 +308,14 @@ function TaskCard({ task, delay, onView, onDraft, onTreat, treated }: {
 }) {
   if (treated) {
     return (
-      <motion.div initial={{ opacity: 1, height: "auto" }} animate={{ opacity: 0.5, height: "auto" }} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, marginBottom: 12, padding: "14px 18px", background: "#F9FAFB", display: "flex", alignItems: "center", gap: 10 }}>
-        <CheckCircle2 size={18} color={GREEN} />
-        <span style={{ fontSize: 13, color: TEXT_MUTED, textDecoration: "line-through" }}>{task.title}</span>
+      <motion.div initial={{ opacity: 1, height: "auto" }} animate={{ opacity: 0.6, height: "auto" }} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, marginBottom: 12, padding: "14px 18px", background: "#F9FAFB", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <CheckCircle2 size={18} color={GREEN} />
+          <span style={{ fontSize: 13, color: TEXT_MUTED, textDecoration: "line-through" }}>{task.title}</span>
+        </div>
+        <button onClick={onTreat} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+          Remettre à faire
+        </button>
       </motion.div>
     )
   }
@@ -344,8 +349,8 @@ function TaskCard({ task, delay, onView, onDraft, onTreat, treated }: {
           <button onClick={onView} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}><Eye size={13} /> Voir</button>
           <button onClick={onDraft} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}><Edit3 size={13} /> Brouillon</button>
         </div>
-        <button onClick={onTreat} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 6, border: "none", background: task.status === "sent" ? "#111827" : ACCENT_BG, color: task.status === "sent" ? "#fff" : ACCENT, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 500 }}>
-          {task.status === "sent" ? <><CheckCircle2 size={13} /> Mail envoyé</> : <StatusBadge status={task.status} />}
+        <button onClick={onTreat} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 6, border: `1px solid ${ACCENT}20`, background: ACCENT_BG, color: ACCENT, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
+          <CheckCircle2 size={13} /> Marquer fait
         </button>
       </div>
     </motion.div>
@@ -589,6 +594,7 @@ function DossierDetailView({ dossier, onClose, isMobile }: {
   dossier: typeof DOSSIERS[0]; onClose: () => void; isMobile: boolean
 }) {
   const [selectedDoc, setSelectedDoc] = useState<typeof dossier.documents[0] | null>(null)
+  const [selectedEmail, setSelectedEmail] = useState<typeof dossier.emails[0] | null>(null)
   const statusColors = { actif: GREEN, en_attente: "#D97706", "archivé": TEXT_LIGHT }
 
   return (
@@ -632,7 +638,7 @@ function DossierDetailView({ dossier, onClose, isMobile }: {
             </div>
           ) : (
             dossier.emails.map(email => (
-              <div key={email.id} style={{ padding: "12px 16px", borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 8, cursor: "pointer", transition: "background 0.15s" }}
+              <div key={email.id} onClick={() => setSelectedEmail(email)} style={{ padding: "12px 16px", borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 8, cursor: "pointer", transition: "background 0.15s" }}
                 onMouseEnter={e => (e.currentTarget.style.background = "#F9FAFB")}
                 onMouseLeave={e => (e.currentTarget.style.background = BG)}
               >
@@ -703,6 +709,57 @@ function DossierDetailView({ dossier, onClose, isMobile }: {
                   <button onClick={() => setSelectedDoc(null)} style={{ background: "none", border: "none", cursor: "pointer", color: TEXT_MUTED }}><X size={18} /></button>
                 </div>
                 <p style={{ fontSize: 13, color: TEXT, lineHeight: 1.7 }}>{selectedDoc.resume}</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Email preview modal */}
+      <AnimatePresence>
+        {selectedEmail && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 90, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+            onClick={() => setSelectedEmail(null)}
+          >
+            <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
+              onClick={e => e.stopPropagation()}
+              style={{ background: BG, borderRadius: 12, width: "100%", maxWidth: 640, maxHeight: "80vh", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", display: "flex", flexDirection: "column" }}
+            >
+              {/* Email header */}
+              <div style={{ padding: "20px 24px", borderBottom: `1px solid ${BORDER}` }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: TEXT }}>{selectedEmail.subject}</div>
+                  <button onClick={() => setSelectedEmail(null)} style={{ background: "none", border: "none", cursor: "pointer", color: TEXT_MUTED, padding: 4 }}><X size={18} /></button>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: dossier.color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 700 }}>
+                    {selectedEmail.sender.charAt(0)}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{selectedEmail.sender}</div>
+                    <div style={{ fontSize: 11, color: TEXT_LIGHT }}>à Me Fernandez · {selectedEmail.date}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Email body */}
+              <div style={{ flex: 1, padding: "20px 24px", overflowY: "auto" }}>
+                <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.8 }}>
+                  <p style={{ margin: "0 0 16px" }}>Bonjour Me Fernandez,</p>
+                  <p style={{ margin: "0 0 16px" }}>{selectedEmail.resume}</p>
+                  <p style={{ margin: "0 0 16px" }}>N'hésitez pas à me contacter si vous avez besoin d'informations complémentaires.</p>
+                  <p style={{ margin: 0 }}>Cordialement,<br />{selectedEmail.sender}</p>
+                </div>
+              </div>
+
+              {/* Donna analysis footer */}
+              <div style={{ padding: "14px 24px", borderTop: `1px solid ${BORDER}`, background: ACCENT_BG }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700 }}>D</div>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: ACCENT }}>Analyse Donna</span>
+                </div>
+                <p style={{ fontSize: 12, color: TEXT_MUTED, lineHeight: 1.6, margin: 0 }}>{selectedEmail.resume}</p>
               </div>
             </motion.div>
           </motion.div>
@@ -897,7 +954,14 @@ export default function DemoV2() {
 
   const handleView = (task: typeof TASKS[0]) => { setSelectedTask(task); setDrawerMode("view") }
   const handleDraft = (task: typeof TASKS[0]) => { setSelectedTask(task); setDrawerMode("draft") }
-  const handleTreat = (id: number) => { setTreatedIds(prev => new Set(prev).add(id)) }
+  const handleTreat = (id: number) => {
+    setTreatedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   return (
     <div style={{ background: BG, color: TEXT, height: "100vh", fontFamily: "Inter, system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
