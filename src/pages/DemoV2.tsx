@@ -1033,7 +1033,7 @@ export default function DemoV2() {
             <Menu size={18} color={TEXT_MUTED} />
           </button>
           <div style={{ flex: 1, textAlign: "center", fontSize: 13, fontWeight: 600, color: TEXT }}>Donna</div>
-          <Link to="/v3" style={{ fontSize: 11, color: TEXT_LIGHT, textDecoration: "none", display: "flex", alignItems: "center", gap: 2 }}>
+          <Link to="/" style={{ fontSize: 11, color: TEXT_LIGHT, textDecoration: "none", display: "flex", alignItems: "center", gap: 2 }}>
             Landing <ChevronRight size={10} />
           </Link>
         </div>
