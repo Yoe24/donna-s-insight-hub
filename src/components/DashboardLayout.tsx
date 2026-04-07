@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { PageTransition } from "@/components/PageTransition";
+import { BannerReconnectGmail } from "@/components/BannerReconnectGmail";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -8,6 +9,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col">
+          <BannerReconnectGmail />
           <header className="sticky top-0 z-40 h-12 flex items-center px-4 bg-background/80 backdrop-blur-xl md:bg-transparent md:backdrop-blur-none">
             <SidebarTrigger className="text-muted-foreground" />
           </header>
