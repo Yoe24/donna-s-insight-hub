@@ -64,6 +64,12 @@ interface ApiDossierDocument {
   url?: string;
 }
 
+interface ApiEcheance {
+  date: string;       // YYYY-MM-DD
+  label: string;
+  source_email_id?: string;
+}
+
 interface ApiDossierDetailData {
   id: string;
   // Format API réel
@@ -79,6 +85,10 @@ interface ApiDossierDetailData {
   emails?: ApiDossierEmail[];
   documents?: ApiDossierDocument[];
   dossier_documents?: ApiDossierDocument[];
+  // Enrichissement dossier (Étape B)
+  echeances?: ApiEcheance[];
+  resume_pj?: string | null;
+  last_summary_update?: string | null;
 }
 
 interface DossierDocument {
@@ -103,6 +113,8 @@ interface DossierDetailData {
   status: string;
   emails: DossierEmail[];
   documents: DossierDocument[];
+  echeances: ApiEcheance[];
+  last_summary_update: string | null;
 }
 
 const statutBadge = (statut: string) => {
@@ -198,6 +210,8 @@ function normalizeDossier(data: ApiDossierDetailData): DossierDetailData {
     status: data.statut || data.status || "actif",
     emails: (data.emails || []).map(normalizeEmail),
     documents: rawDocs.map(normalizeDocument),
+    echeances: data.echeances || [],
+    last_summary_update: data.last_summary_update || null,
   };
 }
 
@@ -216,8 +230,9 @@ const DossierDetailPage = () => {
   const [renameValue, setRenameValue] = useState("");
   const [activeTab, setActiveTab] = useState<"resume" | "echanges" | "documents">("resume");
 
-  const echeances = isDemo() ? (mockEcheances[id || ""] || []) : [];
-  const showEcheancesSection = isDemo() ? echeances.length > 0 : true;
+  // In demo mode: use mock echéances. In real mode: use dossier.echeances from API.
+  const echeances = isDemo() ? (mockEcheances[id || ""] || []) : (dossier?.echeances || []);
+  const showEcheancesSection = true;
 
   const fetchDossier = useCallback(async () => {
     if (!id) return;
@@ -276,6 +291,8 @@ const DossierDetailPage = () => {
         status: "actif",
         emails: demoEmails,
         documents: demoDocs,
+        echeances: [],
+        last_summary_update: null,
       };
       setDossier(detail);
       setEmails(demoEmails);
@@ -397,16 +414,28 @@ const DossierDetailPage = () => {
           </div>
         </motion.div>
 
-        {/* ── Résumé narratif du dossier ── */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6">
+        {/* ── Résumé de la situation ── */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-4">
           <div className="rounded-2xl border border-border/60 bg-[#FAFAFA] p-4">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">Résumé de la situation</h2>
+              {dossier.last_summary_update && (
+                <span className="text-[10px] text-muted-foreground shrink-0">
+                  mis à jour {(() => {
+                    const mins = Math.floor((Date.now() - new Date(dossier.last_summary_update!).getTime()) / 60000);
+                    if (mins < 1) return "à l'instant";
+                    if (mins < 60) return `il y a ${mins}min`;
+                    const hrs = Math.floor(mins / 60);
+                    if (hrs < 24) return `il y a ${hrs}h`;
+                    return `il y a ${Math.floor(hrs / 24)}j`;
+                  })()}
+                </span>
+              )}
+            </div>
             {dossier.summary ? (
               <p className="text-[13px] text-foreground/85 leading-relaxed">{dossier.summary}</p>
             ) : (
-              <p className="text-[13px] text-foreground/85 leading-relaxed">
-                Dossier {dossier.name} — {sortedEmails.length} échange{sortedEmails.length > 1 ? "s" : ""}, {sortedDocs.length} document{sortedDocs.length > 1 ? "s" : ""}.
-                {sortedEmails.length > 0 && ` Sujets : ${sortedEmails.slice(0, 3).map(e => e.objet).join(", ")}${sortedEmails.length > 3 ? "…" : "."}`}
-              </p>
+              <p className="text-[13px] text-muted-foreground leading-relaxed italic">Résumé en cours de génération…</p>
             )}
           </div>
         </motion.div>
@@ -465,30 +494,40 @@ const DossierDetailPage = () => {
 
           {showEcheancesSection && (
             <div className="mt-6">
-              <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Échéances</h2>
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">
+                Échéances{echeances.length > 0 ? ` (${echeances.length})` : ""}
+              </h2>
               <div className="rounded-2xl border border-border/60 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] divide-y divide-border/40">
                 {echeances.length === 0 ? (
                   <p className="text-sm text-muted-foreground p-5">Aucune échéance détectée</p>
-                ) : echeances.map((ech) => {
+                ) : echeances.map((ech, idx) => {
                   const echDate = new Date(ech.date);
                   const daysUntil = Math.ceil((echDate.getTime() - Date.now()) / 86400000);
+                  const isPast = daysUntil < 0;
+                  const isSoon = !isPast && daysUntil <= 7;
                   const dateStr = echDate.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+                  // Demo mode: ech may have status/source fields. Real mode: derive from date.
+                  const demoEch = ech as any;
+                  const status = demoEch.status || (isPast ? "depassee" : isSoon ? "proche" : "futur");
+                  const source = demoEch.source || null;
                   return (
-                    <div key={ech.id} className="flex items-start gap-4 px-5 py-3.5">
-                      <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap w-24 shrink-0 pt-0.5">{dateStr}</span>
+                    <div key={demoEch.id || `ech-${idx}`} className="flex items-start gap-4 px-5 py-3.5">
+                      <span className={`text-xs tabular-nums whitespace-nowrap w-24 shrink-0 pt-0.5 ${isPast ? "text-muted-foreground/60" : "text-muted-foreground"}`}>
+                        {dateStr}
+                      </span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground">{ech.label}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Source : {ech.source}</p>
+                        <p className={`text-sm ${isPast ? "text-foreground/50" : "text-foreground"}`}>{ech.label}</p>
+                        {source && <p className="text-xs text-muted-foreground mt-0.5">Source : {source}</p>}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                          ech.status === "depassee" ? "bg-red-50 text-red-700 ring-1 ring-red-200" :
-                          ech.status === "proche" ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200" :
+                          status === "depassee" ? "bg-red-50 text-red-700 ring-1 ring-red-200" :
+                          status === "proche" ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200" :
                           "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
                         }`}>
-                          {ech.status === "depassee" ? "Dépassée" : ech.status === "proche" ? `J-${Math.abs(daysUntil)}` : `dans ${daysUntil}j`}
+                          {isPast ? "Dépassée" : isSoon ? `J-${daysUntil}` : `dans ${daysUntil}j`}
                         </span>
-                        {ech.status === "depassee" && (
+                        {status === "depassee" && (
                           <button
                             onClick={() => toast.success("Brouillon de relance généré")}
                             className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/10 text-primary ring-1 ring-primary/20 hover:bg-primary/20 transition-colors"
