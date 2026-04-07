@@ -22,6 +22,8 @@ import {
 import { PublicNavbar } from "@/components/PublicNavbar";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { PageTransition } from "@/components/PageTransition";
+import SEO from "@/components/SEO";
+import { OrganizationJsonLd, SoftwareJsonLd } from "@/components/JsonLd";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -158,6 +160,12 @@ const Index = () => {
 
   return (
     <PageTransition>
+      <SEO
+        path="/"
+        description="Donna lit vos emails, trie vos dossiers et prépare vos réponses. 5 minutes pour changer votre façon de travailler. Gratuit pendant le lancement."
+      />
+      <OrganizationJsonLd />
+      <SoftwareJsonLd />
       <div className="min-h-screen flex flex-col" style={{ scrollBehavior: "smooth" }}>
         <PublicNavbar />
 

@@ -8,6 +8,7 @@ import { Eye, EyeOff, Loader2, Mail, Zap, PenLine, ArrowLeft } from "lucide-reac
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { PageTransition } from "@/components/PageTransition";
+import SEO from "@/components/SEO";
 import { apiPublicGet } from "@/lib/api";
 
 // hero-bg removed — clean dark panel instead
@@ -88,6 +89,7 @@ const Login = () => {
 
   return (
     <PageTransition>
+      <SEO title="Connexion" path="/login" noindex />
       <div className="min-h-screen flex flex-col lg:flex-row">
         {/* Left panel — brand message + benefits */}
         <div

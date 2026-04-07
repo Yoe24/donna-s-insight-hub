@@ -1,7 +1,15 @@
 {
   "routes": [
     { "src": "/assets/(.*)", "dest": "/assets/$1" },
-    { "src": "/(.*\\.(js|css|png|jpg|svg|ico))", "dest": "/$1" },
+    { "src": "/sitemap\\.xml", "dest": "/sitemap.xml" },
+    { "src": "/robots\\.txt", "dest": "/robots.txt" },
+    { "src": "/(.*\\.(js|css|png|jpg|svg|ico|xml|txt|webmanifest))", "dest": "/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/sitemap.xml",
+      "headers": [{ "key": "Content-Type", "value": "application/xml" }]
+    }
   ]
 }

@@ -1,10 +1,12 @@
 import { PublicNavbar } from "@/components/PublicNavbar";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PageTransition } from "@/components/PageTransition";
+import SEO from "@/components/SEO";
 
 const MentionsLegales = () => {
   return (
     <PageTransition>
+      <SEO title="Mentions légales" description="Mentions légales, politique de confidentialité et conditions d'utilisation de Donna Legal." path="/mentions-legales" />
       <div className="min-h-screen bg-background flex flex-col">
         <PublicNavbar />
         <main className="flex-1 max-w-2xl mx-auto px-6 py-16 font-sans">

@@ -5,6 +5,7 @@ import { PublicNavbar } from "@/components/PublicNavbar";
 import { PublicFooter } from "@/components/PublicFooter";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { PageTransition } from "@/components/PageTransition";
+import SEO from "@/components/SEO";
 import {
   Accordion,
   AccordionContent,
@@ -116,6 +117,7 @@ const fadeUp = {
 const Securite = () => {
   return (
     <PageTransition>
+      <SEO title="Sécurité & Confidentialité" description="Lecture seule, chiffrement AES-256, données hébergées en France, suppression sur demande. Donna respecte le secret professionnel des avocats." path="/securite" />
       <div className="min-h-screen bg-white flex flex-col">
         <PublicNavbar />
 

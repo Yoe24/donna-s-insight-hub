@@ -5,6 +5,7 @@ import { PublicNavbar } from "@/components/PublicNavbar";
 import { PublicFooter } from "@/components/PublicFooter";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { PageTransition } from "@/components/PageTransition";
+import SEO from "@/components/SEO";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -32,6 +33,7 @@ const values = [
 const APropos = () => {
   return (
     <PageTransition>
+      <SEO title="À propos" description="Donna Legal est née d'un constat simple : les avocats passent trop de temps sur leurs emails. Notre mission : leur rendre ce temps." path="/a-propos" />
       <div className="min-h-screen bg-background flex flex-col">
         <PublicNavbar />
 
