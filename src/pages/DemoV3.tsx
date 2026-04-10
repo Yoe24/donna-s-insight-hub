@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Link } from "react-router-dom"
 import {
   Settings, LayoutDashboard, Paperclip, Eye, Edit3, Send, ChevronRight, Mail,
-  ArrowUp, MessageCircle, X, Menu, ArrowLeft, Copy, Check, FileText, Download,
-  Calendar, AlertTriangle, CheckCircle2, Clock, ThumbsUp, Pencil, XCircle, Loader2,
-  SkipForward
+  ArrowUp, X, Menu, ArrowLeft, Copy, Check, FileText, Download,
+  Calendar, CheckCircle2, Clock, ThumbsUp, Pencil, XCircle,
+  SkipForward, ChevronDown, Zap
 } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 
-// ─── Palette (identique DemoV2) ───
+// ─── Palette ───
 const BG = "#FFFFFF"
 const SIDEBAR_BG = "#F9FAFB"
 const SIDEBAR_BORDER = "#E5E7EB"
@@ -58,7 +58,7 @@ function useIsMobile(bp = 768) {
 }
 
 // ═══════════════════════════════════════════════════════
-// ─── DEMO DATA (repris de DemoV2) ───
+// ─── DEMO DATA ───
 // ═══════════════════════════════════════════════════════
 
 const DOSSIERS = [
@@ -260,6 +260,26 @@ const SIMULATED_EMAILS = [
   "Comparatif offres de prêt — courtier Cafpi",
 ]
 
+// ─── Textes explicatifs Donna pendant la Phase B ───
+const DONNA_PHASE_B_TEXTS = [
+  "Donna classe vos emails par dossier client...",
+  "Donna télécharge et archive les pièces jointes...",
+  "Donna repère les échéances et les dates d'audience...",
+  "Donna prépare vos brouillons de réponse...",
+  "Donna identifie ce qui est urgent...",
+  "Donna construit votre briefing du jour...",
+]
+
+// ─── Détails affichés pour chaque dossier pendant la cinématique ───
+const DOSSIER_CINEMATIC_DETAILS = [
+  { emails: 3, attachments: 2, deadline: "22 avril" },
+  { emails: 2, attachments: 1, deadline: "10 avril" },
+  { emails: 2, attachments: 1, deadline: "15 avril" },
+  { emails: 1, attachments: 1, deadline: "15 mai" },
+  { emails: 1, attachments: 1, deadline: "25 avril" },
+  { emails: 1, attachments: 1, deadline: null },
+]
+
 // ─── Chat data ───
 interface ChatMessage { role: "user" | "assistant"; content: string; ts: number }
 
@@ -288,28 +308,13 @@ function getDemoResponse(q: string): string {
 }
 
 // ═══════════════════════════════════════════════════════
-// ─── ANIMATION STATE ───
+// ─── PHASE DEFINITIONS ───
+// 0 = Phase A: scan emails (0-8s)
+// 1 = Phase B: dossiers creation (8-25s)
+// 2 = Phase C: briefing construction (25-40s)
+// 3 = Phase D: ROI reveal (40-50s)
+// 4 = Phase E: interactive (50s+)
 // ═══════════════════════════════════════════════════════
-
-interface AnimState {
-  // Phase scanning
-  isScanning: boolean
-  mailCount: number       // 0 → 89
-  currentEmailIdx: number // index dans SIMULATED_EMAILS
-  // Stats
-  statsEmailCount: number // 0 → 12
-  statsDossierCount: number // 0 → 6
-  statsFilteredCount: number // 0 → 9
-  // Dossiers visibles (index dans DOSSIERS)
-  visibleDossierCount: number
-  // Tâches visibles
-  visibleTaskCount: number
-  // Briefing text
-  briefingText: string
-  briefingDone: boolean
-  // Done
-  done: boolean
-}
 
 // ═══════════════════════════════════════════════════════
 // ─── SUB-COMPONENTS ───
@@ -327,70 +332,89 @@ function StatusBadge({ status }: { status: TaskStatus }) {
   return <span style={{ padding: "3px 10px", borderRadius: 20, background: s.bg, color: s.color, fontSize: 11, fontWeight: 600 }}>{s.label}</span>
 }
 
-// ─── TaskCard ───
-function TaskCard({ task, delay, onView, onDraft, onTreat, treated }: {
-  task: typeof TASKS[0]; delay: number
-  onView: () => void; onDraft: () => void; onTreat: () => void; treated: boolean
+// ─── Slim TaskCard (Phase E — briefing épuré) ───
+function SlimTaskCard({ task, onExpand, expanded, onView, onDraft, onTreat, treated }: {
+  task: typeof TASKS[0]
+  onExpand: () => void
+  expanded: boolean
+  onView: () => void
+  onDraft: () => void
+  onTreat: () => void
+  treated: boolean
 }) {
   if (treated) {
     return (
       <motion.div
-        initial={{ opacity: 1 }} animate={{ opacity: 0.55 }}
+        initial={{ opacity: 1 }} animate={{ opacity: 0.5 }}
         transition={{ duration: 0.3 }}
-        style={{ border: `1px solid ${BORDER}`, borderRadius: 10, marginBottom: 12, overflow: "hidden", background: "#F9FAFB" }}
+        style={{ border: `1px solid ${BORDER}`, borderRadius: 12, padding: "16px 20px", marginBottom: 10, background: "#F9FAFB", display: "flex", alignItems: "center", gap: 10 }}
       >
-        <div style={{ padding: "14px 18px 0" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-            <div style={{ fontSize: 11, color: TEXT_MUTED }}><span style={{ color: TEXT_LIGHT, fontWeight: 500 }}>{task.dossier}</span>{" · "}{task.tribunal}</div>
-            <span style={{ fontSize: 11, color: TEXT_LIGHT, flexShrink: 0, marginLeft: 12 }}>{task.date}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <CheckCircle2 size={16} color={GREEN} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: TEXT_MUTED, textDecoration: "line-through" }}>{task.title}</span>
-          </div>
-        </div>
-        <div style={{ padding: "10px 18px 14px", display: "flex", justifyContent: "flex-end", borderTop: `1px solid ${BORDER}` }}>
-          <button onClick={onTreat} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 6, border: `1px solid ${GREEN}30`, background: "#F0FDF4", color: GREEN, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
-            <CheckCircle2 size={13} /> Mail envoyé
-          </button>
-        </div>
+        <CheckCircle2 size={16} color={GREEN} style={{ flexShrink: 0 }} />
+        <span style={{ fontSize: 14, color: TEXT_MUTED, textDecoration: "line-through", flex: 1 }}>{task.title}</span>
+        <button onClick={onTreat} style={{ fontSize: 11, color: GREEN, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Annuler</button>
       </motion.div>
     )
   }
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      style={{ border: `1px solid ${BORDER}`, borderRadius: 10, marginBottom: 12, overflow: "hidden", background: BG }}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      style={{ border: `1px solid ${task.urgent ? "rgba(239,68,68,0.25)" : BORDER}`, borderRadius: 12, marginBottom: 10, overflow: "hidden", background: BG }}
     >
-      <div style={{ padding: "14px 18px 0" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-          <div style={{ fontSize: 11, color: TEXT_MUTED }}><span style={{ color: TEXT, fontWeight: 500 }}>{task.dossier}</span>{" · "}{task.tribunal}</div>
-          <span style={{ fontSize: 11, color: TEXT_LIGHT, flexShrink: 0, marginLeft: 12 }}>{task.date}</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
-          {task.urgent && <span style={{ width: 6, height: 6, borderRadius: "50%", background: URGENT, flexShrink: 0, marginTop: 6 }} />}
-          <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, lineHeight: 1.4 }}>{task.title}</div>
-        </div>
-        {task.urgent && <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 4, background: URGENT_BG, color: URGENT, fontSize: 11, fontWeight: 600, marginBottom: 8 }}>⚡ Urgent</span>}
-        <p style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.65, marginBottom: 10 }}>{task.desc}</p>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-          {task.tags.map(tag => (
-            <span key={tag.name} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 4, background: "#F9FAFB", border: `1px solid ${BORDER}`, fontSize: 11, color: TEXT_MUTED }}>
-              <Paperclip size={10} /> {tag.name}
-            </span>
-          ))}
+      <div style={{ padding: "16px 20px", cursor: "pointer" }} onClick={onExpand}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+          {task.urgent && (
+            <span style={{ flexShrink: 0, marginTop: 2, width: 7, height: 7, borderRadius: "50%", background: URGENT, display: "inline-block" }} />
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+              <StatusBadge status={task.status} />
+              {task.urgent && (
+                <span style={{ fontSize: 10, fontWeight: 700, color: URGENT, background: URGENT_BG, padding: "2px 6px", borderRadius: 4, letterSpacing: "0.04em" }}>URGENT</span>
+              )}
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: TEXT, lineHeight: 1.35, marginBottom: 4 }}>{task.title}</div>
+            <div style={{ fontSize: 12, color: TEXT_MUTED }}>{task.resume}</div>
+          </div>
+          <ChevronDown size={16} color={TEXT_LIGHT} style={{ flexShrink: 0, transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s", marginTop: 2 }} />
         </div>
       </div>
-      <div style={{ padding: "10px 18px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: `1px solid ${BORDER}` }}>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onView} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}><Eye size={13} /> Voir</button>
-          <button onClick={onDraft} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}><Edit3 size={13} /> Brouillon</button>
-        </div>
-        <button onClick={onTreat} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 6, border: `1px solid ${BORDER}`, background: "#FEF9EC", color: "#B45309", fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
-          <Clock size={13} /> Mail en attente
-        </button>
-      </div>
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{ overflow: "hidden" }}
+          >
+            <div style={{ padding: "0 20px 16px", borderTop: `1px solid ${BORDER}`, paddingTop: 14 }}>
+              <p style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.65, marginBottom: 12 }}>{task.desc}</p>
+              {task.tags.length > 0 && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+                  {task.tags.map(tag => (
+                    <span key={tag.name} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 4, background: "#F9FAFB", border: `1px solid ${BORDER}`, fontSize: 11, color: TEXT_MUTED }}>
+                      <Paperclip size={10} /> {tag.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button onClick={onView} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 7, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+                  <Eye size={13} /> Voir l'email
+                </button>
+                <button onClick={onDraft} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 7, border: `1px solid ${ACCENT}`, background: ACCENT_BG, color: ACCENT, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
+                  <Edit3 size={13} /> Brouillon Donna
+                </button>
+                <button onClick={onTreat} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 7, border: `1px solid ${GREEN}30`, background: "#F0FDF4", color: GREEN, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, marginLeft: "auto" }}>
+                  <CheckCircle2 size={13} /> Traiter
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
@@ -772,7 +796,7 @@ function DossierDetailView({ dossier, onClose, isMobile }: {
   )
 }
 
-// ─── Chat Panel ───
+// ─── Chat markdown ───
 const mdComponents = {
   p: ({ children }: any) => <p style={{ margin: "0 0 6px", lineHeight: 1.65 }}>{children}</p>,
   strong: ({ children }: any) => <strong style={{ fontWeight: 600, color: TEXT }}>{children}</strong>,
@@ -787,289 +811,214 @@ const mdComponents = {
   code: ({ children }: any) => <code style={{ background: "#F3F4F6", padding: "1px 4px", borderRadius: 3, fontSize: 12 }}>{children}</code>,
 }
 
-function DonnaChatPanel({ isOpen, onToggle, isMobile }: { isOpen: boolean; onToggle: () => void; isMobile: boolean }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME])
-  const [input, setInput] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [showSuggestions, setShowSuggestions] = useState(true)
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-
-  const scrollToBottom = useCallback(() => {
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50)
-  }, [])
-
-  useEffect(() => { scrollToBottom() }, [messages, loading, scrollToBottom])
-  useEffect(() => { if (isOpen && textareaRef.current) setTimeout(() => textareaRef.current?.focus(), 300) }, [isOpen])
-
-  const send = async (text: string) => {
-    const trimmed = text.trim()
-    if (!trimmed || loading) return
-    setShowSuggestions(false)
-    setMessages(prev => [...prev, { role: "user", content: trimmed, ts: Date.now() }])
-    setInput("")
-    if (textareaRef.current) textareaRef.current.style.height = "auto"
-    setLoading(true)
-    await new Promise(r => setTimeout(r, 900 + Math.random() * 800))
-    setMessages(prev => [...prev, { role: "assistant", content: getDemoResponse(trimmed), ts: Date.now() }])
-    setLoading(false)
-  }
-
-  const handleKey = (e: React.KeyboardEvent) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input) } }
-  const autoResize = () => { const el = textareaRef.current; if (!el) return; el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px" }
-
-  if (!isOpen && !isMobile) {
-    return (
-      <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-        style={{ width: 56, flexShrink: 0, borderLeft: `1px solid ${BORDER}`, background: SIDEBAR_BG, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 16, gap: 12, cursor: "pointer", position: "relative" }}
-        onClick={onToggle}
-      >
-        <div style={{ position: "relative" }}>
-          <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, fontWeight: 700 }}>D</div>
-          <div style={{ position: "absolute", bottom: -1, right: -1, width: 10, height: 10, borderRadius: "50%", background: GREEN, border: `2px solid ${SIDEBAR_BG}` }} />
-        </div>
-        <div style={{ writingMode: "vertical-rl", textOrientation: "mixed", fontSize: 11, color: TEXT_MUTED, letterSpacing: "0.02em", whiteSpace: "nowrap", userSelect: "none" }}>Donna est là</div>
-        <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }} transition={{ duration: 2, repeat: Infinity }} style={{ width: 8, height: 8, borderRadius: "50%", background: ACCENT, marginTop: 4 }} />
-      </motion.div>
-    )
-  }
-
-  if (!isOpen && isMobile) return null
-
-  const panelStyle: React.CSSProperties = isMobile
-    ? { position: "fixed", inset: 0, zIndex: 100, background: BG, display: "flex", flexDirection: "column" }
-    : { width: 380, flexShrink: 0, borderLeft: `1px solid ${BORDER}`, display: "flex", flexDirection: "column", background: BG, height: "100%" }
-
-  return (
-    <motion.div
-      initial={isMobile ? { y: "100%" } : { width: 0, opacity: 0 }}
-      animate={isMobile ? { y: 0 } : { width: 380, opacity: 1 }}
-      exit={isMobile ? { y: "100%" } : { width: 0, opacity: 0 }}
-      transition={{ type: "spring", damping: 28, stiffness: 300 }}
-      style={panelStyle}
-    >
-      <div style={{ padding: isMobile ? "12px 16px" : "16px 20px", paddingTop: isMobile ? "max(12px, env(safe-area-inset-top))" : 16, borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", gap: 10, background: BG, flexShrink: 0 }}>
-        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, fontWeight: 700, flexShrink: 0 }}>D</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>Donna</div>
-          <div style={{ fontSize: 11, color: GREEN, display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: GREEN, display: "inline-block" }} /> En ligne · Mode démo
-          </div>
-        </div>
-        <button onClick={onToggle} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: TEXT_MUTED, flexShrink: 0 }}><X size={16} /></button>
-      </div>
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px", WebkitOverflowScrolling: "touch" }}>
-        {messages.map((msg, i) => (
-          <div key={i} style={{ marginBottom: 16, display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start" }}>
-            {msg.role === "assistant" && (
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 8, maxWidth: "92%" }}>
-                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>D</div>
-                <div style={{ background: "#F9FAFB", borderRadius: "16px 16px 16px 4px", padding: "10px 14px", fontSize: 13, color: TEXT, lineHeight: 1.65, border: `1px solid ${BORDER}` }}>
-                  <ReactMarkdown components={mdComponents}>{msg.content}</ReactMarkdown>
-                </div>
-              </div>
-            )}
-            {msg.role === "user" && (
-              <div style={{ background: ACCENT, borderRadius: "16px 16px 4px 16px", padding: "10px 14px", fontSize: 13, color: "#fff", lineHeight: 1.65, maxWidth: "85%", boxShadow: "0 2px 8px rgba(37,99,235,0.25)" }}>{msg.content}</div>
-            )}
-          </div>
-        ))}
-        {loading && (
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 8, marginBottom: 16 }}>
-            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>D</div>
-            <div style={{ background: "#F9FAFB", borderRadius: "16px 16px 16px 4px", padding: "12px 16px", border: `1px solid ${BORDER}` }}>
-              <div style={{ display: "flex", gap: 4 }}>
-                {[0, 1, 2].map(i => <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }} transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }} style={{ width: 6, height: 6, borderRadius: "50%", background: TEXT_MUTED }} />)}
-              </div>
-            </div>
-          </div>
-        )}
-        {showSuggestions && messages.length === 1 && !loading && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
-            {SUGGESTIONS.map(s => (
-              <button key={s} onClick={() => send(s)}
-                style={{ textAlign: "left", padding: "8px 12px", borderRadius: 8, border: `1px solid ${BORDER}`, background: "#FAFAFA", fontSize: 12, color: TEXT_MUTED, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s", lineHeight: 1.4 }}
-                onMouseEnter={e => { (e.target as HTMLElement).style.background = ACCENT_BG; (e.target as HTMLElement).style.borderColor = "#BFDBFE"; (e.target as HTMLElement).style.color = ACCENT }}
-                onMouseLeave={e => { (e.target as HTMLElement).style.background = "#FAFAFA"; (e.target as HTMLElement).style.borderColor = BORDER; (e.target as HTMLElement).style.color = TEXT_MUTED }}
-              >{s}</button>
-            ))}
-          </div>
-        )}
-        <div ref={bottomRef} />
-      </div>
-      <div style={{ padding: "12px 16px", paddingBottom: isMobile ? "max(16px, env(safe-area-inset-bottom))" : 16, borderTop: `1px solid ${BORDER}`, background: BG, flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 8, padding: "10px 12px", borderRadius: 12, border: `1.5px solid ${BORDER}`, background: "#FAFAFA" }}>
-          <textarea ref={textareaRef} value={input} onChange={e => { setInput(e.target.value); autoResize() }} onKeyDown={handleKey}
-            placeholder="Posez votre question à Donna..." rows={1}
-            style={{ flex: 1, border: "none", background: "transparent", resize: "none", outline: "none", fontSize: 13, color: TEXT, lineHeight: 1.5, fontFamily: "inherit", minHeight: 20, maxHeight: 120 }}
-          />
-          <button onClick={() => send(input)} disabled={!input.trim() || loading}
-            style={{ width: 32, height: 32, borderRadius: "50%", background: input.trim() && !loading ? ACCENT : "#E5E7EB", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: input.trim() && !loading ? "pointer" : "default", flexShrink: 0 }}
-          ><ArrowUp size={15} color={input.trim() && !loading ? "#fff" : TEXT_LIGHT} /></button>
-        </div>
-        <div style={{ fontSize: 10, color: TEXT_LIGHT, textAlign: "center", marginTop: 6 }}>Mode démo — données fictives à titre d'illustration</div>
-      </div>
-    </motion.div>
-  )
-}
-
-// ═══════════════════════════════════════════════════════
-// ─── SCANNING ZONE (remplace le briefing pendant l'animation) ───
-// ═══════════════════════════════════════════════════════
-
-function ScanningZone({ mailCount, currentEmailSubject, isMobile }: {
-  mailCount: number
-  currentEmailSubject: string
-  isMobile: boolean
+// ─── Cinematic Phase A: email scanning ───
+function PhaseAScanZone({ mailCount, currentEmailSubject, isMobile }: {
+  mailCount: number; currentEmailSubject: string; isMobile: boolean
 }) {
   const pct = Math.round((mailCount / 89) * 100)
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -16 }}
+      exit={{ opacity: 0, y: -12 }}
       transition={{ duration: 0.4 }}
-      style={{ border: `1px solid ${BORDER}`, borderRadius: 12, padding: isMobile ? "18px 16px" : "24px 28px", marginBottom: 24, background: BG }}
+      style={{ border: `1px solid ${BORDER}`, borderRadius: 12, padding: isMobile ? "16px" : "22px 26px", background: BG }}
     >
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-        <div style={{ position: "relative", width: 44, height: 44, flexShrink: 0 }}>
-          {/* Spinner ring */}
-          <svg width="44" height="44" style={{ position: "absolute", top: 0, left: 0 }}>
-            <circle cx="22" cy="22" r="18" fill="none" stroke={BORDER} strokeWidth="3" />
-            <motion.circle
-              cx="22" cy="22" r="18"
-              fill="none" stroke={ACCENT} strokeWidth="3"
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <div style={{ position: "relative", width: 36, height: 36, flexShrink: 0 }}>
+          <svg width="36" height="36" style={{ position: "absolute", top: 0, left: 0 }}>
+            <circle cx="18" cy="18" r="14" fill="none" stroke={BORDER} strokeWidth="2.5" />
+            <motion.circle cx="18" cy="18" r="14" fill="none" stroke={ACCENT} strokeWidth="2.5"
               strokeLinecap="round"
-              strokeDasharray={`${2 * Math.PI * 18}`}
-              strokeDashoffset={`${2 * Math.PI * 18 * (1 - pct / 100)}`}
-              transform="rotate(-90 22 22)"
+              strokeDasharray={`${2 * Math.PI * 14}`}
+              strokeDashoffset={`${2 * Math.PI * 14 * (1 - pct / 100)}`}
+              transform="rotate(-90 18 18)"
               style={{ transition: "stroke-dashoffset 0.4s ease" }}
             />
           </svg>
-          {/* D in center */}
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44 }}>
-            <motion.div
-              animate={{ opacity: [0.6, 1, 0.6] }}
-              transition={{ duration: 1.6, repeat: Infinity }}
-              style={{ fontSize: 13, fontWeight: 700, color: ACCENT }}
-            >D</motion.div>
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <motion.span animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.6, repeat: Infinity }} style={{ fontSize: 11, fontWeight: 700, color: ACCENT }}>D</motion.span>
           </div>
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 2 }}>
-            Donna analyse vos emails...
-          </div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, marginBottom: 1 }}>Donna analyse vos emails des 30 derniers jours...</div>
           <div style={{ fontSize: 12, color: TEXT_MUTED }}>
             <span style={{ fontWeight: 600, color: ACCENT }}>{mailCount}</span> / 89 emails analysés
           </div>
         </div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: mailCount >= 89 ? GREEN : TEXT_MUTED }}>
-          {pct}%
-        </div>
       </div>
-
-      {/* Progress bar */}
-      <div style={{ height: 4, background: BORDER, borderRadius: 2, marginBottom: 14, overflow: "hidden" }}>
-        <motion.div
-          style={{ height: "100%", background: ACCENT, borderRadius: 2 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.5 }}
-        />
+      <div style={{ height: 3, background: BORDER, borderRadius: 2, marginBottom: 12, overflow: "hidden" }}>
+        <motion.div style={{ height: "100%", background: ACCENT, borderRadius: 2 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.5 }} />
       </div>
-
-      {/* Current email subject */}
       <AnimatePresence mode="wait">
-        <motion.div
-          key={currentEmailSubject}
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.25 }}
-          style={{ display: "flex", alignItems: "center", gap: 8 }}
+        <motion.div key={currentEmailSubject} initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.2 }}
+          style={{ display: "flex", alignItems: "center", gap: 6 }}
         >
-          <Mail size={13} color={TEXT_LIGHT} style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: 12, color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {currentEmailSubject}
-          </span>
+          <Mail size={11} color={TEXT_LIGHT} style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: 11, color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{currentEmailSubject}</span>
         </motion.div>
       </AnimatePresence>
     </motion.div>
   )
 }
 
-// ═══════════════════════════════════════════════════════
-// ─── SIDEBAR CONTENT (accepte visibleCount) ───
-// ═══════════════════════════════════════════════════════
+// ─── Cinematic Phase B: dossier being processed (main area) ───
+function PhaseBDossierFocus({ dossier, details, donnaText }: {
+  dossier: typeof DOSSIERS[0]
+  details: typeof DOSSIER_CINEMATIC_DETAILS[0]
+  donnaText: string
+}) {
+  return (
+    <motion.div
+      key={dossier.id}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.35 }}
+      style={{ border: `1px solid ${BORDER}`, borderRadius: 12, padding: "20px 24px", background: BG }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        <div style={{ width: 36, height: 36, borderRadius: "50%", background: dossier.color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{dossier.initials}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>{dossier.name}</div>
+          <div style={{ fontSize: 11, color: TEXT_MUTED }}>{dossier.domain}</div>
+        </div>
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring", stiffness: 400 }}>
+          <CheckCircle2 size={18} color={GREEN} />
+        </motion.div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {[
+          `${details.emails} email${details.emails > 1 ? "s" : ""} archivé${details.emails > 1 ? "s" : ""}`,
+          `${details.attachments} pièce${details.attachments > 1 ? "s" : ""} jointe${details.attachments > 1 ? "s" : ""} téléchargée${details.attachments > 1 ? "s" : ""}`,
+          details.deadline ? `1 échéance notée : ${details.deadline}` : null,
+        ].filter(Boolean).map((line, i) => (
+          <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.15 }}
+            style={{ fontSize: 12, color: TEXT_MUTED, display: "flex", alignItems: "center", gap: 6 }}
+          >
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />
+            {line}
+          </motion.div>
+        ))}
+      </div>
+      {donnaText && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
+          style={{ marginTop: 14, padding: "10px 14px", borderRadius: 8, background: ACCENT_BG, border: `1px solid rgba(37,99,235,0.12)`, display: "flex", alignItems: "center", gap: 8 }}
+        >
+          <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 8, fontWeight: 700, flexShrink: 0 }}>D</div>
+          <span style={{ fontSize: 12, color: ACCENT, fontStyle: "italic" }}>{donnaText}</span>
+        </motion.div>
+      )}
+    </motion.div>
+  )
+}
 
-function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount }: {
-  onDossierClick: (d: typeof DOSSIERS[0]) => void
+// ─── Cinematic Phase C: briefing being typed ───
+function PhaseCBriefing({ briefingText, briefingDone, isMobile }: {
+  briefingText: string; briefingDone: boolean; isMobile: boolean
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      style={{ border: `1px solid ${BORDER}`, borderRadius: 12, padding: isMobile ? "16px" : "20px 24px", background: BG }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700 }}>D</div>
+        <span style={{ fontSize: 12, fontWeight: 600, color: ACCENT }}>Donna écrit votre briefing...</span>
+        {!briefingDone && (
+          <motion.div animate={{ opacity: [1, 0, 1] }} transition={{ duration: 0.8, repeat: Infinity }} style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT }} />
+        )}
+      </div>
+      <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.75, margin: 0, minHeight: 40 }}>
+        {briefingText}
+        {!briefingDone && (
+          <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ duration: 0.8, repeat: Infinity }}
+            style={{ display: "inline-block", width: 2, height: 14, background: ACCENT, marginLeft: 2, verticalAlign: "text-bottom" }} />
+        )}
+      </p>
+    </motion.div>
+  )
+}
+
+// ─── Sidebar ───
+function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, animPhase }: {
+  onDossierClick: (d: typeof DOSSIERS[0] | null) => void
   activeDossierId: string | null
   visibleDossierCount: number
+  animPhase: number
 }) {
   const visible = DOSSIERS.slice(0, visibleDossierCount)
+  // During phase B, the focused dossier is highlighted
+  const cinematicHighlight = animPhase === 1 ? DOSSIERS[Math.min(visibleDossierCount - 1, DOSSIERS.length - 1)]?.id : null
+
   return (
     <>
-      <div style={{ padding: "20px 16px 12px", borderBottom: `1px solid ${SIDEBAR_BORDER}` }}>
+      <div style={{ padding: "18px 14px 12px", borderBottom: `1px solid ${SIDEBAR_BORDER}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 18, color: TEXT }}>Donna</span>
+          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 17, color: TEXT }}>Donna</span>
           <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: ACCENT_BG, color: ACCENT, letterSpacing: "0.05em" }}>DÉMO</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: GREEN }} />
+          <motion.span animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 2, repeat: animPhase < 4 ? Infinity : 0 }}
+            style={{ width: 6, height: 6, borderRadius: "50%", background: animPhase < 4 ? ACCENT : GREEN, flexShrink: 0 }} />
           <span style={{ fontSize: 11, color: TEXT_MUTED }}>
-            {visibleDossierCount < DOSSIERS.length ? "Analyse en cours..." : "À jour · Dernière analyse il y a 2 min"}
+            {animPhase < 4 ? "Analyse en cours..." : "À jour · il y a 2 min"}
           </span>
         </div>
       </div>
-      <div style={{ padding: "12px 8px" }}>
-        <button onClick={() => onDossierClick(null as any)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 8px", borderRadius: 6, background: !activeDossierId ? "#F3F4F6" : "transparent", marginBottom: 2, width: "100%", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
-          <LayoutDashboard size={15} style={{ color: !activeDossierId ? TEXT : TEXT_MUTED }} />
-          <div>
-            <div style={{ fontSize: 13, fontWeight: !activeDossierId ? 600 : 400, color: !activeDossierId ? TEXT : TEXT_MUTED }}>Briefing</div>
-            <div style={{ fontSize: 10, color: TEXT_MUTED }}>Votre journée en un coup d'œil</div>
-          </div>
+
+      <div style={{ padding: "10px 6px" }}>
+        <button onClick={() => onDossierClick(null)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 6, background: activeDossierId === null && animPhase >= 4 ? "#F3F4F6" : "transparent", marginBottom: 2, width: "100%", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
+          <LayoutDashboard size={14} style={{ color: activeDossierId === null ? TEXT : TEXT_MUTED, flexShrink: 0 }} />
+          <div style={{ fontSize: 13, fontWeight: activeDossierId === null ? 600 : 400, color: activeDossierId === null ? TEXT : TEXT_MUTED }}>Briefing</div>
         </button>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 8px", borderRadius: 6, marginBottom: 2 }}>
-          <Settings size={15} style={{ color: TEXT_MUTED }} />
-          <div>
-            <div style={{ fontSize: 13, color: TEXT_MUTED }}>Configurez-moi</div>
-            <div style={{ fontSize: 10, color: TEXT_LIGHT }}>Personnalisez votre assistante</div>
-          </div>
-        </div>
       </div>
-      <div style={{ padding: "8px 16px", flex: 1 }}>
+
+      <div style={{ padding: "4px 14px 8px", flex: 1, overflowY: "auto" }}>
         <div style={{ fontSize: 10, fontWeight: 600, color: TEXT_LIGHT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
           Dossiers {visibleDossierCount > 0 && `(${visibleDossierCount})`}
         </div>
         {visible.length === 0 && (
-          <div style={{ fontSize: 12, color: TEXT_LIGHT, fontStyle: "italic", paddingLeft: 4 }}>Aucun dossier encore...</div>
+          <div style={{ fontSize: 11, color: TEXT_LIGHT, fontStyle: "italic", paddingLeft: 2 }}>En cours de création...</div>
         )}
         <AnimatePresence>
-          {visible.map((d, i) => (
-            <motion.div key={d.id}
-              initial={{ opacity: 0, x: -16 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              onClick={() => onDossierClick(d)}
-              style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", marginBottom: 2, cursor: "pointer", borderRadius: 6, background: activeDossierId === d.id ? "#F3F4F6" : "transparent", transition: "background 0.15s" }}
-              onMouseEnter={e => { if (activeDossierId !== d.id) e.currentTarget.style.background = "#F9FAFB" }}
-              onMouseLeave={e => { if (activeDossierId !== d.id) e.currentTarget.style.background = "transparent" }}
-            >
-              <div style={{ width: 26, height: 26, borderRadius: "50%", background: d.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{d.initials}</div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: activeDossierId === d.id ? 600 : 500, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</div>
-                <div style={{ fontSize: 10, color: TEXT_MUTED }}>{d.type}</div>
-              </div>
-            </motion.div>
-          ))}
+          {visible.map((d) => {
+            const isActive = activeDossierId === d.id || (animPhase === 1 && cinematicHighlight === d.id)
+            return (
+              <motion.div key={d.id}
+                initial={{ opacity: 0, x: -14 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                onClick={() => animPhase >= 4 && onDossierClick(d)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", marginBottom: 2,
+                  cursor: animPhase >= 4 ? "pointer" : "default",
+                  borderRadius: 6,
+                  background: isActive ? (animPhase === 1 ? `${d.color}18` : "#F3F4F6") : "transparent",
+                  borderLeft: isActive && animPhase === 1 ? `3px solid ${d.color}` : "3px solid transparent",
+                  transition: "all 0.2s",
+                }}
+              >
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: d.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{d.initials}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: isActive ? 600 : 500, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</div>
+                </div>
+                {isActive && animPhase === 1 && (
+                  <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1, repeat: Infinity }} style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: d.color, flexShrink: 0 }} />
+                )}
+              </motion.div>
+            )
+          })}
         </AnimatePresence>
       </div>
-      <div style={{ padding: "12px 16px", borderTop: `1px solid ${SIDEBAR_BORDER}` }}>
-        <Link to="/contact" style={{ fontSize: 12, color: ACCENT, fontWeight: 500, marginBottom: 6, display: "flex", alignItems: "center", gap: 5, textDecoration: "none" }}>
-          <Mail size={12} /> Demander un essai gratuit
+
+      <div style={{ padding: "10px 14px", borderTop: `1px solid ${SIDEBAR_BORDER}` }}>
+        <Link to="/contact" style={{ fontSize: 12, color: ACCENT, fontWeight: 500, display: "flex", alignItems: "center", gap: 5, textDecoration: "none", marginBottom: 6 }}>
+          <Mail size={11} /> Demander un essai gratuit
         </Link>
-        <Link to="/" style={{ fontSize: 12, color: TEXT_MUTED, textDecoration: "none" }}>← Retour au site</Link>
+        <Link to="/" style={{ fontSize: 11, color: TEXT_MUTED, textDecoration: "none" }}>← Retour au site</Link>
       </div>
     </>
   )
@@ -1079,38 +1028,37 @@ function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount }
 // ─── MAIN PAGE ───
 // ═══════════════════════════════════════════════════════
 
-const DONNA_BRIEFING_TEXT = "Bonjour Alexandra, c'est Donna. J'ai trié vos 12 emails ce matin — 9 étaient du bruit (newsletters, prospection), je m'en suis occupée. Il vous reste 3 brouillons de réponse à valider, tout est prêt."
-const DONNA_BRIEFING_SUBTITLE = "Votre to-do du jour est juste en dessous."
+const DONNA_BRIEFING_TEXT = "Bonjour Alexandra, voici votre briefing. J'ai analysé 89 emails et créé 6 dossiers. 9 emails sans intérêt ont été filtrés automatiquement. 3 actions vous attendent ce matin."
 
 export default function DemoV3() {
   const isMobile = useIsMobile()
-  const [chatOpen, setChatOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [treatedIds, setTreatedIds] = useState<Set<number>>(new Set())
+  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null)
 
   // Drawer state
   const [selectedTask, setSelectedTask] = useState<typeof TASKS[0] | null>(null)
   const [drawerMode, setDrawerMode] = useState<"view" | "draft">("view")
 
-  // Dossier detail state
+  // Dossier detail
   const [selectedDossier, setSelectedDossier] = useState<typeof DOSSIERS[0] | null>(null)
 
-  // ─── Animation state ───
-  const [isScanning, setIsScanning] = useState(true)
+  // ─── Animation phases ───
+  // 0 = Phase A (scan), 1 = Phase B (dossiers), 2 = Phase C (briefing), 3 = Phase D (ROI), 4 = Phase E (interactive)
+  const [animPhase, setAnimPhase] = useState(0)
   const [mailCount, setMailCount] = useState(0)
   const [currentEmailIdx, setCurrentEmailIdx] = useState(0)
   const [visibleDossierCount, setVisibleDossierCount] = useState(0)
-  const [visibleTaskCount, setVisibleTaskCount] = useState(0)
-  const [statsEmailCount, setStatsEmailCount] = useState(0)
-  const [statsDossierCount, setStatsDossierCount] = useState(0)
-  const [statsFilteredCount, setStatsFilteredCount] = useState(0)
-  const [statsVisible, setStatsVisible] = useState(false)
+  const [activeCinematicDossierIdx, setActiveCinematicDossierIdx] = useState(-1) // which dossier is focused in Phase B
+  const [donnaPhaseText, setDonnaPhaseText] = useState(DONNA_PHASE_B_TEXTS[0])
   const [briefingText, setBriefingText] = useState("")
-  const [briefingSubtitle, setBriefingSubtitle] = useState("")
   const [briefingDone, setBriefingDone] = useState(false)
+  const [visibleTaskCount, setVisibleTaskCount] = useState(0)
+  const [roiVisible, setRoiVisible] = useState(false)
   const [animDone, setAnimDone] = useState(false)
 
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+  const emailIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const addTimer = useCallback((fn: () => void, delay: number) => {
     const t = setTimeout(fn, delay)
@@ -1122,110 +1070,81 @@ export default function DemoV3() {
   const skipToEnd = useCallback(() => {
     timersRef.current.forEach(t => clearTimeout(t))
     timersRef.current = []
-    setIsScanning(false)
+    if (emailIntervalRef.current) clearInterval(emailIntervalRef.current)
+    setAnimPhase(4)
     setMailCount(89)
-    setCurrentEmailIdx(SIMULATED_EMAILS.length - 1)
     setVisibleDossierCount(DOSSIERS.length)
-    setVisibleTaskCount(TASKS.length)
-    setStatsVisible(true)
-    setStatsEmailCount(12)
-    setStatsDossierCount(6)
-    setStatsFilteredCount(9)
+    setActiveCinematicDossierIdx(-1)
     setBriefingText(DONNA_BRIEFING_TEXT)
-    setBriefingSubtitle(DONNA_BRIEFING_SUBTITLE)
     setBriefingDone(true)
+    setVisibleTaskCount(TASKS.length)
+    setRoiVisible(true)
     setAnimDone(true)
   }, [])
 
   // ─── Animation sequence ───
   useEffect(() => {
-    // 0-2s : Dashboard vide, spinner démarre
-    // 2-12s : compteur monte 0→89, emails défilent
-    const emailIntervalMs = 10000 / 40 // 10s pour ~40 emails
-
-    // Start rotating email subjects every ~250ms
-    let emailRotateInterval: ReturnType<typeof setInterval> | null = null
-
+    // === PHASE A: 0-8s — scan emails ===
     addTimer(() => {
-      // Start email rotation
-      emailRotateInterval = setInterval(() => {
+      emailIntervalRef.current = setInterval(() => {
         setCurrentEmailIdx(i => (i + 1) % SIMULATED_EMAILS.length)
-      }, 250)
-
-      // Increment mail count: 0 → 89 over 10s
-      const milestones = [5, 12, 18, 25, 32, 40, 47, 55, 62, 70, 76, 81, 85, 87, 89]
+      }, 220)
+      const milestones = [5, 12, 20, 28, 36, 44, 52, 60, 68, 74, 80, 84, 87, 89]
       milestones.forEach((target, i) => {
-        addTimer(() => setMailCount(target), i * (10000 / milestones.length))
+        addTimer(() => setMailCount(target), i * (7000 / milestones.length))
       })
-    }, 2000)
+    }, 500)
 
-    // Dossiers appear one by one starting at 5s
-    const dossierTimings = [5000, 7000, 9000, 11000, 13000, 15000]
+    // === PHASE B: 8-25s — dossiers appear + navigate ===
+    // Each dossier appears every ~2.5s, is highlighted for ~2s, then next
+    const dossierTimings = [8000, 10500, 13000, 15500, 18000, 20500]
     dossierTimings.forEach((delay, i) => {
-      addTimer(() => setVisibleDossierCount(i + 1), delay)
+      addTimer(() => {
+        if (emailIntervalRef.current) { clearInterval(emailIntervalRef.current); emailIntervalRef.current = null }
+        setAnimPhase(1)
+        setVisibleDossierCount(i + 1)
+        setActiveCinematicDossierIdx(i)
+        setDonnaPhaseText(DONNA_PHASE_B_TEXTS[i] || DONNA_PHASE_B_TEXTS[DONNA_PHASE_B_TEXTS.length - 1])
+      }, delay)
     })
 
-    // Stats appear at 12s
+    // === PHASE C: 25s — briefing construction ===
     addTimer(() => {
-      setStatsVisible(true)
-      // Animate stats
-      const intervals: ReturnType<typeof setInterval>[] = []
-      let e = 0, d = 0, f = 0
-      const emailInt = setInterval(() => {
-        e++
-        setStatsEmailCount(e)
-        if (e >= 12) clearInterval(emailInt)
-      }, 600)
-      setTimeout(() => {
-        const dossierInt = setInterval(() => {
-          d++
-          setStatsDossierCount(d)
-          if (d >= 6) clearInterval(dossierInt)
-        }, 700)
-        setTimeout(() => {
-          const filteredInt = setInterval(() => {
-            f++
-            setStatsFilteredCount(f)
-            if (f >= 9) clearInterval(filteredInt)
-          }, 600)
-        }, 400)
-      }, 200)
-    }, 12000)
-
-    // Spinner ends at 15s
-    addTimer(() => {
-      if (emailRotateInterval) clearInterval(emailRotateInterval)
-      setIsScanning(false)
-    }, 15000)
-
-    // Tasks appear at 20s, 22s, 24s
-    addTimer(() => setVisibleTaskCount(1), 20000)
-    addTimer(() => setVisibleTaskCount(2), 22000)
-    addTimer(() => setVisibleTaskCount(3), 24000)
-
-    // Donna types briefing at 20s
-    addTimer(() => {
+      setAnimPhase(2)
+      setActiveCinematicDossierIdx(-1)
       const fullText = DONNA_BRIEFING_TEXT
       let idx = 0
       const typeInterval = setInterval(() => {
-        idx += 3
+        idx += 4
         setBriefingText(fullText.slice(0, idx))
         if (idx >= fullText.length) {
           clearInterval(typeInterval)
           setBriefingText(fullText)
-          setBriefingSubtitle(DONNA_BRIEFING_SUBTITLE)
           setBriefingDone(true)
         }
-      }, 30)
+      }, 28)
       timersRef.current.push(typeInterval as any)
-    }, 20000)
+      // Tasks appear during briefing construction
+      addTimer(() => setVisibleTaskCount(1), 3000)
+      addTimer(() => setVisibleTaskCount(2), 5000)
+      addTimer(() => setVisibleTaskCount(3), 7000)
+    }, 23000)
 
-    // All done at 30s
-    addTimer(() => setAnimDone(true), 30000)
+    // === PHASE D: 40s — ROI encart ===
+    addTimer(() => {
+      setAnimPhase(3)
+      setRoiVisible(true)
+    }, 38000)
+
+    // === PHASE E: 50s — interactive ===
+    addTimer(() => {
+      setAnimPhase(4)
+      setAnimDone(true)
+    }, 48000)
 
     return () => {
       timersRef.current.forEach(t => clearTimeout(t))
-      if (emailRotateInterval) clearInterval(emailRotateInterval)
+      if (emailIntervalRef.current) clearInterval(emailIntervalRef.current)
     }
   }, [addTimer])
 
@@ -1241,8 +1160,14 @@ export default function DemoV3() {
       return next
     })
   }
+  const handleExpandTask = (id: number) => {
+    setExpandedTaskId(prev => prev === id ? null : id)
+  }
 
   const currentEmailSubject = SIMULATED_EMAILS[currentEmailIdx] || ""
+  const currentCinematicDossier = activeCinematicDossierIdx >= 0 ? DOSSIERS[activeCinematicDossierIdx] : null
+  const currentCinematicDetails = activeCinematicDossierIdx >= 0 ? DOSSIER_CINEMATIC_DETAILS[activeCinematicDossierIdx] : null
+  const urgentRemaining = TASKS.slice(0, visibleTaskCount).filter(t => t.urgent && !treatedIds.has(t.id)).length
 
   return (
     <div style={{ background: BG, color: TEXT, height: "100vh", fontFamily: "Inter, system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -1255,12 +1180,11 @@ export default function DemoV3() {
           </button>
           <div style={{ flex: 1, textAlign: "center", fontSize: 13, fontWeight: 600, color: TEXT }}>Donna</div>
           <Link to="/" style={{ fontSize: 11, color: TEXT_LIGHT, textDecoration: "none", display: "flex", alignItems: "center", gap: 2 }}>
-            Landing <ChevronRight size={10} />
+            Site <ChevronRight size={10} />
           </Link>
         </div>
       )}
 
-      {/* Layout */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
 
         {/* Mobile sidebar overlay */}
@@ -1270,17 +1194,12 @@ export default function DemoV3() {
               <>
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   onClick={() => setSidebarOpen(false)}
-                  style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 50 }}
-                />
+                  style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 50 }} />
                 <motion.aside initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
                   transition={{ type: "spring", damping: 28, stiffness: 300 }}
-                  style={{ position: "fixed", top: 40, left: 0, bottom: 0, zIndex: 51, width: 260, background: SIDEBAR_BG, borderRight: `1px solid ${SIDEBAR_BORDER}`, display: "flex", flexDirection: "column", overflowY: "auto" }}
+                  style={{ position: "fixed", top: 40, left: 0, bottom: 0, zIndex: 51, width: 240, background: SIDEBAR_BG, borderRight: `1px solid ${SIDEBAR_BORDER}`, display: "flex", flexDirection: "column", overflowY: "auto" }}
                 >
-                  <SidebarContent
-                    onDossierClick={d => { setSelectedDossier(d); setSidebarOpen(false) }}
-                    activeDossierId={selectedDossier?.id || null}
-                    visibleDossierCount={visibleDossierCount}
-                  />
+                  <SidebarContent onDossierClick={d => { if (d) setSelectedDossier(d); setSidebarOpen(false) }} activeDossierId={selectedDossier?.id || null} visibleDossierCount={visibleDossierCount} animPhase={animPhase} />
                 </motion.aside>
               </>
             )}
@@ -1289,12 +1208,8 @@ export default function DemoV3() {
 
         {/* Desktop sidebar */}
         {!isMobile && (
-          <aside style={{ width: 220, background: SIDEBAR_BG, borderRight: `1px solid ${SIDEBAR_BORDER}`, display: "flex", flexDirection: "column", flexShrink: 0, overflowY: "auto" }}>
-            <SidebarContent
-              onDossierClick={d => setSelectedDossier(d)}
-              activeDossierId={selectedDossier?.id || null}
-              visibleDossierCount={visibleDossierCount}
-            />
+          <aside style={{ width: 210, background: SIDEBAR_BG, borderRight: `1px solid ${SIDEBAR_BORDER}`, display: "flex", flexDirection: "column", flexShrink: 0, overflowY: "auto" }}>
+            <SidebarContent onDossierClick={d => setSelectedDossier(d)} activeDossierId={selectedDossier?.id || null} visibleDossierCount={visibleDossierCount} animPhase={animPhase} />
           </aside>
         )}
 
@@ -1302,130 +1217,94 @@ export default function DemoV3() {
         {selectedDossier ? (
           <DossierDetailView dossier={selectedDossier} onClose={() => setSelectedDossier(null)} isMobile={isMobile} />
         ) : (
-          <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px" : "32px 32px", position: "relative" }}>
+          <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px" : "36px 40px", position: "relative", maxWidth: 760 }}>
 
-            {/* Header: greeting + skip button */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? 24 : 30, fontWeight: 400, color: TEXT, marginBottom: 4, letterSpacing: "-0.02em" }}>Bonjour, Alexandra</h1>
-                <p style={{ fontSize: 13, color: TEXT_MUTED }}>Je suis Donna, votre employée numérique · {getToday()}</p>
+            {/* Header + Skip button */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+                <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? 22 : 28, fontWeight: 400, color: TEXT, marginBottom: 5, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+                  Bonjour, Alexandra
+                </h1>
+                <p style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.4 }}>
+                  Je suis Donna, votre assistante · {getToday()}
+                </p>
               </motion.div>
-
-              {/* Bouton Passer — visible pendant l'animation */}
               <AnimatePresence>
                 {!animDone && (
                   <motion.button
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }}
+                    initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
                     transition={{ delay: 0.5, duration: 0.3 }}
                     onClick={skipToEnd}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 6,
-                      padding: "7px 14px", borderRadius: 8,
-                      border: `1px solid ${BORDER}`, background: BG,
-                      color: TEXT_MUTED, fontSize: 12, cursor: "pointer",
-                      fontFamily: "inherit", flexShrink: 0, marginLeft: 16,
-                      marginTop: 4,
-                    }}
+                    style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 7, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit", flexShrink: 0, marginLeft: 16, marginTop: 4 }}
                   >
-                    <SkipForward size={13} /> Passer
+                    <SkipForward size={12} /> Passer
                   </motion.button>
                 )}
               </AnimatePresence>
             </div>
 
-            {/* Stats bar — apparaît progressivement */}
-            <AnimatePresence>
-              {statsVisible && (
-                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-                  style={{ border: `1px solid ${BORDER}`, borderRadius: 12, padding: isMobile ? "14px 16px" : "18px 22px", marginBottom: 16, display: "flex", alignItems: "center", gap: isMobile ? 12 : 20, flexWrap: "wrap" }}
-                >
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: isMobile ? 26 : 32, fontWeight: 700, color: TEXT, lineHeight: 1 }}>{treatedIds.size}</div>
-                    <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2 }}>/3</div>
-                  </div>
-                  <div style={{ width: 1, height: 36, background: BORDER }} />
-                  <div style={{ display: "flex", gap: isMobile ? 10 : 16, flex: 1, flexWrap: "wrap" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: TEXT_MUTED }}>
-                      <Mail size={13} /> {statsEmailCount > 0 ? `${statsEmailCount} reçus` : "–"}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: TEXT_MUTED }}>
-                      <LayoutDashboard size={13} /> {statsDossierCount > 0 ? `${statsDossierCount} dossiers` : "–"}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: TEXT_MUTED }}>
-                      <Settings size={13} /> {statsFilteredCount > 0 ? `${statsFilteredCount} filtrés` : "–"}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Scanning zone OR briefing text */}
+            {/* PHASE A: scanning zone */}
             <AnimatePresence mode="wait">
-              {isScanning ? (
-                <ScanningZone
-                  key="scanning"
-                  mailCount={mailCount}
-                  currentEmailSubject={currentEmailSubject}
-                  isMobile={isMobile}
-                />
-              ) : (
-                <motion.div
-                  key="briefing"
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                  style={{ border: `1px solid ${BORDER}`, borderRadius: 12, padding: isMobile ? "14px 16px" : "18px 22px", marginBottom: 24, minHeight: 80 }}
-                >
-                  {briefingText ? (
-                    <AnimatePresence>
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
-                        <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.7, marginBottom: briefingSubtitle ? 6 : 0 }}>
-                          {briefingText}
-                          {!briefingDone && (
-                            <motion.span
-                              animate={{ opacity: [1, 0, 1] }}
-                              transition={{ duration: 0.8, repeat: Infinity }}
-                              style={{ display: "inline-block", width: 2, height: 14, background: ACCENT, marginLeft: 2, verticalAlign: "text-bottom" }}
-                            />
-                          )}
-                        </p>
-                        {briefingSubtitle && (
-                          <p style={{ fontSize: 12, color: TEXT_MUTED, fontStyle: "italic" }}>{briefingSubtitle}</p>
-                        )}
-                      </motion.div>
-                    </AnimatePresence>
-                  ) : (
-                    <div style={{ display: "flex", gap: 5, alignItems: "center", height: 20 }}>
-                      <span style={{ fontSize: 12, color: TEXT_MUTED, marginRight: 4 }}>Donna prépare votre briefing...</span>
-                      {[0, 1, 2].map(i => <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }} style={{ width: 5, height: 5, borderRadius: "50%", background: TEXT_MUTED }} />)}
-                    </div>
-                  )}
+              {animPhase === 0 && (
+                <motion.div key="phaseA" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} style={{ marginBottom: 20 }}>
+                  <PhaseAScanZone mailCount={mailCount} currentEmailSubject={currentEmailSubject} isMobile={isMobile} />
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* To-do list — tasks appear one by one */}
-            <AnimatePresence>
-              {visibleTaskCount > 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.08em", textTransform: "uppercase" }}>TO-DO LIST</div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: URGENT }}>
-                      {TASKS.slice(0, visibleTaskCount).filter(t => t.urgent && !treatedIds.has(t.id)).length}
-                    </span>
-                  </div>
+            {/* PHASE B: dossier focus */}
+            <AnimatePresence mode="wait">
+              {animPhase === 1 && currentCinematicDossier && currentCinematicDetails && (
+                <motion.div key={`phaseB-${currentCinematicDossier.id}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }} style={{ marginBottom: 20 }}>
+                  <PhaseBDossierFocus dossier={currentCinematicDossier} details={currentCinematicDetails} donnaText={donnaPhaseText} />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-                  {TASKS.slice(0, visibleTaskCount).map((task, i) => (
-                    <TaskCard
+            {/* PHASE C+: briefing message */}
+            <AnimatePresence>
+              {animPhase >= 2 && briefingText && (
+                <motion.div key="briefing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ marginBottom: 28 }}>
+                  <PhaseCBriefing briefingText={briefingText} briefingDone={briefingDone} isMobile={isMobile} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* PHASE C+: single action count (replaces stats bar) */}
+            <AnimatePresence>
+              {animPhase >= 2 && visibleTaskCount > 0 && (
+                <motion.div key="action-count" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: isMobile ? 36 : 44, fontWeight: 700, color: urgentRemaining > 0 ? URGENT : GREEN, lineHeight: 1 }}>
+                        {TASKS.slice(0, visibleTaskCount).filter(t => !treatedIds.has(t.id)).length}
+                      </span>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>actions à traiter</div>
+                        <div style={{ fontSize: 12, color: TEXT_MUTED }}>aujourd'hui</div>
+                      </div>
+                    </div>
+                    {urgentRemaining > 0 && (
+                      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 20, background: URGENT_BG, border: `1px solid rgba(239,68,68,0.2)` }}>
+                        <Zap size={12} color={URGENT} />
+                        <span style={{ fontSize: 12, fontWeight: 600, color: URGENT }}>{urgentRemaining} urgente{urgentRemaining > 1 ? "s" : ""}</span>
+                      </motion.div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Tasks */}
+            <AnimatePresence>
+              {visibleTaskCount > 0 && animPhase >= 2 && (
+                <motion.div key="tasks" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+                  {TASKS.slice(0, visibleTaskCount).map((task) => (
+                    <SlimTaskCard
                       key={task.id}
                       task={task}
-                      delay={0}
+                      onExpand={() => handleExpandTask(task.id)}
+                      expanded={expandedTaskId === task.id}
                       onView={() => handleView(task)}
                       onDraft={() => handleDraft(task)}
                       onTreat={() => handleTreat(task.id)}
@@ -1436,43 +1315,47 @@ export default function DemoV3() {
               )}
             </AnimatePresence>
 
-            {/* CTA — apparaît à la fin */}
+            {/* PHASE D: ROI encart */}
+            <AnimatePresence>
+              {roiVisible && (
+                <motion.div key="roi"
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
+                  style={{ marginTop: 20, padding: isMobile ? "14px 16px" : "18px 22px", borderRadius: 12, background: "#F0FDF4", border: `1px solid rgba(16,185,129,0.2)` }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
+                    <Clock size={15} color={GREEN} style={{ flexShrink: 0, marginTop: 1 }} />
+                    <div style={{ fontSize: 13, color: "#065F46", lineHeight: 1.6 }}>
+                      <strong>Donna a traité 89 emails en 4 minutes.</strong> Temps économisé estimé : <strong>environ 2h30.</strong>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                    <Calendar size={15} color={GREEN} style={{ flexShrink: 0, marginTop: 1 }} />
+                    <div style={{ fontSize: 13, color: "#065F46", lineHeight: 1.6 }}>
+                      Demain matin à 8h, votre prochain briefing sera prêt.
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* PHASE E: CTA */}
             <AnimatePresence>
               {animDone && (
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6 }}
-                  style={{ marginTop: 24, padding: isMobile ? "16px" : "18px 22px", borderRadius: 12, background: ACCENT_BG, border: `1px solid rgba(37,99,235,0.15)`, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: isMobile ? 80 : 0 }}
+                <motion.div key="cta"
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
+                  style={{ marginTop: 24, padding: isMobile ? "16px" : "20px 24px", borderRadius: 12, background: ACCENT, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, marginBottom: isMobile ? 24 : 0 }}
                 >
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: ACCENT, marginBottom: 4 }}>Vous aimez ce que vous voyez ?</div>
-                    <div style={{ fontSize: 13, color: TEXT_MUTED }}>Connectez votre vraie boîte mail — 14 jours gratuits, sans engagement.</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Vous aimez ce que vous voyez ?</div>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)" }}>Connectez votre vraie boîte mail — 14 jours gratuits.</div>
                   </div>
-                  <Link to="/contact" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", borderRadius: 8, background: ACCENT, color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none", flexShrink: 0 }}>
+                  <Link to="/contact" style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "11px 22px", borderRadius: 9, background: "#fff", color: ACCENT, fontSize: 14, fontWeight: 700, textDecoration: "none", flexShrink: 0 }}>
                     Demander un essai gratuit <Send size={13} />
                   </Link>
                 </motion.div>
               )}
             </AnimatePresence>
           </main>
-        )}
-
-        {/* Chat panel */}
-        <AnimatePresence mode="wait">
-          <DonnaChatPanel key={chatOpen ? "open" : "closed"} isOpen={chatOpen} onToggle={() => setChatOpen(o => !o)} isMobile={isMobile} />
-        </AnimatePresence>
-
-        {/* Mobile floating bubble */}
-        {isMobile && !chatOpen && (
-          <motion.button initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 1, type: "spring", stiffness: 300, damping: 20 }}
-            onClick={() => setChatOpen(true)}
-            style={{ position: "fixed", bottom: 20, right: 20, zIndex: 40, width: 56, height: 56, borderRadius: "50%", background: ACCENT, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 20px rgba(37,99,235,0.35)" }}
-          >
-            <MessageCircle size={24} color="#fff" />
-            <div style={{ position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#EF4444", border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff" }}>1</div>
-          </motion.button>
         )}
 
         {/* Email drawer */}
