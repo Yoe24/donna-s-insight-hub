@@ -427,8 +427,9 @@ function SlimTaskCard({ task, onExpand, expanded, onView, onDraft, onTreat, trea
         background: BG,
       }}
     >
-      <div style={{ padding: "18px 22px", cursor: "pointer" }} onClick={onExpand}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+      {/* Partie supérieure : infos + boutons toujours visibles */}
+      <div style={{ padding: "18px 22px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               {task.urgent && (
@@ -439,9 +440,36 @@ function SlimTaskCard({ task, onExpand, expanded, onView, onDraft, onTreat, trea
             <div style={{ fontSize: 15, fontWeight: 600, color: TEXT, lineHeight: 1.35, marginBottom: 5 }}>{task.title}</div>
             <div style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.5 }}>{task.resume}</div>
           </div>
-          <ChevronDown size={15} color={TEXT_LIGHT} style={{ flexShrink: 0, transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s", marginTop: 3 }} />
+        </div>
+        {/* Boutons toujours visibles */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <button
+            onClick={e => { e.stopPropagation(); onView() }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: ACCENT, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 500 }}
+          >
+            <Mail size={13} /> Voir le mail
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); onDraft() }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 6, border: `1px solid ${ACCENT}`, background: ACCENT_BG, color: ACCENT, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}
+          >
+            <Edit3 size={13} /> Réponse Donna
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); onExpand() }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 6, border: `1px solid ${BORDER}`, background: "transparent", color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}
+          >
+            <ChevronDown size={13} style={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} /> Détails
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); onTreat() }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 6, border: `1px solid rgba(39,174,96,0.3)`, background: "transparent", color: GREEN, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, marginLeft: "auto" }}
+          >
+            <CheckCircle2 size={13} /> Traiter
+          </button>
         </div>
       </div>
+      {/* Expand : détail complet */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -454,7 +482,7 @@ function SlimTaskCard({ task, onExpand, expanded, onView, onDraft, onTreat, trea
             <div style={{ padding: "0 22px 18px", borderTop: `1px solid ${BORDER}`, paddingTop: 16 }}>
               <p style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.7, marginBottom: 14 }}>{task.desc}</p>
               {task.tags.length > 0 && (
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {task.tags.map(tag => (
                     <span key={tag.name} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 5, background: SIDEBAR_BG, border: `1px solid ${BORDER}`, fontSize: 11, color: TEXT_MUTED }}>
                       <Paperclip size={10} /> {tag.name}
@@ -462,17 +490,6 @@ function SlimTaskCard({ task, onExpand, expanded, onView, onDraft, onTreat, trea
                   ))}
                 </div>
               )}
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                <button onClick={onView} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
-                  <Eye size={13} /> Voir l'email
-                </button>
-                <button onClick={onDraft} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 6, border: `1px solid ${ACCENT}`, background: "transparent", color: ACCENT, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
-                  <Edit3 size={13} /> Voir le détail
-                </button>
-                <button onClick={onTreat} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 6, border: `1px solid rgba(39,174,96,0.3)`, background: "transparent", color: GREEN, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, marginLeft: "auto" }}>
-                  <CheckCircle2 size={13} /> Traiter
-                </button>
-              </div>
             </div>
           </motion.div>
         )}
@@ -699,7 +716,7 @@ function DossierDetailView({ dossier, onClose, isMobile }: {
     <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px" : "32px 40px" }}>
       <div style={{ marginBottom: 24 }}>
         <button onClick={onClose} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontSize: 13, color: TEXT_MUTED, fontFamily: "inherit", marginBottom: 16 }}>
-          <ArrowLeft size={16} /> Retour au briefing
+          <ArrowLeft size={16} /> Retour au tableau de bord
         </button>
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 8 }}>
           <div style={{ width: 42, height: 42, borderRadius: "50%", background: INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", color: INITIALS_TEXT, fontSize: 14, fontWeight: 700 }}>{dossier.initials}</div>
@@ -1104,7 +1121,7 @@ function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, 
       <div style={{ padding: "10px 6px" }}>
         <button onClick={() => onDossierClick(null)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 6, background: activeDossierId === null && animPhase >= 4 ? ACCENT_BG : "transparent", marginBottom: 2, width: "100%", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
           <LayoutDashboard size={14} style={{ color: activeDossierId === null ? ACCENT : TEXT_MUTED, flexShrink: 0 }} />
-          <div style={{ fontSize: 13, fontWeight: activeDossierId === null ? 600 : 400, color: activeDossierId === null ? TEXT : TEXT_MUTED }}>Briefing</div>
+          <div style={{ fontSize: 13, fontWeight: activeDossierId === null ? 600 : 400, color: activeDossierId === null ? TEXT : TEXT_MUTED }}>Tableau de bord</div>
         </button>
       </div>
 
@@ -1174,8 +1191,8 @@ const PHASE_C_DONNA_LINES = [
 
 // Textes Phase D — ROI
 const PHASE_D_DONNA_LINES = [
-  "J'ai analysé 89 emails en 4 minutes. Vous auriez mis environ 2h30.",
-  "Demain matin à 8h, votre prochain briefing sera prêt automatiquement. Chaque jour, je vous fais gagner du temps.",
+  "J'ai lu, trié et organisé les pièces jointes par dossier de 89 emails durant ces 24 dernières heures. Vous auriez mis environ 2h30.",
+  "Demain matin à 8h, votre prochain tableau de bord sera prêt automatiquement.",
 ]
 
 export default function DemoV3() {
@@ -1183,6 +1200,8 @@ export default function DemoV3() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [treatedIds, setTreatedIds] = useState<Set<number>>(new Set())
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null)
+  const [activeTab, setActiveTab] = useState<"todo" | "inbox">("todo")
+  const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null)
 
   // Drawer state
   const [selectedTask, setSelectedTask] = useState<typeof TASKS[0] | null>(null)
@@ -1452,34 +1471,66 @@ export default function DemoV3() {
               )}
             </AnimatePresence>
 
-            {/* Action count */}
+            {/* Action count + onglets */}
             <AnimatePresence>
               {animPhase >= 2 && visibleTaskCount > 0 && (
                 <motion.div key="action-count" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ marginBottom: 20 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontSize: isMobile ? 34 : 42, fontWeight: 700, color: urgentRemaining > 0 ? URGENT : TEXT, lineHeight: 1 }}>
-                        {TASKS.slice(0, visibleTaskCount).filter(t => !treatedIds.has(t.id)).length}
+                      <span style={{ fontSize: isMobile ? 34 : 42, fontWeight: 700, color: activeTab === "todo" && urgentRemaining > 0 ? URGENT : TEXT, lineHeight: 1 }}>
+                        {activeTab === "todo"
+                          ? TASKS.slice(0, visibleTaskCount).filter(t => !treatedIds.has(t.id)).length
+                          : DOSSIERS.flatMap(d => d.emails).length
+                        }
                       </span>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>actions à traiter</div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>
+                          {activeTab === "todo" ? "tâches" : "emails"}
+                        </div>
                         <div style={{ fontSize: 12, color: TEXT_MUTED }}>aujourd'hui</div>
                       </div>
                     </div>
-                    {urgentRemaining > 0 && (
+                    {activeTab === "todo" && urgentRemaining > 0 && (
                       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 20, background: URGENT_BG, border: `1px solid rgba(192,57,43,0.2)` }}>
                         <Zap size={12} color={URGENT} />
                         <span style={{ fontSize: 12, fontWeight: 600, color: URGENT }}>{urgentRemaining} urgente{urgentRemaining > 1 ? "s" : ""}</span>
                       </motion.div>
                     )}
                   </div>
+                  {/* Onglets To-do list / Inbox */}
+                  <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
+                    <button
+                      onClick={() => setActiveTab("todo")}
+                      style={{
+                        padding: "7px 18px", borderRadius: 20, border: "none", cursor: "pointer",
+                        fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+                        background: activeTab === "todo" ? ACCENT : "#F0F1F3",
+                        color: activeTab === "todo" ? "#fff" : TEXT_MUTED,
+                        transition: "all 0.18s",
+                      }}
+                    >
+                      To-do list
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("inbox")}
+                      style={{
+                        padding: "7px 18px", borderRadius: 20, border: "none", cursor: "pointer",
+                        fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+                        background: activeTab === "inbox" ? ACCENT : "#F0F1F3",
+                        color: activeTab === "inbox" ? "#fff" : TEXT_MUTED,
+                        transition: "all 0.18s",
+                      }}
+                    >
+                      Inbox
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Tasks */}
+            {/* Tasks — onglet To-do list */}
             <AnimatePresence>
-              {visibleTaskCount > 0 && animPhase >= 2 && (
+              {visibleTaskCount > 0 && animPhase >= 2 && activeTab === "todo" && (
                 <motion.div key="tasks" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} style={{ marginBottom: 8 }}>
                   {TASKS.slice(0, visibleTaskCount).map((task) => (
                     <SlimTaskCard
@@ -1492,6 +1543,51 @@ export default function DemoV3() {
                       onTreat={() => handleTreat(task.id)}
                       treated={treatedIds.has(task.id)}
                     />
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Inbox — onglet Inbox */}
+            <AnimatePresence>
+              {animPhase >= 2 && activeTab === "inbox" && (
+                <motion.div key="inbox" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} style={{ marginBottom: 8 }}>
+                  {DOSSIERS.flatMap(d => d.emails.map(e => ({ ...e, dossierName: d.name, dossierInitials: d.initials }))).sort((a, b) => b.id.localeCompare(a.id)).map(email => (
+                    <div key={email.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, marginBottom: 8, background: BG, overflow: "hidden" }}>
+                      <div
+                        onClick={() => setExpandedEmailId(prev => prev === email.id ? null : email.id)}
+                        style={{ padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 12 }}
+                      >
+                        <div style={{ width: 34, height: 34, borderRadius: "50%", background: INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: INITIALS_TEXT, flexShrink: 0 }}>{email.dossierInitials}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 3 }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email.sender}</span>
+                            <span style={{ fontSize: 11, color: TEXT_LIGHT, flexShrink: 0 }}>{email.date}</span>
+                          </div>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: TEXT, marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email.subject}</div>
+                          <div style={{ fontSize: 12, color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email.resume}</div>
+                        </div>
+                        <ChevronDown size={14} color={TEXT_LIGHT} style={{ flexShrink: 0, transform: expandedEmailId === email.id ? "rotate(180deg)" : "none", transition: "transform 0.2s", marginTop: 4 }} />
+                      </div>
+                      <AnimatePresence>
+                        {expandedEmailId === email.id && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                            style={{ overflow: "hidden" }}
+                          >
+                            <div style={{ padding: "12px 18px 16px", borderTop: `1px solid ${BORDER}` }}>
+                              <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 8, lineHeight: 1.6 }}>
+                                <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 60 }}>Dossier</span> {email.dossierName}
+                              </div>
+                              <p style={{ fontSize: 13, color: TEXT, lineHeight: 1.7, margin: 0 }}>{email.resume}</p>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   ))}
                 </motion.div>
               )}
