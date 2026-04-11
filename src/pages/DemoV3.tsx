@@ -218,6 +218,33 @@ const TASKS = [
   },
 ]
 
+// ─── Emails Inbox (dossiers + bruit) ───
+const INBOX_EMAILS = [
+  // Dossiers
+  ...([
+    { id: "e10", sender: "Jean-Pierre Martin", subject: "Documents demandés pour le dossier", date: getDaysAgo(2), resume: "M. Martin transmet ses 3 derniers bulletins de salaire et son contrat de travail comme demandé.", dossier: "Martin", isBruit: false },
+    { id: "e11", sender: "Me Laurent (adverse)", subject: "Conclusions en défense", date: getDaysAgo(5), resume: "L'employeur maintient la qualification de faute grave. Argument : absences répétées non justifiées.", dossier: "Martin", isBruit: false },
+    { id: "e12", sender: "Greffe CPH Paris", subject: "Convocation bureau de conciliation", date: getDaysAgo(8), resume: "Convocation pour le 22 avril à 9h30. Bureau de conciliation, section industrie.", dossier: "Martin", isBruit: false },
+    { id: "e20", sender: "Marie Dupont", subject: "Re: Point sur le contentieux TechnoPlus", date: getDaysAgo(1), resume: "Mme Dupont confirme qu'aucun règlement n'est intervenu. Elle souhaite accélérer la procédure.", dossier: "Dupont", isBruit: false },
+    { id: "e21", sender: "Me Garnier (TechnoPlus)", subject: "Demande de délai de paiement", date: getDaysAgo(3), resume: "L'avocat de TechnoPlus propose un échelonnement sur 6 mois.", dossier: "Dupont", isBruit: false },
+    { id: "e30", sender: "Claire Dubois", subject: "Nouveaux travaux ce week-end", date: getDaysAgo(1), resume: "Mme Dubois signale que le voisin a repris les travaux malgré la médiation.", dossier: "Dubois", isBruit: false },
+    { id: "e31", sender: "Syndic Foncia Neuilly", subject: "Re: Demande intervention travaux non autorisés", date: getDaysAgo(2), resume: "Le syndic confirme l'absence d'autorisation. Mise en demeure envoyée.", dossier: "Dubois", isBruit: false },
+    { id: "e40", sender: "Famille Roux", subject: "Re: Offre de prêt reçue de la BNP", date: getDaysAgo(1), resume: "Les Roux ont reçu l'offre de prêt BNP : 388 000€ sur 25 ans à 3,2%.", dossier: "Roux", isBruit: false },
+    { id: "e50", sender: "Alice Bernard", subject: "Re: Convention — OK pour la garde alternée", date: getDaysAgo(1), resume: "Mme Bernard accepte la garde alternée une semaine sur deux.", dossier: "Bernard", isBruit: false },
+    { id: "e60", sender: "Cabinet Moreau", subject: "Pièces complémentaires succession Martin", date: getDaysAgo(2), resume: "Transmission de l'inventaire notarial préliminaire.", dossier: "Succession Martin", isBruit: false },
+  ] as const),
+  // Bruit
+  { id: "b1", sender: "Lexbase Newsletter", subject: "Veille juridique de la semaine", date: getDaysAgo(0), resume: "Les dernières décisions de la Cour de cassation en droit du travail.", dossier: null, isBruit: true },
+  { id: "b2", sender: "Ordre des Avocats Paris", subject: "Rappel : cotisation annuelle 2026", date: getDaysAgo(2), resume: "Votre cotisation est à régler avant le 30 avril.", dossier: null, isBruit: true },
+  { id: "b3", sender: "LinkedIn", subject: "3 nouvelles notifications", date: getDaysAgo(1), resume: "Me Garnier a consulté votre profil.", dossier: null, isBruit: true },
+  { id: "b4", sender: "Wolters Kluwer", subject: "Mise à jour Lamyline — droit immobilier", date: getDaysAgo(3), resume: "Nouvelles fiches pratiques disponibles.", dossier: null, isBruit: true },
+  { id: "b5", sender: "CARPA Paris", subject: "Relevé de compte séquestre — mars 2026", date: getDaysAgo(4), resume: "Votre relevé mensuel est disponible.", dossier: null, isBruit: true },
+  { id: "b6", sender: "CNB Formation", subject: "Webinaire IA et avocats — 22 avril", date: getDaysAgo(1), resume: "Inscription ouverte pour le webinaire sur l'IA dans la pratique juridique.", dossier: null, isBruit: true },
+  { id: "b7", sender: "Gazette du Palais", subject: "Flash info — réforme procédure civile", date: getDaysAgo(0), resume: "Le décret du 3 avril modifie les délais de recours.", dossier: null, isBruit: true },
+  { id: "b8", sender: "Docusign", subject: "Document signé — compromis Roux", date: getDaysAgo(5), resume: "Le compromis de vente a été signé électroniquement.", dossier: null, isBruit: true },
+  { id: "b9", sender: "RPVA", subject: "Accusé réception conclusions Martin", date: getDaysAgo(3), resume: "Vos conclusions ont été reçues par le greffe.", dossier: null, isBruit: true },
+]
+
 // ─── Sujets de mails simulés ───
 const SIMULATED_EMAILS = [
   "Convocation audience JAF — Dupont c/ Dupont",
@@ -385,30 +412,11 @@ function useTypingText(targetText: string, active: boolean, charsPerSec = 35) {
 
 type TaskStatus = "sent" | "draft" | "pending"
 
-function StatusBadge({ status }: { status: TaskStatus }) {
-  const map: Record<TaskStatus, { label: string }> = {
-    sent: { label: "Mail envoyé" },
-    draft: { label: "Brouillon prêt" },
-    pending: { label: "À traiter" },
-  }
-  return (
-    <span style={{
-      padding: "3px 10px", borderRadius: 20,
-      background: "#F3F4F5", color: TEXT_MUTED,
-      fontSize: 11, fontWeight: 500,
-      border: `1px solid ${BORDER}`,
-    }}>
-      {map[status].label}
-    </span>
-  )
-}
-
-// ─── Slim TaskCard — épurée style cabinet ───
-function SlimTaskCard({ task, onExpand, expanded, onView, onDraft, onTreat, treated }: {
+// ─── Slim TaskCard — nouveau design ───
+function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
   task: typeof TASKS[0]
   onExpand: () => void
   expanded: boolean
-  onView: () => void
   onDraft: () => void
   onTreat: () => void
   treated: boolean
@@ -416,13 +424,18 @@ function SlimTaskCard({ task, onExpand, expanded, onView, onDraft, onTreat, trea
   if (treated) {
     return (
       <motion.div
-        initial={{ opacity: 1 }} animate={{ opacity: 0.45 }}
+        initial={{ opacity: 1 }} animate={{ opacity: 0.42 }}
         transition={{ duration: 0.3 }}
         style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: "14px 20px", marginBottom: 10, background: SIDEBAR_BG, display: "flex", alignItems: "center", gap: 10 }}
       >
-        <CheckCircle2 size={15} color={GREEN} style={{ flexShrink: 0 }} />
+        <button
+          onClick={onTreat}
+          title="Marquer comme non traité"
+          style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${GREEN}`, background: GREEN, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, padding: 0 }}
+        >
+          <Check size={10} color="#fff" />
+        </button>
         <span style={{ fontSize: 14, color: TEXT_MUTED, textDecoration: "line-through", flex: 1 }}>{task.title}</span>
-        <button onClick={onTreat} style={{ fontSize: 11, color: TEXT_MUTED, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Annuler</button>
       </motion.div>
     )
   }
@@ -439,69 +452,73 @@ function SlimTaskCard({ task, onExpand, expanded, onView, onDraft, onTreat, trea
         background: BG,
       }}
     >
-      {/* Partie supérieure : infos + boutons toujours visibles */}
-      <div style={{ padding: "18px 22px" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-              {task.urgent && (
-                <span style={{ fontSize: 10, fontWeight: 700, color: URGENT, background: URGENT_BG, padding: "2px 7px", borderRadius: 4, letterSpacing: "0.06em", border: `1px solid rgba(192,57,43,0.18)` }}>URGENT</span>
-              )}
-              <StatusBadge status={task.status} />
-            </div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: TEXT, lineHeight: 1.35, marginBottom: 5 }}>{task.title}</div>
-            <div style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.5 }}>{task.resume}</div>
-          </div>
-        </div>
-        {/* Boutons toujours visibles */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <button
-            onClick={e => { e.stopPropagation(); onView() }}
-            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: ACCENT, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 500 }}
-          >
-            <Mail size={13} /> Voir le mail
-          </button>
-          <button
-            onClick={e => { e.stopPropagation(); onDraft() }}
-            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 6, border: `1px solid ${ACCENT}`, background: ACCENT_BG, color: ACCENT, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}
-          >
-            <Edit3 size={13} /> Réponse Donna
-          </button>
-          <button
-            onClick={e => { e.stopPropagation(); onExpand() }}
-            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 6, border: `1px solid ${BORDER}`, background: "transparent", color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}
-          >
-            <ChevronDown size={13} style={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} /> Détails
-          </button>
+      <div style={{ padding: "16px 20px" }}>
+        {/* Ligne 1 : checkbox + titre + badge urgent */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+          {/* Checkbox discret */}
           <button
             onClick={e => { e.stopPropagation(); onTreat() }}
-            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 6, border: `1px solid rgba(39,174,96,0.3)`, background: "transparent", color: GREEN, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, marginLeft: "auto" }}
+            title="Marquer comme traité"
+            style={{ width: 17, height: 17, borderRadius: "50%", border: `1.5px solid ${BORDER}`, background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, marginTop: 2, padding: 0, transition: "border-color 0.15s" }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = TEXT_MUTED)}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = BORDER)}
+          />
+          {/* Titre cliquable pour expand */}
+          <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={onExpand}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, lineHeight: 1.35, marginBottom: 4 }}>{task.title}</div>
+            <div style={{ fontSize: 12, color: TEXT_MUTED, lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{task.resume}</div>
+          </div>
+          {/* Badge Urgent uniquement */}
+          {task.urgent && (
+            <span style={{ fontSize: 10, fontWeight: 700, color: URGENT, background: URGENT_BG, padding: "2px 7px", borderRadius: 4, letterSpacing: "0.06em", border: `1px solid rgba(192,57,43,0.18)`, flexShrink: 0, marginTop: 1 }}>URGENT</span>
+          )}
+        </div>
+        {/* Ligne 2 : bouton Réponse générée par Donna */}
+        <div style={{ marginTop: 12, marginLeft: 27 }}>
+          <button
+            onClick={e => { e.stopPropagation(); onDraft() }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 7, border: "none", background: ACCENT, color: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, boxShadow: "0 1px 4px rgba(44,62,107,0.15)" }}
           >
-            <CheckCircle2 size={13} /> Traiter
+            <Edit3 size={13} /> Réponse générée par Donna
           </button>
         </div>
       </div>
-      {/* Expand : détail complet */}
+      {/* Expand : détail */}
       <AnimatePresence>
         {expanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.28 }}
             style={{ overflow: "hidden" }}
           >
-            <div style={{ padding: "0 22px 18px", borderTop: `1px solid ${BORDER}`, paddingTop: 16 }}>
-              <p style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.7, marginBottom: 14 }}>{task.desc}</p>
-              {task.tags.length > 0 && (
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {task.tags.map(tag => (
-                    <span key={tag.name} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 5, background: SIDEBAR_BG, border: `1px solid ${BORDER}`, fontSize: 11, color: TEXT_MUTED }}>
-                      <Paperclip size={10} /> {tag.name}
-                    </span>
-                  ))}
-                </div>
-              )}
+            <div style={{ padding: "14px 20px 16px 47px", borderTop: `1px solid ${BORDER}` }}>
+              <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 6, lineHeight: 1.6 }}>
+                <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 36 }}>De</span>
+                <span style={{ fontWeight: 500, color: TEXT }}>{task.email_from}</span>
+              </div>
+              <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 10, lineHeight: 1.6 }}>
+                <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 36 }}>Date</span>
+                <span style={{ color: TEXT }}>{task.email_date}</span>
+              </div>
+              <div style={{ background: ACCENT_BG, borderRadius: 7, padding: "10px 14px", marginBottom: 12, border: `1px solid rgba(44,62,107,0.1)` }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: ACCENT, marginBottom: 4 }}>Résumé Donna</div>
+                <p style={{ fontSize: 13, color: TEXT, lineHeight: 1.65, margin: 0 }}>{task.resume}</p>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <button
+                  onClick={e => { e.stopPropagation(); onDraft() }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 13px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}
+                >
+                  <Mail size={12} /> Voir le mail original
+                </button>
+                {task.tags.length > 0 && task.tags.map(tag => (
+                  <span key={tag.name} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 9px", borderRadius: 5, background: SIDEBAR_BG, border: `1px solid ${BORDER}`, fontSize: 11, color: TEXT_MUTED }}>
+                    <Paperclip size={10} /> {tag.name}
+                  </span>
+                ))}
+              </div>
             </div>
           </motion.div>
         )}
@@ -1214,6 +1231,8 @@ export default function DemoV3() {
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null)
   const [activeTab, setActiveTab] = useState<"todo" | "inbox">("todo")
   const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null)
+  const [inboxPeriodFilter, setInboxPeriodFilter] = useState<"24h" | "7j" | "30j">("30j")
+  const [inboxTypeFilter, setInboxTypeFilter] = useState<"tous" | "dossiers" | "bruit">("tous")
 
   // Drawer state
   const [selectedTask, setSelectedTask] = useState<typeof TASKS[0] | null>(null)
@@ -1492,7 +1511,7 @@ export default function DemoV3() {
                       <span style={{ fontSize: isMobile ? 34 : 42, fontWeight: 700, color: activeTab === "todo" && urgentRemaining > 0 ? URGENT : TEXT, lineHeight: 1 }}>
                         {activeTab === "todo"
                           ? TASKS.slice(0, visibleTaskCount).filter(t => !treatedIds.has(t.id)).length
-                          : DOSSIERS.flatMap(d => d.emails).length
+                          : INBOX_EMAILS.length
                         }
                       </span>
                       <div>
@@ -1550,7 +1569,6 @@ export default function DemoV3() {
                       task={task}
                       onExpand={() => handleExpandTask(task.id)}
                       expanded={expandedTaskId === task.id}
-                      onView={() => handleView(task)}
                       onDraft={() => handleDraft(task)}
                       onTreat={() => handleTreat(task.id)}
                       treated={treatedIds.has(task.id)}
@@ -1564,43 +1582,109 @@ export default function DemoV3() {
             <AnimatePresence>
               {animPhase >= 2 && activeTab === "inbox" && (
                 <motion.div key="inbox" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} style={{ marginBottom: 8 }}>
-                  {DOSSIERS.flatMap(d => d.emails.map(e => ({ ...e, dossierName: d.name, dossierInitials: d.initials }))).sort((a, b) => b.id.localeCompare(a.id)).map(email => (
-                    <div key={email.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, marginBottom: 8, background: BG, overflow: "hidden" }}>
-                      <div
-                        onClick={() => setExpandedEmailId(prev => prev === email.id ? null : email.id)}
-                        style={{ padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 12 }}
-                      >
-                        <div style={{ width: 34, height: 34, borderRadius: "50%", background: INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: INITIALS_TEXT, flexShrink: 0 }}>{email.dossierInitials}</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 3 }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email.sender}</span>
-                            <span style={{ fontSize: 11, color: TEXT_LIGHT, flexShrink: 0 }}>{email.date}</span>
+                  {/* Filtres discrets */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12, marginBottom: 14 }}>
+                    <select
+                      value={inboxPeriodFilter}
+                      onChange={e => setInboxPeriodFilter(e.target.value as "24h" | "7j" | "30j")}
+                      style={{ fontSize: 11, color: TEXT_MUTED, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", outline: "none", appearance: "none", WebkitAppearance: "none", paddingRight: 12 }}
+                    >
+                      <option value="24h">24 dernières heures</option>
+                      <option value="7j">7 derniers jours</option>
+                      <option value="30j">30 derniers jours</option>
+                    </select>
+                    <span style={{ color: BORDER, fontSize: 12 }}>|</span>
+                    <select
+                      value={inboxTypeFilter}
+                      onChange={e => setInboxTypeFilter(e.target.value as "tous" | "dossiers" | "bruit")}
+                      style={{ fontSize: 11, color: TEXT_MUTED, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", outline: "none", appearance: "none", WebkitAppearance: "none", paddingRight: 12 }}
+                    >
+                      <option value="tous">Tous</option>
+                      <option value="dossiers">Dossiers</option>
+                      <option value="bruit">Bruit</option>
+                    </select>
+                  </div>
+                  {/* Liste emails */}
+                  {(() => {
+                    const now = new Date()
+                    const filtered = INBOX_EMAILS.filter(email => {
+                      // Filtre type
+                      if (inboxTypeFilter === "dossiers" && email.isBruit) return false
+                      if (inboxTypeFilter === "bruit" && !email.isBruit) return false
+                      // Filtre période (simplifié : on filtre par index de getDaysAgo)
+                      // Les emails avec getDaysAgo(0) ou (1) = 24h, getDaysAgo(0-7) = 7j, tout = 30j
+                      // On extrait le numéro de jour depuis la date formatée — approche : comparer avec getDaysAgo
+                      if (inboxPeriodFilter === "24h") {
+                        const d0 = getDaysAgo(0); const d1 = getDaysAgo(1)
+                        return email.date === d0 || email.date === d1
+                      }
+                      if (inboxPeriodFilter === "7j") {
+                        const days7 = Array.from({ length: 8 }, (_, i) => getDaysAgo(i))
+                        return days7.includes(email.date)
+                      }
+                      return true // 30j = tout
+                    })
+                    return filtered.map(email => (
+                      <div key={email.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, marginBottom: 8, background: BG, overflow: "hidden" }}>
+                        <div
+                          onClick={() => setExpandedEmailId(prev => prev === email.id ? null : email.id)}
+                          style={{ padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}
+                        >
+                          {/* Initiale expéditeur */}
+                          <div style={{ width: 32, height: 32, borderRadius: "50%", background: email.isBruit ? "#F0F1F3" : INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: INITIALS_TEXT, flexShrink: 0 }}>
+                            {email.sender.charAt(0)}
                           </div>
-                          <div style={{ fontSize: 13, fontWeight: 500, color: TEXT, marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email.subject}</div>
-                          <div style={{ fontSize: 12, color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email.resume}</div>
-                        </div>
-                        <ChevronDown size={14} color={TEXT_LIGHT} style={{ flexShrink: 0, transform: expandedEmailId === email.id ? "rotate(180deg)" : "none", transition: "transform 0.2s", marginTop: 4 }} />
-                      </div>
-                      <AnimatePresence>
-                        {expandedEmailId === email.id && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.25 }}
-                            style={{ overflow: "hidden" }}
-                          >
-                            <div style={{ padding: "12px 18px 16px", borderTop: `1px solid ${BORDER}` }}>
-                              <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 8, lineHeight: 1.6 }}>
-                                <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 60 }}>Dossier</span> {email.dossierName}
-                              </div>
-                              <p style={{ fontSize: 13, color: TEXT, lineHeight: 1.7, margin: 0 }}>{email.resume}</p>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 1 }}>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: email.isBruit ? TEXT_MUTED : TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email.sender}</span>
+                              <span style={{ fontSize: 11, color: TEXT_LIGHT, flexShrink: 0 }}>{email.date}</span>
                             </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ))}
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: 12, color: email.isBruit ? TEXT_MUTED : TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{email.subject}</span>
+                              {email.dossier && (
+                                <span style={{ fontSize: 10, color: TEXT_LIGHT, background: SIDEBAR_BG, border: `1px solid ${BORDER}`, borderRadius: 4, padding: "1px 6px", flexShrink: 0, whiteSpace: "nowrap" }}>{email.dossier}</span>
+                              )}
+                            </div>
+                          </div>
+                          <ChevronDown size={13} color={TEXT_LIGHT} style={{ flexShrink: 0, transform: expandedEmailId === email.id ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+                        </div>
+                        <AnimatePresence>
+                          {expandedEmailId === email.id && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.22 }}
+                              style={{ overflow: "hidden" }}
+                            >
+                              <div style={{ padding: "14px 18px 16px", borderTop: `1px solid ${BORDER}` }}>
+                                <div style={{ marginBottom: 10 }}>
+                                  <div style={{ fontSize: 12, lineHeight: 1.7 }}>
+                                    <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 52 }}>De</span>
+                                    <span style={{ fontWeight: 600, color: TEXT }}>{email.sender}</span>
+                                  </div>
+                                  <div style={{ fontSize: 12, lineHeight: 1.7 }}>
+                                    <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 52 }}>Date</span>
+                                    <span style={{ color: TEXT }}>{email.date}</span>
+                                  </div>
+                                  <div style={{ fontSize: 12, lineHeight: 1.7 }}>
+                                    <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 52 }}>Objet</span>
+                                    <span style={{ color: TEXT }}>{email.subject}</span>
+                                  </div>
+                                </div>
+                                <p style={{ fontSize: 13, color: TEXT, lineHeight: 1.75, margin: "0 0 8px" }}>{email.resume}</p>
+                                {email.dossier && (
+                                  <div style={{ marginTop: 10 }}>
+                                    <span style={{ fontSize: 11, color: TEXT_LIGHT, background: SIDEBAR_BG, border: `1px solid ${BORDER}`, borderRadius: 4, padding: "2px 8px" }}>Dossier : {email.dossier}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    ))
+                  })()}
                 </motion.div>
               )}
             </AnimatePresence>
