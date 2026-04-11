@@ -263,37 +263,49 @@ const SIMULATED_EMAILS = [
 ]
 
 // ─── Narration de Donna pour chaque dossier (Phase B) ───
-// Chaque dossier = 3 lignes à afficher en séquence avec effet typing
+// Chaque dossier = 5 lignes : résumé + échanges + PJ + échéances + conclusion
 const DOSSIER_DONNA_LINES: string[][] = [
   [
-    "J'ai trouvé 10 emails concernant un litige prud'homal avec M. Martin.",
-    "Je classe les échanges avec le greffe, l'adversaire et votre client.",
-    "Attention, j'ai repéré une audience le 22 avril. Je la note dans vos échéances.",
+    "J'ai trouvé un litige prud'homal avec M. Martin. Licenciement contesté pour faute grave.",
+    "3 échanges entre vous, le greffe et l'avocat adverse. Je les classe par ordre chronologique.",
+    "2 pièces jointes extraites, renommées et classées : contrat de travail et lettre de licenciement.",
+    "Attention : audience de conciliation le 22 avril, et dépôt des conclusions le 15 avril.",
+    "Dossier Martin traité.",
   ],
   [
-    "Nouveau dossier. Marie Dupont a un contentieux commercial avec TechnoPlus.",
-    "34 200 euros de factures impayées. Je télécharge les pièces justificatives.",
-    "L'assignation en référé est à préparer. Je l'ajoute à vos urgences.",
+    "Nouveau dossier. Marie Dupont a un contentieux commercial avec TechnoPlus SARL.",
+    "2 échanges entre votre cliente et l'avocat adverse. Je trie la chronologie.",
+    "1 pièce jointe extraite, renommée et classée : le récapitulatif des 3 factures impayées, 34 200 euros.",
+    "Echéance urgente : assignation en référé-provision à préparer au plus vite.",
+    "Dossier Dupont traité.",
   ],
   [
-    "Un litige de voisinage pour Claire Dubois. Nuisances sonores.",
-    "Je retrouve le constat d'huissier dans les pièces jointes et je l'archive.",
-    "Médiation en cours avec le syndic. Je surveille le dossier.",
+    "Un litige de voisinage pour Claire Dubois. Nuisances sonores et travaux non autorisés.",
+    "2 échanges entre votre cliente et le syndic Foncia. Je les archive.",
+    "1 pièce jointe extraite, renommée et classée : le constat d'huissier avec mesure des nuisances.",
+    "Prochaine étape : médiation avec le syndic prévue le 15 avril.",
+    "Dossier Dubois traité.",
   ],
   [
     "La famille Roux prépare une acquisition immobilière à 485 000 euros.",
-    "Signature chez le notaire prévue le 15 mai. Je surveille les délais.",
-    "L'offre de prêt BNP est arrivée. Je la classe dans le dossier.",
+    "1 échange avec vos clients. L'offre de prêt BNP vient d'arriver.",
+    "1 pièce jointe extraite, renommée et classée : le compromis de vente.",
+    "Echéance importante : signature chez le notaire prévue le 15 mai. Je surveille les délais.",
+    "Dossier Roux traité.",
   ],
   [
-    "Un dossier de divorce. Audience JAF le 15 avril.",
-    "Je prépare un résumé des échanges et je note les mesures provisoires à demander.",
-    "Convocation officielle reçue du greffe. C'est urgent.",
+    "Un dossier de divorce pour Alice Bernard. Consentement mutuel en cours.",
+    "1 échange avec votre cliente. Elle accepte la garde alternée.",
+    "1 pièce jointe extraite, renommée et classée : le projet de convention de divorce.",
+    "Echéance : signature de la convention le 25 avril.",
+    "Dossier Bernard traité.",
   ],
   [
     "Une succession de 780 000 euros à partager entre deux héritiers.",
-    "Il manque des pièces. Je prépare un brouillon de relance au notaire.",
-    "L'inventaire notarial est archivé. Dossier traité.",
+    "1 échange avec le cabinet du notaire. Il manque encore des pièces.",
+    "1 pièce jointe extraite, renommée et classée : l'inventaire notarial.",
+    "Je prépare un brouillon de relance au notaire pour les documents manquants.",
+    "Dossier Succession Martin traité.",
   ],
 ]
 
@@ -1212,10 +1224,10 @@ export default function DemoV3() {
 
   // ─── Animation phases ───
   // 0 = Phase A (scan, 0-10s)
-  // 1 = Phase B (dossiers, 10-52s, ~7s par dossier)
-  // 2 = Phase C (briefing, 52-65s)
-  // 3 = Phase D (ROI, 65-75s)
-  // 4 = Phase E (interactive, 75s+)
+  // 1 = Phase B (dossiers, 10-64s, ~9s par dossier, 5 lignes chacun)
+  // 2 = Phase C (briefing, 64-78s)
+  // 3 = Phase D (ROI, 78-90s)
+  // 4 = Phase E (interactive, 90s+)
   const [animPhase, setAnimPhase] = useState(0)
   const [mailCount, setMailCount] = useState(0)
   const [currentEmailIdx, setCurrentEmailIdx] = useState(0)
@@ -1279,9 +1291,9 @@ export default function DemoV3() {
       setPhaseADonnaActive(true)
     }, 1000)
 
-    // === PHASE B: 10-52s — dossiers (~7s each) ===
-    // Timings: 10s, 17s, 24s, 31s, 38s, 45s
-    const dossierStartTimes = [10000, 17000, 24000, 31000, 38000, 45000]
+    // === PHASE B: 10-64s — dossiers (~9s each for 5 lines) ===
+    // Timings: 10s, 19s, 28s, 37s, 46s, 55s
+    const dossierStartTimes = [10000, 19000, 28000, 37000, 46000, 55000]
     dossierStartTimes.forEach((delay, i) => {
       addTimer(() => {
         if (emailIntervalRef.current) { clearInterval(emailIntervalRef.current); emailIntervalRef.current = null }
@@ -1294,14 +1306,14 @@ export default function DemoV3() {
         addTimer(() => {
           setDossierDonnaActive(true)
         }, 300)
-        // Show check after all 3 lines (~3 lines * ~1s each typing + 1.4s pause = ~7s total but start check at ~5s)
+        // Show check after 5 lines (~5 lines * ~1.2s typing + 1.2s pause = ~8s, show check at ~7.5s)
         addTimer(() => {
           setDossierShowCheck(true)
-        }, 5500)
+        }, 7500)
       }, delay)
     })
 
-    // === PHASE C: 52s — briefing construction ===
+    // === PHASE C: 64s — briefing construction ===
     addTimer(() => {
       setAnimPhase(2)
       setActiveCinematicDossierIdx(-1)
@@ -1309,22 +1321,22 @@ export default function DemoV3() {
       setPhaseCActive(true)
       // Tasks appear progressively
       addTimer(() => setVisibleTaskCount(1), 3000)
-      addTimer(() => setVisibleTaskCount(2), 5500)
-      addTimer(() => setVisibleTaskCount(3), 8000)
-    }, 52000)
+      addTimer(() => setVisibleTaskCount(2), 6000)
+      addTimer(() => setVisibleTaskCount(3), 9000)
+    }, 64000)
 
-    // === PHASE D: 65s — ROI ===
+    // === PHASE D: 78s — ROI ===
     addTimer(() => {
       setAnimPhase(3)
       setRoiVisible(true)
       setPhaseDActive(true)
-    }, 65000)
+    }, 78000)
 
-    // === PHASE E: 78s — interactive ===
+    // === PHASE E: 90s — interactive ===
     addTimer(() => {
       setAnimPhase(4)
       setAnimDone(true)
-    }, 78000)
+    }, 90000)
 
     return () => {
       timersRef.current.forEach(t => clearTimeout(t))
