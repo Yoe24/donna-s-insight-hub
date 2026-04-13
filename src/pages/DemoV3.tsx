@@ -1321,9 +1321,9 @@ function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, 
       </div>
 
       <div style={{ padding: "10px 14px", borderTop: `1px solid ${SIDEBAR_BORDER}` }}>
-        <Link to="/contact" style={{ fontSize: 12, color: ACCENT, fontWeight: 500, display: "flex", alignItems: "center", gap: 5, textDecoration: "none", marginBottom: 6 }}>
+        <a href="https://calendly.com/contact-donna-legal/onboarding-15min" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: ACCENT, fontWeight: 500, display: "flex", alignItems: "center", gap: 5, textDecoration: "none", marginBottom: 6 }}>
           <Mail size={11} /> Demander un essai gratuit
-        </Link>
+        </a>
         <Link to="/" style={{ fontSize: 11, color: TEXT_MUTED, textDecoration: "none" }}>← Retour au site</Link>
       </div>
     </>
@@ -1993,9 +1993,9 @@ export default function DemoV3() {
                     <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 5 }}>Vous aimez ce que vous voyez ?</div>
                     <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>Connectez votre vraie boîte mail — 14 jours gratuits.</div>
                   </div>
-                  <Link to="/contact" style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "11px 22px", borderRadius: 8, background: "#fff", color: ACCENT, fontSize: 14, fontWeight: 700, textDecoration: "none", flexShrink: 0 }}>
-                    Demander un essai <Send size={13} />
-                  </Link>
+                  <a href="https://calendly.com/contact-donna-legal/onboarding-15min" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "11px 22px", borderRadius: 8, background: "#fff", color: ACCENT, fontSize: 14, fontWeight: 700, textDecoration: "none", flexShrink: 0 }}>
+                    Réserver un onboarding <Send size={13} />
+                  </a>
                 </motion.div>
               )}
             </AnimatePresence>
