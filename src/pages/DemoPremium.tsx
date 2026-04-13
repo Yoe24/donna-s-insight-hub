@@ -9,21 +9,33 @@ import {
 } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 
-// ─── Palette Noir + Vert Émeraude ───
+// ─── Palette Premium — Noir & Blanc + touches couleur dossiers ───
 const BG = "#FFFFFF"
-const SIDEBAR_BG = "#F5F5F4"
-const SIDEBAR_BORDER = "#E7E5E4"
-const TEXT = "#0F172A"
-const TEXT_MUTED = "#64748B"
-const TEXT_LIGHT = "#94A3B8"
-const ACCENT = "#059669"
-const ACCENT_BG = "#ECFDF5"
-const URGENT = "#DC2626"
-const URGENT_BG = "#FEF2F2"
-const GREEN = "#059669"
-const BORDER = "#E7E5E4"
-const INITIALS_BG = "#0F172A"
-const INITIALS_TEXT = "#10B981"
+const SIDEBAR_BG = "#FAFAFA"
+const SIDEBAR_BORDER = "#EBEBEB"
+const TEXT = "#111111"
+const TEXT_MUTED = "#6B6B6B"
+const TEXT_LIGHT = "#A0A0A0"
+const ACCENT = "#111111"          // noir pour l'accent principal
+const ACCENT_BG = "#F5F5F5"       // gris très clair
+const ACCENT_ACTION = "#6C5CE7"   // violet pour les boutons d'action (Réponse Donna)
+const CIRCLE_COLOR = "#111111"    // cercle emails noir
+const URGENT = "#111111"
+const URGENT_BG = "#F5F5F5"
+const GREEN = "#111111"
+const BORDER = "#EBEBEB"
+const INITIALS_BG = "#E5E5E5"
+const INITIALS_TEXT = "#333333"
+const SERIF_FONT = "'Playfair Display', Georgia, serif"
+
+// Couleurs par domaine de droit (seules couleurs vives de l'interface)
+const DOMAIN_COLORS: Record<string, string> = {
+  "Travail": "#2563EB",
+  "Commercial": "#7C3AED",
+  "Immobilier": "#059669",
+  "Famille": "#DC2626",
+  "Droit successoral": "#EA580C",
+}
 
 // ─── Dates dynamiques ───
 function getToday() {
@@ -444,9 +456,9 @@ function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
   }
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0, y: 16, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
       style={{
         border: `1px solid ${BORDER}`,
         borderRadius: 10,
@@ -480,7 +492,7 @@ function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
         <div style={{ marginTop: 12, marginLeft: 27 }}>
           <button
             onClick={e => { e.stopPropagation(); onDraft() }}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 7, border: "none", background: "#059669", color: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, boxShadow: "0 1px 4px rgba(5,150,105,0.25)" }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 7, border: "none", background: ACCENT_ACTION, color: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, boxShadow: `0 2px 8px rgba(108,92,231,0.2)` }}
           >
             <Edit3 size={13} /> Réponse générée par Donna
           </button>
@@ -505,7 +517,7 @@ function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
                 <div><span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 36 }}>Date</span> <span style={{ color: TEXT }}>{task.email_date}</span></div>
               </div>
               {/* Section Résumé Donna */}
-              <div style={{ background: ACCENT_BG, borderRadius: 8, padding: "12px 14px", marginBottom: 14, border: `1px solid rgba(37,99,235,0.12)` }}>
+              <div style={{ background: ACCENT_BG, borderRadius: 8, padding: "12px 14px", marginBottom: 14, border: `1px solid rgba(17,17,17,0.10)` }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
                   <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700 }}>D</div>
                   <span style={{ fontSize: 11, fontWeight: 600, color: ACCENT }}>Résumé Donna</span>
@@ -537,7 +549,7 @@ function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
               {/* Bouton Générer une réponse */}
               <button
                 onClick={e => { e.stopPropagation(); onDraft() }}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, width: "100%", padding: "11px 18px", borderRadius: 8, background: GREEN, color: "#fff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, width: "100%", padding: "11px 18px", borderRadius: 8, background: ACCENT_ACTION, color: "#fff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 2px 8px rgba(108,92,231,0.2)" }}
               >
                 <Edit3 size={14} /> Générer une réponse
               </button>
@@ -585,10 +597,10 @@ function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
     <motion.div
       initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
       transition={{ type: "spring", damping: 28, stiffness: 300 }}
-      style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: isMobile ? "100%" : "min(680px, 55vw)", background: BG, zIndex: 80, display: "flex", flexDirection: "column", boxShadow: "-4px 0 30px rgba(0,0,0,0.08)", borderLeft: `1px solid ${BORDER}` }}
+      style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: isMobile ? "100%" : "min(680px, 55vw)", background: BG, zIndex: 80, display: "flex", flexDirection: "column", boxShadow: "-4px 0 30px rgba(0,0,0,0.08)", borderLeft: `1.5px solid #111111` }}
     >
       {/* Header avec onglets Voir / Brouillon */}
-      <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+      <div style={{ padding: "16px 20px", borderBottom: `1.5px solid #111111`, display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
         <button onClick={onClose} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontSize: 13, color: TEXT_MUTED, fontFamily: "inherit" }}>
           <ArrowLeft size={16} /> Retour
         </button>
@@ -623,7 +635,7 @@ function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
             </div>
 
             {/* Résumé Donna */}
-            <div style={{ background: ACCENT_BG, borderRadius: 10, padding: "16px 18px", marginBottom: 20, border: `1px solid rgba(37,99,235,0.12)` }}>
+            <div style={{ background: ACCENT_BG, borderRadius: 10, padding: "16px 18px", marginBottom: 20, border: `1px solid rgba(17,17,17,0.10)` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                 <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 10, fontWeight: 700 }}>D</div>
                 <span style={{ fontSize: 12, fontWeight: 600, color: ACCENT }}>Résumé Donna</span>
@@ -669,7 +681,7 @@ function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
             )}
 
             {/* Bouton Générer une réponse */}
-            <button onClick={handleGenerateDraft} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "12px 20px", borderRadius: 8, background: ACCENT, color: "#fff", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+            <button onClick={handleGenerateDraft} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "12px 20px", borderRadius: 8, background: ACCENT_ACTION, color: "#fff", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 2px 8px rgba(108,92,231,0.2)" }}>
               <Edit3 size={15} /> Générer une réponse
             </button>
           </>
@@ -1073,8 +1085,8 @@ function ScanCircle({ size, count, total, isFiltering, isFinal }: {
         position: "absolute",
         inset: 0,
         borderRadius: "50%",
-        background: ACCENT,
-        boxShadow: "0 2px 16px rgba(37,99,235,0.28)",
+        background: CIRCLE_COLOR,
+        boxShadow: "0 2px 16px rgba(17,17,17,0.18)",
       }} />
       {/* Anneau de progression SVG par-dessus */}
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", top: 0, left: 0 }}>
@@ -1264,7 +1276,7 @@ function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, 
       <div style={{ padding: "18px 14px 12px", borderBottom: `1px solid ${SIDEBAR_BORDER}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 17, color: TEXT }}>Donna</span>
-          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: ACCENT_BG, color: ACCENT, letterSpacing: "0.05em" }}>DÉMO</span>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#111111", color: "#FFFFFF", letterSpacing: "0.05em" }}>DÉMO</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
           <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 2.2, repeat: animPhase < 4 ? Infinity : 0 }}
@@ -1296,7 +1308,7 @@ function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, 
               <motion.div key={d.id}
                 initial={{ opacity: 0, x: -12 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
                 onClick={() => animPhase >= 4 && onDossierClick(d)}
                 style={{
                   display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", marginBottom: 2,
@@ -1307,9 +1319,10 @@ function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, 
                   transition: "all 0.2s",
                 }}
               >
-                <div style={{ width: 26, height: 26, borderRadius: "50%", background: INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: INITIALS_TEXT, flexShrink: 0 }}>{d.initials}</div>
+                <div style={{ width: 26, height: 26, borderRadius: "50%", background: DOMAIN_COLORS[d.domain] || INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#FFFFFF", flexShrink: 0 }}>{d.initials}</div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: isActive ? 600 : 400, color: isActive ? TEXT : TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</div>
+                  <div style={{ fontSize: 10, color: TEXT_LIGHT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.type}</div>
                 </div>
                 {isActive && animPhase === 1 && (
                   <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }} style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />
@@ -1321,7 +1334,7 @@ function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, 
       </div>
 
       <div style={{ padding: "10px 14px", borderTop: `1px solid ${SIDEBAR_BORDER}` }}>
-        <a href="https://calendly.com/contact-donna-legal/onboarding-15min" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: ACCENT, fontWeight: 500, display: "flex", alignItems: "center", gap: 5, textDecoration: "none", marginBottom: 6 }}>
+        <a href="https://calendly.com/contact-donna-legal/onboarding-15min" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: ACCENT_ACTION, fontWeight: 500, display: "flex", alignItems: "center", gap: 5, textDecoration: "none", marginBottom: 6 }}>
           <Mail size={11} /> Demander un essai gratuit
         </a>
         <Link to="/" style={{ fontSize: 11, color: TEXT_MUTED, textDecoration: "none" }}>← Retour au site</Link>
@@ -1573,7 +1586,7 @@ export default function DemoV3() {
 
             {/* Header + Skip button — always visible */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
-              <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: "easeOut" }}>
                 <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? 22 : 27, fontWeight: 400, color: TEXT, marginBottom: 4, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
                   Bonjour, Alexandra
                 </h1>
@@ -1631,7 +1644,7 @@ export default function DemoV3() {
             {/* BLOC UNIQUE — Cercle emails + message Donna */}
             <AnimatePresence>
               {animPhase >= 2 && (
-                <motion.div key="donna-bloc" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ marginBottom: 20 }}>
+                <motion.div key="donna-bloc" initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }} style={{ marginBottom: 20 }}>
                   <div style={{
                     border: `1px solid #E5E7EB`,
                     borderRadius: 12,
@@ -1706,7 +1719,7 @@ export default function DemoV3() {
             {/* Tasks — onglet To-do list */}
             <AnimatePresence>
               {visibleTaskCount > 0 && animPhase >= 2 && activeTab === "todo" && (
-                <motion.div key="tasks" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} style={{ marginBottom: 8 }}>
+                <motion.div key="tasks" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }} style={{ marginBottom: 8 }}>
                   {/* Séparateur "Tâches créées par Donna" */}
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, marginTop: 4 }}>
                     <div style={{ height: 1, flex: 1, background: BORDER }} />
@@ -1977,13 +1990,13 @@ export default function DemoV3() {
               {animDone && (
                 <motion.div key="cta"
                   initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
-                  style={{ marginTop: 24, padding: isMobile ? "18px" : "22px 28px", borderRadius: 10, background: ACCENT, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, marginBottom: isMobile ? 24 : 0 }}
+                  style={{ marginTop: 24, padding: isMobile ? "18px" : "22px 28px", borderRadius: 10, background: "#111111", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, marginBottom: isMobile ? 24 : 0 }}
                 >
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 5 }}>Vous aimez ce que vous voyez ?</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#FFFFFF", marginBottom: 5 }}>Vous aimez ce que vous voyez ?</div>
                     <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>Connectez votre boîte mail professionnelle — 7 jours gratuits.</div>
                   </div>
-                  <a href="https://calendly.com/contact-donna-legal/onboarding-15min" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "11px 22px", borderRadius: 8, background: "#fff", color: "#059669", fontSize: 14, fontWeight: 700, textDecoration: "none", flexShrink: 0 }}>
+                  <a href="https://calendly.com/contact-donna-legal/onboarding-15min" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "11px 22px", borderRadius: 8, background: ACCENT_ACTION, color: "#FFFFFF", fontSize: 14, fontWeight: 700, textDecoration: "none", flexShrink: 0 }}>
                     Demander un essai gratuit <Send size={13} />
                   </a>
                 </motion.div>
