@@ -1359,7 +1359,7 @@ export default function DemoV3() {
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null)
   const [activeTab, setActiveTab] = useState<"todo" | "inbox">("todo")
   const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null)
-  const [inboxPeriodFilter, setInboxPeriodFilter] = useState<"24h" | "7j" | "30j">("30j")
+  const [inboxPeriodFilter, setInboxPeriodFilter] = useState<"24h" | "7j" | "30j">("24h")
   const [inboxTypeFilter, setInboxTypeFilter] = useState<"tous" | "dossiers" | "bruit">("tous")
 
   // Drawer state
@@ -1867,7 +1867,7 @@ export default function DemoV3() {
                                       {email.date}
                                     </span>
                                   </div>
-                                  {/* Ligne 2 : objet + badge dossier */}
+                                  {/* Ligne 2 : objet */}
                                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                     <span style={{
                                       fontSize: 12,
@@ -1877,17 +1877,6 @@ export default function DemoV3() {
                                     }}>
                                       {email.subject}
                                     </span>
-                                    {email.dossier && (
-                                      <span style={{
-                                        fontSize: 10, color: TEXT_MUTED,
-                                        background: "#F3F4F6",
-                                        borderRadius: 4, padding: "1px 6px",
-                                        flexShrink: 0, whiteSpace: "nowrap",
-                                        fontWeight: 500,
-                                      }}>
-                                        {email.dossier}
-                                      </span>
-                                    )}
                                   </div>
                                 </div>
                               </div>
