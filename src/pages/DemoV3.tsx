@@ -1050,71 +1050,142 @@ function DonnaVoice({ lines, active, onAllDone }: {
   )
 }
 
-// ─── Cinematic Phase A: email scanning ───
-function PhaseAScanZone({ mailCount, currentEmailSubject, isMobile, donnaLines, donnaActive }: {
-  mailCount: number; currentEmailSubject: string; isMobile: boolean
-  donnaLines: string[]; donnaActive: boolean
+// ─── Cercle de scan unifié (réutilisé Phase A, B, C) ───
+function ScanCircle({ size, count, total, isFiltering, isFinal }: {
+  size: number
+  count: number
+  total: number
+  isFiltering?: boolean
+  isFinal?: boolean
 }) {
-  const pct = Math.round((mailCount / 89) * 100)
+  const r = (size / 2) * 0.9 - 5
+  const circumference = 2 * Math.PI * r
+  const progress = isFinal ? 1 : Math.min(1, count / total)
+  const dashOffset = circumference * (1 - progress)
+  const cx = size / 2
+  const cy = size / 2
+  const displayCount = count
+
+  return (
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      {/* Fond bleu plein */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        borderRadius: "50%",
+        background: ACCENT,
+        boxShadow: "0 2px 16px rgba(37,99,235,0.28)",
+      }} />
+      {/* Anneau de progression SVG par-dessus */}
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", top: 0, left: 0 }}>
+        {/* Anneau de fond semi-transparent */}
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth={size >= 100 ? 6 : 4} />
+        {/* Anneau de progression blanc */}
+        <circle
+          cx={cx} cy={cy} r={r}
+          fill="none"
+          stroke="rgba(255,255,255,0.85)"
+          strokeWidth={size >= 100 ? 6 : 4}
+          strokeLinecap="round"
+          strokeDasharray={`${circumference}`}
+          strokeDashoffset={`${dashOffset}`}
+          transform={`rotate(-90 ${cx} ${cy})`}
+          style={{ transition: isFiltering ? "stroke-dashoffset 0.8s ease" : "stroke-dashoffset 0.35s ease" }}
+        />
+      </svg>
+      {/* Texte centré */}
+      <div style={{
+        position: "absolute", inset: 0,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        pointerEvents: "none",
+      }}>
+        {isFiltering ? (
+          <motion.span
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 0.7, repeat: Infinity }}
+            style={{ fontSize: size >= 100 ? 22 : 16, fontWeight: 700, color: "#fff", lineHeight: 1 }}
+          >
+            {displayCount}
+          </motion.span>
+        ) : (
+          <span style={{ fontSize: size >= 100 ? (size >= 115 ? 28 : 22) : 16, fontWeight: 700, color: "#fff", lineHeight: 1 }}>
+            {displayCount}
+          </span>
+        )}
+        {size >= 100 && (
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.72)", marginTop: 3, letterSpacing: "0.03em" }}>
+            {isFinal ? "/ 89" : `/ ${total}`}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Cinematic Phase A: email scanning ───
+function PhaseAScanZone({ mailCount, currentEmailSubject, isMobile, donnaLines, donnaActive, isFiltering }: {
+  mailCount: number; currentEmailSubject: string; isMobile: boolean
+  donnaLines: string[]; donnaActive: boolean; isFiltering: boolean
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.4 }}
-      style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: isMobile ? "16px" : "22px 26px", background: BG }}
+      style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: isMobile ? "20px 16px" : "28px 32px", background: BG, display: "flex", flexDirection: "column", alignItems: "center" }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-        <div style={{ position: "relative", width: 36, height: 36, flexShrink: 0 }}>
-          <svg width="36" height="36" style={{ position: "absolute", top: 0, left: 0 }}>
-            <circle cx="18" cy="18" r="14" fill="none" stroke={BORDER} strokeWidth="2.5" />
-            <motion.circle cx="18" cy="18" r="14" fill="none" stroke={ACCENT} strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeDasharray={`${2 * Math.PI * 14}`}
-              strokeDashoffset={`${2 * Math.PI * 14 * (1 - pct / 100)}`}
-              transform="rotate(-90 18 18)"
-              style={{ transition: "stroke-dashoffset 0.4s ease" }}
-            />
-          </svg>
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <motion.span animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.8, repeat: Infinity }} style={{ fontSize: 11, fontWeight: 700, color: ACCENT }}>D</motion.span>
-          </div>
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, marginBottom: 2 }}>
-            <span style={{ fontWeight: 700, color: ACCENT }}>{mailCount}</span> / 89 emails analysés
-          </div>
-          <div style={{ height: 3, background: BORDER, borderRadius: 2, overflow: "hidden" }}>
-            <motion.div style={{ height: "100%", background: ACCENT, borderRadius: 2 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.5 }} />
-          </div>
-        </div>
+      {/* Grand cercle centré */}
+      <ScanCircle size={120} count={mailCount} total={89} isFiltering={isFiltering} isFinal={false} />
+
+      {/* Texte sous le cercle */}
+      <div style={{ marginTop: 16, textAlign: "center" }}>
+        {isFiltering ? (
+          <motion.p
+            animate={{ opacity: [0.6, 1, 0.6] }}
+            transition={{ duration: 0.8, repeat: Infinity }}
+            style={{ fontSize: 13, color: ACCENT, fontWeight: 600, margin: "0 0 8px" }}
+          >
+            Donna filtre le bruit...
+          </motion.p>
+        ) : (
+          <p style={{ fontSize: 13, color: TEXT_MUTED, margin: "0 0 8px" }}>Analyse de vos emails...</p>
+        )}
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div key={currentEmailSubject} initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.2 }}
-          style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}
-        >
-          <Mail size={11} color={TEXT_LIGHT} style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: 11, color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{currentEmailSubject}</span>
-        </motion.div>
-      </AnimatePresence>
+      {/* Sujet de mail défilant */}
+      {!isFiltering && (
+        <AnimatePresence mode="wait">
+          <motion.div key={currentEmailSubject} initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.2 }}
+            style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}
+          >
+            <Mail size={11} color={TEXT_LIGHT} style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 11, color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: isMobile ? 260 : 400 }}>{currentEmailSubject}</span>
+          </motion.div>
+        </AnimatePresence>
+      )}
 
-      <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 12 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-          <div style={{ width: 20, height: 20, borderRadius: "50%", background: TEXT, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>D</div>
-          <DonnaVoice lines={donnaLines} active={donnaActive} />
+      {/* Donna voice */}
+      {donnaActive && (
+        <div style={{ marginTop: 12, borderTop: `1px solid ${BORDER}`, paddingTop: 14, width: "100%", maxWidth: 480 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+            <div style={{ width: 20, height: 20, borderRadius: "50%", background: TEXT, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>D</div>
+            <DonnaVoice lines={donnaLines} active={donnaActive} />
+          </div>
         </div>
-      </div>
+      )}
     </motion.div>
   )
 }
 
 // ─── Cinematic Phase B: dossier being processed (main area) ───
-function PhaseBDossierFocus({ dossier, donnaLines, donnaActive, showCheck }: {
+function PhaseBDossierFocus({ dossier, donnaLines, donnaActive, showCheck, dossierIdx }: {
   dossier: typeof DOSSIERS[0]
   donnaLines: string[]
   donnaActive: boolean
   showCheck: boolean
+  dossierIdx: number
 }) {
   return (
     <motion.div
@@ -1125,19 +1196,28 @@ function PhaseBDossierFocus({ dossier, donnaLines, donnaActive, showCheck }: {
       transition={{ duration: 0.35 }}
       style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: "22px 26px", background: BG }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <div style={{ width: 38, height: 38, borderRadius: "50%", background: INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", color: INITIALS_TEXT, fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{dossier.initials}</div>
+      {/* Cercle réduit 100px en haut de la zone + infos dossier */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 18 }}>
+        <ScanCircle size={100} count={89} total={89} isFiltering={false} isFinal={true} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>{dossier.name}</div>
-          <div style={{ fontSize: 11, color: TEXT_MUTED }}>{dossier.domain}</div>
+          <div style={{ fontSize: 11, color: TEXT_LIGHT, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+            Dossier {dossierIdx + 1} / {DOSSIERS.length}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", color: INITIALS_TEXT, fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{dossier.initials}</div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>{dossier.name}</div>
+              <div style={{ fontSize: 11, color: TEXT_MUTED }}>{dossier.domain}</div>
+            </div>
+            <AnimatePresence>
+              {showCheck && (
+                <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 400, damping: 20 }} style={{ marginLeft: "auto" }}>
+                  <CheckCircle2 size={20} color={GREEN} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
-        <AnimatePresence>
-          {showCheck && (
-            <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}>
-              <CheckCircle2 size={20} color={GREEN} />
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
@@ -1304,6 +1384,7 @@ export default function DemoV3() {
   const [dossierShowCheck, setDossierShowCheck] = useState(false)
   // Phase A donna lines
   const [phaseADonnaActive, setPhaseADonnaActive] = useState(false)
+  const [phaseAFiltering, setPhaseAFiltering] = useState(false)
   // Phase C + D donna lines state
   const [phaseCActive, setPhaseCActive] = useState(false)
   const [phaseDActive, setPhaseDActive] = useState(false)
@@ -1332,6 +1413,7 @@ export default function DemoV3() {
     setDossierDonnaActive(false)
     setDossierShowCheck(false)
     setPhaseADonnaActive(false)
+    setPhaseAFiltering(false)
     setPhaseCActive(false)
     setPhaseDActive(false)
     setVisibleTaskCount(TASKS.length)
@@ -1357,6 +1439,12 @@ export default function DemoV3() {
     addTimer(() => {
       setPhaseADonnaActive(true)
     }, 1000)
+
+    // 8.5s: Phase A filtering — compteur atteint 89, Donna "filtre le bruit"
+    addTimer(() => {
+      if (emailIntervalRef.current) { clearInterval(emailIntervalRef.current); emailIntervalRef.current = null }
+      setPhaseAFiltering(true)
+    }, 8500)
 
     // === PHASE B: 10-64s — dossiers (~9s each for 5 lines) ===
     // Timings: 10s, 19s, 28s, 37s, 46s, 55s
@@ -1518,6 +1606,7 @@ export default function DemoV3() {
                     isMobile={isMobile}
                     donnaLines={PHASE_A_DONNA_LINES}
                     donnaActive={phaseADonnaActive}
+                    isFiltering={phaseAFiltering}
                   />
                 </motion.div>
               )}
@@ -1532,6 +1621,7 @@ export default function DemoV3() {
                     donnaLines={currentDonnaLines}
                     donnaActive={dossierDonnaActive}
                     showCheck={dossierShowCheck}
+                    dossierIdx={activeCinematicDossierIdx}
                   />
                 </motion.div>
               )}
@@ -1551,7 +1641,7 @@ export default function DemoV3() {
                     alignItems: isMobile ? "flex-start" : "center",
                     gap: isMobile ? 14 : 20,
                   }}>
-                    {/* Cercle cliquable avec compteur emails */}
+                    {/* Cercle cliquable — version finale 66px, continuité visuelle avec Phase A/B */}
                     <button
                       onClick={() => setActiveTab(prev => prev === "inbox" ? "todo" : "inbox")}
                       title={activeTab === "inbox" ? "Retour aux tâches" : "Voir l'inbox complète"}
@@ -1559,24 +1649,20 @@ export default function DemoV3() {
                         width: 66,
                         height: 66,
                         borderRadius: "50%",
-                        background: ACCENT,
+                        background: "none",
                         border: "none",
                         cursor: "pointer",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        padding: 0,
                         flexShrink: 0,
-                        transition: "transform 0.15s ease, box-shadow 0.15s ease",
-                        boxShadow: "0 2px 8px rgba(37,99,235,0.18)",
+                        transition: "transform 0.15s ease",
                       }}
-                      onMouseEnter={e => { (e.currentTarget.style.transform = "scale(1.06)"); (e.currentTarget.style.boxShadow = "0 4px 16px rgba(37,99,235,0.28)") }}
-                      onMouseLeave={e => { (e.currentTarget.style.transform = "scale(1)"); (e.currentTarget.style.boxShadow = "0 2px 8px rgba(37,99,235,0.18)") }}
+                      onMouseEnter={e => { (e.currentTarget.style.transform = "scale(1.06)") }}
+                      onMouseLeave={e => { (e.currentTarget.style.transform = "scale(1)") }}
                     >
-                      <span style={{ fontSize: 24, fontWeight: 700, color: "#fff", lineHeight: 1 }}>
-                        {animPhase >= 4 ? "12" : Math.max(0, Math.min(12, Math.round((mailCount / 89) * 12))).toString()}
-                      </span>
-                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.8)", marginTop: 2, letterSpacing: "0.02em" }}>emails</span>
+                      <div style={{ pointerEvents: "none" }}>
+                        <ScanCircle size={66} count={12} total={89} isFiltering={false} isFinal={true} />
+                      </div>
+                      <span style={{ display: "block", fontSize: 10, color: TEXT_MUTED, marginTop: 4, textAlign: "center", letterSpacing: "0.02em" }}>emails</span>
                     </button>
 
                     {/* Texte Donna */}
