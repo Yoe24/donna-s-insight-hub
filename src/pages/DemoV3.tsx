@@ -1701,19 +1701,6 @@ export default function DemoV3() {
               )}
             </AnimatePresence>
 
-            {/* En-tête Inbox — affiché uniquement en vue inbox */}
-            <AnimatePresence>
-              {animPhase >= 2 && activeTab === "inbox" && (
-                <motion.div key="inbox-header" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} style={{ marginBottom: 14 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>Inbox</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, background: ACCENT, color: "#fff", borderRadius: 10, padding: "1px 7px", lineHeight: 1.6 }}>
-                      {INBOX_EMAILS.length}
-                    </span>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             {/* Tasks — onglet To-do list */}
             <AnimatePresence>
@@ -1744,108 +1731,217 @@ export default function DemoV3() {
             <AnimatePresence>
               {animPhase >= 2 && activeTab === "inbox" && (
                 <motion.div key="inbox" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} style={{ marginBottom: 8 }}>
-                  {/* Filtres discrets */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12, marginBottom: 14 }}>
-                    <select
-                      value={inboxPeriodFilter}
-                      onChange={e => setInboxPeriodFilter(e.target.value as "24h" | "7j" | "30j")}
-                      style={{ fontSize: 11, color: TEXT_MUTED, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", outline: "none", appearance: "none", WebkitAppearance: "none", paddingRight: 12 }}
-                    >
-                      <option value="24h">24 dernières heures</option>
-                      <option value="7j">7 derniers jours</option>
-                      <option value="30j">30 derniers jours</option>
-                    </select>
-                    <span style={{ color: BORDER, fontSize: 12 }}>|</span>
-                    <select
-                      value={inboxTypeFilter}
-                      onChange={e => setInboxTypeFilter(e.target.value as "tous" | "dossiers" | "bruit")}
-                      style={{ fontSize: 11, color: TEXT_MUTED, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", outline: "none", appearance: "none", WebkitAppearance: "none", paddingRight: 12 }}
-                    >
-                      <option value="tous">Tous</option>
-                      <option value="dossiers">Dossiers</option>
-                      <option value="bruit">Bruit</option>
-                    </select>
+                  {/* En-tête inbox : titre à gauche, filtres à droite */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: TEXT }}>
+                        Boîte de réception
+                      </span>
+                      <span style={{ fontSize: 11, fontWeight: 700, background: ACCENT, color: "#fff", borderRadius: 10, padding: "1px 7px", lineHeight: 1.6 }}>
+                        {INBOX_EMAILS.length}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <select
+                        value={inboxPeriodFilter}
+                        onChange={e => setInboxPeriodFilter(e.target.value as "24h" | "7j" | "30j")}
+                        style={{ fontSize: 11, color: TEXT_MUTED, background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 5, padding: "3px 8px", cursor: "pointer", fontFamily: "inherit", outline: "none" }}
+                      >
+                        <option value="24h">24h</option>
+                        <option value="7j">7 jours</option>
+                        <option value="30j">30 jours</option>
+                      </select>
+                      <select
+                        value={inboxTypeFilter}
+                        onChange={e => setInboxTypeFilter(e.target.value as "tous" | "dossiers" | "bruit")}
+                        style={{ fontSize: 11, color: TEXT_MUTED, background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 5, padding: "3px 8px", cursor: "pointer", fontFamily: "inherit", outline: "none" }}
+                      >
+                        <option value="tous">Tous</option>
+                        <option value="dossiers">Dossiers</option>
+                        <option value="bruit">Bruit</option>
+                      </select>
+                    </div>
                   </div>
-                  {/* Liste emails */}
+
+                  {/* Liste emails — style boîte mail */}
                   {(() => {
-                    const now = new Date()
+                    // Couleurs variées pour les avatars
+                    const AVATAR_COLORS = [
+                      { bg: "#DBEAFE", text: "#1D4ED8" }, // bleu
+                      { bg: "#D1FAE5", text: "#065F46" }, // vert
+                      { bg: "#FEE2E2", text: "#991B1B" }, // rouge
+                      { bg: "#EDE9FE", text: "#5B21B6" }, // violet
+                      { bg: "#FEF3C7", text: "#92400E" }, // ambre
+                      { bg: "#E0F2FE", text: "#0369A1" }, // bleu ciel
+                      { bg: "#FCE7F3", text: "#9D174D" }, // rose
+                      { bg: "#F3F4F6", text: "#374151" }, // gris
+                    ]
+                    // Assigne une couleur fixe par expéditeur (hash simple)
+                    function getAvatarColor(sender: string) {
+                      let h = 0
+                      for (let i = 0; i < sender.length; i++) h = (h * 31 + sender.charCodeAt(i)) & 0xffff
+                      return AVATAR_COLORS[h % AVATAR_COLORS.length]
+                    }
+
+                    const d0 = getDaysAgo(0)
+                    const d1 = getDaysAgo(1)
+
                     const filtered = INBOX_EMAILS.filter(email => {
-                      // Filtre type
                       if (inboxTypeFilter === "dossiers" && email.isBruit) return false
                       if (inboxTypeFilter === "bruit" && !email.isBruit) return false
-                      // Filtre période (simplifié : on filtre par index de getDaysAgo)
-                      // Les emails avec getDaysAgo(0) ou (1) = 24h, getDaysAgo(0-7) = 7j, tout = 30j
-                      // On extrait le numéro de jour depuis la date formatée — approche : comparer avec getDaysAgo
                       if (inboxPeriodFilter === "24h") {
-                        const d0 = getDaysAgo(0); const d1 = getDaysAgo(1)
                         return email.date === d0 || email.date === d1
                       }
                       if (inboxPeriodFilter === "7j") {
                         const days7 = Array.from({ length: 8 }, (_, i) => getDaysAgo(i))
                         return days7.includes(email.date)
                       }
-                      return true // 30j = tout
+                      return true
                     })
-                    return filtered.map(email => (
-                      <div key={email.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, marginBottom: 8, background: BG, overflow: "hidden" }}>
-                        <div
-                          onClick={() => setExpandedEmailId(prev => prev === email.id ? null : email.id)}
-                          style={{ padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}
-                        >
-                          {/* Initiale expéditeur */}
-                          <div style={{ width: 32, height: 32, borderRadius: "50%", background: email.isBruit ? "#F0F1F3" : INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: INITIALS_TEXT, flexShrink: 0 }}>
-                            {email.sender.charAt(0)}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 1 }}>
-                              <span style={{ fontSize: 13, fontWeight: 600, color: email.isBruit ? TEXT_MUTED : TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email.sender}</span>
-                              <span style={{ fontSize: 11, color: TEXT_LIGHT, flexShrink: 0 }}>{email.date}</span>
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <span style={{ fontSize: 12, color: email.isBruit ? TEXT_MUTED : TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{email.subject}</span>
-                              {email.dossier && (
-                                <span style={{ fontSize: 10, color: TEXT_LIGHT, background: SIDEBAR_BG, border: `1px solid ${BORDER}`, borderRadius: 4, padding: "1px 6px", flexShrink: 0, whiteSpace: "nowrap" }}>{email.dossier}</span>
-                              )}
-                            </div>
-                          </div>
-                          <ChevronDown size={13} color={TEXT_LIGHT} style={{ flexShrink: 0, transform: expandedEmailId === email.id ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+
+                    if (filtered.length === 0) {
+                      return (
+                        <div style={{ padding: "32px 16px", textAlign: "center", color: TEXT_MUTED, fontSize: 13 }}>
+                          Aucun email sur cette période.
                         </div>
-                        <AnimatePresence>
-                          {expandedEmailId === email.id && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.22 }}
-                              style={{ overflow: "hidden" }}
-                            >
-                              <div style={{ padding: "14px 18px 16px", borderTop: `1px solid ${BORDER}` }}>
-                                <div style={{ marginBottom: 10 }}>
-                                  <div style={{ fontSize: 12, lineHeight: 1.7 }}>
-                                    <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 52 }}>De</span>
-                                    <span style={{ fontWeight: 600, color: TEXT }}>{email.sender}</span>
+                      )
+                    }
+
+                    return (
+                      <div style={{ marginTop: 12, border: `1px solid #E5E7EB`, borderRadius: 8, background: BG, overflow: "hidden" }}>
+                        {filtered.map((email, idx) => {
+                          const isUnread = email.date === d0 || email.date === d1
+                          const isExpanded = expandedEmailId === email.id
+                          const avatar = getAvatarColor(email.sender)
+                          const isLast = idx === filtered.length - 1
+
+                          return (
+                            <div key={email.id} style={{ borderBottom: isLast ? "none" : `1px solid #F3F4F6` }}>
+                              {/* Ligne principale — style Gmail */}
+                              <div
+                                onClick={() => setExpandedEmailId(prev => prev === email.id ? null : email.id)}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 10,
+                                  padding: "9px 14px",
+                                  cursor: "pointer",
+                                  background: isExpanded ? "#F9FAFB" : BG,
+                                  transition: "background 0.12s",
+                                }}
+                                onMouseEnter={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = "#F9FAFB" }}
+                                onMouseLeave={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = BG }}
+                              >
+                                {/* Point non lu */}
+                                <div style={{ width: 8, flexShrink: 0, display: "flex", justifyContent: "center" }}>
+                                  {isUnread && (
+                                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: ACCENT }} />
+                                  )}
+                                </div>
+
+                                {/* Avatar initiale */}
+                                <div style={{
+                                  width: 32, height: 32, borderRadius: "50%",
+                                  background: avatar.bg,
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  fontSize: 12, fontWeight: 700, color: avatar.text,
+                                  flexShrink: 0,
+                                }}>
+                                  {email.sender.charAt(0).toUpperCase()}
+                                </div>
+
+                                {/* Contenu : expéditeur + objet */}
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  {/* Ligne 1 : expéditeur + date */}
+                                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 1 }}>
+                                    <span style={{
+                                      fontSize: 13,
+                                      fontWeight: isUnread ? 700 : 400,
+                                      color: "#111827",
+                                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                      maxWidth: "60%",
+                                    }}>
+                                      {email.sender}
+                                    </span>
+                                    <span style={{ fontSize: 11, color: TEXT_LIGHT, flexShrink: 0, fontWeight: isUnread ? 600 : 400 }}>
+                                      {email.date}
+                                    </span>
                                   </div>
-                                  <div style={{ fontSize: 12, lineHeight: 1.7 }}>
-                                    <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 52 }}>Date</span>
-                                    <span style={{ color: TEXT }}>{email.date}</span>
-                                  </div>
-                                  <div style={{ fontSize: 12, lineHeight: 1.7 }}>
-                                    <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 52 }}>Objet</span>
-                                    <span style={{ color: TEXT }}>{email.subject}</span>
+                                  {/* Ligne 2 : objet + badge dossier */}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <span style={{
+                                      fontSize: 12,
+                                      color: isUnread ? TEXT : TEXT_MUTED,
+                                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                      flex: 1,
+                                    }}>
+                                      {email.subject}
+                                    </span>
+                                    {email.dossier && (
+                                      <span style={{
+                                        fontSize: 10, color: TEXT_MUTED,
+                                        background: "#F3F4F6",
+                                        borderRadius: 4, padding: "1px 6px",
+                                        flexShrink: 0, whiteSpace: "nowrap",
+                                        fontWeight: 500,
+                                      }}>
+                                        {email.dossier}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
-                                <p style={{ fontSize: 13, color: TEXT, lineHeight: 1.75, margin: "0 0 8px" }}>{email.resume}</p>
-                                {email.dossier && (
-                                  <div style={{ marginTop: 10 }}>
-                                    <span style={{ fontSize: 11, color: TEXT_LIGHT, background: SIDEBAR_BG, border: `1px solid ${BORDER}`, borderRadius: 4, padding: "2px 8px" }}>Dossier : {email.dossier}</span>
-                                  </div>
-                                )}
                               </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+
+                              {/* Expand : contenu de l'email */}
+                              <AnimatePresence>
+                                {isExpanded && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.22 }}
+                                    style={{ overflow: "hidden" }}
+                                  >
+                                    <div style={{
+                                      padding: "16px 20px 18px 54px",
+                                      borderTop: `1px solid #E5E7EB`,
+                                      borderLeft: `3px solid ${ACCENT}`,
+                                      background: "#FAFBFF",
+                                    }}>
+                                      {/* En-tête email */}
+                                      <div style={{ marginBottom: 14, fontSize: 12, lineHeight: 1.9 }}>
+                                        <div>
+                                          <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 44 }}>De</span>
+                                          <span style={{ fontWeight: 600, color: TEXT }}>{email.sender}</span>
+                                        </div>
+                                        <div>
+                                          <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 44 }}>Date</span>
+                                          <span style={{ color: TEXT }}>{email.date}</span>
+                                        </div>
+                                        <div>
+                                          <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 44 }}>Objet</span>
+                                          <span style={{ color: TEXT, fontWeight: 500 }}>{email.subject}</span>
+                                        </div>
+                                        {email.dossier && (
+                                          <div>
+                                            <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 44 }}>Dossier</span>
+                                            <span style={{ fontSize: 11, color: ACCENT, background: ACCENT_BG, borderRadius: 4, padding: "1px 7px", fontWeight: 600 }}>{email.dossier}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      {/* Corps */}
+                                      <p style={{ fontSize: 13, color: TEXT, lineHeight: 1.8, margin: 0 }}>
+                                        {email.resume}
+                                      </p>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          )
+                        })}
                       </div>
-                    ))
+                    )
                   })()}
                 </motion.div>
               )}
