@@ -1980,7 +1980,7 @@ export default function DemoV3() {
                 >
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 5 }}>Vous aimez ce que vous voyez ?</div>
-                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>Connectez votre boîte mail professionnelle — 14 jours gratuits.</div>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>Connectez votre boîte mail professionnelle — 7 jours gratuits.</div>
                   </div>
                   <a href="https://calendly.com/contact-donna-legal/onboarding-15min" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "11px 22px", borderRadius: 8, background: "#fff", color: ACCENT, fontSize: 14, fontWeight: 700, textDecoration: "none", flexShrink: 0 }}>
                     Demander un essai gratuit <Send size={13} />
