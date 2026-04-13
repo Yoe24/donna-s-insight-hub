@@ -210,7 +210,7 @@ const TASKS = [
     tags: [
       { name: "inventaire_notarial.pdf", type: "PDF", size: "1.2 Mo", resume: "Actif successoral estimé : 780 000€. Deux héritiers en parts égales." },
     ],
-    status: "pending" as const,
+    status: "draft" as const,
     email_from: "Cabinet Moreau <contact@cabinet-moreau.fr>",
     email_to: "Me Alexandra Fernandez <a.fernandez@cabinet-fernandez.fr>",
     email_cc: "",
@@ -466,8 +466,9 @@ function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
             onMouseEnter={e => (e.currentTarget.style.borderColor = TEXT_MUTED)}
             onMouseLeave={e => (e.currentTarget.style.borderColor = BORDER)}
           />
-          {/* Titre + contexte cliquables pour expand */}
+          {/* Dossier + titre + contexte cliquables pour expand */}
           <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={onExpand}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 }}>Dossier {task.dossier}</div>
             <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, lineHeight: 1.35, marginBottom: 4 }}>{task.title}</div>
             {/* Phrase contextuelle actionnable */}
             {(task as any).context && (
@@ -475,26 +476,15 @@ function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
             )}
           </div>
         </div>
-        {/* Ligne 2 : bouton Réponse générée par Donna — toujours visible */}
-        {task.status === "draft" || task.status === "sent" ? (
-          <div style={{ marginTop: 12, marginLeft: 27 }}>
-            <button
-              onClick={e => { e.stopPropagation(); onDraft() }}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 7, border: "none", background: ACCENT, color: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, boxShadow: `0 1px 4px rgba(37,99,235,0.18)` }}
-            >
-              <Edit3 size={13} /> Réponse générée par Donna
-            </button>
-          </div>
-        ) : (
-          <div style={{ marginTop: 12, marginLeft: 27 }}>
-            <button
-              onClick={e => { e.stopPropagation(); onExpand() }}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 7, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 500 }}
-            >
-              <Eye size={13} /> Voir le détail
-            </button>
-          </div>
-        )}
+        {/* Ligne 2 : bouton Réponse générée par Donna — toujours visible sur toutes les tâches */}
+        <div style={{ marginTop: 12, marginLeft: 27 }}>
+          <button
+            onClick={e => { e.stopPropagation(); onDraft() }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 7, border: "none", background: ACCENT, color: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, boxShadow: `0 1px 4px rgba(37,99,235,0.18)` }}
+          >
+            <Edit3 size={13} /> Réponse générée par Donna
+          </button>
+        </div>
       </div>
       {/* Expand : vue détaillée style DemoV2 */}
       <AnimatePresence>
@@ -1272,7 +1262,7 @@ const PHASE_A_DONNA_LINES = [
 
 // Textes Phase C — Donna construit le briefing
 const PHASE_C_DONNA_LINES = [
-  "Bonjour Alexandra, c'est Donna. J'ai lu vos 12 emails des dernières 24 heures.",
+  "Bonjour Alexandra. 12 emails lus. 3 tâches identifiées.",
   "9 étaient du bruit, je m'en suis occupée. Il vous reste 3 brouillons de réponse à valider, tout est prêt.",
 ]
 
@@ -1607,7 +1597,7 @@ export default function DemoV3() {
                       ) : animPhase >= 4 ? (
                         /* Texte statique post-cinématique */
                         <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.7, margin: 0 }}>
-                          <strong>Bonjour Alexandra, c'est Donna.</strong> J'ai lu vos <strong>12 emails</strong> des dernières 24 heures. 9 étaient du bruit, je m'en suis occupée. Il vous reste <strong>3 tâches</strong> à traiter, vous pouvez les consulter ci-dessous.
+                          <strong>Bonjour Alexandra.</strong> <strong>12 emails</strong> lus ces dernières 24h. <strong>3 tâches</strong> identifiées.
                         </p>
                       ) : (
                         /* Texte animé pendant la cinématique */
@@ -1643,6 +1633,12 @@ export default function DemoV3() {
             <AnimatePresence>
               {visibleTaskCount > 0 && animPhase >= 2 && activeTab === "todo" && (
                 <motion.div key="tasks" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} style={{ marginBottom: 8 }}>
+                  {/* Séparateur "Tâches créées par Donna" */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, marginTop: 4 }}>
+                    <div style={{ height: 1, flex: 1, background: BORDER }} />
+                    <span style={{ fontSize: 11, fontWeight: 600, color: TEXT_LIGHT, textTransform: "uppercase", letterSpacing: 0.8, whiteSpace: "nowrap" }}>Tâches créées par Donna</span>
+                    <div style={{ height: 1, flex: 1, background: BORDER }} />
+                  </div>
                   {TASKS.slice(0, visibleTaskCount).map((task) => (
                     <SlimTaskCard
                       key={task.id}
