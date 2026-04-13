@@ -1568,7 +1568,8 @@ export default function DemoV3() {
         {selectedDossier ? (
           <DossierDetailView dossier={selectedDossier} onClose={() => setSelectedDossier(null)} isMobile={isMobile} />
         ) : (
-          <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px" : "36px 44px", position: "relative", maxWidth: 780 }}>
+          <main style={{ flex: 1, overflowY: "auto", position: "relative", width: "100%" }}>
+          <div style={{ maxWidth: isMobile ? "100%" : 900, margin: "0 auto", padding: isMobile ? "20px 16px" : "36px 44px" }}>
 
             {/* Header + Skip button — always visible */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
@@ -1988,6 +1989,7 @@ export default function DemoV3() {
                 </motion.div>
               )}
             </AnimatePresence>
+          </div>
           </main>
         )}
 
