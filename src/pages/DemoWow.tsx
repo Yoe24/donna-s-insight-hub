@@ -9,28 +9,29 @@ import {
 } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 
-// ─── Palette DemoWow — glassmorphism ───
-const BG = "transparent" // le fond sera un gradient
+// ─── Palette DemoWow — glassmorphism noir & blanc ───
+const BG = "transparent"
 const SIDEBAR_BG = "rgba(255,255,255,0.7)"
 const SIDEBAR_BORDER = "rgba(255,255,255,0.2)"
 const TEXT = "#111111"
 const TEXT_MUTED = "#555555"
 const TEXT_LIGHT = "#999999"
-const ACCENT = "#6C5CE7" // violet comme accent principal
-const ACCENT_BG = "rgba(108,92,231,0.06)"
-const URGENT = "#E74C3C"
-const URGENT_BG = "rgba(231,76,60,0.06)"
-const GREEN = "#00B894"
+const ACCENT = "#111111"
+const ACCENT_BG = "rgba(0,0,0,0.03)"
+const URGENT = "#111111"
+const URGENT_BG = "rgba(0,0,0,0.03)"
+const GREEN = "#111111"
 const BORDER = "rgba(0,0,0,0.06)"
 const INITIALS_BG = "#E5E5E5"
 const INITIALS_TEXT = "#333"
 
+// 6 couleurs toutes distinctes, harmonieuses, jamais deux pareilles côte à côte
 const DOMAIN_COLORS: Record<string, string> = {
-  "Travail": "#2563EB",
-  "Commercial": "#7C3AED",
-  "Immobilier": "#059669",
-  "Famille": "#DC2626",
-  "Droit successoral": "#EA580C",
+  "Travail": "#2563EB",         // bleu
+  "Commercial": "#9333EA",      // violet
+  "Immobilier": "#0891B2",      // cyan/teal
+  "Famille": "#E11D48",         // rose/rouge
+  "Droit successoral": "#D97706", // ambre/orange
 }
 
 // ─── Dates dynamiques ───
@@ -468,7 +469,7 @@ function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
         boxShadow: hovered
-          ? "0 8px 32px rgba(108,92,231,0.08), 0 2px 8px rgba(0,0,0,0.04)"
+          ? "0 8px 32px rgba(17,17,17,0.08), 0 2px 8px rgba(0,0,0,0.04)"
           : "0 4px 24px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02)",
         transform: hovered ? "translateY(-2px)" : "translateY(0)",
         transition: "all 0.3s ease",
@@ -499,9 +500,9 @@ function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
         <div style={{ marginTop: 12, marginLeft: 27 }}>
           <button
             onClick={e => { e.stopPropagation(); onDraft() }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 24px rgba(108,92,231,0.4)" }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 16px rgba(108,92,231,0.25)" }}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #6C5CE7, #A29BFE)", color: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, boxShadow: "0 4px 16px rgba(108,92,231,0.25)", transition: "box-shadow 0.2s" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 24px rgba(17,17,17,0.4)" }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 16px rgba(17,17,17,0.25)" }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #1a1a2e, #2d2d44)", color: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, boxShadow: "0 4px 16px rgba(17,17,17,0.25)", transition: "box-shadow 0.2s" }}
           >
             <Edit3 size={13} /> Réponse générée par Donna
           </button>
@@ -558,9 +559,9 @@ function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
               {/* Bouton Générer une réponse */}
               <button
                 onClick={e => { e.stopPropagation(); onDraft() }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 24px rgba(108,92,231,0.4)" }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 16px rgba(108,92,231,0.25)" }}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, width: "100%", padding: "11px 18px", borderRadius: 10, background: "linear-gradient(135deg, #6C5CE7, #A29BFE)", color: "#fff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 16px rgba(108,92,231,0.25)", transition: "box-shadow 0.2s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 24px rgba(17,17,17,0.4)" }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 16px rgba(17,17,17,0.25)" }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, width: "100%", padding: "11px 18px", borderRadius: 10, background: "linear-gradient(135deg, #1a1a2e, #2d2d44)", color: "#fff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 16px rgba(17,17,17,0.25)", transition: "box-shadow 0.2s" }}
               >
                 <Edit3 size={14} /> Générer une réponse
               </button>
@@ -694,9 +695,9 @@ function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
             {/* Bouton Générer une réponse */}
             <button
               onClick={handleGenerateDraft}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 24px rgba(108,92,231,0.4)" }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 16px rgba(108,92,231,0.25)" }}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "12px 20px", borderRadius: 10, background: "linear-gradient(135deg, #6C5CE7, #A29BFE)", color: "#fff", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 16px rgba(108,92,231,0.25)", transition: "box-shadow 0.2s" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 24px rgba(17,17,17,0.4)" }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 16px rgba(17,17,17,0.25)" }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "12px 20px", borderRadius: 10, background: "linear-gradient(135deg, #1a1a2e, #2d2d44)", color: "#fff", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 16px rgba(17,17,17,0.25)", transition: "box-shadow 0.2s" }}
             >
               <Edit3 size={15} /> Générer une réponse
             </button>
@@ -1106,8 +1107,8 @@ function ScanCircle({ size, count, total, isFiltering, isFinal }: {
         position: "absolute",
         inset: 0,
         borderRadius: "50%",
-        background: "#6C5CE7",
-        boxShadow: "0 0 20px rgba(108,92,231,0.3), 0 0 60px rgba(108,92,231,0.1)",
+        background: "#111111",
+        boxShadow: "0 0 20px rgba(17,17,17,0.3), 0 0 60px rgba(17,17,17,0.1)",
       }} />
       {/* Anneau de progression SVG par-dessus */}
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", top: 0, left: 0 }}>
@@ -1559,8 +1560,8 @@ export default function DemoV3() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
         @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 20px rgba(108,92,231,0.3), 0 0 60px rgba(108,92,231,0.1); }
-          50% { box-shadow: 0 0 40px rgba(108,92,231,0.5), 0 0 80px rgba(108,92,231,0.15); }
+          0%, 100% { box-shadow: 0 0 20px rgba(17,17,17,0.3), 0 0 60px rgba(17,17,17,0.1); }
+          50% { box-shadow: 0 0 40px rgba(17,17,17,0.5), 0 0 80px rgba(17,17,17,0.15); }
         }
         .donna-scan-circle { animation: pulse-glow 2s ease-in-out infinite; }
       `}</style>
@@ -1687,28 +1688,31 @@ export default function DemoV3() {
                     alignItems: isMobile ? "flex-start" : "center",
                     gap: isMobile ? 14 : 20,
                   }}>
-                    {/* Cercle cliquable — version finale 66px, continuité visuelle avec Phase A/B */}
+                    {/* Indicateur emails — informatif, pas buzzer */}
                     <button
                       onClick={() => setActiveTab(prev => prev === "inbox" ? "todo" : "inbox")}
                       title={activeTab === "inbox" ? "Retour aux tâches" : "Voir l'inbox complète"}
                       style={{
-                        width: 66,
-                        height: 66,
-                        borderRadius: "50%",
-                        background: "none",
-                        border: "none",
+                        background: "rgba(255,255,255,0.6)",
+                        backdropFilter: "blur(12px)",
+                        WebkitBackdropFilter: "blur(12px)",
+                        border: "1px solid rgba(0,0,0,0.08)",
+                        borderRadius: 14,
                         cursor: "pointer",
-                        padding: 0,
+                        padding: "14px 18px",
                         flexShrink: 0,
-                        transition: "transform 0.15s ease",
+                        transition: "all 0.25s ease",
+                        display: "flex",
+                        flexDirection: "column" as const,
+                        alignItems: "center",
+                        gap: 2,
+                        minWidth: 72,
                       }}
-                      onMouseEnter={e => { (e.currentTarget.style.transform = "scale(1.06)") }}
-                      onMouseLeave={e => { (e.currentTarget.style.transform = "scale(1)") }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.85)"; e.currentTarget.style.borderColor = "rgba(0,0,0,0.15)" }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.6)"; e.currentTarget.style.borderColor = "rgba(0,0,0,0.08)" }}
                     >
-                      <div style={{ pointerEvents: "none" }}>
-                        <ScanCircle size={66} count={12} total={89} isFiltering={false} isFinal={true} />
-                      </div>
-                      <span style={{ display: "block", fontSize: 10, color: TEXT_MUTED, marginTop: 4, textAlign: "center", letterSpacing: "0.02em" }}>emails</span>
+                      <span style={{ fontSize: 28, fontWeight: 700, color: TEXT, lineHeight: 1, fontFamily: "'Playfair Display', serif" }}>12</span>
+                      <span style={{ fontSize: 10, color: TEXT_MUTED, letterSpacing: "0.04em", textTransform: "uppercase" as const }}>emails</span>
                     </button>
 
                     {/* Texte Donna */}
@@ -1754,9 +1758,9 @@ export default function DemoV3() {
                 <motion.div key="tasks" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} style={{ marginBottom: 8 }}>
                   {/* Séparateur "Tâches créées par Donna" */}
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, marginTop: 4 }}>
-                    <div style={{ height: 1, flex: 1, background: "linear-gradient(to right, transparent, rgba(108,92,231,0.2), transparent)" }} />
+                    <div style={{ height: 1, flex: 1, background: "linear-gradient(to right, transparent, rgba(17,17,17,0.2), transparent)" }} />
                     <span style={{ fontSize: 11, fontWeight: 600, color: ACCENT, textTransform: "uppercase", letterSpacing: 0.8, whiteSpace: "nowrap" }}>Tâches créées par Donna</span>
-                    <div style={{ height: 1, flex: 1, background: "linear-gradient(to right, transparent, rgba(108,92,231,0.2), transparent)" }} />
+                    <div style={{ height: 1, flex: 1, background: "linear-gradient(to right, transparent, rgba(17,17,17,0.2), transparent)" }} />
                   </div>
                   {TASKS.slice(0, visibleTaskCount).map((task) => (
                     <SlimTaskCard
@@ -1872,16 +1876,16 @@ export default function DemoV3() {
                                   gap: 10,
                                   padding: "9px 14px",
                                   cursor: "pointer",
-                                  background: isExpanded ? "rgba(108,92,231,0.04)" : "transparent",
+                                  background: isExpanded ? "rgba(17,17,17,0.04)" : "transparent",
                                   transition: "background 0.12s",
                                 }}
-                                onMouseEnter={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = "rgba(108,92,231,0.03)" }}
+                                onMouseEnter={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = "rgba(17,17,17,0.03)" }}
                                 onMouseLeave={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = "transparent" }}
                               >
                                 {/* Point non lu */}
                                 <div style={{ width: 8, flexShrink: 0, display: "flex", justifyContent: "center" }}>
                                   {isUnread && (
-                                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#6C5CE7" }} />
+                                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#111111" }} />
                                   )}
                                 </div>
 
@@ -1987,7 +1991,7 @@ export default function DemoV3() {
               {roiVisible && (
                 <motion.div key="roi"
                   initial={{ opacity: 0, y: 20, scale: 0.96, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }} transition={{ duration: 0.8, ease: [0.22, 0.61, 0.36, 1], delay: 0.2 }}
-                  style={{ marginTop: 24, padding: isMobile ? "18px 16px" : "22px 26px", borderRadius: 16, background: "rgba(108,92,231,0.04)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(108,92,231,0.1)" }}
+                  style={{ marginTop: 24, padding: isMobile ? "18px 16px" : "22px 26px", borderRadius: 16, background: "rgba(17,17,17,0.04)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(17,17,17,0.1)" }}
                 >
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
                     {/* Icône Donna */}
@@ -2028,7 +2032,7 @@ export default function DemoV3() {
                     <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 5 }}>Vous aimez ce que vous voyez ?</div>
                     <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>Connectez votre boîte mail professionnelle — 7 jours gratuits.</div>
                   </div>
-                  <a href="https://calendly.com/contact-donna-legal/onboarding-15min" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "11px 22px", borderRadius: 10, background: "linear-gradient(135deg, #6C5CE7, #A29BFE)", color: "#fff", fontSize: 14, fontWeight: 700, textDecoration: "none", flexShrink: 0, boxShadow: "0 4px 16px rgba(108,92,231,0.3)" }}>
+                  <a href="https://calendly.com/contact-donna-legal/onboarding-15min" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "11px 22px", borderRadius: 10, background: "linear-gradient(135deg, #1a1a2e, #2d2d44)", color: "#fff", fontSize: 14, fontWeight: 700, textDecoration: "none", flexShrink: 0, boxShadow: "0 4px 16px rgba(17,17,17,0.3)" }}>
                     Demander un essai gratuit <Send size={13} />
                   </a>
                 </motion.div>
