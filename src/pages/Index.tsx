@@ -103,7 +103,7 @@ const steps = [
   },
   {
     num: "02",
-    title: "Donna analyse votre cabinet",
+    title: "Donna analyse votre boîte mail",
     text: "En 5 minutes, Donna lit vos 30 derniers jours d'emails, crée vos dossiers clients et apprend votre style.",
   },
   {
