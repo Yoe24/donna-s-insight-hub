@@ -98,12 +98,12 @@ const features = [
 const steps = [
   {
     num: "01",
-    title: "Connectez votre Gmail",
+    title: "Connectez votre boîte mail",
     text: "Donna se connecte à votre boîte mail en lecture seule via Google. Aucun mot de passe à partager.",
   },
   {
     num: "02",
-    title: "Donna analyse votre boîte mail",
+    title: "Donna analyse vos mails",
     text: "En 5 minutes, Donna lit vos 30 derniers jours d'emails, crée vos dossiers clients et apprend votre style.",
   },
   {
