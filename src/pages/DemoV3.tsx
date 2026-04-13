@@ -1547,118 +1547,94 @@ export default function DemoV3() {
               )}
             </AnimatePresence>
 
-            {/* PHASE C: cadran + message Donna (style DemoV2) */}
+            {/* BLOC UNIQUE — Cercle emails + message Donna */}
             <AnimatePresence>
               {animPhase >= 2 && (
-                <motion.div key="briefing-v2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ marginBottom: 20 }}>
-                  {/* Cadran/compteur — style DemoV2 */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-                    style={{ border: `1px solid ${BORDER}`, borderRadius: 12, padding: isMobile ? "14px 16px" : "18px 22px", marginBottom: 16, display: "flex", alignItems: "center", gap: isMobile ? 12 : 20, flexWrap: "wrap" }}
-                  >
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: isMobile ? 26 : 32, fontWeight: 700, color: TEXT, lineHeight: 1 }}>
-                        {TASKS.slice(0, visibleTaskCount).filter(t => !treatedIds.has(t.id)).length}
-                      </div>
-                      <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2 }}>/3</div>
-                    </div>
-                    <div style={{ width: 1, height: 36, background: BORDER, flexShrink: 0 }} />
-                    <div style={{ display: "flex", gap: isMobile ? 10 : 16, flex: 1, flexWrap: "wrap" }}>
-                      {[
-                        { icon: Mail, value: "12 reçus" },
-                        { icon: LayoutDashboard, value: "6 dossiers" },
-                        { icon: Settings, value: "9 filtrés" },
-                      ].map((s, i) => (
-                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: TEXT_MUTED }}>
-                          <s.icon size={13} /> {s.value}
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
+                <motion.div key="donna-bloc" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ marginBottom: 20 }}>
+                  <div style={{
+                    border: `1px solid #E5E7EB`,
+                    borderRadius: 12,
+                    padding: isMobile ? "18px 16px" : "22px 24px",
+                    background: "#FAFBFC",
+                    display: "flex",
+                    flexDirection: isMobile ? "column" : "row",
+                    alignItems: isMobile ? "flex-start" : "center",
+                    gap: isMobile ? 14 : 20,
+                  }}>
+                    {/* Cercle cliquable avec compteur emails */}
+                    <button
+                      onClick={() => setActiveTab(prev => prev === "inbox" ? "todo" : "inbox")}
+                      title={activeTab === "inbox" ? "Retour aux tâches" : "Voir l'inbox complète"}
+                      style={{
+                        width: 66,
+                        height: 66,
+                        borderRadius: "50%",
+                        background: ACCENT,
+                        border: "none",
+                        cursor: "pointer",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                        boxShadow: "0 2px 8px rgba(37,99,235,0.18)",
+                      }}
+                      onMouseEnter={e => { (e.currentTarget.style.transform = "scale(1.06)"); (e.currentTarget.style.boxShadow = "0 4px 16px rgba(37,99,235,0.28)") }}
+                      onMouseLeave={e => { (e.currentTarget.style.transform = "scale(1)"); (e.currentTarget.style.boxShadow = "0 2px 8px rgba(37,99,235,0.18)") }}
+                    >
+                      <span style={{ fontSize: 24, fontWeight: 700, color: "#fff", lineHeight: 1 }}>
+                        {animPhase >= 4 ? "12" : Math.max(0, Math.min(12, Math.round((mailCount / 89) * 12))).toString()}
+                      </span>
+                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.8)", marginTop: 2, letterSpacing: "0.02em" }}>emails</span>
+                    </button>
 
-                  {/* Message Donna — style DemoV2 */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.5 }}
-                    style={{ border: `1px solid ${BORDER}`, borderRadius: 12, padding: isMobile ? "14px 16px" : "18px 22px", marginBottom: 0 }}
-                  >
-                    {/* En-tête avec cercle D et badge email cliquable */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>D</div>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: TEXT_MUTED }}>Donna</span>
-                      </div>
-                      {/* Badge email cliquable */}
-                      <button
-                        onClick={() => setActiveTab(prev => prev === "inbox" ? "todo" : "inbox")}
-                        title={activeTab === "inbox" ? "Retour à la to-do list" : "Voir l'inbox complète"}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 5,
-                          padding: "4px 10px", borderRadius: 20,
-                          background: activeTab === "inbox" ? ACCENT_BG : "#F3F4F6",
-                          border: `1px solid ${activeTab === "inbox" ? "rgba(37,99,235,0.25)" : BORDER}`,
-                          color: activeTab === "inbox" ? ACCENT : TEXT_MUTED,
-                          fontSize: 11, fontWeight: 500, cursor: "pointer", fontFamily: "inherit",
-                          transition: "all 0.18s",
-                        }}
-                        onMouseEnter={e => { (e.currentTarget.style.background = ACCENT_BG); (e.currentTarget.style.borderColor = "rgba(37,99,235,0.25)"); (e.currentTarget.style.color = ACCENT) }}
-                        onMouseLeave={e => {
-                          if (activeTab !== "inbox") {
-                            (e.currentTarget.style.background = "#F3F4F6"); (e.currentTarget.style.borderColor = BORDER); (e.currentTarget.style.color = TEXT_MUTED)
-                          }
-                        }}
-                      >
-                        <Mail size={11} />
-                        <span>12 reçus · 3 traités</span>
-                      </button>
-                    </div>
-                    <PhaseCBriefing
-                      lines={PHASE_C_DONNA_LINES}
-                      active={phaseCActive}
-                      isMobile={isMobile}
-                    />
-                    {/* Texte statique affiché après la cinématique */}
-                    {animPhase >= 4 && (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
-                        <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.7, marginBottom: 6 }}>
-                          Bonjour Alexandra, c'est Donna. J'ai lu vos <strong>12 emails</strong> des dernières 24 heures. 9 étaient du bruit, je m'en suis occupée. Il vous reste <strong>3 brouillons de réponse</strong> à valider, tout est prêt.
+                    {/* Texte Donna */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {activeTab === "inbox" ? (
+                        /* Vue Inbox activée */
+                        <div>
+                          <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.7, margin: "0 0 8px" }}>
+                            Vous consultez votre inbox. <strong>12 emails</strong> reçus dans les dernières 24 heures.
+                          </p>
+                          <button
+                            onClick={() => setActiveTab("todo")}
+                            style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", fontSize: 12, color: ACCENT, fontFamily: "inherit", padding: 0, fontWeight: 500 }}
+                          >
+                            <ArrowLeft size={13} /> Retour aux tâches
+                          </button>
+                        </div>
+                      ) : animPhase >= 4 ? (
+                        /* Texte statique post-cinématique */
+                        <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.7, margin: 0 }}>
+                          <strong>Bonjour Alexandra, c'est Donna.</strong> J'ai lu vos <strong>12 emails</strong> des dernières 24 heures. 9 étaient du bruit, je m'en suis occupée. Il vous reste <strong>3 tâches</strong> à traiter, vous pouvez les consulter ci-dessous.
                         </p>
-                        <p style={{ fontSize: 12, color: TEXT_MUTED, fontStyle: "italic", margin: 0 }}>Votre to-do du jour est juste en dessous.</p>
-                      </motion.div>
-                    )}
-                  </motion.div>
+                      ) : (
+                        /* Texte animé pendant la cinématique */
+                        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: "14px 16px", background: BG }}>
+                          <PhaseCBriefing
+                            lines={PHASE_C_DONNA_LINES}
+                            active={phaseCActive}
+                            isMobile={isMobile}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Titre To-do list / En-tête Inbox */}
+            {/* En-tête Inbox — affiché uniquement en vue inbox */}
             <AnimatePresence>
-              {animPhase >= 2 && visibleTaskCount > 0 && (
-                <motion.div key="section-header" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ marginBottom: 14 }}>
-                  {activeTab === "inbox" ? (
-                    /* En-tête vue Inbox avec bouton retour */
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>Inbox</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, background: ACCENT, color: "#fff", borderRadius: 10, padding: "1px 7px", lineHeight: 1.6 }}>
-                          {INBOX_EMAILS.length}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => setActiveTab("todo")}
-                        style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", fontSize: 12, color: TEXT_MUTED, fontFamily: "inherit", padding: "4px 8px" }}
-                      >
-                        <ArrowLeft size={13} /> Retour à la to-do list
-                      </button>
-                    </div>
-                  ) : (
-                    /* Titre simple To-do list */
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>To-do list</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, background: ACCENT, color: "#fff", borderRadius: 10, padding: "1px 7px", lineHeight: 1.6 }}>
-                        {TASKS.slice(0, visibleTaskCount).filter(t => !treatedIds.has(t.id)).length}
-                      </span>
-                    </div>
-                  )}
+              {animPhase >= 2 && activeTab === "inbox" && (
+                <motion.div key="inbox-header" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} style={{ marginBottom: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>Inbox</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, background: ACCENT, color: "#fff", borderRadius: 10, padding: "1px 7px", lineHeight: 1.6 }}>
+                      {INBOX_EMAILS.length}
+                    </span>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
