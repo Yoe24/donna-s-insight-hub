@@ -1268,7 +1268,7 @@ const PHASE_C_DONNA_LINES = [
 
 // Textes Phase D — ROI
 const PHASE_D_DONNA_LINES = [
-  "J'ai lu, trié et organisé les pièces jointes par dossier de 89 emails durant ces 24 dernières heures. Vous auriez mis environ 2h30.",
+  "J'ai lu, trié et organisé les pièces jointes par dossier de 89 emails durant ces 24 dernières heures.",
   "Demain matin à 8h, votre prochain tableau de bord sera prêt automatiquement.",
 ]
 
@@ -1782,7 +1782,7 @@ export default function DemoV3() {
                       </div>
                       {/* Sous-texte */}
                       <p style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.65, margin: "0 0 10px" }}>
-                        Donna a organisé vos pièces jointes par dossier et identifié 3 actions prioritaires. Vous auriez mis environ 2h30.
+                        Donna a organisé vos pièces jointes par dossier et identifié 3 actions prioritaires.
                       </p>
                       {/* Texte DonnaVoice si cinématique active */}
                       {phaseDActive && !animDone && (
