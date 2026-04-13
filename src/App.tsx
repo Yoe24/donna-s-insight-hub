@@ -36,6 +36,8 @@ const LandingV5 = lazy(() => import("./pages/LandingV5"));
 const DemoV2 = lazy(() => import("./pages/DemoV2"));
 const DemoV3 = lazy(() => import("./pages/DemoV3"));
 const DemoPrestige = lazy(() => import("./pages/DemoPrestige"));
+const DemoEmeraude = lazy(() => import("./pages/DemoEmeraude"));
+const DemoSatin = lazy(() => import("./pages/DemoSatin"));
 
 const queryClient = new QueryClient();
 
@@ -100,6 +102,8 @@ const App = () => (
             <Route path="/demo-v2" element={<Navigate to="/demo" replace />} />
             <Route path="/demo-v3" element={<Suspense fallback={null}><DemoV3 /></Suspense>} />
             <Route path="/demo-prestige" element={<Suspense fallback={null}><DemoPrestige /></Suspense>} />
+            <Route path="/demo-emeraude" element={<Suspense fallback={null}><DemoEmeraude /></Suspense>} />
+            <Route path="/demo-satin" element={<Suspense fallback={null}><DemoSatin /></Suspense>} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
