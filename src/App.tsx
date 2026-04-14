@@ -96,10 +96,10 @@ const App = () => (
             <Route path="/v3" element={<Suspense fallback={null}><LandingV3 /></Suspense>} />
             <Route path="/v4" element={<Suspense fallback={null}><LandingV4 /></Suspense>} />
             <Route path="/v5" element={<Suspense fallback={null}><LandingV5 /></Suspense>} />
-            <Route path="/demo" element={<Suspense fallback={null}><DemoV2 /></Suspense>} />
-            <Route path="/demo-v2" element={<Navigate to="/demo" replace />} />
+            <Route path="/demo" element={<Suspense fallback={null}><DemoWow /></Suspense>} />
+            <Route path="/demo-v2" element={<Suspense fallback={null}><DemoV2 /></Suspense>} />
             <Route path="/demo-v3" element={<Suspense fallback={null}><DemoV3 /></Suspense>} />
-            <Route path="/demo-wow" element={<Suspense fallback={null}><DemoWow /></Suspense>} />
+            <Route path="/demo-wow" element={<Navigate to="/demo" replace />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
