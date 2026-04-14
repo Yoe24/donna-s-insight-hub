@@ -1222,6 +1222,69 @@ function PhaseBDossierFocus({ dossier, donnaLines, donnaActive, showCheck, dossi
   showCheck: boolean
   dossierIdx: number
 }) {
+  // Track internal progression: how many emails/docs/deadlines are visible
+  // Timeline over 9s: header 0-0.5s, emails 0.5-3s, docs 3-4.5s, deadlines 4.5-6s, check 6-7s
+  const [visibleEmails, setVisibleEmails] = useState(0)
+  const [visibleDocs, setVisibleDocs] = useState(0)
+  const [visibleDeadlines, setVisibleDeadlines] = useState(0)
+  const [showEmailSection, setShowEmailSection] = useState(false)
+  const [showDocSection, setShowDocSection] = useState(false)
+  const [showDeadlineSection, setShowDeadlineSection] = useState(false)
+
+  const internalTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+
+  // Reset and re-run when dossier changes
+  useEffect(() => {
+    // Clear previous timers
+    internalTimersRef.current.forEach(t => clearTimeout(t))
+    internalTimersRef.current = []
+
+    // Reset state
+    setVisibleEmails(0)
+    setVisibleDocs(0)
+    setVisibleDeadlines(0)
+    setShowEmailSection(false)
+    setShowDocSection(false)
+    setShowDeadlineSection(false)
+
+    if (!donnaActive) return
+
+    const add = (fn: () => void, delay: number) => {
+      const t = setTimeout(fn, delay)
+      internalTimersRef.current.push(t)
+    }
+
+    // 0.5s: show ÉCHANGES section
+    add(() => setShowEmailSection(true), 500)
+
+    // Emails appear one by one starting at 0.7s, 1.2s apart each
+    dossier.emails.forEach((_, i) => {
+      add(() => setVisibleEmails(i + 1), 700 + i * 800)
+    })
+
+    // 3s: show PIÈCES JOINTES section
+    add(() => setShowDocSection(true), 3000)
+
+    // Docs appear starting at 3.2s
+    dossier.documents.forEach((_, i) => {
+      add(() => setVisibleDocs(i + 1), 3200 + i * 700)
+    })
+
+    // 4.5s: show ÉCHÉANCES section
+    add(() => setShowDeadlineSection(true), 4500)
+
+    // Deadlines appear starting at 4.7s
+    dossier.deadlines.forEach((_, i) => {
+      add(() => setVisibleDeadlines(i + 1), 4700 + i * 650)
+    })
+
+    return () => {
+      internalTimersRef.current.forEach(t => clearTimeout(t))
+    }
+  }, [dossier.id, donnaActive])
+
+  const dossierColor = DOSSIER_COLORS[dossier.id] || INITIALS_BG
+
   return (
     <motion.div
       key={dossier.id}
@@ -1231,34 +1294,217 @@ function PhaseBDossierFocus({ dossier, donnaLines, donnaActive, showCheck, dossi
       transition={{ duration: 0.8, ease: [0.22, 0.61, 0.36, 1] }}
       style={{ border: "1px solid rgba(255,255,255,0.4)", borderRadius: 16, padding: "22px 26px", background: "rgba(255,255,255,0.6)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}
     >
-      {/* Cercle réduit 100px en haut de la zone + infos dossier */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 18 }}>
-        <ScanCircle size={100} count={89} total={89} isFiltering={false} isFinal={true} />
+      {/* Header: scan circle + dossier identity */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+        <ScanCircle size={60} count={89} total={89} isFiltering={false} isFinal={true} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, color: TEXT_LIGHT, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+          <div style={{ fontSize: 10, color: TEXT_LIGHT, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
             Dossier {dossierIdx + 1} / {DOSSIERS.length}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", color: INITIALS_TEXT, fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{dossier.initials}</div>
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            style={{ display: "flex", alignItems: "center", gap: 10 }}
+          >
+            <div style={{
+              width: 36, height: 36, borderRadius: "50%",
+              background: dossierColor,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0,
+            }}>
+              {dossier.initials}
+            </div>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>{dossier.name}</div>
-              <div style={{ fontSize: 11, color: TEXT_MUTED }}>{dossier.domain}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: TEXT }}>{dossier.name}</div>
+              <div style={{ fontSize: 12, color: TEXT_MUTED }}>{dossier.type}</div>
             </div>
             <AnimatePresence>
               {showCheck && (
-                <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 400, damping: 20 }} style={{ marginLeft: "auto" }}>
-                  <CheckCircle2 size={20} color={GREEN} />
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                  style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}
+                >
+                  <CheckCircle2 size={18} color="#059669" />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#059669" }}>Dossier traité</span>
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </motion.div>
         </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-        <div style={{ width: 20, height: 20, borderRadius: "50%", background: TEXT, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>D</div>
-        <DonnaVoice lines={donnaLines} active={donnaActive} />
-      </div>
+      {/* LIVE FILL: Échanges */}
+      <AnimatePresence>
+        {showEmailSection && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            style={{ marginBottom: 16 }}
+          >
+            <div style={{ fontSize: 10, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+              <Mail size={10} />
+              Échanges
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <AnimatePresence>
+                {dossier.emails.slice(0, visibleEmails).map((email, i) => (
+                  <motion.div
+                    key={email.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      background: "rgba(255,255,255,0.5)",
+                      border: "1px solid rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    {/* Initiale expéditeur */}
+                    <div style={{
+                      width: 26, height: 26, borderRadius: "50%",
+                      background: INITIALS_BG,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 10, fontWeight: 700, color: INITIALS_TEXT, flexShrink: 0,
+                    }}>
+                      {email.sender.charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {email.sender}
+                      </div>
+                      <div style={{ fontSize: 11, color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {email.subject}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 10, color: TEXT_LIGHT, flexShrink: 0 }}>{email.date}</span>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* LIVE FILL: Pièces jointes */}
+      <AnimatePresence>
+        {showDocSection && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            style={{ marginBottom: 16 }}
+          >
+            <div style={{ fontSize: 10, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+              <Paperclip size={10} />
+              Pièces jointes
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <AnimatePresence>
+                {dossier.documents.slice(0, visibleDocs).map((doc) => (
+                  <motion.div
+                    key={doc.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      background: "rgba(255,255,255,0.5)",
+                      border: "1px solid rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    <FileText size={14} color={ACCENT} style={{ flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {doc.name}
+                      </div>
+                      <div style={{ fontSize: 10, color: TEXT_LIGHT }}>{doc.type} · {doc.size}</div>
+                    </div>
+                    {/* Download progress indicator — fast fade-in bar */}
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: 32 }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                      style={{ height: 3, background: "rgba(0,0,0,0.12)", borderRadius: 2, overflow: "hidden", flexShrink: 0 }}
+                    >
+                      <motion.div
+                        initial={{ width: "0%" }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: 0.45, ease: "easeOut" }}
+                        style={{ height: "100%", background: ACCENT, borderRadius: 2 }}
+                      />
+                    </motion.div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* LIVE FILL: Échéances */}
+      <AnimatePresence>
+        {showDeadlineSection && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            style={{ marginBottom: 16 }}
+          >
+            <div style={{ fontSize: 10, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+              <Calendar size={10} />
+              Échéances
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <AnimatePresence>
+                {dossier.deadlines.slice(0, visibleDeadlines).map((dl, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 22 }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      background: dl.urgent ? "rgba(225,29,72,0.04)" : "rgba(255,255,255,0.5)",
+                      border: `1px solid ${dl.urgent ? "rgba(225,29,72,0.18)" : "rgba(0,0,0,0.05)"}`,
+                    }}
+                  >
+                    <span style={{ fontSize: 14, flexShrink: 0 }}>{dl.urgent ? "⚠️" : "📅"}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: dl.urgent ? "#E11D48" : TEXT }}>
+                        {dl.date}
+                      </div>
+                      <div style={{ fontSize: 11, color: TEXT_MUTED }}>{dl.label}</div>
+                    </div>
+                    {dl.urgent && (
+                      <span style={{ fontSize: 9, fontWeight: 700, color: "#E11D48", background: "rgba(225,29,72,0.08)", padding: "2px 6px", borderRadius: 3, letterSpacing: "0.05em", flexShrink: 0 }}>URGENT</span>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Donna voice — commentary below the live fill */}
+      {donnaActive && (
+        <div style={{ marginTop: 12, paddingTop: 14, borderTop: `1px solid ${BORDER}` }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+            <div style={{ width: 20, height: 20, borderRadius: "50%", background: TEXT, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>D</div>
+            <DonnaVoice lines={donnaLines} active={donnaActive} />
+          </div>
+        </div>
+      )}
     </motion.div>
   )
 }
