@@ -1149,7 +1149,7 @@ function ScanCircle({ size, count, total, isFiltering, isFinal }: {
         )}
         {size >= 100 && (
           <span style={{ fontSize: 11, color: "rgba(255,255,255,0.72)", marginTop: 3, letterSpacing: "0.03em" }}>
-            {isFinal ? "/ 89" : `/ ${total}`}
+            {isFinal ? "emails" : "emails lus"}
           </span>
         )}
       </div>
@@ -1475,28 +1475,34 @@ export default function DemoV3() {
       setPhaseADonnaActive(true)
     }, 1000)
 
+    // Dossiers appear DURING scan (progressive discovery)
+    // Dossier 1 appears at ~15 emails, dossier 2 at ~30, etc.
+    const dossierAppearTimes = [3000, 4500, 5500, 6500, 7200, 8000]
+    dossierAppearTimes.forEach((delay, i) => {
+      addTimer(() => {
+        setVisibleDossierCount(i + 1)
+      }, delay)
+    })
+
     // 8.5s: Phase A filtering — compteur atteint 89, Donna "filtre le bruit"
     addTimer(() => {
       if (emailIntervalRef.current) { clearInterval(emailIntervalRef.current); emailIntervalRef.current = null }
       setPhaseAFiltering(true)
     }, 8500)
 
-    // === PHASE B: 10-64s — dossiers (~9s each for 5 lines) ===
-    // Timings: 10s, 19s, 28s, 37s, 46s, 55s
+    // === PHASE B: 10-64s — dossiers detail (~9s each for 5 lines) ===
+    // Dossiers already visible in sidebar, now Donna explains each one
     const dossierStartTimes = [10000, 19000, 28000, 37000, 46000, 55000]
     dossierStartTimes.forEach((delay, i) => {
       addTimer(() => {
         if (emailIntervalRef.current) { clearInterval(emailIntervalRef.current); emailIntervalRef.current = null }
         setAnimPhase(1)
-        setVisibleDossierCount(i + 1)
         setActiveCinematicDossierIdx(i)
         setDossierShowCheck(false)
         setDossierDonnaActive(false)
-        // Small delay then start donna voice for this dossier
         addTimer(() => {
           setDossierDonnaActive(true)
         }, 300)
-        // Show check after 5 lines (~5 lines * ~1.2s typing + 1.2s pause = ~8s, show check at ~7.5s)
         addTimer(() => {
           setDossierShowCheck(true)
         }, 7500)
