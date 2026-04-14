@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import DashboardCinematic from "@/components/cinematic/DashboardCinematic";
+import LandingDashboardCinematic from "@/components/cinematic/LandingDashboardCinematic";
 import { AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -223,7 +223,7 @@ const Index = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
             >
-              <DashboardCinematic theme="light" />
+              <LandingDashboardCinematic />
             </motion.div>
           </div>
         </section>
