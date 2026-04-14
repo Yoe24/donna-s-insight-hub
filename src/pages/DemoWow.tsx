@@ -1377,7 +1377,7 @@ const PHASE_A_DONNA_LINES = [
 
 // Textes Phase C — Donna construit le briefing
 const PHASE_C_DONNA_LINES = [
-  "Bonjour Alexandra. 12 emails lus. 3 tâches identifiées.",
+  "Bonjour Alexandra. 19 emails lus. 3 tâches identifiées.",
   "9 étaient du bruit, je m'en suis occupée. Il vous reste 3 brouillons de réponse à valider, tout est prêt.",
 ]
 
@@ -1593,7 +1593,7 @@ export default function DemoV3() {
                   transition={{ type: "spring", damping: 28, stiffness: 300 }}
                   style={{ position: "fixed", top: 40, left: 0, bottom: 0, zIndex: 51, width: 240, background: "rgba(255,255,255,0.65)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderRight: "1px solid rgba(255,255,255,0.3)", display: "flex", flexDirection: "column", overflowY: "auto" }}
                 >
-                  <SidebarContent onDossierClick={d => { if (d) setSelectedDossier(d); setSidebarOpen(false) }} activeDossierId={selectedDossier?.id || null} visibleDossierCount={visibleDossierCount} animPhase={animPhase} />
+                  <SidebarContent onDossierClick={d => { setSelectedDossier(d); setSidebarOpen(false) }} activeDossierId={selectedDossier?.id || null} visibleDossierCount={visibleDossierCount} animPhase={animPhase} />
                 </motion.aside>
               </>
             )}
@@ -1711,7 +1711,7 @@ export default function DemoV3() {
                       onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.85)"; e.currentTarget.style.borderColor = "rgba(0,0,0,0.15)" }}
                       onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.6)"; e.currentTarget.style.borderColor = "rgba(0,0,0,0.08)" }}
                     >
-                      <span style={{ fontSize: 28, fontWeight: 700, color: TEXT, lineHeight: 1, fontFamily: "'Playfair Display', serif" }}>12</span>
+                      <span style={{ fontSize: 28, fontWeight: 700, color: TEXT, lineHeight: 1, fontFamily: "'Playfair Display', serif" }}>19</span>
                       <span style={{ fontSize: 10, color: TEXT_MUTED, letterSpacing: "0.04em", textTransform: "uppercase" as const }}>emails</span>
                     </button>
 
@@ -1721,7 +1721,7 @@ export default function DemoV3() {
                         /* Vue Inbox activée */
                         <div>
                           <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.7, margin: "0 0 8px" }}>
-                            Vous consultez votre inbox. <strong>12 emails</strong> reçus dans les dernières 24 heures.
+                            Vous consultez votre inbox. <strong>19 emails</strong> reçus dans les dernières 24 heures.
                           </p>
                           <button
                             onClick={() => setActiveTab("todo")}
@@ -1733,7 +1733,7 @@ export default function DemoV3() {
                       ) : animPhase >= 4 ? (
                         /* Texte statique post-cinématique */
                         <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.7, margin: 0 }}>
-                          <strong>Bonjour Alexandra.</strong> <strong>12 emails</strong> lus ces dernières 24h. <strong>3 tâches</strong> identifiées.
+                          <strong>Bonjour Alexandra.</strong> <strong>19 emails</strong> lus ces dernières 24h. <strong>3 tâches</strong> identifiées.
                         </p>
                       ) : (
                         /* Texte animé pendant la cinématique */
