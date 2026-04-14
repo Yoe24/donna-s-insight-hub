@@ -9,19 +9,19 @@ import {
 } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 
-// ─── Palette DemoWow — glassmorphism noir & blanc ───
-const BG = "transparent"
-const SIDEBAR_BG = "rgba(255,255,255,0.7)"
-const SIDEBAR_BORDER = "rgba(255,255,255,0.2)"
-const TEXT = "#111111"
-const TEXT_MUTED = "#555555"
-const TEXT_LIGHT = "#999999"
-const ACCENT = "#111111"
-const ACCENT_BG = "rgba(0,0,0,0.03)"
-const URGENT = "#111111"
-const URGENT_BG = "rgba(0,0,0,0.03)"
-const GREEN = "#111111"
-const BORDER = "rgba(0,0,0,0.06)"
+// ─── Palette DemoWow — charte donna-legal.com ───
+const BG = "#FFFFFF"
+const SIDEBAR_BG = "#F9FAFB"
+const SIDEBAR_BORDER = "#E5E5E5"
+const TEXT = "#0D0D0D"
+const TEXT_MUTED = "#737373"
+const TEXT_LIGHT = "#A0A0A0"
+const ACCENT = "#0D0D0D"
+const ACCENT_BG = "#F5F5F5"
+const URGENT = "#FF5555"
+const URGENT_BG = "#FEF2F2"
+const GREEN = "#10B981"
+const BORDER = "#E5E5E5"
 const INITIALS_BG = "#E5E5E5"
 const INITIALS_TEXT = "#333"
 
@@ -441,7 +441,7 @@ function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
       <motion.div
         initial={{ opacity: 1 }} animate={{ opacity: 0.42 }}
         transition={{ duration: 0.3 }}
-        style={{ border: "1px solid rgba(255,255,255,0.4)", borderRadius: 16, padding: "14px 20px", marginBottom: 10, background: "rgba(255,255,255,0.6)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "flex", alignItems: "center", gap: 10 }}
+        style={{ border: `1px solid ${BORDER}`, borderRadius: 16, padding: "14px 20px", marginBottom: 10, background: BG, display: "flex", alignItems: "center", gap: 10 }}
       >
         <button
           onClick={onTreat}
@@ -456,23 +456,21 @@ function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
   }
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.96, filter: "blur(8px)" }}
-      animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-      transition={{ duration: 0.6, ease: [0.22, 0.61, 0.36, 1] }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        border: "1px solid rgba(255,255,255,0.4)",
+        border: `1px solid ${BORDER}`,
         borderRadius: 16,
         marginBottom: 12,
         overflow: "hidden",
-        background: "rgba(255,255,255,0.6)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
+        background: BG,
         boxShadow: hovered
-          ? "0 8px 32px rgba(17,17,17,0.08), 0 2px 8px rgba(0,0,0,0.04)"
-          : "0 4px 24px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02)",
-        transform: hovered ? "translateY(-2px)" : "translateY(0)",
+          ? "0 4px 12px rgba(0,0,0,0.06)"
+          : "0 1px 3px rgba(0,0,0,0.04)",
+        transform: hovered ? "translateY(-1px)" : "translateY(0)",
         transition: "all 0.3s ease",
       }}
     >
@@ -501,9 +499,9 @@ function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
         <div style={{ marginTop: 12, marginLeft: 27 }}>
           <button
             onClick={e => { e.stopPropagation(); onDraft() }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 24px rgba(17,17,17,0.4)" }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 16px rgba(17,17,17,0.25)" }}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #1a1a2e, #2d2d44)", color: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, boxShadow: "0 4px 16px rgba(17,17,17,0.25)", transition: "box-shadow 0.2s" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.9" }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1" }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 24px", borderRadius: 8, border: "none", background: "#0D0D0D", color: "#FFFFFF", fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 500, transition: "opacity 0.2s" }}
           >
             <Edit3 size={13} /> Réponse générée par Donna
           </button>
@@ -521,7 +519,7 @@ function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
           >
             <div style={{ padding: "14px 20px 18px 20px", borderTop: `1px solid ${BORDER}` }}>
               {/* En-tête email */}
-              <div style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(10px)", borderRadius: 8, padding: "12px 14px", marginBottom: 14, fontSize: 12, lineHeight: 1.8, border: "1px solid rgba(255,255,255,0.3)" }}>
+              <div style={{ background: SIDEBAR_BG, borderRadius: 8, padding: "12px 14px", marginBottom: 14, fontSize: 12, lineHeight: 1.8, border: `1px solid ${BORDER}` }}>
                 <div><span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 36 }}>De</span> <span style={{ fontWeight: 600, color: TEXT }}>{task.email_from}</span></div>
                 <div><span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 36 }}>À</span> <span style={{ color: TEXT }}>{task.email_to}</span></div>
                 {task.email_cc && <div><span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 36 }}>Cc</span> <span style={{ color: TEXT }}>{task.email_cc}</span></div>}
@@ -560,9 +558,9 @@ function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
               {/* Bouton Générer une réponse */}
               <button
                 onClick={e => { e.stopPropagation(); onDraft() }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 24px rgba(17,17,17,0.4)" }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 16px rgba(17,17,17,0.25)" }}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, width: "100%", padding: "11px 18px", borderRadius: 10, background: "linear-gradient(135deg, #1a1a2e, #2d2d44)", color: "#fff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 16px rgba(17,17,17,0.25)", transition: "box-shadow 0.2s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.9" }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1" }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, width: "100%", padding: "10px 24px", borderRadius: 8, background: "#0D0D0D", color: "#FFFFFF", border: "none", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "opacity 0.2s" }}
               >
                 <Edit3 size={14} /> Générer une réponse
               </button>
@@ -610,7 +608,7 @@ function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
     <motion.div
       initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
       transition={{ type: "spring", damping: 28, stiffness: 300 }}
-      style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: isMobile ? "100%" : "min(680px, 55vw)", background: "rgba(255,255,255,0.85)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", zIndex: 80, display: "flex", flexDirection: "column", boxShadow: "-4px 0 30px rgba(0,0,0,0.08)", borderLeft: "1px solid rgba(255,255,255,0.3)" }}
+      style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: isMobile ? "100%" : "min(680px, 55vw)", background: BG, zIndex: 80, display: "flex", flexDirection: "column", boxShadow: "-4px 0 30px rgba(0,0,0,0.08)", borderLeft: `1px solid ${BORDER}` }}
     >
       {/* Header avec onglets Voir / Brouillon */}
       <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
@@ -696,9 +694,9 @@ function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
             {/* Bouton Générer une réponse */}
             <button
               onClick={handleGenerateDraft}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 24px rgba(17,17,17,0.4)" }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 16px rgba(17,17,17,0.25)" }}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "12px 20px", borderRadius: 10, background: "linear-gradient(135deg, #1a1a2e, #2d2d44)", color: "#fff", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 16px rgba(17,17,17,0.25)", transition: "box-shadow 0.2s" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.9" }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1" }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "10px 24px", borderRadius: 8, background: "#0D0D0D", color: "#FFFFFF", border: "none", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "opacity 0.2s" }}
             >
               <Edit3 size={15} /> Générer une réponse
             </button>
@@ -1165,11 +1163,11 @@ function PhaseAScanZone({ mailCount, currentEmailSubject, isMobile, donnaLines, 
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.96, filter: "blur(8px)" }}
-      animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.8, ease: [0.22, 0.61, 0.36, 1] }}
-      style={{ border: "1px solid rgba(255,255,255,0.4)", borderRadius: 16, padding: isMobile ? "20px 16px" : "28px 32px", background: "rgba(255,255,255,0.6)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", boxShadow: "0 4px 24px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column", alignItems: "center" }}
+      transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
+      style={{ border: `1px solid ${BORDER}`, borderRadius: 16, padding: isMobile ? "20px 16px" : "28px 32px", background: BG, boxShadow: "0 1px 3px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column", alignItems: "center" }}
     >
       {/* Grand cercle centré */}
       <ScanCircle size={120} count={mailCount} total={89} isFiltering={isFiltering} isFinal={false} />
@@ -1288,11 +1286,11 @@ function PhaseBDossierFocus({ dossier, donnaLines, donnaActive, showCheck, dossi
   return (
     <motion.div
       key={dossier.id}
-      initial={{ opacity: 0, y: 20, scale: 0.96, filter: "blur(8px)" }}
-      animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.8, ease: [0.22, 0.61, 0.36, 1] }}
-      style={{ border: "1px solid rgba(255,255,255,0.4)", borderRadius: 16, padding: "22px 26px", background: "rgba(255,255,255,0.6)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}
+      transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
+      style={{ border: `1px solid ${BORDER}`, borderRadius: 16, padding: "22px 26px", background: BG, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
     >
       {/* Header: scan circle + dossier identity */}
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
@@ -1361,8 +1359,8 @@ function PhaseBDossierFocus({ dossier, donnaLines, donnaActive, showCheck, dossi
                       display: "flex", alignItems: "center", gap: 10,
                       padding: "8px 12px",
                       borderRadius: 8,
-                      background: "rgba(255,255,255,0.5)",
-                      border: "1px solid rgba(0,0,0,0.05)",
+                      background: SIDEBAR_BG,
+                      border: `1px solid ${BORDER}`,
                     }}
                   >
                     {/* Initiale expéditeur */}
@@ -1416,8 +1414,8 @@ function PhaseBDossierFocus({ dossier, donnaLines, donnaActive, showCheck, dossi
                       display: "flex", alignItems: "center", gap: 10,
                       padding: "8px 12px",
                       borderRadius: 8,
-                      background: "rgba(255,255,255,0.5)",
-                      border: "1px solid rgba(0,0,0,0.05)",
+                      background: SIDEBAR_BG,
+                      border: `1px solid ${BORDER}`,
                     }}
                   >
                     <FileText size={14} color={ACCENT} style={{ flexShrink: 0 }} />
@@ -1474,19 +1472,19 @@ function PhaseBDossierFocus({ dossier, donnaLines, donnaActive, showCheck, dossi
                       display: "flex", alignItems: "center", gap: 10,
                       padding: "8px 12px",
                       borderRadius: 8,
-                      background: dl.urgent ? "rgba(225,29,72,0.04)" : "rgba(255,255,255,0.5)",
-                      border: `1px solid ${dl.urgent ? "rgba(225,29,72,0.18)" : "rgba(0,0,0,0.05)"}`,
+                      background: dl.urgent ? URGENT_BG : SIDEBAR_BG,
+                      border: `1px solid ${dl.urgent ? "rgba(255,85,85,0.25)" : BORDER}`,
                     }}
                   >
                     <span style={{ fontSize: 14, flexShrink: 0 }}>{dl.urgent ? "⚠️" : "📅"}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: dl.urgent ? "#E11D48" : TEXT }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: dl.urgent ? URGENT : TEXT }}>
                         {dl.date}
                       </div>
                       <div style={{ fontSize: 11, color: TEXT_MUTED }}>{dl.label}</div>
                     </div>
                     {dl.urgent && (
-                      <span style={{ fontSize: 9, fontWeight: 700, color: "#E11D48", background: "rgba(225,29,72,0.08)", padding: "2px 6px", borderRadius: 3, letterSpacing: "0.05em", flexShrink: 0 }}>URGENT</span>
+                      <span style={{ fontSize: 9, fontWeight: 700, color: URGENT, background: URGENT_BG, padding: "2px 6px", borderRadius: 3, letterSpacing: "0.05em", flexShrink: 0 }}>URGENT</span>
                     )}
                   </motion.div>
                 ))}
@@ -1515,10 +1513,10 @@ function PhaseCBriefing({ lines, active, isMobile, onAllDone }: {
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.96, filter: "blur(8px)" }}
-      animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-      transition={{ duration: 0.8, ease: [0.22, 0.61, 0.36, 1] }}
-      style={{ border: "1px solid rgba(255,255,255,0.4)", borderRadius: 16, padding: isMobile ? "16px" : "22px 26px", background: "rgba(255,255,255,0.6)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
+      style={{ border: `1px solid ${BORDER}`, borderRadius: 16, padding: isMobile ? "16px" : "22px 26px", background: BG, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
         <div style={{ width: 22, height: 22, borderRadius: "50%", background: TEXT, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>D</div>
@@ -1545,7 +1543,7 @@ function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, 
       <div style={{ padding: "18px 14px 12px", borderBottom: `1px solid ${SIDEBAR_BORDER}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 17, color: TEXT }}>Donna</span>
-          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: ACCENT_BG, color: ACCENT, letterSpacing: "0.05em" }}>DÉMO</span>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#0D0D0D", color: "#FFFFFF", letterSpacing: "0.05em" }}>DÉMO</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
           <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 2.2, repeat: animPhase < 4 ? Infinity : 0 }}
@@ -1809,19 +1807,14 @@ export default function DemoV3() {
   const urgentRemaining = TASKS.slice(0, visibleTaskCount).filter(t => t.urgent && !treatedIds.has(t.id)).length
 
   return (
-    <div style={{ background: "linear-gradient(135deg, #F8F9FF 0%, #F0EEFF 30%, #FFF5F5 60%, #F8F9FF 100%)", color: TEXT, height: "100vh", fontFamily: "Inter, system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ background: "#FFFFFF", color: TEXT, height: "100vh", fontFamily: "Inter, system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
-        @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 20px rgba(17,17,17,0.3), 0 0 60px rgba(17,17,17,0.1); }
-          50% { box-shadow: 0 0 40px rgba(17,17,17,0.5), 0 0 80px rgba(17,17,17,0.15); }
-        }
-        .donna-scan-circle { animation: pulse-glow 2s ease-in-out infinite; }
       `}</style>
 
       {/* Top bar — mobile only */}
       {isMobile && (
-        <div style={{ height: 40, background: "rgba(255,255,255,0.65)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.3)", display: "flex", alignItems: "center", padding: "0 16px", gap: 8, flexShrink: 0 }}>
+        <div style={{ height: 40, background: BG, borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", padding: "0 16px", gap: 8, flexShrink: 0 }}>
           <button onClick={() => setSidebarOpen(o => !o)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}>
             <Menu size={18} color={TEXT_MUTED} />
           </button>
@@ -1844,7 +1837,7 @@ export default function DemoV3() {
                   style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 50 }} />
                 <motion.aside initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
                   transition={{ type: "spring", damping: 28, stiffness: 300 }}
-                  style={{ position: "fixed", top: 40, left: 0, bottom: 0, zIndex: 51, width: 240, background: "rgba(255,255,255,0.65)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderRight: "1px solid rgba(255,255,255,0.3)", display: "flex", flexDirection: "column", overflowY: "auto" }}
+                  style={{ position: "fixed", top: 40, left: 0, bottom: 0, zIndex: 51, width: 240, background: SIDEBAR_BG, borderRight: `1px solid ${SIDEBAR_BORDER}`, display: "flex", flexDirection: "column", overflowY: "auto" }}
                 >
                   <SidebarContent onDossierClick={d => { setSelectedDossier(d); setSidebarOpen(false) }} activeDossierId={selectedDossier?.id || null} visibleDossierCount={visibleDossierCount} animPhase={animPhase} />
                 </motion.aside>
@@ -1855,7 +1848,7 @@ export default function DemoV3() {
 
         {/* Desktop sidebar */}
         {!isMobile && (
-          <aside style={{ width: 210, background: "rgba(255,255,255,0.65)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderRight: "1px solid rgba(255,255,255,0.3)", display: "flex", flexDirection: "column", flexShrink: 0, overflowY: "auto" }}>
+          <aside style={{ width: 210, background: SIDEBAR_BG, borderRight: `1px solid ${SIDEBAR_BORDER}`, display: "flex", flexDirection: "column", flexShrink: 0, overflowY: "auto" }}>
             <SidebarContent onDossierClick={d => setSelectedDossier(d)} activeDossierId={selectedDossier?.id || null} visibleDossierCount={visibleDossierCount} animPhase={animPhase} />
           </aside>
         )}
@@ -1869,7 +1862,7 @@ export default function DemoV3() {
 
             {/* Header + Skip button — always visible */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
-              <motion.div initial={{ opacity: 0, y: 20, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.8, ease: [0.22, 0.61, 0.36, 1] }}>
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}>
                 <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? 22 : 27, fontWeight: 400, color: TEXT, marginBottom: 4, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
                   Bonjour, Alexandra
                 </h1>
@@ -1927,14 +1920,12 @@ export default function DemoV3() {
             {/* BLOC UNIQUE — Cercle emails + message Donna */}
             <AnimatePresence>
               {animPhase >= 2 && (
-                <motion.div key="donna-bloc" initial={{ opacity: 0, y: 20, scale: 0.96, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }} transition={{ duration: 0.8, ease: [0.22, 0.61, 0.36, 1] }} style={{ marginBottom: 20 }}>
+                <motion.div key="donna-bloc" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }} style={{ marginBottom: 20 }}>
                   <div style={{
-                    background: "rgba(255,255,255,0.5)",
-                    backdropFilter: "blur(20px)",
-                    WebkitBackdropFilter: "blur(20px)",
-                    border: "1px solid rgba(255,255,255,0.3)",
-                    borderRadius: 20,
-                    boxShadow: "0 8px 32px rgba(0,0,0,0.04)",
+                    background: BG,
+                    border: `1px solid ${BORDER}`,
+                    borderRadius: 16,
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                     padding: isMobile ? "18px 16px" : "22px 24px",
                     display: "flex",
                     flexDirection: isMobile ? "column" : "row",
@@ -2011,9 +2002,9 @@ export default function DemoV3() {
                 <motion.div key="tasks" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} style={{ marginBottom: 8 }}>
                   {/* Séparateur "Tâches créées par Donna" */}
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, marginTop: 4 }}>
-                    <div style={{ height: 1, flex: 1, background: "linear-gradient(to right, transparent, rgba(17,17,17,0.2), transparent)" }} />
-                    <span style={{ fontSize: 11, fontWeight: 600, color: ACCENT, textTransform: "uppercase", letterSpacing: 0.8, whiteSpace: "nowrap" }}>Tâches créées par Donna</span>
-                    <div style={{ height: 1, flex: 1, background: "linear-gradient(to right, transparent, rgba(17,17,17,0.2), transparent)" }} />
+                    <div style={{ height: 1, flex: 1, background: BORDER }} />
+                    <span style={{ fontSize: 11, fontWeight: 500, color: TEXT_LIGHT, textTransform: "uppercase", letterSpacing: 0.8, whiteSpace: "nowrap" }}>Tâches créées par Donna</span>
+                    <div style={{ height: 1, flex: 1, background: BORDER }} />
                   </div>
                   {TASKS.slice(0, visibleTaskCount).map((task) => (
                     <SlimTaskCard
@@ -2111,7 +2102,7 @@ export default function DemoV3() {
                     }
 
                     return (
-                      <div style={{ marginTop: 12, border: "1px solid rgba(255,255,255,0.4)", borderRadius: 12, background: "rgba(255,255,255,0.6)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+                      <div style={{ marginTop: 12, border: `1px solid ${BORDER}`, borderRadius: 12, background: BG, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
                         {filtered.map((email, idx) => {
                           const isUnread = email.date === d0 || email.date === d1
                           const isExpanded = expandedEmailId === email.id
@@ -2129,16 +2120,16 @@ export default function DemoV3() {
                                   gap: 10,
                                   padding: "9px 14px",
                                   cursor: "pointer",
-                                  background: isExpanded ? "rgba(17,17,17,0.04)" : "transparent",
+                                  background: isExpanded ? SIDEBAR_BG : "transparent",
                                   transition: "background 0.12s",
                                 }}
-                                onMouseEnter={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = "rgba(17,17,17,0.03)" }}
+                                onMouseEnter={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = SIDEBAR_BG }}
                                 onMouseLeave={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = "transparent" }}
                               >
                                 {/* Point non lu */}
                                 <div style={{ width: 8, flexShrink: 0, display: "flex", justifyContent: "center" }}>
                                   {isUnread && (
-                                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#111111" }} />
+                                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#0D0D0D" }} />
                                   )}
                                 </div>
 
@@ -2196,9 +2187,9 @@ export default function DemoV3() {
                                   >
                                     <div style={{
                                       padding: "16px 20px 18px 54px",
-                                      borderTop: `1px solid #E5E7EB`,
+                                      borderTop: `1px solid ${BORDER}`,
                                       borderLeft: `3px solid ${ACCENT}`,
-                                      background: "#FAFBFF",
+                                      background: SIDEBAR_BG,
                                     }}>
                                       {/* En-tête email */}
                                       <div style={{ marginBottom: 14, fontSize: 12, lineHeight: 1.9 }}>
@@ -2243,8 +2234,8 @@ export default function DemoV3() {
             <AnimatePresence>
               {roiVisible && (
                 <motion.div key="roi"
-                  initial={{ opacity: 0, y: 20, scale: 0.96, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }} transition={{ duration: 0.8, ease: [0.22, 0.61, 0.36, 1], delay: 0.2 }}
-                  style={{ marginTop: 24, padding: isMobile ? "18px 16px" : "22px 26px", borderRadius: 16, background: "rgba(17,17,17,0.04)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid rgba(17,17,17,0.1)" }}
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1], delay: 0.2 }}
+                  style={{ marginTop: 24, padding: isMobile ? "18px 16px" : "22px 26px", borderRadius: 16, background: ACCENT_BG, border: `1px solid ${BORDER}` }}
                 >
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
                     {/* Icône Donna */}
@@ -2278,14 +2269,14 @@ export default function DemoV3() {
             <AnimatePresence>
               {animDone && (
                 <motion.div key="cta"
-                  initial={{ opacity: 0, y: 20, scale: 0.96, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }} transition={{ duration: 0.8, ease: [0.22, 0.61, 0.36, 1], delay: 0.3 }}
-                  style={{ marginTop: 24, padding: isMobile ? "18px" : "22px 28px", borderRadius: 16, background: "linear-gradient(135deg, #1a1a2e, #16213e)", boxShadow: "0 8px 32px rgba(0,0,0,0.12)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, marginBottom: isMobile ? 24 : 0 }}
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1], delay: 0.3 }}
+                  style={{ marginTop: 24, padding: isMobile ? "18px" : "22px 28px", borderRadius: 16, background: "#0D0D0D", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, marginBottom: isMobile ? 24 : 0 }}
                 >
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 5 }}>Vous aimez ce que vous voyez ?</div>
                     <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>Connectez votre boîte mail professionnelle — 7 jours gratuits.</div>
                   </div>
-                  <a href="https://calendly.com/contact-donna-legal/onboarding-15min" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "11px 22px", borderRadius: 10, background: "linear-gradient(135deg, #1a1a2e, #2d2d44)", color: "#fff", fontSize: 14, fontWeight: 700, textDecoration: "none", flexShrink: 0, boxShadow: "0 4px 16px rgba(17,17,17,0.3)" }}>
+                  <a href="https://calendly.com/contact-donna-legal/onboarding-15min" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "10px 24px", borderRadius: 8, background: "#FFFFFF", color: "#0D0D0D", fontSize: 13, fontWeight: 500, textDecoration: "none", flexShrink: 0 }}>
                     Demander un essai gratuit <Send size={13} />
                   </a>
                 </motion.div>
