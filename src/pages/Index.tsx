@@ -139,19 +139,29 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleDemo = (e: React.FormEvent) => {
+  const handleDemo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nom || !form.email) {
       toast({ title: "Veuillez remplir au moins votre nom et email.", variant: "destructive" });
       return;
     }
-    // Store in localStorage until a real backend is connected
-    const submissions = JSON.parse(localStorage.getItem("donna_demo_requests") || "[]");
-    submissions.push({ ...form, submittedAt: new Date().toISOString() });
-    localStorage.setItem("donna_demo_requests", JSON.stringify(submissions));
-
-    setSent(true);
-    toast({ title: "Merci ! Nous vous recontactons sous 24h." });
+    try {
+      const res = await fetch("/api/demo-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error("Erreur serveur");
+      setSent(true);
+      toast({ title: "Merci ! Votre démo a été envoyée par email." });
+    } catch {
+      // Fallback: store locally if API fails
+      const submissions = JSON.parse(localStorage.getItem("donna_demo_requests") || "[]");
+      submissions.push({ ...form, submittedAt: new Date().toISOString() });
+      localStorage.setItem("donna_demo_requests", JSON.stringify(submissions));
+      setSent(true);
+      toast({ title: "Merci ! Nous vous recontactons sous 24h." });
+    }
   };
 
   const scrollToDemo = () => {
