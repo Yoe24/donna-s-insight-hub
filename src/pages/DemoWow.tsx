@@ -25,13 +25,14 @@ const BORDER = "rgba(0,0,0,0.06)"
 const INITIALS_BG = "#E5E5E5"
 const INITIALS_TEXT = "#333"
 
-// 6 couleurs toutes distinctes, harmonieuses, jamais deux pareilles côte à côte
-const DOMAIN_COLORS: Record<string, string> = {
-  "Travail": "#2563EB",         // bleu
-  "Commercial": "#9333EA",      // violet
-  "Immobilier": "#0891B2",      // cyan/teal
-  "Famille": "#E11D48",         // rose/rouge
-  "Droit successoral": "#D97706", // ambre/orange
+// 6 couleurs uniques par dossier (pas par domaine), jamais deux pareilles côte à côte
+const DOSSIER_COLORS: Record<string, string> = {
+  "d1": "#2563EB",   // Jean-Pierre Martin — bleu
+  "d2": "#9333EA",   // Marie Dupont — violet
+  "d3": "#0891B2",   // Claire Dubois — teal
+  "d4": "#E11D48",   // Famille Roux — rose
+  "d5": "#D97706",   // Alice Bernard — ambre
+  "d6": "#059669",   // Succession Martin — vert émeraude
 }
 
 // ─── Dates dynamiques ───
@@ -1341,7 +1342,7 @@ function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, 
                   transition: "all 0.2s",
                 }}
               >
-                <div style={{ width: 26, height: 26, borderRadius: "50%", background: DOMAIN_COLORS[d.domain] || INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{d.initials}</div>
+                <div style={{ width: 26, height: 26, borderRadius: "50%", background: DOSSIER_COLORS[d.id] || INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{d.initials}</div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: isActive ? 600 : 400, color: isActive ? TEXT : TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</div>
                   <div style={{ fontSize: 10, color: TEXT_LIGHT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.domain}</div>
