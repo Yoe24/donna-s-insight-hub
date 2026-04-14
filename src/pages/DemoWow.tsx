@@ -1694,31 +1694,31 @@ export default function DemoV3() {
                     alignItems: isMobile ? "flex-start" : "center",
                     gap: isMobile ? 14 : 20,
                   }}>
-                    {/* Indicateur emails — informatif, pas buzzer */}
+                    {/* Indicateur emails — même cercle que la cinématique */}
                     <button
                       onClick={() => setActiveTab(prev => prev === "inbox" ? "todo" : "inbox")}
                       title={activeTab === "inbox" ? "Retour aux tâches" : "Voir l'inbox complète"}
                       style={{
-                        background: "rgba(255,255,255,0.6)",
-                        backdropFilter: "blur(12px)",
-                        WebkitBackdropFilter: "blur(12px)",
-                        border: "1px solid rgba(0,0,0,0.08)",
-                        borderRadius: 14,
+                        width: 56,
+                        height: 56,
+                        borderRadius: "50%",
+                        background: ACCENT,
                         cursor: "pointer",
-                        padding: "14px 18px",
+                        padding: 0,
+                        border: "none",
                         flexShrink: 0,
                         transition: "all 0.25s ease",
                         display: "flex",
                         flexDirection: "column" as const,
                         alignItems: "center",
-                        gap: 2,
-                        minWidth: 72,
+                        justifyContent: "center",
+                        boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.85)"; e.currentTarget.style.borderColor = "rgba(0,0,0,0.15)" }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.6)"; e.currentTarget.style.borderColor = "rgba(0,0,0,0.08)" }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.15)" }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.1)" }}
                     >
-                      <span style={{ fontSize: 28, fontWeight: 700, color: TEXT, lineHeight: 1, fontFamily: "'Playfair Display', serif" }}>19</span>
-                      <span style={{ fontSize: 10, color: TEXT_MUTED, letterSpacing: "0.04em", textTransform: "uppercase" as const }}>emails</span>
+                      <span style={{ fontSize: 18, fontWeight: 700, color: "#fff", lineHeight: 1 }}>19</span>
+                      <span style={{ fontSize: 8, color: "rgba(255,255,255,0.75)", letterSpacing: "0.04em", textTransform: "uppercase" as const, marginTop: 2 }}>emails</span>
                     </button>
 
                     {/* Texte Donna */}
