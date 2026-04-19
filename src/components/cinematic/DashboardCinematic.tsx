@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface Props {
@@ -7,761 +7,543 @@ interface Props {
   chromeless?: boolean
 }
 
-// 5 scenes × ~8s = 40s cycle
-const CYCLE = 40
-const SCENES = [0, 8, 16, 24, 32] // start times
+// Scene durations (seconds): 6+6+6+6+6+6 = 36s cycle
+const SCENE_DURATION = 6
+const TOTAL = 36
 
+// Minimal color palette
 const C = {
-  bg: "#FFFFFF", sidebar: "#F9FAFB", card: "#F3F4F6", border: "#E5E7EB",
-  text: "#111827", muted: "#6B7280", light: "#9CA3AF",
-  accent: "#2563EB", accentBg: "#EFF6FF",
-  green: "#10B981", red: "#EF4444",
+  bg: "#fafafa",
+  card: "#ffffff",
+  border: "rgba(0,0,0,0.07)",
+  text: "#1a1a1a",
+  muted: "#888888",
+  accent: "#1a1a1a",
+  pill: {
+    blue: { bg: "#EFF6FF", text: "#1D4ED8" },
+    green: { bg: "#ECFDF5", text: "#059669" },
+    amber: { bg: "#FFFBEB", text: "#D97706" },
+    red: { bg: "#FEF2F2", text: "#DC2626" },
+    gray: { bg: "#F3F4F6", text: "#374151" },
+  }
 }
 
-const FOLDERS = [
-  { name: "Dupont c/ Dupont", color: "#2563EB" },
-  { name: "SCI Les Tilleuls", color: "#3B82F6" },
-  { name: "Succession Martin", color: "#F59E0B" },
-]
-
-export default function DashboardCinematic({ className = "" }: Props) {
-  const [t, setT] = useState(0)
-
-  useEffect(() => {
-    const timer = setInterval(() => setT(p => (p + 0.1) % CYCLE), 100)
-    return () => clearInterval(timer)
-  }, [])
-
-  const scene = t < 8 ? 0 : t < 16 ? 1 : t < 24 ? 2 : t < 32 ? 3 : 4
-  const st = t - SCENES[scene] // scene-local time
-
-  // Sidebar: which nav item is active
-  const navActive = scene === 4 ? "briefing" : scene === 3 ? "calendrier" : "dossiers"
-  // Which folder is highlighted
-  const activeFolderIdx = scene === 1 ? 0 : scene === 2 ? 1 : -1
-
-  // Folders appear progressively during scene 0
-  const foldersVisible = scene === 0
-    ? [st > 4, st > 5, st > 6]
-    : [true, true, true]
-
-  const statusLabel = scene === 0 ? "Analyse en cours..." : scene === 1 ? "Dossier ouvert" : scene === 2 ? "Dossier ouvert" : scene === 3 ? "Échéances détectées" : "Briefing prêt"
-
+function Card({ children, style = {}, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={className} style={{
-      width: "100%", maxWidth: 1000, margin: "0 auto",
-      borderRadius: 16, overflow: "hidden",
-      boxShadow: "0 8px 40px rgba(0,0,0,0.08)",
+    <div style={{
+      background: C.card,
+      borderRadius: 16,
+      boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
       border: `1px solid ${C.border}`,
-    }}>
-      <div style={{ background: C.bg, height: 520, display: "flex", position: "relative", overflow: "hidden" }}>
-        {/* Sidebar */}
-        <div style={{
-          width: 188, minWidth: 188, background: C.sidebar,
-          borderRight: `1px solid ${C.border}`, padding: "20px 12px",
-          display: "flex", flexDirection: "column",
-        }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 2 }}>Donna</div>
-          <div style={{ fontSize: 10, color: C.green, marginBottom: 24 }}>
-            ● {statusLabel}
-          </div>
-
-          {/* Nav: Tableau de bord */}
-          <motion.div
-            animate={{
-              background: navActive === "dashboard" ? C.accentBg : "transparent",
-              color: navActive === "dashboard" ? C.accent : C.muted,
-            }}
-            style={{ fontSize: 12, padding: "7px 10px", borderRadius: 8, marginBottom: 12, fontWeight: 500 }}
-          >
-            Tableau de bord
-          </motion.div>
-
-          {/* Folders section */}
-          <div style={{ fontSize: 9, color: C.light, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, paddingLeft: 10 }}>
-            Dossiers
-          </div>
-          {FOLDERS.map((f, i) => (
-            <AnimatePresence key={f.name}>
-              {foldersVisible[i] && (
-                <motion.div
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{
-                    opacity: 1, x: 0,
-                    background: activeFolderIdx === i ? C.accentBg : "transparent",
-                  }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.35 }}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    padding: "7px 10px", borderRadius: 8, marginBottom: 3,
-                    fontSize: 12, color: C.text,
-                  }}
-                >
-                  {/* Colored dot badge */}
-                  <div style={{
-                    width: 8, height: 8, borderRadius: "50%",
-                    background: f.color, flexShrink: 0,
-                  }} />
-                  <span style={{
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    color: activeFolderIdx === i ? C.accent : C.text,
-                    fontWeight: activeFolderIdx === i ? 600 : 400,
-                  }}>
-                    {f.name}
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          ))}
-
-          {/* Nav: Calendrier */}
-          <div style={{ marginTop: 8 }}>
-            <motion.div
-              animate={{
-                background: navActive === "calendrier" ? C.accentBg : "transparent",
-                color: navActive === "calendrier" ? C.accent : C.muted,
-              }}
-              style={{ fontSize: 12, padding: "7px 10px", borderRadius: 8, fontWeight: 500 }}
-            >
-              Calendrier
-            </motion.div>
-          </div>
-
-          {/* Nav: Briefing */}
-          <div style={{ marginTop: "auto" }}>
-            <motion.div
-              animate={{
-                background: navActive === "briefing" ? C.accentBg : "transparent",
-                color: navActive === "briefing" ? C.accent : C.muted,
-              }}
-              style={{ fontSize: 12, padding: "7px 10px", borderRadius: 8, fontWeight: 500 }}
-            >
-              Briefing
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Main content */}
-        <div style={{ flex: 1, minWidth: 0, overflow: "hidden", position: "relative" }}>
-          <AnimatePresence mode="wait">
-            {scene === 0 && <SceneScan key="s0" t={st} />}
-            {scene === 1 && <SceneDossierDupont key="s1" t={st} />}
-            {scene === 2 && <SceneDossierSCI key="s2" t={st} />}
-            {scene === 3 && <SceneCalendrier key="s3" t={st} />}
-            {scene === 4 && <SceneBriefing key="s4" t={st} />}
-          </AnimatePresence>
-        </div>
-
-        {/* Donna agent */}
-        <DonnaAgent scene={scene} st={st} />
-      </div>
+      ...style,
+    }} {...rest}>
+      {children}
     </div>
   )
 }
 
-// ─── DONNA AGENT ───
+function Pill({ children, color = "gray" }: { children: React.ReactNode; color?: keyof typeof C.pill }) {
+  const s = C.pill[color]
+  return (
+    <span style={{
+      display: "inline-block",
+      background: s.bg,
+      color: s.text,
+      borderRadius: 99,
+      padding: "4px 12px",
+      fontSize: 12,
+      fontWeight: 600,
+    }}>
+      {children}
+    </span>
+  )
+}
 
-function DonnaAgent({ scene, st }: { scene: number; st: number }) {
-  let x = 300, y = 200, label = "", visible = true
-
-  if (scene === 0) {
-    x = st < 3 ? 240 : 180
-    y = st < 3 ? 80 : 140
-    label = st < 3 ? "Analyse des emails..." : "89 emails reçus ce mois-ci..."
-    visible = st > 0.5
-  } else if (scene === 1) {
-    // Cursor moves to sidebar folder, then into content
-    if (st < 2) {
-      x = -110; y = 100   // sidebar: Dupont folder
-      label = "Ouverture du dossier..."
-    } else if (st < 4) {
-      x = 160; y = 100
-      label = "3 échanges, 2 pièces jointes classées..."
-    } else {
-      x = 160; y = 220
-      label = "Échéance JAF le 15 avril"
-    }
-  } else if (scene === 2) {
-    if (st < 1.5) {
-      x = -110; y = 130   // sidebar: SCI folder
-      label = "Dossier suivant..."
-    } else if (st < 4) {
-      x = 140; y = 80
-      label = "Loyers impayés 12 600€..."
-    } else {
-      x = 140; y = 200
-      label = "Mise en demeure prête"
-    }
-  } else if (scene === 3) {
-    if (st < 1.5) {
-      x = -110; y = 260   // sidebar: Calendrier nav
-      label = "Analyse des échéances..."
-    } else if (st < 4) {
-      x = 160; y = 80
-      label = "3 dates critiques détectées"
-    } else {
-      x = 200; y = 260
-      label = "Synchronisation calendrier..."
-    }
-  } else if (scene === 4) {
-    if (st < 1.5) {
-      x = -120; y = 300   // sidebar: Briefing nav
-      label = "Retour au briefing..."
-    } else if (st < 3) {
-      x = 180; y = 60
-      label = "Votre briefing est prêt"
-    } else {
-      x = 200; y = 220
-      label = "3 tâches identifiées"
-    }
-  }
-
-  if (!visible) return null
-
+// ─── SCENE WRAPPER ───
+function SceneWrapper({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
-      animate={{ x, y }}
-      transition={{ type: "spring", damping: 20, stiffness: 100 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
       style={{
-        position: "absolute", zIndex: 30, pointerEvents: "none",
-        display: "flex", alignItems: "center", gap: 8,
-        left: 188, // offset by sidebar width
+        position: "absolute", inset: 0,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        padding: "32px 24px",
       }}
     >
-      <motion.div
-        animate={{
-          boxShadow: ["0 0 0px #2563EB40", "0 0 16px #2563EB50", "0 0 0px #2563EB40"],
-        }}
-        transition={{ duration: 1.2, repeat: Infinity }}
-        style={{
-          width: 30, height: 30, borderRadius: "50%",
-          background: C.accent,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 12, fontWeight: 700, color: "#fff",
-          border: "2px solid #fff",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-        }}
-      >
-        D
-      </motion.div>
-      <motion.div
-        key={label}
-        initial={{ opacity: 0, x: -4 }}
-        animate={{ opacity: 1, x: 0 }}
-        style={{
-          background: "#fff", padding: "4px 12px", borderRadius: 16,
-          fontSize: 11, fontWeight: 500, color: C.accent,
-          whiteSpace: "nowrap",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-          border: `1px solid ${C.border}`,
-        }}
-      >
-        {label}
-      </motion.div>
+      {children}
     </motion.div>
   )
 }
 
-// ─── SCENE 0: SCAN DES EMAILS ───
+// ─── SCENE 1 — LA BOITE MAIL ───
+function Scene1({ t }: { t: number }) {
+  const [count, setCount] = useState(0)
+  const target = 89
 
-const EMAIL_SUBJECTS = [
-  "Convocation audience JAF — 15 avril",
-  "RE: Conclusions — SCI Les Tilleuls",
-  "Pièces complémentaires dossier Dupont",
-  "Notification jugement n°2026/1847",
-  "Mise en demeure — Loyers impayés",
-  "Rapport expertise immobilière",
-  "Demande de renvoi — Tribunal correctionnel",
-]
-
-function SceneScan({ t }: { t: number }) {
-  // Counter goes from 0 to 89 over ~3.5 seconds
-  const counter = Math.min(Math.round((t / 3.5) * 89), 89)
-  // Which subjects are visible (one every ~0.8s, starting at t=0.5)
-  const visibleSubjects = EMAIL_SUBJECTS.filter((_, i) => t > 0.5 + i * 0.8)
+  useEffect(() => {
+    if (t < 0.5) { setCount(0); return }
+    const elapsed = (t - 0.5) * 1000
+    const progress = Math.min(elapsed / 3500, 1)
+    setCount(Math.floor(progress * target))
+  }, [t])
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}
-      style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      {/* Header */}
-      <div style={{ padding: "16px 24px", borderBottom: `1px solid ${C.border}` }}>
-        <span style={{ fontSize: 15, fontWeight: 600, color: C.text }}>Analyse de vos emails...</span>
-      </div>
-
-      {/* Central scan circle + counter */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 24, paddingBottom: 16 }}>
+    <SceneWrapper>
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        style={{ textAlign: "center" }}
+      >
+        {/* Icon */}
         <motion.div
-          animate={{ boxShadow: ["0 0 0px #2563EB30", "0 0 32px #2563EB40", "0 0 0px #2563EB30"] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
+          animate={{ scale: [1, 1.06, 1] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
           style={{
-            width: 96, height: 96, borderRadius: "50%",
-            border: `3px solid ${C.accent}`,
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center",
-            background: C.accentBg,
+            width: 64, height: 64, borderRadius: 20,
+            background: "#F3F4F6",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            margin: "0 auto 20px",
+            fontSize: 28,
           }}
         >
-          <motion.span
-            key={counter}
-            style={{ fontSize: 28, fontWeight: 700, color: C.accent, lineHeight: 1 }}
-          >
-            {counter}
-          </motion.span>
-          <span style={{ fontSize: 9, color: C.muted, marginTop: 2 }}>emails</span>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <path d="m2 7 10 6.5L22 7"/>
+          </svg>
         </motion.div>
 
-        {/* Scanning ring */}
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          style={{
-            position: "absolute",
-            width: 112, height: 112, borderRadius: "50%",
-            border: `2px dashed ${C.accent}30`,
-            marginTop: 0,
-            pointerEvents: "none",
-          }}
-        />
-      </div>
-
-      {/* Email subjects scrolling */}
-      <div style={{ flex: 1, overflow: "hidden", padding: "0 24px" }}>
-        <div style={{ fontSize: 10, color: C.light, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-          Sujets détectés
+        {/* Counter */}
+        <div style={{ fontSize: 64, fontWeight: 700, color: C.text, lineHeight: 1, marginBottom: 8, fontVariantNumeric: "tabular-nums" }}>
+          {count}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {visibleSubjects.slice(-5).map((subj, i) => (
+        <div style={{ fontSize: 18, color: C.muted, marginBottom: 20, fontWeight: 500 }}>
+          emails reçus
+        </div>
+
+        {/* Subtitle */}
+        <AnimatePresence>
+          {t > 2 && (
             <motion.div
-              key={subj}
-              initial={{ opacity: 0, x: 12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3 }}
-              style={{
-                fontSize: 11, color: C.text,
-                padding: "5px 10px", borderRadius: 6,
-                background: i === visibleSubjects.slice(-5).length - 1 ? C.accentBg : C.card,
-                border: `1px solid ${i === visibleSubjects.slice(-5).length - 1 ? C.accent + "30" : C.border}`,
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              }}
-            >
-              {subj}
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-// ─── SCENE 1: DOSSIER DUPONT C/ DUPONT ───
-
-function SceneDossierDupont({ t }: { t: number }) {
-  const emails = [
-    { initials: "TP", color: "#2563EB", sender: "Tribunal de Paris", subject: "Convocation audience JAF — 15 avril", date: "Auj." },
-    { initials: "CM", color: "#10B981", sender: "Cabinet Moreau", subject: "Pièces complémentaires", date: "Auj." },
-    { initials: "MB", color: "#3B82F6", sender: "Me Benzara", subject: "Conclusions en réponse", date: "02/04" },
-  ]
-  const attachments = [
-    { name: "Convocation_JAF.pdf", type: "PDF", color: C.red },
-    { name: "Conclusions_v2.docx", type: "DOC", color: C.accent },
-  ]
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}
-      style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      {/* Header */}
-      <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2563EB" }} />
-        <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Dupont c/ Dupont</span>
-        <span style={{ fontSize: 11, color: C.light }}>Droit de la famille</span>
-      </div>
-
-      {/* Emails sliding in */}
-      <div style={{ padding: "12px 24px 8px" }}>
-        <div style={{ fontSize: 10, color: C.light, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
-          Échanges
-        </div>
-        {emails.map((e, i) => (
-          <motion.div
-            key={e.sender}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: t > 0.4 + i * 0.9 ? 1 : 0, x: t > 0.4 + i * 0.9 ? 0 : 20 }}
-            transition={{ duration: 0.35 }}
-            style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "8px 10px", borderRadius: 8, marginBottom: 4,
-              background: i === 0 ? C.accentBg : C.card,
-              border: `1px solid ${i === 0 ? C.accent + "25" : C.border}`,
-            }}
-          >
-            <div style={{ width: 28, height: 28, borderRadius: "50%", background: e.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-              {e.initials}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 500, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.sender}</div>
-              <div style={{ fontSize: 11, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.subject}</div>
-            </div>
-            <div style={{ fontSize: 10, color: C.light, flexShrink: 0 }}>{e.date}</div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Attachments appearing */}
-      <div style={{ padding: "0 24px 8px" }}>
-        <div style={{ fontSize: 10, color: C.light, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
-          Pièces jointes
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          {attachments.map((a, i) => (
-            <motion.div
-              key={a.name}
               initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: t > 3.2 + i * 0.7 ? 1 : 0, y: t > 3.2 + i * 0.7 ? 0 : 8 }}
-              transition={{ duration: 0.3 }}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "6px 10px", borderRadius: 8,
-                border: `1px solid ${C.border}`, background: C.card,
-              }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              style={{ fontSize: 14, color: C.muted, maxWidth: 280, lineHeight: 1.6 }}
             >
-              <div style={{ width: 22, height: 22, borderRadius: 4, background: a.color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7, fontWeight: 700, color: a.color }}>
-                {a.type}
-              </div>
-              <span style={{ fontSize: 10, color: C.text }}>{a.name}</span>
+              Donna lit chaque email et chaque pièce jointe
             </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* Deadline badge */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: t > 5.2 ? 1 : 0, scale: t > 5.2 ? 1 : 0.9 }}
-        transition={{ duration: 0.35 }}
-        style={{
-          margin: "4px 24px 0",
-          padding: "10px 14px", borderRadius: 10,
-          background: "#FEF2F2", border: `1px solid ${C.red}30`,
-          display: "flex", alignItems: "center", gap: 8,
-        }}
-      >
-        <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.red, flexShrink: 0 }} />
-        <span style={{ fontSize: 12, color: "#991B1B", fontWeight: 600 }}>15 avril — Audience JAF</span>
-        <span style={{ marginLeft: "auto", fontSize: 10, color: C.red, background: "#FEF2F2", fontWeight: 700, padding: "2px 7px", borderRadius: 5, border: `1px solid ${C.red}40` }}>
-          URGENT
-        </span>
+          )}
+        </AnimatePresence>
       </motion.div>
-    </motion.div>
+    </SceneWrapper>
   )
 }
 
-// ─── SCENE 2: DOSSIER SCI LES TILLEULS ───
-
-function SceneDossierSCI({ t }: { t: number }) {
-  const emails = [
-    { initials: "KB", color: "#3B82F6", sender: "Me Karim Benzara", subject: "RE: Conclusions — SCI Les Tilleuls", date: "Auj." },
-    { initials: "GN", color: "#EF4444", sender: "Greffe TGI Nanterre", subject: "Notification jugement n°2026/1847", date: "07/04" },
-    { initials: "PD", color: "#F59E0B", sender: "Prop. Duplessis", subject: "Mise en demeure", date: "05/04" },
-  ]
-  const attachments = [
-    { name: "Mise_en_demeure.pdf", type: "PDF", color: C.red },
-    { name: "Bail_SCI.pdf", type: "PDF", color: C.red },
+// ─── SCENE 2 — LE TRI INTELLIGENT ───
+function Scene2({ t }: { t: number }) {
+  const piles = [
+    { label: "Dossiers clients", count: 6, color: "blue" as const, delay: 0.3 },
+    { label: "A traiter", count: 3, color: "amber" as const, delay: 0.8 },
+    { label: "Bruit filtre", count: 80, color: "gray" as const, delay: 1.3 },
   ]
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}
-      style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      {/* Header */}
-      <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#3B82F6" }} />
-        <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>SCI Les Tilleuls</span>
-        <span style={{ fontSize: 11, color: C.light }}>Droit immobilier</span>
-      </div>
-
-      {/* Emails */}
-      <div style={{ padding: "12px 24px 8px" }}>
-        <div style={{ fontSize: 10, color: C.light, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
-          Échanges
-        </div>
-        {emails.map((e, i) => (
-          <motion.div
-            key={e.sender}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: t > 0.3 + i * 0.6 ? 1 : 0, x: t > 0.3 + i * 0.6 ? 0 : 20 }}
-            transition={{ duration: 0.3 }}
-            style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "8px 10px", borderRadius: 8, marginBottom: 4,
-              background: i === 0 ? C.accentBg : C.card,
-              border: `1px solid ${i === 0 ? C.accent + "25" : C.border}`,
-            }}
-          >
-            <div style={{ width: 28, height: 28, borderRadius: "50%", background: e.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-              {e.initials}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 500, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.sender}</div>
-              <div style={{ fontSize: 11, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.subject}</div>
-            </div>
-            <div style={{ fontSize: 10, color: C.light, flexShrink: 0 }}>{e.date}</div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Attachments */}
-      <div style={{ padding: "0 24px 8px" }}>
-        <div style={{ fontSize: 10, color: C.light, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>
-          Pièces jointes
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          {attachments.map((a, i) => (
-            <motion.div
-              key={a.name}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: t > 2.5 + i * 0.5 ? 1 : 0, y: t > 2.5 + i * 0.5 ? 0 : 8 }}
-              transition={{ duration: 0.3 }}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "6px 10px", borderRadius: 8,
-                border: `1px solid ${C.border}`, background: C.card,
-              }}
-            >
-              <div style={{ width: 22, height: 22, borderRadius: 4, background: a.color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7, fontWeight: 700, color: a.color }}>
-                {a.type}
-              </div>
-              <span style={{ fontSize: 10, color: C.text }}>{a.name}</span>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* Amount + status */}
+    <SceneWrapper>
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: t > 4.5 ? 1 : 0, scale: t > 4.5 ? 1 : 0.9 }}
-        transition={{ duration: 0.35 }}
-        style={{
-          margin: "4px 24px 0",
-          padding: "10px 14px", borderRadius: 10,
-          background: "#FEF2F2", border: `1px solid ${C.red}30`,
-          display: "flex", alignItems: "center", gap: 8,
-        }}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        style={{ fontSize: 20, fontWeight: 600, color: C.text, textAlign: "center", marginBottom: 28 }}
       >
-        <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.red, flexShrink: 0 }} />
-        <span style={{ fontSize: 12, color: "#991B1B", fontWeight: 600 }}>Loyers impayés 12 600€</span>
-        <span style={{ marginLeft: "auto", fontSize: 10, color: C.green, background: "#ECFDF5", fontWeight: 700, padding: "2px 7px", borderRadius: 5, border: `1px solid ${C.green}40` }}>
-          Mise en demeure prête
-        </span>
+        Tri intelligent de vos emails
       </motion.div>
-    </motion.div>
-  )
-}
 
-// ─── SCENE 3: CALENDRIER / ÉCHÉANCES ───
-
-const CALENDAR_EVENTS = [
-  { day: 15, label: "Audience JAF — Dupont", color: C.red, urgent: true },
-  { day: 22, label: "Délai appel — SCI Tilleuls", color: "#F59E0B", urgent: false },
-  { day: 28, label: "Forclusion — Succession Martin", color: C.accent, urgent: false },
-]
-
-// April 2026 calendar: starts on Wednesday (index 2)
-const APRIL_DAYS = Array.from({ length: 30 }, (_, i) => i + 1)
-const APRIL_START_OFFSET = 2 // Wednesday
-
-function SceneCalendrier({ t }: { t: number }) {
-  const today = 19
-  const eventDays = CALENDAR_EVENTS.map(e => e.day)
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}
-      style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      {/* Header */}
-      <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Avril 2026</span>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: t > 1 ? 1 : 0, scale: t > 1 ? 1 : 0.85 }}
-          transition={{ duration: 0.35 }}
-          style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "4px 12px", borderRadius: 20,
-            background: "#FEF2F2", border: `1px solid ${C.red}30`,
-            fontSize: 11, fontWeight: 600, color: "#991B1B",
-          }}
-        >
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.red }} />
-          3 échéances détectées
-        </motion.div>
-      </div>
-
-      {/* Calendar grid */}
-      <div style={{ padding: "12px 20px 8px", flex: 1 }}>
-        {/* Day names */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }}>
-          {["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"].map(d => (
-            <div key={d} style={{ fontSize: 9, color: C.light, textAlign: "center", fontWeight: 600, textTransform: "uppercase" }}>{d}</div>
-          ))}
-        </div>
-
-        {/* Days grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
-          {/* Empty cells for offset */}
-          {Array.from({ length: APRIL_START_OFFSET }).map((_, i) => (
-            <div key={`empty-${i}`} />
-          ))}
-          {APRIL_DAYS.map(day => {
-            const eventIdx = CALENDAR_EVENTS.findIndex(e => e.day === day)
-            const hasEvent = eventIdx >= 0
-            const isToday = day === today
-            const eventVisible = hasEvent && t > 1.5 + eventIdx * 1.2
-
-            return (
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
+        {piles.map((pile) => (
+          <AnimatePresence key={pile.label}>
+            {t > pile.delay && (
               <motion.div
-                key={day}
-                style={{
-                  position: "relative",
-                  height: 32,
-                  borderRadius: 6,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: isToday ? C.accentBg : "transparent",
-                  border: isToday ? `1px solid ${C.accent}40` : "1px solid transparent",
-                }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 280, damping: 20 }}
               >
-                <span style={{
-                  fontSize: 11,
-                  fontWeight: isToday ? 700 : hasEvent ? 600 : 400,
-                  color: isToday ? C.accent : hasEvent ? C.text : C.muted,
-                  lineHeight: 1,
-                }}>
-                  {day}
-                </span>
-                {hasEvent && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: eventVisible ? 1 : 0, scale: eventVisible ? 1 : 0 }}
-                    transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
-                    style={{
-                      width: 5, height: 5, borderRadius: "50%",
-                      background: CALENDAR_EVENTS[eventIdx].color,
-                      marginTop: 2,
-                    }}
-                  />
-                )}
+                <Card style={{ padding: "20px 24px", textAlign: "center", minWidth: 120 }}>
+                  <div style={{
+                    fontSize: 36, fontWeight: 700, color: C.pill[pile.color]?.text ?? C.text,
+                    lineHeight: 1, marginBottom: 8,
+                  }}>
+                    {pile.count}
+                  </div>
+                  <div style={{ fontSize: 12, color: C.muted, fontWeight: 500 }}>
+                    {pile.label}
+                  </div>
+                </Card>
               </motion.div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Event list below calendar */}
-      <div style={{ padding: "4px 20px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
-        {CALENDAR_EVENTS.map((ev, i) => (
-          <motion.div
-            key={ev.label}
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: t > 2.5 + i * 0.9 ? 1 : 0, x: t > 2.5 + i * 0.9 ? 0 : 12 }}
-            transition={{ duration: 0.3 }}
-            style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "7px 10px", borderRadius: 8,
-              background: i === 0 ? "#FEF2F2" : C.card,
-              border: `1px solid ${i === 0 ? C.red + "25" : C.border}`,
-            }}
-          >
-            <div style={{ width: 3, height: 28, borderRadius: 2, background: ev.color, flexShrink: 0 }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ev.label}</div>
-              <div style={{ fontSize: 10, color: C.muted }}>15 avril 2026</div>
-            </div>
-            {ev.urgent && (
-              <span style={{ fontSize: 9, fontWeight: 700, color: C.red, background: "#FEF2F2", padding: "2px 6px", borderRadius: 4, border: `1px solid ${C.red}30`, flexShrink: 0 }}>
-                URGENT
-              </span>
             )}
-          </motion.div>
+          </AnimatePresence>
         ))}
       </div>
-    </motion.div>
+    </SceneWrapper>
   )
 }
 
-// ─── SCENE 4: BRIEFING / TO-DO ───
+// ─── SCENE 3 — LES ECHEANCES ───
+function Scene3({ t }: { t: number }) {
+  const days = Array.from({ length: 35 }, (_, i) => i + 1)
+  const deadlines: Record<number, string> = {
+    7: "#DC2626",
+    12: "#D97706",
+    18: "#DC2626",
+    22: "#DC2626",
+    25: "#D97706",
+    29: "#059669",
+    31: "#D97706",
+  }
 
-const TASKS = [
-  { title: "Dupont c/ Dupont", detail: "Confirmer présence audience JAF — 15 avril", color: C.red },
-  { title: "SCI Les Tilleuls", detail: "Envoyer mise en demeure loyers impayés", color: "#F59E0B" },
-  { title: "Succession Martin", detail: "Transmettre inventaire au notaire", color: C.accent },
-]
+  const deadlineEntries = Object.entries(deadlines)
 
-function SceneBriefing({ t }: { t: number }) {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}
-      style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      {/* Header */}
-      <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 14 }}>
-        {/* Circle "19 emails" */}
-        <div style={{
-          width: 44, height: 44, borderRadius: "50%",
-          background: C.accentBg, border: `2px solid ${C.accent}40`,
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          flexShrink: 0,
-        }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: C.accent, lineHeight: 1 }}>19</span>
-          <span style={{ fontSize: 7, color: C.muted }}>emails</span>
-        </div>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>Bonjour Alexandra.</div>
-          <div style={{ fontSize: 11, color: C.muted }}>19 emails lus. 3 tâches identifiées.</div>
-        </div>
-      </div>
-
-      {/* Task cards */}
-      <div style={{ padding: "14px 24px", display: "flex", flexDirection: "column", gap: 8 }}>
-        <div style={{ fontSize: 10, color: C.light, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>
-          Tâches prioritaires
-        </div>
-        {TASKS.map((task, i) => (
+    <SceneWrapper>
+      <AnimatePresence>
+        {t > 0.3 && (
           <motion.div
-            key={task.title}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: t > 1.2 + i * 1.0 ? 1 : 0, y: t > 1.2 + i * 1.0 ? 0 : 12 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            style={{
-              padding: "12px 14px", borderRadius: 10,
-              border: `1px solid ${C.border}`, background: C.bg,
-              display: "flex", flexDirection: "column", gap: 6,
-            }}
+            style={{ textAlign: "center", marginBottom: 20 }}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{task.title}</div>
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 1 }}>{task.detail}</div>
-              </div>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: task.color, flexShrink: 0, marginLeft: 8 }} />
+            <div style={{ fontSize: 20, fontWeight: 600, color: C.text, marginBottom: 6 }}>
+              7 echeances critiques detectees
             </div>
-            {/* CTA button */}
+            <div style={{ fontSize: 13, color: C.muted }}>
+              Audiences, forclusions, delais d'appel
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {t > 0.6 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.45 }}
+          >
+            <Card style={{ padding: "16px 20px" }}>
+              {/* Day headers */}
+              <div style={{
+                display: "grid", gridTemplateColumns: "repeat(7, 1fr)",
+                gap: 4, marginBottom: 4,
+              }}>
+                {["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"].map((d) => (
+                  <div key={d} style={{ fontSize: 10, color: C.muted, textAlign: "center", fontWeight: 600, padding: "2px 0" }}>
+                    {d}
+                  </div>
+                ))}
+              </div>
+              {/* Days grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+                {days.map((day) => {
+                  const dotColor = deadlines[day]
+                  const dotDelay = dotColor ? deadlineEntries.findIndex(([d]) => Number(d) === day) * 0.18 + 1.2 : 0
+                  return (
+                    <div key={day} style={{ position: "relative", textAlign: "center" }}>
+                      <div style={{ fontSize: 11, color: day > 30 ? "#ddd" : "#999", padding: "3px 0" }}>
+                        {day <= 31 ? day : ""}
+                      </div>
+                      {dotColor && t > dotDelay && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                          style={{
+                            width: 6, height: 6, borderRadius: "50%",
+                            background: dotColor,
+                            margin: "0 auto",
+                            position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
+                          }}
+                        />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </SceneWrapper>
+  )
+}
+
+// ─── SCENE 4 — LES RESUMES ───
+function Scene4({ t }: { t: number }) {
+  const fullText = "Audience de conciliation le 22 avril. Reponse attendue avant le 18."
+  const displayedLength = Math.floor(Math.min((t - 1.5) / 3.5 * fullText.length, fullText.length))
+  const displayed = t > 1.5 ? fullText.slice(0, displayedLength) : ""
+
+  return (
+    <SceneWrapper>
+      <AnimatePresence>
+        {t > 0.4 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            style={{ width: "100%", maxWidth: 380 }}
+          >
+            <Card style={{ padding: "20px 22px" }}>
+              {/* Email header */}
+              <div style={{ marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
+                <div style={{ fontSize: 11, color: C.muted, marginBottom: 3 }}>
+                  De : <span style={{ fontWeight: 600, color: C.text }}>Greffe TJ Paris</span>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
+                  Convocation audience Dupont
+                </div>
+              </div>
+
+              {/* Donna summary */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8, fontWeight: 600 }}>
+                  Resume Donna
+                </div>
+                <div style={{ fontSize: 13, color: C.text, lineHeight: 1.65, minHeight: 44 }}>
+                  {displayed}
+                  {displayed.length < fullText.length && t > 1.5 && (
+                    <motion.span
+                      animate={{ opacity: [1, 0, 1] }}
+                      transition={{ duration: 0.6, repeat: Infinity }}
+                      style={{ display: "inline-block", width: 2, height: 14, background: C.text, verticalAlign: "text-bottom", marginLeft: 1 }}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Button */}
+              <AnimatePresence>
+                {t > 4.5 && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <motion.div
+                      animate={{ boxShadow: ["0 0 0px rgba(26,26,26,0.1)", "0 4px 20px rgba(26,26,26,0.18)", "0 0 0px rgba(26,26,26,0.1)"] }}
+                      transition={{ duration: 1.6, repeat: Infinity }}
+                      style={{
+                        background: C.text, color: "#fff",
+                        borderRadius: 10, padding: "10px 18px",
+                        fontSize: 12, fontWeight: 600, textAlign: "center", cursor: "pointer",
+                      }}
+                    >
+                      Reponse generee par Donna
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </SceneWrapper>
+  )
+}
+
+// ─── SCENE 5 — LE RESULTAT ───
+function Scene5({ t }: { t: number }) {
+  const pills = [
+    { label: "Dossiers classes", delay: 1.2, color: "blue" as const },
+    { label: "Echeances surveillees", delay: 1.7, color: "green" as const },
+    { label: "Reponses pretes", delay: 2.2, color: "gray" as const },
+  ]
+
+  return (
+    <SceneWrapper>
+      <AnimatePresence>
+        {t > 0.3 && (
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 18 }}
+            style={{ textAlign: "center", marginBottom: 24 }}
+          >
+            <div style={{ fontSize: 72, fontWeight: 700, color: C.text, lineHeight: 1 }}>
+              2h
+            </div>
+            <div style={{ fontSize: 18, color: C.muted, fontWeight: 500, marginTop: 8 }}>
+              gagnees par jour
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+        {pills.map((pill) => (
+          <AnimatePresence key={pill.label}>
+            {t > pill.delay && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+              >
+                <Pill color={pill.color}>{pill.label}</Pill>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        ))}
+      </div>
+    </SceneWrapper>
+  )
+}
+
+// ─── SCENE 6 — CTA ───
+function Scene6({ t }: { t: number }) {
+  return (
+    <SceneWrapper>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.7 }}
+        style={{ textAlign: "center" }}
+      >
+        {/* Logo */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          style={{ fontSize: 36, fontWeight: 700, color: C.text, marginBottom: 8, letterSpacing: -1 }}
+        >
+          Donna
+        </motion.div>
+
+        <AnimatePresence>
+          {t > 1 && (
             <motion.div
               initial={{ opacity: 0 }}
-              animate={{ opacity: t > 1.8 + i * 1.0 ? 1 : 0 }}
-              transition={{ duration: 0.3 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              style={{ fontSize: 14, color: C.muted, marginBottom: 28 }}
+            >
+              +150 avocats nous font confiance
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {t > 1.8 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
               style={{
-                display: "inline-flex", alignItems: "center",
-                padding: "5px 12px", borderRadius: 6,
-                background: C.text, color: "#fff",
-                fontSize: 11, fontWeight: 600, width: "fit-content",
-                cursor: "default",
+                display: "inline-block",
+                border: `2px solid ${C.text}`,
+                borderRadius: 12,
+                padding: "12px 28px",
+                fontSize: 14,
+                fontWeight: 600,
+                color: C.text,
+                cursor: "pointer",
               }}
             >
-              Réponse générée par Donna
+              Essayer gratuitement
             </motion.div>
-          </motion.div>
-        ))}
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </SceneWrapper>
+  )
+}
+
+// ─── SCENE LABELS ───
+const SCENE_LABELS = [
+  "La boite mail",
+  "Le tri intelligent",
+  "Les echeances",
+  "Les resumes",
+  "Le resultat",
+  "Decouvrir Donna",
+]
+
+// ─── MAIN COMPONENT ───
+export default function DashboardCinematic({ className = "" }: Props) {
+  const [t, setT] = useState(0)
+  const ref = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    ref.current = setInterval(() => setT((p) => {
+      const next = p + 0.1
+      return next >= TOTAL ? 0 : next
+    }), 100)
+    return () => { if (ref.current) clearInterval(ref.current) }
+  }, [])
+
+  const scene = Math.floor(t / SCENE_DURATION)
+  const st = t - scene * SCENE_DURATION
+
+  return (
+    <div className={className} style={{
+      width: "100%",
+      borderRadius: 20,
+      overflow: "hidden",
+      boxShadow: "0 4px 40px rgba(0,0,0,0.08)",
+      border: `1px solid rgba(0,0,0,0.07)`,
+      background: C.bg,
+    }}>
+      {/* Gradient background layer */}
+      <div style={{
+        position: "relative",
+        background: "radial-gradient(ellipse at 30% 50%, rgba(255,200,200,0.15), rgba(200,200,255,0.1), rgba(255,255,255,0)), #fafafa",
+        minHeight: 420,
+      }}>
+        {/* Scene content */}
+        <div style={{ position: "relative", minHeight: 420 }}>
+          <AnimatePresence mode="wait">
+            {scene === 0 && <Scene1 key="s1" t={st} />}
+            {scene === 1 && <Scene2 key="s2" t={st} />}
+            {scene === 2 && <Scene3 key="s3" t={st} />}
+            {scene === 3 && <Scene4 key="s4" t={st} />}
+            {scene === 4 && <Scene5 key="s5" t={st} />}
+            {scene === 5 && <Scene6 key="s6" t={st} />}
+          </AnimatePresence>
+        </div>
+
+        {/* Bottom progress bar + scene label */}
+        <div style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          padding: "12px 20px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          borderTop: `1px solid rgba(0,0,0,0.05)`,
+          background: "rgba(255,255,255,0.7)",
+          backdropFilter: "blur(6px)",
+        }}>
+          {/* Dots */}
+          <div style={{ display: "flex", gap: 6 }}>
+            {Array.from({ length: 6 }, (_, i) => (
+              <div
+                key={i}
+                style={{
+                  width: i === scene ? 20 : 6,
+                  height: 6,
+                  borderRadius: 99,
+                  background: i === scene ? C.text : "#D1D5DB",
+                  transition: "all 0.3s ease",
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Scene label */}
+          <div style={{ fontSize: 11, color: C.muted, fontWeight: 500 }}>
+            {SCENE_LABELS[scene] ?? ""}
+          </div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
