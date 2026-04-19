@@ -1562,6 +1562,7 @@ function PhaseCBriefing({ lines, active, isMobile, onAllDone }: {
 function MiniCalendar({ deadlineItems }: {
   deadlineItems: { date: Date; label: string; dossierName: string; dossierColor: string; urgent: boolean }[]
 }) {
+  const isMobile = useIsMobile(768)
   const [calMonth, setCalMonth] = useState(() => {
     const n = new Date()
     return new Date(n.getFullYear(), n.getMonth(), 1)
@@ -1620,7 +1621,7 @@ function MiniCalendar({ deadlineItems }: {
   const isCurrentMonth = year === calMonth.getFullYear() && month === calMonth.getMonth()
 
   return (
-    <div style={{ background: BG, border: `1px solid ${BORDER}` }}>
+    <div style={{ background: BG, border: `1px solid ${BORDER}`, width: "100%", maxWidth: "100%", boxSizing: "border-box", overflow: "hidden" }}>
       {/* En-tête : mois + année + flèches */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -1658,6 +1659,9 @@ function MiniCalendar({ deadlineItems }: {
         borderBottom: `1px solid #eee`,
         scrollbarWidth: "none",
         msOverflowStyle: "none",
+        WebkitOverflowScrolling: "touch",
+        boxSizing: "border-box",
+        maxWidth: "100%",
       }}>
         {pillMonths.map((pm, i) => {
           const isActive = pm.year === year && pm.month === month
@@ -1689,22 +1693,24 @@ function MiniCalendar({ deadlineItems }: {
       {/* En-têtes jours de semaine */}
       <div style={{
         display: "grid", gridTemplateColumns: "repeat(7, 1fr)",
+        width: "100%", boxSizing: "border-box",
         borderBottom: `1px solid #eee`,
       }}>
         {DAY_NAMES.map((d, i) => (
           <div key={i} style={{
             textAlign: "center",
-            fontSize: 11,
+            fontSize: isMobile ? 10 : 11,
             fontWeight: 500,
             color: TEXT_LIGHT,
-            padding: "6px 0",
+            padding: isMobile ? "5px 0" : "6px 0",
             letterSpacing: "0.04em",
+            boxSizing: "border-box",
           }}>{d}</div>
         ))}
       </div>
 
       {/* Grille 6x7 */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", width: "100%", boxSizing: "border-box" }}>
         {cells.map((cell, i) => {
           const key = `${cell.dateObj.getFullYear()}-${cell.dateObj.getMonth()}-${cell.dateObj.getDate()}`
           const events = cell.currentMonth ? (dlMap[key] || []) : []
@@ -1729,69 +1735,91 @@ function MiniCalendar({ deadlineItems }: {
                 position: "relative",
                 borderRight,
                 borderBottom,
-                minHeight: 72,
-                padding: "5px 5px 4px",
+                minHeight: isMobile ? 50 : 72,
+                padding: isMobile ? "2px 2px 2px" : "5px 5px 4px",
                 background: isTooltipVisible ? "#fafafa" : BG,
                 cursor: hasEvents ? "pointer" : "default",
                 transition: "background 0.1s",
+                boxSizing: "border-box",
+                overflow: "hidden",
               }}
               onMouseEnter={e => {
-                if (hasEvents) {
+                if (hasEvents && !isMobile) {
                   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
                   setTooltip({ key, x: rect.left, y: rect.top })
                 }
               }}
-              onMouseLeave={() => setTooltip(null)}
+              onMouseLeave={() => { if (!isMobile) setTooltip(null) }}
               onClick={() => hasEvents && setTooltip(isTooltipVisible ? null : { key, x: 0, y: 0 })}
             >
               {/* Numéro du jour — aligné en haut à droite */}
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 3 }}>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: isMobile ? 1 : 3 }}>
                 <span style={{
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: 24,
-                  height: 24,
+                  width: isMobile ? 18 : 24,
+                  height: isMobile ? 18 : 24,
                   borderRadius: "50%",
-                  fontSize: 12,
+                  fontSize: isMobile ? 10 : 12,
                   fontWeight: isTodayCell ? 700 : 400,
                   color: isTodayCell ? "#fff" : cell.currentMonth ? TEXT : TEXT_LIGHT,
                   background: isTodayCell ? ACCENT : "transparent",
                   lineHeight: 1,
+                  flexShrink: 0,
                 }}>
                   {cell.day}
                 </span>
               </div>
 
-              {/* Blocs d'échéances */}
+              {/* Blocs d'échéances : pastilles sur mobile, texte sur desktop */}
               {hasEvents && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {events.slice(0, 3).map((ev, ei) => (
-                    <div
-                      key={ei}
-                      style={{
-                        borderLeft: ev.urgent ? `2px solid ${URGENT}` : `2px solid ${ev.dossierColor}`,
-                        background: ev.urgent ? URGENT_BG : `${ev.dossierColor}12`,
-                        borderRadius: "0 3px 3px 0",
-                        padding: "1px 4px",
-                        fontSize: 10,
-                        fontWeight: 500,
-                        color: ev.urgent ? URGENT : ev.dossierColor,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap" as const,
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {ev.label}
-                    </div>
-                  ))}
-                  {events.length > 3 && (
-                    <div style={{ fontSize: 9, color: TEXT_LIGHT, paddingLeft: 4 }}>
-                      +{events.length - 3} de plus
-                    </div>
-                  )}
-                </div>
+                isMobile ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "flex-end", justifyContent: "center" }}>
+                    {events.slice(0, 3).map((ev, ei) => (
+                      <div
+                        key={ei}
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background: ev.urgent ? URGENT : ev.dossierColor,
+                          flexShrink: 0,
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    {events.slice(0, 3).map((ev, ei) => (
+                      <div
+                        key={ei}
+                        style={{
+                          borderLeft: ev.urgent ? `2px solid ${URGENT}` : `2px solid ${ev.dossierColor}`,
+                          background: ev.urgent ? URGENT_BG : `${ev.dossierColor}12`,
+                          borderRadius: "0 3px 3px 0",
+                          padding: "1px 4px",
+                          fontSize: 10,
+                          fontWeight: 500,
+                          color: ev.urgent ? URGENT : ev.dossierColor,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap" as const,
+                          maxWidth: "100%",
+                          lineHeight: 1.5,
+                          boxSizing: "border-box",
+                        }}
+                      >
+                        {ev.label}
+                      </div>
+                    ))}
+                    {events.length > 3 && (
+                      <div style={{ fontSize: 9, color: TEXT_LIGHT, paddingLeft: 4 }}>
+                        +{events.length - 3} de plus
+                      </div>
+                    )}
+                  </div>
+                )
               )}
 
               {/* Tooltip au survol */}
@@ -1887,7 +1915,8 @@ function EcheancesSection({ isMobile }: { isMobile: boolean }) {
           style={{
             flex: 1,
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            padding: "9px 16px",
+            padding: isMobile ? "12px 16px" : "9px 16px",
+            minHeight: isMobile ? 44 : "auto",
             borderRadius: 9,
             border: `1px solid ${BORDER}`,
             background: BG,
@@ -1897,6 +1926,8 @@ function EcheancesSection({ isMobile }: { isMobile: boolean }) {
             cursor: "pointer",
             fontFamily: "inherit",
             transition: "border-color 0.15s, color 0.15s",
+            width: isMobile ? "100%" : "auto",
+            boxSizing: "border-box",
           }}
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = ACCENT; (e.currentTarget as HTMLButtonElement).style.color = ACCENT }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; (e.currentTarget as HTMLButtonElement).style.color = TEXT_MUTED }}
@@ -1909,7 +1940,8 @@ function EcheancesSection({ isMobile }: { isMobile: boolean }) {
           style={{
             flex: 1,
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            padding: "9px 16px",
+            padding: isMobile ? "12px 16px" : "9px 16px",
+            minHeight: isMobile ? 44 : "auto",
             borderRadius: 9,
             border: `1px solid ${BORDER}`,
             background: BG,
@@ -1919,6 +1951,8 @@ function EcheancesSection({ isMobile }: { isMobile: boolean }) {
             cursor: "pointer",
             fontFamily: "inherit",
             transition: "border-color 0.15s, color 0.15s",
+            width: isMobile ? "100%" : "auto",
+            boxSizing: "border-box",
           }}
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = ACCENT; (e.currentTarget as HTMLButtonElement).style.color = ACCENT }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; (e.currentTarget as HTMLButtonElement).style.color = TEXT_MUTED }}
