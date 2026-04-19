@@ -1558,28 +1558,25 @@ function PhaseCBriefing({ lines, active, isMobile, onAllDone }: {
   )
 }
 
-// ─── Mini Calendrier custom (mois courant + suivant) ───
-function MiniCalendar({ deadlineItems, onClose }: {
+// ─── Mini Calendrier épuré — directement visible (pas derrière un bouton) ───
+function MiniCalendar({ deadlineItems, isMobile }: {
   deadlineItems: { date: Date; label: string; dossierName: string; dossierColor: string }[]
-  onClose: () => void
+  isMobile: boolean
 }) {
   const [calMonth, setCalMonth] = useState(() => {
     const n = new Date()
     return new Date(n.getFullYear(), n.getMonth(), 1)
   })
   const [hoveredDay, setHoveredDay] = useState<string | null>(null)
+  const [clickedDay, setClickedDay] = useState<string | null>(null)
 
   const year = calMonth.getFullYear()
   const month = calMonth.getMonth()
   const MONTH_NAMES = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
   const DAY_NAMES = ["L", "M", "M", "J", "V", "S", "D"]
 
-  // Jours du mois
-  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7 // 0=lundi
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const cells: (number | null)[] = []
-  for (let i = 0; i < firstDow; i++) cells.push(null)
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+  const today = new Date()
+  const isToday = (d: number) => d === today.getDate() && month === today.getMonth() && year === today.getFullYear()
 
   // Map date string → deadlines
   const dlMap: Record<string, typeof deadlineItems> = {}
@@ -1589,47 +1586,128 @@ function MiniCalendar({ deadlineItems, onClose }: {
     dlMap[key].push(item)
   })
 
-  const today = new Date()
-  const isToday = (d: number) => d === today.getDate() && month === today.getMonth() && year === today.getFullYear()
+  // Vue semaine (mobile) : 7 jours à partir du lundi de la semaine courante
+  const getWeekDays = () => {
+    const d = new Date(today)
+    const dow = (d.getDay() + 6) % 7 // 0=lundi
+    d.setDate(d.getDate() - dow)
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(d)
+      day.setDate(d.getDate() + i)
+      return day
+    })
+  }
+
+  if (isMobile) {
+    // Vue semaine compacte
+    const weekDays = getWeekDays()
+    return (
+      <div style={{ background: BG, borderRadius: 14, border: `1px solid ${BORDER}`, padding: "14px 12px", overflowX: "auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(38px, 1fr))", gap: 4, minWidth: 280 }}>
+          {weekDays.map((day, i) => {
+            const key = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`
+            const events = dlMap[key] || []
+            const isTodayDay = day.getDate() === today.getDate() && day.getMonth() === today.getMonth() && day.getFullYear() === today.getFullYear()
+            const hasEvents = events.length > 0
+            const isActive = hoveredDay === key || clickedDay === key
+            return (
+              <div
+                key={i}
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}
+              >
+                <span style={{ fontSize: 10, fontWeight: 500, color: TEXT_LIGHT, textTransform: "uppercase" }}>
+                  {["L", "M", "M", "J", "V", "S", "D"][i]}
+                </span>
+                <div
+                  onMouseEnter={() => hasEvents ? setHoveredDay(key) : undefined}
+                  onMouseLeave={() => setHoveredDay(null)}
+                  onClick={() => hasEvents ? setClickedDay(clickedDay === key ? null : key) : undefined}
+                  style={{
+                    position: "relative",
+                    width: 34, height: 34,
+                    borderRadius: "50%",
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    background: isTodayDay ? ACCENT : isActive && hasEvents ? SIDEBAR_BG : "transparent",
+                    cursor: hasEvents ? "pointer" : "default",
+                    border: hasEvents && !isTodayDay ? `1px solid ${BORDER}` : "1px solid transparent",
+                    transition: "background 0.15s",
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: isTodayDay ? 700 : 400, color: isTodayDay ? "#fff" : hasEvents ? TEXT : TEXT_MUTED, lineHeight: 1 }}>
+                    {day.getDate()}
+                  </span>
+                  {hasEvents && (
+                    <div style={{ display: "flex", gap: 2, marginTop: 2 }}>
+                      {events.slice(0, 2).map((ev, ei) => (
+                        <div key={ei} style={{ width: 4, height: 4, borderRadius: "50%", background: ev.dossierColor }} />
+                      ))}
+                    </div>
+                  )}
+                  {(isActive) && hasEvents && (
+                    <div style={{
+                      position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
+                      background: "#fff", color: TEXT, borderRadius: 10, padding: "8px 10px",
+                      fontSize: 11, lineHeight: 1.5, zIndex: 20,
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.12)", minWidth: 160, maxWidth: 220,
+                      border: `1px solid ${BORDER}`, pointerEvents: "none", whiteSpace: "normal" as const,
+                    }}>
+                      {events.map((ev, ei) => (
+                        <div key={ei} style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: ei < events.length - 1 ? 6 : 0 }}>
+                          <div style={{ width: 7, height: 7, borderRadius: "50%", background: ev.dossierColor, flexShrink: 0, marginTop: 3 }} />
+                          <div>
+                            <div style={{ fontWeight: 600, color: TEXT, fontSize: 11 }}>{ev.dossierName}</div>
+                            <div style={{ color: TEXT_MUTED, fontSize: 10 }}>{ev.label}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  // Vue mensuelle (desktop)
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const cells: (number | null)[] = []
+  for (let i = 0; i < firstDow; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.97, y: -8 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.97, y: -8 }}
-      transition={{ duration: 0.2 }}
-      style={{
-        position: "absolute", top: 36, right: 0, zIndex: 60,
-        background: BG, border: `1px solid ${BORDER}`, borderRadius: 16,
-        boxShadow: "0 8px 40px rgba(0,0,0,0.12)", padding: "20px 18px",
-        width: 300, minWidth: 260,
-      }}
-      onClick={e => e.stopPropagation()}
-    >
+    <div style={{ background: BG, borderRadius: 14, border: `1px solid ${BORDER}`, padding: "20px 18px" }}>
       {/* Navigation mois */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <button onClick={() => setCalMonth(new Date(year, month - 1, 1))}
-          style={{ background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 6, color: TEXT_MUTED, display: "flex", alignItems: "center" }}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <button
+          onClick={() => setCalMonth(new Date(year, month - 1, 1))}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 6, color: TEXT_MUTED, display: "flex", alignItems: "center", transition: "background 0.12s" }}
           onMouseEnter={e => (e.currentTarget.style.background = SIDEBAR_BG)}
           onMouseLeave={e => (e.currentTarget.style.background = "none")}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8L10 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
-        <span style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>{MONTH_NAMES[month]} {year}</span>
-        <button onClick={() => setCalMonth(new Date(year, month + 1, 1))}
-          style={{ background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 6, color: TEXT_MUTED, display: "flex", alignItems: "center" }}
+        <span style={{ fontSize: 13, fontWeight: 600, color: TEXT, letterSpacing: "0.01em" }}>{MONTH_NAMES[month]} {year}</span>
+        <button
+          onClick={() => setCalMonth(new Date(year, month + 1, 1))}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 6, color: TEXT_MUTED, display: "flex", alignItems: "center", transition: "background 0.12s" }}
           onMouseEnter={e => (e.currentTarget.style.background = SIDEBAR_BG)}
           onMouseLeave={e => (e.currentTarget.style.background = "none")}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
       </div>
+
       {/* En-têtes jours */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 6 }}>
         {DAY_NAMES.map((d, i) => (
-          <div key={i} style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: TEXT_LIGHT, padding: "2px 0" }}>{d}</div>
+          <div key={i} style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: TEXT_LIGHT, padding: "2px 0", letterSpacing: "0.05em" }}>{d}</div>
         ))}
       </div>
+
       {/* Grille jours */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
         {cells.map((day, i) => {
@@ -1638,51 +1716,63 @@ function MiniCalendar({ deadlineItems, onClose }: {
           const events = dlMap[key] || []
           const dayIsToday = isToday(day)
           const hasEvents = events.length > 0
-          const hovKey = `${year}-${month}-${day}`
-          const isHov = hoveredDay === hovKey
+          const isHov = hoveredDay === key || clickedDay === key
 
           return (
             <div
               key={`d-${day}`}
-              onMouseEnter={() => hasEvents ? setHoveredDay(hovKey) : undefined}
+              onMouseEnter={() => hasEvents ? setHoveredDay(key) : undefined}
               onMouseLeave={() => setHoveredDay(null)}
+              onClick={() => hasEvents ? setClickedDay(clickedDay === key ? null : key) : undefined}
               style={{
                 position: "relative",
                 textAlign: "center",
-                padding: "5px 2px 4px",
+                padding: "6px 2px 5px",
                 borderRadius: 8,
                 background: dayIsToday ? ACCENT : isHov && hasEvents ? SIDEBAR_BG : "transparent",
                 cursor: hasEvents ? "pointer" : "default",
-                border: hasEvents && !dayIsToday ? `1px solid ${BORDER}` : "1px solid transparent",
                 transition: "background 0.12s",
               }}
             >
-              <span style={{ fontSize: 12, fontWeight: dayIsToday ? 700 : 400, color: dayIsToday ? "#fff" : hasEvents ? TEXT : TEXT_MUTED, lineHeight: 1 }}>
+              <span style={{ fontSize: 12, fontWeight: dayIsToday ? 700 : 400, color: dayIsToday ? "#fff" : hasEvents ? TEXT : TEXT_MUTED, lineHeight: 1, display: "block" }}>
                 {day}
               </span>
-              {/* Points colorés */}
+              {/* Points discrets couleur dossier */}
               {hasEvents && (
                 <div style={{ display: "flex", justifyContent: "center", gap: 2, marginTop: 3 }}>
                   {events.slice(0, 3).map((ev, ei) => (
-                    <div key={ei} style={{ width: 5, height: 5, borderRadius: "50%", background: ev.dossierColor, flexShrink: 0 }} />
+                    <div key={ei} style={{ width: 4, height: 4, borderRadius: "50%", background: dayIsToday ? "rgba(255,255,255,0.8)" : ev.dossierColor, flexShrink: 0 }} />
                   ))}
                 </div>
               )}
-              {/* Tooltip au survol */}
+              {/* Tooltip élégant au survol */}
               {isHov && hasEvents && (
                 <div style={{
-                  position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
-                  background: TEXT, color: "#fff", borderRadius: 8, padding: "8px 10px",
-                  fontSize: 11, lineHeight: 1.5, whiteSpace: "normal" as any, zIndex: 10,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.18)", minWidth: 160, maxWidth: 200,
+                  position: "absolute",
+                  bottom: "calc(100% + 8px)",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  background: "#fff",
+                  color: TEXT,
+                  borderRadius: 10,
+                  padding: "10px 12px",
+                  fontSize: 11,
+                  lineHeight: 1.6,
+                  zIndex: 20,
+                  boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
+                  minWidth: 180,
+                  maxWidth: 230,
+                  border: `1px solid ${BORDER}`,
                   pointerEvents: "none",
+                  whiteSpace: "normal" as const,
+                  textAlign: "left",
                 }}>
                   {events.map((ev, ei) => (
-                    <div key={ei} style={{ display: "flex", alignItems: "flex-start", gap: 5, marginBottom: ei < events.length - 1 ? 4 : 0 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: ev.dossierColor, flexShrink: 0, marginTop: 3 }} />
+                    <div key={ei} style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: ei < events.length - 1 ? 7 : 0 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: "50%", background: ev.dossierColor, flexShrink: 0, marginTop: 4 }} />
                       <div>
-                        <div style={{ fontWeight: 600 }}>{ev.dossierName}</div>
-                        <div style={{ opacity: 0.8 }}>{ev.label}</div>
+                        <div style={{ fontWeight: 600, color: TEXT, fontSize: 11 }}>{ev.dossierName}</div>
+                        <div style={{ color: TEXT_MUTED, fontSize: 10 }}>{ev.label}</div>
                       </div>
                     </div>
                   ))}
@@ -1692,61 +1782,34 @@ function MiniCalendar({ deadlineItems, onClose }: {
           )
         })}
       </div>
-      {/* Légende */}
-      <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${BORDER}` }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: TEXT_LIGHT, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Légende</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {deadlineItems.filter((item, idx, arr) => arr.findIndex(a => a.dossierName === item.dossierName) === idx).map((item, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: item.dossierColor, flexShrink: 0 }} />
-              <span style={{ fontSize: 11, color: TEXT_MUTED }}>{item.dossierName}</span>
-            </div>
-          ))}
+
+      {/* Légende dossiers (uniquement si des échéances existent ce mois) */}
+      {deadlineItems.some(item => item.date.getMonth() === month && item.date.getFullYear() === year) && (
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${BORDER}`, display: "flex", flexWrap: "wrap", gap: "6px 14px" }}>
+          {deadlineItems
+            .filter((item, idx, arr) => arr.findIndex(a => a.dossierName === item.dossierName) === idx && item.date.getMonth() === month && item.date.getFullYear() === year)
+            .map((item, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: item.dossierColor, flexShrink: 0 }} />
+                <span style={{ fontSize: 10, color: TEXT_MUTED }}>{item.dossierName}</span>
+              </div>
+            ))}
         </div>
-      </div>
-    </motion.div>
+      )}
+    </div>
   )
 }
 
-// ─── Section Échéances : frise + bouton calendrier ───
+// ─── Section Calendrier — directement visible en phase 4 ───
 function EcheancesSection({ isMobile }: { isMobile: boolean }) {
-  const [calOpen, setCalOpen] = useState(false)
-
-  // Construire la liste des échéances depuis tous les dossiers
-  const allDeadlines = DOSSIERS.flatMap(d =>
-    d.deadlines.map(dl => ({
-      dateStr: dl.label ? dl.date : dl.date,
-      label: dl.label,
-      dossierName: d.name,
-      dossierId: d.id,
-      dossierColor: DOSSIER_COLORS[d.id] || "#888",
-      urgent: dl.urgent,
-      parsedDate: parseFrenchDate(dl.date),
-    }))
-  ).filter(dl => dl.parsedDate !== null) as {
-    dateStr: string; label: string; dossierName: string; dossierId: string
-    dossierColor: string; urgent: boolean; parsedDate: Date
-  }[]
-
-  // Filtrer les 45 prochains jours (pour avoir une fenêtre visible)
-  const today = new Date()
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-  const window45 = new Date(todayStart.getTime() + 45 * 24 * 60 * 60 * 1000)
-  const upcoming = allDeadlines
-    .filter(dl => dl.parsedDate >= todayStart && dl.parsedDate <= window45)
-    .sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime())
-
-  // Si aucune échéance dans la fenêtre, montrer toutes les futures
-  const displayItems = upcoming.length > 0
-    ? upcoming
-    : allDeadlines.filter(dl => dl.parsedDate >= todayStart).sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime()).slice(0, 6)
-
-  // Items calendrier (toutes les deadlines futures)
-  const calItems = allDeadlines
-    .filter(dl => dl.parsedDate >= todayStart)
-    .map(dl => ({ date: dl.parsedDate, label: dl.label, dossierName: dl.dossierName, dossierColor: dl.dossierColor }))
-
-  const MONTH_SHORT = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
+  // Construire les items calendrier depuis tous les dossiers
+  const calItems = DOSSIERS.flatMap(d =>
+    d.deadlines.map(dl => {
+      const parsed = parseFrenchDate(dl.date)
+      if (!parsed) return null
+      return { date: parsed, label: dl.label, dossierName: d.name, dossierColor: DOSSIER_COLORS[d.id] || "#888" }
+    })
+  ).filter(Boolean) as { date: Date; label: string; dossierName: string; dossierColor: string }[]
 
   return (
     <motion.div
@@ -1756,161 +1819,67 @@ function EcheancesSection({ isMobile }: { isMobile: boolean }) {
       style={{ marginBottom: 20 }}
     >
       {/* Titre de section */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, marginTop: 4 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
-          <div style={{ height: 1, background: BORDER, width: 20 }} />
-          <span style={{ fontSize: 11, fontWeight: 500, color: TEXT_LIGHT, textTransform: "uppercase" as const, letterSpacing: 0.8, whiteSpace: "nowrap" as const }}>
-            Échéances à surveiller
-          </span>
-          <div style={{ height: 1, flex: 1, background: BORDER }} />
-        </div>
-        {/* Bouton calendrier */}
-        <div style={{ position: "relative", marginLeft: 10, flexShrink: 0 }}>
-          <button
-            onClick={() => setCalOpen(o => !o)}
-            title="Voir le calendrier"
-            style={{
-              display: "flex", alignItems: "center", gap: 5,
-              padding: "5px 10px", borderRadius: 7,
-              border: `1px solid ${calOpen ? ACCENT : BORDER}`,
-              background: calOpen ? ACCENT_BG : BG,
-              color: calOpen ? ACCENT : TEXT_MUTED,
-              fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 500,
-              transition: "all 0.15s",
-            }}
-            onMouseEnter={e => { if (!calOpen) { (e.currentTarget as HTMLButtonElement).style.borderColor = ACCENT; (e.currentTarget as HTMLButtonElement).style.color = ACCENT } }}
-            onMouseLeave={e => { if (!calOpen) { (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; (e.currentTarget as HTMLButtonElement).style.color = TEXT_MUTED } }}
-          >
-            <Calendar size={13} /> Calendrier
-          </button>
-          <AnimatePresence>
-            {calOpen && (
-              <>
-                <div style={{ position: "fixed", inset: 0, zIndex: 59 }} onClick={() => setCalOpen(false)} />
-                <MiniCalendar deadlineItems={calItems} onClose={() => setCalOpen(false)} />
-              </>
-            )}
-          </AnimatePresence>
-        </div>
+      <div style={{ marginBottom: 14, marginTop: 4 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: TEXT_LIGHT, textTransform: "uppercase" as const, letterSpacing: "0.12em" }}>
+          VOS ÉCHÉANCES
+        </span>
       </div>
 
-      {/* Frise chronologique */}
-      {displayItems.length === 0 ? (
-        <div style={{ padding: "14px 18px", borderRadius: 12, border: `1px solid ${BORDER}`, background: SIDEBAR_BG, textAlign: "center", fontSize: 13, color: TEXT_MUTED }}>
-          Aucune échéance dans les 45 prochains jours.
-        </div>
-      ) : (
-        <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 14, boxShadow: "0 1px 3px rgba(0,0,0,0.04)", overflow: "hidden" }}>
-          {/* Barre de progression temporelle */}
-          <div style={{ padding: "12px 16px 10px", borderBottom: `1px solid ${BORDER}`, background: SIDEBAR_BG }}>
-            <div style={{ position: "relative", height: 6, background: BORDER, borderRadius: 3, overflow: "visible" }}>
-              {displayItems.map((item, i) => {
-                const firstDate = displayItems[0].parsedDate
-                const lastDate = displayItems[displayItems.length - 1].parsedDate
-                const totalSpan = Math.max(1, lastDate.getTime() - firstDate.getTime())
-                const pos = displayItems.length === 1 ? 50 : ((item.parsedDate.getTime() - firstDate.getTime()) / totalSpan) * 92 + 4
-                const days = daysUntil(item.parsedDate)
-                const color = urgencyColor(days)
-                return (
-                  <div
-                    key={`marker-${i}`}
-                    title={`${item.dossierName} — ${item.label}`}
-                    style={{
-                      position: "absolute",
-                      left: `${pos}%`,
-                      top: "50%",
-                      transform: "translate(-50%, -50%)",
-                      width: 12, height: 12,
-                      borderRadius: "50%",
-                      background: item.dossierColor,
-                      border: `2px solid ${color}`,
-                      boxShadow: `0 0 0 2px ${color}22`,
-                      cursor: "default",
-                      zIndex: 2,
-                    }}
-                  />
-                )
-              })}
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-              <span style={{ fontSize: 10, color: TEXT_LIGHT }}>
-                {displayItems[0]?.parsedDate
-                  ? `${displayItems[0].parsedDate.getDate()} ${MONTH_SHORT[displayItems[0].parsedDate.getMonth()]}`
-                  : ""}
-              </span>
-              <span style={{ fontSize: 10, color: TEXT_LIGHT }}>
-                {displayItems.length > 1 && displayItems[displayItems.length - 1]?.parsedDate
-                  ? `${displayItems[displayItems.length - 1].parsedDate.getDate()} ${MONTH_SHORT[displayItems[displayItems.length - 1].parsedDate.getMonth()]}`
-                  : ""}
-              </span>
-            </div>
-          </div>
+      {/* Calendrier mensuel / semaine directement visible */}
+      <MiniCalendar deadlineItems={calItems} isMobile={isMobile} />
 
-          {/* Liste des échéances */}
-          <div>
-            {displayItems.map((item, i) => {
-              const days = daysUntil(item.parsedDate)
-              const color = urgencyColor(days)
-              const isLast = i === displayItems.length - 1
-              const daysLabel = days === 0 ? "Aujourd'hui"
-                : days === 1 ? "Demain"
-                : days < 0 ? `Il y a ${Math.abs(days)}j`
-                : `Dans ${days}j`
-
-              return (
-                <div
-                  key={`${item.dossierId}-${i}`}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 12,
-                    padding: "11px 16px",
-                    borderBottom: isLast ? "none" : `1px solid ${BORDER}`,
-                    background: days < 7 && days >= 0 ? `${URGENT}06` : "transparent",
-                  }}
-                >
-                  {/* Point couleur dossier */}
-                  <div style={{
-                    width: 10, height: 10, borderRadius: "50%",
-                    background: item.dossierColor, flexShrink: 0,
-                    boxShadow: `0 0 0 3px ${item.dossierColor}22`,
-                  }} />
-
-                  {/* Date + dossier + label */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: color }}>{item.dateStr}</span>
-                      <span style={{
-                        fontSize: 9, fontWeight: 700, color: "#fff",
-                        background: color, padding: "1px 6px", borderRadius: 3, letterSpacing: "0.04em",
-                      }}>
-                        {daysLabel.toUpperCase()}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 12, color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
-                      <span style={{
-                        display: "inline-block", width: 6, height: 6, borderRadius: "50%",
-                        background: item.dossierColor, marginRight: 5, verticalAlign: "middle",
-                      }} />
-                      <span style={{ fontWeight: 500, color: TEXT }}>{item.dossierName}</span>
-                      {" — "}
-                      {item.label}
-                    </div>
-                  </div>
-
-                  {/* Badge type */}
-                  <div style={{
-                    fontSize: 10, color: color,
-                    background: `${color}14`, padding: "3px 8px", borderRadius: 5,
-                    fontWeight: 600, flexShrink: 0, letterSpacing: "0.02em",
-                    border: `1px solid ${color}33`,
-                  }}>
-                    {days < 7 && days >= 0 ? "URGENT" : days < 14 && days >= 0 ? "PROCHE" : days < 0 ? "PASSÉE" : "PLANIFIÉE"}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
+      {/* Boutons de connexion */}
+      <div style={{
+        display: "flex",
+        flexDirection: isMobile ? "column" : "row",
+        gap: 10,
+        marginTop: 14,
+      }}>
+        <button
+          onClick={() => console.log("Bientôt disponible")}
+          style={{
+            flex: 1,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            padding: "9px 16px",
+            borderRadius: 9,
+            border: `1px solid ${BORDER}`,
+            background: BG,
+            color: TEXT_MUTED,
+            fontSize: 12,
+            fontWeight: 500,
+            cursor: "pointer",
+            fontFamily: "inherit",
+            transition: "border-color 0.15s, color 0.15s",
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = ACCENT; (e.currentTarget as HTMLButtonElement).style.color = ACCENT }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; (e.currentTarget as HTMLButtonElement).style.color = TEXT_MUTED }}
+        >
+          <Calendar size={14} />
+          Connecter Google Calendar
+        </button>
+        <button
+          onClick={() => console.log("Bientôt disponible")}
+          style={{
+            flex: 1,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            padding: "9px 16px",
+            borderRadius: 9,
+            border: `1px solid ${BORDER}`,
+            background: BG,
+            color: TEXT_MUTED,
+            fontSize: 12,
+            fontWeight: 500,
+            cursor: "pointer",
+            fontFamily: "inherit",
+            transition: "border-color 0.15s, color 0.15s",
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = ACCENT; (e.currentTarget as HTMLButtonElement).style.color = ACCENT }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; (e.currentTarget as HTMLButtonElement).style.color = TEXT_MUTED }}
+        >
+          <Calendar size={14} />
+          Connecter Outlook
+        </button>
+      </div>
     </motion.div>
   )
 }
