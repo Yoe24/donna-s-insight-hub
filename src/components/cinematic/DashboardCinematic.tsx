@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Mail, Calendar, Folder, CheckSquare } from "lucide-react"
 
 interface Props {
   theme?: "light" | "dark"
@@ -8,674 +7,539 @@ interface Props {
   chromeless?: boolean
 }
 
-// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+// Scene durations (seconds): 6+6+6+6+6+6 = 36s cycle
+const SCENE_DURATION = 6
+const TOTAL = 36
 
-const CYCLE_DURATION = 24000 // 24s total loop
-
-// Phase boundaries in ms
-const PHASE = {
-  input:   { start: 0,     end: 5000  },
-  connect: { start: 5000,  end: 9000  },
-  outputs: { start: 9000,  end: 16000 },
-  hold:    { start: 16000, end: 21000 },
-  fadeOut: { start: 21000, end: 24000 },
+// Minimal color palette
+const C = {
+  bg: "#fafafa",
+  card: "#ffffff",
+  border: "rgba(0,0,0,0.07)",
+  text: "#1a1a1a",
+  muted: "#888888",
+  accent: "#1a1a1a",
+  pill: {
+    blue: { bg: "#EFF6FF", text: "#1D4ED8" },
+    green: { bg: "#ECFDF5", text: "#059669" },
+    amber: { bg: "#FFFBEB", text: "#D97706" },
+    red: { bg: "#FEF2F2", text: "#DC2626" },
+    gray: { bg: "#F3F4F6", text: "#374151" },
+  }
 }
 
-const TICK_MS = 80
-
-// ─── STYLES ──────────────────────────────────────────────────────────────────
-
-const S = {
-  bg:         "#0f0f0f",
-  glass:      "rgba(255,255,255,0.05)",
-  glassBorder:"rgba(255,255,255,0.08)",
-  text:       "#ffffff",
-  muted:      "#888888",
-  mutedLight: "#cccccc",
-  line:       "rgba(255,255,255,0.15)",
-  glow:       "0 0 8px rgba(255,255,255,0.5)",
-  dotRed:     "#ef4444",
-  dotOrange:  "#f97316",
-  dotGreen:   "#22c55e",
-  dotBlue:    "#3b82f6",
-}
-
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
-
-function useIsMobile() {
-  const [mobile, setMobile] = useState(false)
-  useEffect(() => {
-    const check = () => setMobile(window.innerWidth < 640)
-    check()
-    window.addEventListener("resize", check)
-    return () => window.removeEventListener("resize", check)
-  }, [])
-  return mobile
-}
-
-let stylesInjected = false
-function injectStyles() {
-  if (stylesInjected || typeof document === "undefined") return
-  stylesInjected = true
-  const style = document.createElement("style")
-  style.textContent = `
-    @keyframes travelX {
-      0%   { left: 0%;   opacity: 0; }
-      10%  { opacity: 1; }
-      90%  { opacity: 1; }
-      100% { left: 100%; opacity: 0; }
-    }
-    @keyframes travelY {
-      0%   { top: 0%;   opacity: 0; }
-      10%  { opacity: 1; }
-      90%  { opacity: 1; }
-      100% { top: 100%; opacity: 0; }
-    }
-    @keyframes pulseDot {
-      0%, 100% { opacity: 0.3; transform: scale(0.8); }
-      50%       { opacity: 1;   transform: scale(1.1); }
-    }
-    @keyframes glowPulse {
-      0%, 100% { box-shadow: 0 0 4px rgba(255,255,255,0.3); }
-      50%       { box-shadow: 0 0 12px rgba(255,255,255,0.7); }
-    }
-  `
-  document.head.appendChild(style)
-}
-
-// ─── GLASS CIRCLE ─────────────────────────────────────────────────────────────
-
-function GlassCircle({ size, children }: { size: number; children: React.ReactNode }) {
+function Card({ children, style = {}, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div style={{
-      width: size,
-      height: size,
-      borderRadius: "50%",
-      background: S.glass,
-      border: `1px solid ${S.glassBorder}`,
-      backdropFilter: "blur(10px)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      flexShrink: 0,
-    }}>
+      background: C.card,
+      borderRadius: 16,
+      boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
+      border: `1px solid ${C.border}`,
+      ...style,
+    }} {...rest}>
       {children}
     </div>
   )
 }
 
-// ─── CONNECTOR HORIZONTAL (draws from left to right) ──────────────────────────
-
-function ConnectorH({ active, showDot, width = 64 }: { active: boolean; showDot: boolean; width?: number }) {
-  useEffect(() => { injectStyles() }, [])
+function Pill({ children, color = "gray" }: { children: React.ReactNode; color?: keyof typeof C.pill }) {
+  const s = C.pill[color]
   return (
-    <div style={{
-      position: "relative",
-      width: width,
-      height: 1,
-      flexShrink: 0,
-      alignSelf: "center",
-      overflow: "visible",
+    <span style={{
+      display: "inline-block",
+      background: s.bg,
+      color: s.text,
+      borderRadius: 99,
+      padding: "4px 12px",
+      fontSize: 12,
+      fontWeight: 600,
     }}>
-      {/* Line drawing animation */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        height: 1,
-        width: active ? "100%" : "0%",
-        background: S.line,
-        transition: active ? "width 1.2s ease-out" : "none",
-      }} />
-      {/* Travelling dot */}
-      {showDot && (
-        <div style={{
-          position: "absolute",
-          top: "50%",
-          transform: "translateY(-50%)",
-          width: 4,
-          height: 4,
-          borderRadius: "50%",
-          background: "#ffffff",
-          boxShadow: S.glow,
-          animation: "travelX 1.6s ease-in-out infinite",
-        }} />
-      )}
-    </div>
+      {children}
+    </span>
   )
 }
 
-// ─── CONNECTOR VERTICAL (draws from top to bottom) ────────────────────────────
-
-function ConnectorV({ active, showDot, height = 32 }: { active: boolean; showDot: boolean; height?: number }) {
-  useEffect(() => { injectStyles() }, [])
+// ─── SCENE WRAPPER ───
+function SceneWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{
-      position: "relative",
-      height: height,
-      width: 1,
-      flexShrink: 0,
-      alignSelf: "center",
-      overflow: "visible",
-    }}>
-      <div style={{
-        position: "absolute",
-        left: 0,
-        top: 0,
-        width: 1,
-        height: active ? "100%" : "0%",
-        background: S.line,
-        transition: active ? "height 1.2s ease-out" : "none",
-      }} />
-      {showDot && (
-        <div style={{
-          position: "absolute",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: 4,
-          height: 4,
-          borderRadius: "50%",
-          background: "#ffffff",
-          boxShadow: S.glow,
-          animation: "travelY 1.6s ease-in-out infinite",
-        }} />
-      )}
-    </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
+      style={{
+        position: "absolute", inset: 0,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        padding: "32px 24px",
+      }}
+    >
+      {children}
+    </motion.div>
   )
 }
 
-// ─── INPUT CARD ───────────────────────────────────────────────────────────────
+// ─── SCENE 1 — LA BOITE MAIL ───
+function Scene1({ t }: { t: number }) {
+  const [count, setCount] = useState(0)
+  const target = 89
 
-function InputCard({ visible }: { visible: boolean }) {
+  useEffect(() => {
+    if (t < 0.5) { setCount(0); return }
+    const elapsed = (t - 0.5) * 1000
+    const progress = Math.min(elapsed / 3500, 1)
+    setCount(Math.floor(progress * target))
+  }, [t])
+
   return (
-    <AnimatePresence>
-      {visible && (
+    <SceneWrapper>
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        style={{ textAlign: "center" }}
+      >
+        {/* Icon */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, flexShrink: 0 }}
+          animate={{ scale: [1, 1.06, 1] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            width: 64, height: 64, borderRadius: 20,
+            background: "#F3F4F6",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            margin: "0 auto 20px",
+            fontSize: 28,
+          }}
         >
-          <GlassCircle size={48}>
-            <Mail size={20} color={S.text} />
-          </GlassCircle>
-          <span style={{ fontSize: 14, color: S.text, fontWeight: 400 }}>Votre boîte mail</span>
-          {/* Email skeleton lines */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, width: 120 }}>
-            {[75, 60, 80, 65].map((pct, i) => (
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <path d="m2 7 10 6.5L22 7"/>
+          </svg>
+        </motion.div>
+
+        {/* Counter */}
+        <div style={{ fontSize: 64, fontWeight: 700, color: C.text, lineHeight: 1, marginBottom: 8, fontVariantNumeric: "tabular-nums" }}>
+          {count}
+        </div>
+        <div style={{ fontSize: 18, color: C.muted, marginBottom: 20, fontWeight: 500 }}>
+          emails reçus
+        </div>
+
+        {/* Subtitle */}
+        <AnimatePresence>
+          {t > 2 && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              style={{ fontSize: 14, color: C.muted, maxWidth: 280, lineHeight: 1.6 }}
+            >
+              Donna lit chaque email et chaque pièce jointe
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </SceneWrapper>
+  )
+}
+
+// ─── SCENE 2 — LE TRI INTELLIGENT ───
+function Scene2({ t }: { t: number }) {
+  const piles = [
+    { label: "Dossiers clients", count: 6, color: "blue" as const, delay: 0.3 },
+    { label: "A traiter", count: 3, color: "amber" as const, delay: 0.8 },
+    { label: "Bruit filtre", count: 80, color: "gray" as const, delay: 1.3 },
+  ]
+
+  return (
+    <SceneWrapper>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        style={{ fontSize: 20, fontWeight: 600, color: C.text, textAlign: "center", marginBottom: 28 }}
+      >
+        Tri intelligent de vos emails
+      </motion.div>
+
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
+        {piles.map((pile) => (
+          <AnimatePresence key={pile.label}>
+            {t > pile.delay && (
               <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 280, damping: 20 }}
+              >
+                <Card style={{ padding: "20px 24px", textAlign: "center", minWidth: 120 }}>
+                  <div style={{
+                    fontSize: 36, fontWeight: 700, color: C.pill[pile.color]?.text ?? C.text,
+                    lineHeight: 1, marginBottom: 8,
+                  }}>
+                    {pile.count}
+                  </div>
+                  <div style={{ fontSize: 12, color: C.muted, fontWeight: 500 }}>
+                    {pile.label}
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        ))}
+      </div>
+    </SceneWrapper>
+  )
+}
+
+// ─── SCENE 3 — LES ECHEANCES ───
+function Scene3({ t }: { t: number }) {
+  const days = Array.from({ length: 35 }, (_, i) => i + 1)
+  const deadlines: Record<number, string> = {
+    7: "#DC2626",
+    12: "#D97706",
+    18: "#DC2626",
+    22: "#DC2626",
+    25: "#D97706",
+    29: "#059669",
+    31: "#D97706",
+  }
+
+  const deadlineEntries = Object.entries(deadlines)
+
+  return (
+    <SceneWrapper>
+      <AnimatePresence>
+        {t > 0.3 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            style={{ textAlign: "center", marginBottom: 20 }}
+          >
+            <div style={{ fontSize: 20, fontWeight: 600, color: C.text, marginBottom: 6 }}>
+              7 echeances critiques detectees
+            </div>
+            <div style={{ fontSize: 13, color: C.muted }}>
+              Audiences, forclusions, delais d'appel
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {t > 0.6 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.45 }}
+          >
+            <Card style={{ padding: "16px 20px" }}>
+              {/* Day headers */}
+              <div style={{
+                display: "grid", gridTemplateColumns: "repeat(7, 1fr)",
+                gap: 4, marginBottom: 4,
+              }}>
+                {["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"].map((d) => (
+                  <div key={d} style={{ fontSize: 10, color: C.muted, textAlign: "center", fontWeight: 600, padding: "2px 0" }}>
+                    {d}
+                  </div>
+                ))}
+              </div>
+              {/* Days grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+                {days.map((day) => {
+                  const dotColor = deadlines[day]
+                  const dotDelay = dotColor ? deadlineEntries.findIndex(([d]) => Number(d) === day) * 0.18 + 1.2 : 0
+                  return (
+                    <div key={day} style={{ position: "relative", textAlign: "center" }}>
+                      <div style={{ fontSize: 11, color: day > 30 ? "#ddd" : "#999", padding: "3px 0" }}>
+                        {day <= 31 ? day : ""}
+                      </div>
+                      {dotColor && t > dotDelay && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                          style={{
+                            width: 6, height: 6, borderRadius: "50%",
+                            background: dotColor,
+                            margin: "0 auto",
+                            position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
+                          }}
+                        />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </SceneWrapper>
+  )
+}
+
+// ─── SCENE 4 — LES RESUMES ───
+function Scene4({ t }: { t: number }) {
+  const fullText = "Audience de conciliation le 22 avril. Reponse attendue avant le 18."
+  const displayedLength = Math.floor(Math.min((t - 1.5) / 3.5 * fullText.length, fullText.length))
+  const displayed = t > 1.5 ? fullText.slice(0, displayedLength) : ""
+
+  return (
+    <SceneWrapper>
+      <AnimatePresence>
+        {t > 0.4 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            style={{ width: "100%", maxWidth: 380 }}
+          >
+            <Card style={{ padding: "20px 22px" }}>
+              {/* Email header */}
+              <div style={{ marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
+                <div style={{ fontSize: 11, color: C.muted, marginBottom: 3 }}>
+                  De : <span style={{ fontWeight: 600, color: C.text }}>Greffe TJ Paris</span>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
+                  Convocation audience Dupont
+                </div>
+              </div>
+
+              {/* Donna summary */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8, fontWeight: 600 }}>
+                  Resume Donna
+                </div>
+                <div style={{ fontSize: 13, color: C.text, lineHeight: 1.65, minHeight: 44 }}>
+                  {displayed}
+                  {displayed.length < fullText.length && t > 1.5 && (
+                    <motion.span
+                      animate={{ opacity: [1, 0, 1] }}
+                      transition={{ duration: 0.6, repeat: Infinity }}
+                      style={{ display: "inline-block", width: 2, height: 14, background: C.text, verticalAlign: "text-bottom", marginLeft: 1 }}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Button */}
+              <AnimatePresence>
+                {t > 4.5 && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <motion.div
+                      animate={{ boxShadow: ["0 0 0px rgba(26,26,26,0.1)", "0 4px 20px rgba(26,26,26,0.18)", "0 0 0px rgba(26,26,26,0.1)"] }}
+                      transition={{ duration: 1.6, repeat: Infinity }}
+                      style={{
+                        background: C.text, color: "#fff",
+                        borderRadius: 10, padding: "10px 18px",
+                        fontSize: 12, fontWeight: 600, textAlign: "center", cursor: "pointer",
+                      }}
+                    >
+                      Reponse generee par Donna
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </SceneWrapper>
+  )
+}
+
+// ─── SCENE 5 — LE RESULTAT ───
+function Scene5({ t }: { t: number }) {
+  const pills = [
+    { label: "Dossiers classes", delay: 1.2, color: "blue" as const },
+    { label: "Echeances surveillees", delay: 1.7, color: "green" as const },
+    { label: "Reponses pretes", delay: 2.2, color: "gray" as const },
+  ]
+
+  return (
+    <SceneWrapper>
+      <AnimatePresence>
+        {t > 0.3 && (
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 18 }}
+            style={{ textAlign: "center", marginBottom: 24 }}
+          >
+            <div style={{ fontSize: 72, fontWeight: 700, color: C.text, lineHeight: 1 }}>
+              2h
+            </div>
+            <div style={{ fontSize: 18, color: C.muted, fontWeight: 500, marginTop: 8 }}>
+              gagnees par jour
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+        {pills.map((pill) => (
+          <AnimatePresence key={pill.label}>
+            {t > pill.delay && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+              >
+                <Pill color={pill.color}>{pill.label}</Pill>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        ))}
+      </div>
+    </SceneWrapper>
+  )
+}
+
+// ─── SCENE 6 — CTA ───
+function Scene6({ t }: { t: number }) {
+  return (
+    <SceneWrapper>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.7 }}
+        style={{ textAlign: "center" }}
+      >
+        {/* Logo */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          style={{ fontSize: 36, fontWeight: 700, color: C.text, marginBottom: 8, letterSpacing: -1 }}
+        >
+          Donna
+        </motion.div>
+
+        <AnimatePresence>
+          {t > 1 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              style={{ fontSize: 14, color: C.muted, marginBottom: 28 }}
+            >
+              +150 avocats nous font confiance
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {t > 1.8 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              style={{
+                display: "inline-block",
+                border: `2px solid ${C.text}`,
+                borderRadius: 12,
+                padding: "12px 28px",
+                fontSize: 14,
+                fontWeight: 600,
+                color: C.text,
+                cursor: "pointer",
+              }}
+            >
+              Essayer gratuitement
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </SceneWrapper>
+  )
+}
+
+// ─── SCENE LABELS ───
+const SCENE_LABELS = [
+  "La boite mail",
+  "Le tri intelligent",
+  "Les echeances",
+  "Les resumes",
+  "Le resultat",
+  "Decouvrir Donna",
+]
+
+// ─── MAIN COMPONENT ───
+export default function DashboardCinematic({ className = "" }: Props) {
+  const [t, setT] = useState(0)
+  const ref = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    ref.current = setInterval(() => setT((p) => {
+      const next = p + 0.1
+      return next >= TOTAL ? 0 : next
+    }), 100)
+    return () => { if (ref.current) clearInterval(ref.current) }
+  }, [])
+
+  const scene = Math.floor(t / SCENE_DURATION)
+  const st = t - scene * SCENE_DURATION
+
+  return (
+    <div className={className} style={{
+      width: "100%",
+      borderRadius: 20,
+      overflow: "hidden",
+      boxShadow: "0 4px 40px rgba(0,0,0,0.08)",
+      border: `1px solid rgba(0,0,0,0.07)`,
+      background: C.bg,
+    }}>
+      {/* Gradient background layer */}
+      <div style={{
+        position: "relative",
+        background: "radial-gradient(ellipse at 30% 50%, rgba(255,200,200,0.15), rgba(200,200,255,0.1), rgba(255,255,255,0)), #fafafa",
+        minHeight: 420,
+      }}>
+        {/* Scene content */}
+        <div style={{ position: "relative", minHeight: 420 }}>
+          <AnimatePresence mode="wait">
+            {scene === 0 && <Scene1 key="s1" t={st} />}
+            {scene === 1 && <Scene2 key="s2" t={st} />}
+            {scene === 2 && <Scene3 key="s3" t={st} />}
+            {scene === 3 && <Scene4 key="s4" t={st} />}
+            {scene === 4 && <Scene5 key="s5" t={st} />}
+            {scene === 5 && <Scene6 key="s6" t={st} />}
+          </AnimatePresence>
+        </div>
+
+        {/* Bottom progress bar + scene label */}
+        <div style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          padding: "12px 20px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          borderTop: `1px solid rgba(0,0,0,0.05)`,
+          background: "rgba(255,255,255,0.7)",
+          backdropFilter: "blur(6px)",
+        }}>
+          {/* Dots */}
+          <div style={{ display: "flex", gap: 6 }}>
+            {Array.from({ length: 6 }, (_, i) => (
+              <div
                 key={i}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 + i * 0.35, duration: 0.8 }}
                 style={{
+                  width: i === scene ? 20 : 6,
                   height: 6,
                   borderRadius: 99,
-                  background: "rgba(255,255,255,0.1)",
-                  width: `${pct}%`,
+                  background: i === scene ? C.text : "#D1D5DB",
+                  transition: "all 0.3s ease",
                 }}
               />
             ))}
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
 
-// ─── DONNA NODE ───────────────────────────────────────────────────────────────
-
-function DonnaNode({ visible, processing }: { visible: boolean; processing: boolean }) {
-  return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, flexShrink: 0 }}
-        >
-          {/* D circle */}
-          <div style={{
-            width: 64,
-            height: 64,
-            borderRadius: "50%",
-            background: S.glass,
-            border: `1px solid ${S.glassBorder}`,
-            backdropFilter: "blur(10px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            animation: processing ? "glowPulse 2s ease-in-out infinite" : "none",
-          }}>
-            <span style={{ fontSize: 28, fontWeight: 300, color: S.text, letterSpacing: "-0.5px" }}>D</span>
-          </div>
-          {/* Processing label */}
-          {processing ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 12, color: S.muted }}>Analyse en cours</span>
-              <div style={{ display: "flex", gap: 3 }}>
-                {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    style={{
-                      width: 3,
-                      height: 3,
-                      borderRadius: "50%",
-                      background: S.muted,
-                      animation: `pulseDot 1.4s ease-in-out ${i * 0.25}s infinite`,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <span style={{ fontSize: 12, color: S.muted }}>Donna</span>
-          )}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
-
-// ─── OUTPUT CARDS ─────────────────────────────────────────────────────────────
-
-function CalendarOutput({ visible }: { visible: boolean }) {
-  const entries = [
-    { text: "22 avr — Audience Dupont",    dot: S.dotRed    },
-    { text: "24 avr — Conclusions Martin", dot: S.dotOrange },
-    { text: "30 avr — Médiation Dubois",   dot: S.dotGreen  },
-  ]
-  return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          style={{
-            background: S.glass,
-            border: `1px solid ${S.glassBorder}`,
-            backdropFilter: "blur(10px)",
-            borderRadius: 16,
-            padding: "12px 14px",
-            width: 170,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <GlassCircle size={28}>
-              <Calendar size={13} color={S.mutedLight} />
-            </GlassCircle>
-            <span style={{ fontSize: 14, color: S.text, fontWeight: 400 }}>Vos échéances</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-            {entries.map((e, i) => (
-              <motion.div
-                key={e.text}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.5, duration: 0.5 }}
-                style={{ display: "flex", alignItems: "center", gap: 8 }}
-              >
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: e.dot, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, color: S.mutedLight }}>{e.text}</span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
-
-function DossiersOutput({ visible }: { visible: boolean }) {
-  const items = [
-    { text: "Martin — Prud'hommes", color: S.dotBlue   },
-    { text: "Dupont — Référé",      color: S.dotOrange },
-    { text: "Dubois — Copropriété", color: S.dotGreen  },
-  ]
-  return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          style={{
-            background: S.glass,
-            border: `1px solid ${S.glassBorder}`,
-            backdropFilter: "blur(10px)",
-            borderRadius: 16,
-            padding: "12px 14px",
-            width: 170,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <GlassCircle size={28}>
-              <Folder size={13} color={S.mutedLight} />
-            </GlassCircle>
-            <span style={{ fontSize: 14, color: S.text, fontWeight: 400 }}>Vos dossiers classés</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-            {items.map((item, i) => (
-              <motion.div
-                key={item.text}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.5, duration: 0.5 }}
-                style={{ display: "flex", alignItems: "center", gap: 8 }}
-              >
-                <div style={{ width: 6, height: 6, borderRadius: 1, background: item.color, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, color: S.mutedLight }}>{item.text}</span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
-
-function TodoOutput({ visible }: { visible: boolean }) {
-  const tasks = [
-    "Répondre au greffe",
-    "Valider brouillon Dupont",
-    "Relire conclusions",
-  ]
-  return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          style={{
-            background: S.glass,
-            border: `1px solid ${S.glassBorder}`,
-            backdropFilter: "blur(10px)",
-            borderRadius: 16,
-            padding: "12px 14px",
-            width: 170,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <GlassCircle size={28}>
-              <CheckSquare size={13} color={S.mutedLight} />
-            </GlassCircle>
-            <span style={{ fontSize: 14, color: S.text, fontWeight: 400 }}>Actions du jour</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-            {tasks.map((task, i) => (
-              <motion.div
-                key={task}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.5, duration: 0.5 }}
-                style={{ display: "flex", alignItems: "center", gap: 8 }}
-              >
-                <div style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 2,
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  flexShrink: 0,
-                }} />
-                <span style={{ fontSize: 12, color: S.mutedLight }}>{task}</span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
-
-// ─── DESKTOP LAYOUT ───────────────────────────────────────────────────────────
-
-function DesktopPipeline({ ms }: { ms: number }) {
-  const showInput    = ms >= PHASE.input.start
-  const showConn1    = ms >= PHASE.connect.start
-  const showDot1     = ms >= PHASE.connect.start + 300 && ms < PHASE.outputs.start
-  const showDonna    = ms >= PHASE.connect.start
-  const processing   = ms >= PHASE.connect.start && ms < PHASE.outputs.start
-  const showConns2   = ms >= PHASE.outputs.start
-  const showDot2     = ms >= PHASE.outputs.start + 300 && ms < PHASE.hold.start
-  const showCalendar = ms >= PHASE.outputs.start
-  const showDossiers = ms >= PHASE.outputs.start + 2000
-  const showTodo     = ms >= PHASE.outputs.start + 4000
-  const showTagline  = ms >= PHASE.hold.start
-
-  return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      width: "100%",
-      height: "100%",
-      padding: "0 32px",
-      boxSizing: "border-box",
-    }}>
-      {/* Header label */}
-      <div style={{
-        fontSize: 11,
-        letterSpacing: "0.25em",
-        textTransform: "uppercase",
-        color: "#444",
-        marginBottom: 32,
-        fontWeight: 400,
-      }}>
-        Comment Donna fonctionne
-      </div>
-
-      {/* Pipeline row */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "100%",
-        gap: 0,
-      }}>
-        {/* INPUT */}
-        <InputCard visible={showInput} />
-
-        {/* Connector 1 */}
-        <div style={{ marginLeft: 20, marginRight: 20 }}>
-          <ConnectorH active={showConn1} showDot={showDot1} width={56} />
+          {/* Scene label - hidden */}
         </div>
-
-        {/* DONNA */}
-        <DonnaNode visible={showDonna} processing={processing} />
-
-        {/* Outputs block */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginLeft: 20 }}>
-          {/* Output 1 */}
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <ConnectorH active={showConns2} showDot={showDot2} width={56} />
-            <div style={{ marginLeft: 16 }}>
-              <CalendarOutput visible={showCalendar} />
-            </div>
-          </div>
-          {/* Output 2 */}
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <ConnectorH active={showConns2} showDot={showDot2} width={56} />
-            <div style={{ marginLeft: 16 }}>
-              <DossiersOutput visible={showDossiers} />
-            </div>
-          </div>
-          {/* Output 3 */}
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <ConnectorH active={showConns2} showDot={showDot2} width={56} />
-            <div style={{ marginLeft: 16 }}>
-              <TodoOutput visible={showTodo} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tagline */}
-      <AnimatePresence>
-        {showTagline && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 2, ease: "easeOut" }}
-            style={{
-              marginTop: 32,
-              fontSize: 16,
-              fontWeight: 300,
-              color: "#666",
-              textAlign: "center",
-              letterSpacing: "0.02em",
-            }}
-          >
-            Connectez votre boîte mail. Donna s'occupe du reste.
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
-// ─── MOBILE LAYOUT ────────────────────────────────────────────────────────────
-
-function MobilePipeline({ ms }: { ms: number }) {
-  const showInput    = ms >= PHASE.input.start
-  const showConn1    = ms >= PHASE.connect.start
-  const showDot1     = ms >= PHASE.connect.start + 300 && ms < PHASE.outputs.start
-  const showDonna    = ms >= PHASE.connect.start
-  const processing   = ms >= PHASE.connect.start && ms < PHASE.outputs.start
-  const showConns2   = ms >= PHASE.outputs.start
-  const showDot2     = ms >= PHASE.outputs.start + 300 && ms < PHASE.hold.start
-  const showCalendar = ms >= PHASE.outputs.start
-  const showDossiers = ms >= PHASE.outputs.start + 2000
-  const showTodo     = ms >= PHASE.outputs.start + 4000
-  const showTagline  = ms >= PHASE.hold.start
-
-  return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      width: "100%",
-      padding: "24px 16px 32px",
-      boxSizing: "border-box",
-      gap: 0,
-    }}>
-      <div style={{
-        fontSize: 10,
-        letterSpacing: "0.25em",
-        textTransform: "uppercase",
-        color: "#444",
-        marginBottom: 24,
-        fontWeight: 400,
-      }}>
-        Comment Donna fonctionne
-      </div>
-
-      <InputCard visible={showInput} />
-      <ConnectorV active={showConn1} showDot={showDot1} height={36} />
-      <DonnaNode visible={showDonna} processing={processing} />
-      <ConnectorV active={showConns2} showDot={showDot2} height={36} />
-
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: "100%" }}>
-        <CalendarOutput visible={showCalendar} />
-        <DossiersOutput visible={showDossiers} />
-        <TodoOutput     visible={showTodo} />
-      </div>
-
-      <AnimatePresence>
-        {showTagline && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 2, ease: "easeOut" }}
-            style={{
-              marginTop: 24,
-              fontSize: 14,
-              fontWeight: 300,
-              color: "#666",
-              textAlign: "center",
-              letterSpacing: "0.02em",
-            }}
-          >
-            Connectez votre boîte mail. Donna s'occupe du reste.
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
-
-export default function DashboardCinematic({ className = "" }: Props) {
-  const [ms, setMs] = useState(0)
-  const [globalOpacity, setGlobalOpacity] = useState(1)
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const isMobile = useIsMobile()
-
-  useEffect(() => {
-    tickRef.current = setInterval(() => {
-      setMs((prev) => {
-        const next = prev + TICK_MS
-
-        // Phase 5: fade out (21-24s)
-        if (next >= PHASE.fadeOut.start && next < PHASE.fadeOut.end) {
-          const progress = (next - PHASE.fadeOut.start) / (PHASE.fadeOut.end - PHASE.fadeOut.start)
-          setGlobalOpacity(1 - progress)
-        }
-
-        // Reset at end
-        if (next >= CYCLE_DURATION) {
-          setGlobalOpacity(0)
-          setTimeout(() => {
-            setMs(0)
-            setGlobalOpacity(1)
-          }, 300)
-          return prev
-        }
-
-        return next
-      })
-    }, TICK_MS)
-    return () => { if (tickRef.current) clearInterval(tickRef.current) }
-  }, [])
-
-  return (
-    <div
-      className={className}
-      style={{
-        width: "100%",
-        height: isMobile ? undefined : 420,
-        minHeight: isMobile ? 500 : 420,
-        borderRadius: 16,
-        overflow: "hidden",
-        background: S.bg,
-        boxSizing: "border-box",
-      }}
-    >
-      <div
-        style={{
-          opacity: globalOpacity,
-          transition: "opacity 0.15s linear",
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        {isMobile
-          ? <MobilePipeline ms={ms} />
-          : <DesktopPipeline ms={ms} />
-        }
       </div>
     </div>
   )
