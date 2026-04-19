@@ -7,51 +7,55 @@ interface Props {
   chromeless?: boolean
 }
 
+// Scene durations (seconds): 6+6+6+6+6+6 = 36s cycle
 const SCENE_DURATION = 6
-const TOTAL_SCENES = 6
-const TOTAL = SCENE_DURATION * TOTAL_SCENES
+const TOTAL = 36
 
-// ─── ANIMATED CURSOR ───
-interface CursorProps {
-  fromX: number
-  fromY: number
-  toX: number
-  toY: number
-  trigger?: boolean
-  delay?: number
+// Minimal color palette
+const C = {
+  bg: "#fafafa",
+  card: "#ffffff",
+  border: "rgba(0,0,0,0.07)",
+  text: "#1a1a1a",
+  muted: "#888888",
+  accent: "#1a1a1a",
+  pill: {
+    blue: { bg: "#EFF6FF", text: "#1D4ED8" },
+    green: { bg: "#ECFDF5", text: "#059669" },
+    amber: { bg: "#FFFBEB", text: "#D97706" },
+    red: { bg: "#FEF2F2", text: "#DC2626" },
+    gray: { bg: "#F3F4F6", text: "#374151" },
+  }
 }
 
-function AnimatedCursor({ fromX, fromY, toX, toY, trigger = false, delay = 0 }: CursorProps) {
+function Card({ children, style = {}, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <motion.div
-      initial={{ x: fromX, y: fromY, scale: 1, opacity: 0 }}
-      animate={
-        trigger
-          ? [
-              { x: fromX, y: fromY, scale: 1, opacity: 1 },
-              { x: toX, y: toY, scale: 1, opacity: 1 },
-              { x: toX, y: toY, scale: 0.8, opacity: 1 },
-              { x: toX, y: toY, scale: 1, opacity: 1 },
-            ]
-          : { x: fromX, y: fromY, scale: 1, opacity: 0 }
-      }
-      transition={{
-        duration: 1.8,
-        delay,
-        ease: "easeInOut",
-        times: [0, 0.55, 0.75, 1],
-      }}
-      style={{
-        position: "absolute",
-        width: 12,
-        height: 12,
-        borderRadius: "50%",
-        background: "#1a1a1a",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
-        pointerEvents: "none",
-        zIndex: 20,
-      }}
-    />
+    <div style={{
+      background: C.card,
+      borderRadius: 16,
+      boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
+      border: `1px solid ${C.border}`,
+      ...style,
+    }} {...rest}>
+      {children}
+    </div>
+  )
+}
+
+function Pill({ children, color = "gray" }: { children: React.ReactNode; color?: keyof typeof C.pill }) {
+  const s = C.pill[color]
+  return (
+    <span style={{
+      display: "inline-block",
+      background: s.bg,
+      color: s.text,
+      borderRadius: 99,
+      padding: "4px 12px",
+      fontSize: 12,
+      fontWeight: 600,
+    }}>
+      {children}
+    </span>
   )
 }
 
@@ -64,13 +68,10 @@ function SceneWrapper({ children }: { children: React.ReactNode }) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5, ease: "easeInOut" }}
       style={{
-        position: "absolute",
-        inset: 0,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "32px 24px 60px",
+        position: "absolute", inset: 0,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        padding: "32px 24px",
       }}
     >
       {children}
@@ -78,540 +79,396 @@ function SceneWrapper({ children }: { children: React.ReactNode }) {
   )
 }
 
-// ─── FADE IN ELEMENT ───
-function FadeIn({
-  children,
-  delay = 0,
-  slideUp = false,
-  style = {},
-}: {
-  children: React.ReactNode
-  delay?: number
-  slideUp?: boolean
-  style?: React.CSSProperties
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: slideUp ? 20 : 0 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay, ease: "easeOut" }}
-      style={style}
-    >
-      {children}
-    </motion.div>
-  )
-}
-
-// ─── DOT ───
-function Dot({ color }: { color: string }) {
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        width: 7,
-        height: 7,
-        borderRadius: "50%",
-        background: color,
-        flexShrink: 0,
-        marginTop: 2,
-      }}
-    />
-  )
-}
-
-// ─── SCENE 1 — "Le matin" ───
+// ─── SCENE 1 — LA BOITE MAIL ───
 function Scene1({ t }: { t: number }) {
-  return (
-    <SceneWrapper>
-      <FadeIn>
-        <p
-          style={{
-            fontSize: "clamp(24px, 5vw, 34px)",
-            fontWeight: 700,
-            color: "#1a1a1a",
-            textAlign: "center",
-            lineHeight: 1.2,
-            letterSpacing: "-0.5px",
-            margin: 0,
-          }}
-        >
-          8h00. 89 emails reçus.
-        </p>
-      </FadeIn>
-      {t >= 2 && (
-        <FadeIn delay={0} slideUp>
-          <p
-            style={{
-              fontSize: "clamp(15px, 2.5vw, 18px)",
-              color: "#999",
-              textAlign: "center",
-              marginTop: 16,
-              fontWeight: 400,
-            }}
-          >
-            Donna a déjà tout lu pour vous.
-          </p>
-        </FadeIn>
-      )}
-    </SceneWrapper>
-  )
-}
-
-// ─── SCENE 2 — "Le tri" ───
-function Scene2({ t }: { t: number }) {
-  const cards = [
-    { label: "Répondre au greffe", dot: "#ef4444" },
-    { label: "Valider le brouillon Dupont", dot: "#f59e0b" },
-    { label: "Relire les conclusions Martin", dot: "#f59e0b" },
-  ]
-  return (
-    <SceneWrapper>
-      <FadeIn>
-        <p
-          style={{
-            fontSize: "clamp(22px, 4.5vw, 30px)",
-            fontWeight: 700,
-            color: "#1a1a1a",
-            textAlign: "center",
-            lineHeight: 1.2,
-            letterSpacing: "-0.4px",
-            margin: "0 0 24px",
-          }}
-        >
-          80 emails filtrés.{" "}
-          <span style={{ color: "#1a1a1a" }}>3 actions à faire.</span>
-        </p>
-      </FadeIn>
-
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 360,
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-          position: "relative",
-        }}
-      >
-        {cards.map((card, i) => (
-          <AnimatePresence key={i}>
-            {t >= 1 + i * 0.4 && (
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                  background: i === 0 && t >= 3.5 ? "#f5f5f5" : "#ffffff",
-                }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                style={{
-                  border: "1px solid #eeeeee",
-                  borderRadius: 12,
-                  padding: "12px 16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <Dot color={card.dot} />
-                <span
-                  style={{
-                    fontSize: "clamp(13px, 2vw, 15px)",
-                    color: "#1a1a1a",
-                    fontWeight: 500,
-                  }}
-                >
-                  {card.label}
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        ))}
-
-        {t >= 3 && (
-          <AnimatedCursor
-            fromX={40}
-            fromY={-80}
-            toX={40}
-            toY={-2}
-            trigger={t >= 3}
-            delay={0}
-          />
-        )}
-      </div>
-    </SceneWrapper>
-  )
-}
-
-// ─── SCENE 3 — "Les échéances" ───
-function Scene3({ t }: { t: number }) {
-  const items = [
-    { date: "22 avr", label: "Audience conciliation Martin", dot: "#ef4444" },
-    { date: "23 avr", label: "Forclusion Dupont", dot: "#ef4444" },
-    { date: "24 avr", label: "Dépôt conclusions", dot: "#f59e0b" },
-    { date: "30 avr", label: "Médiation Dubois", dot: "#999" },
-  ]
-  return (
-    <SceneWrapper>
-      <FadeIn>
-        <p
-          style={{
-            fontSize: "clamp(20px, 4vw, 28px)",
-            fontWeight: 700,
-            color: "#1a1a1a",
-            textAlign: "center",
-            lineHeight: 1.2,
-            letterSpacing: "-0.4px",
-            margin: "0 0 24px",
-          }}
-        >
-          4 échéances extraites de vos emails
-        </p>
-      </FadeIn>
-
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 380,
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-          position: "relative",
-        }}
-      >
-        {items.map((item, i) => (
-          <AnimatePresence key={i}>
-            {t >= 0.8 + i * 0.5 && (
-              <motion.div
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.35, ease: "easeOut" }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                }}
-              >
-                <Dot color={item.dot} />
-                <span
-                  style={{
-                    fontSize: "clamp(12px, 1.8vw, 14px)",
-                    color: "#999",
-                    fontWeight: 600,
-                    width: 46,
-                    flexShrink: 0,
-                  }}
-                >
-                  {item.date}
-                </span>
-                <span
-                  style={{
-                    fontSize: "clamp(13px, 2vw, 15px)",
-                    color: "#1a1a1a",
-                    fontWeight: 500,
-                  }}
-                >
-                  {item.label}
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        ))}
-
-        {t >= 3.5 && (
-          <AnimatedCursor
-            fromX={180}
-            fromY={-72}
-            toX={20}
-            toY={-72}
-            trigger={t >= 3.5}
-            delay={0}
-          />
-        )}
-      </div>
-
-      {t >= 3 && (
-        <FadeIn delay={0} slideUp style={{ marginTop: 20 }}>
-          <p
-            style={{
-              fontSize: "clamp(11px, 1.6vw, 13px)",
-              color: "#bbb",
-              textAlign: "center",
-            }}
-          >
-            Synchronisé avec Google Calendar et Outlook
-          </p>
-        </FadeIn>
-      )}
-    </SceneWrapper>
-  )
-}
-
-// ─── TYPING EFFECT ───
-function TypingText({ text, active }: { text: string; active: boolean }) {
-  const [displayed, setDisplayed] = useState("")
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [count, setCount] = useState(0)
+  const target = 89
 
   useEffect(() => {
-    if (!active) {
-      setDisplayed("")
-      return
-    }
-    let i = 0
-    function next() {
-      setDisplayed(text.slice(0, i + 1))
-      i++
-      if (i < text.length) {
-        timerRef.current = setTimeout(next, 28)
-      }
-    }
-    timerRef.current = setTimeout(next, 0)
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [active, text])
-
-  return (
-    <span>
-      {displayed}
-      {active && displayed.length < text.length && (
-        <span
-          style={{
-            display: "inline-block",
-            width: 2,
-            height: "1em",
-            background: "#1a1a1a",
-            marginLeft: 1,
-            verticalAlign: "middle",
-          }}
-        />
-      )}
-    </span>
-  )
-}
-
-// ─── SCENE 4 — "La réponse" ───
-function Scene4({ t }: { t: number }) {
-  const draftText =
-    "Maître, je confirme la présence de mon client à l'audience du 22 avril..."
+    if (t < 0.5) { setCount(0); return }
+    const elapsed = (t - 0.5) * 1000
+    const progress = Math.min(elapsed / 3500, 1)
+    setCount(Math.floor(progress * target))
+  }, [t])
 
   return (
     <SceneWrapper>
-      <FadeIn>
-        <p
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        style={{ textAlign: "center" }}
+      >
+        {/* Icon */}
+        <motion.div
+          animate={{ scale: [1, 1.06, 1] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
           style={{
-            fontSize: "clamp(22px, 4.5vw, 30px)",
-            fontWeight: 700,
-            color: "#1a1a1a",
-            textAlign: "center",
-            lineHeight: 1.2,
-            letterSpacing: "-0.4px",
-            margin: "0 0 20px",
+            width: 64, height: 64, borderRadius: 20,
+            background: "#F3F4F6",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            margin: "0 auto 20px",
+            fontSize: 28,
           }}
         >
-          Votre réponse est prête
-        </p>
-      </FadeIn>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <path d="m2 7 10 6.5L22 7"/>
+          </svg>
+        </motion.div>
 
-      <FadeIn delay={0.3} slideUp style={{ width: "100%", maxWidth: 400 }}>
-        <div
-          style={{
-            border: "1px solid #eeeeee",
-            borderRadius: 16,
-            background: "#ffffff",
-            padding: "16px 20px",
-            position: "relative",
-          }}
-        >
-          <p
-            style={{
-              fontSize: "clamp(12px, 1.8vw, 13px)",
-              color: "#999",
-              margin: "0 0 2px",
-            }}
-          >
-            À : Greffe TJ Paris
-          </p>
-          <p
-            style={{
-              fontSize: "clamp(12px, 1.8vw, 13px)",
-              color: "#999",
-              margin: "0 0 12px",
-            }}
-          >
-            Objet : Re: Convocation audience Dupont
-          </p>
-          <div
-            style={{
-              height: 1,
-              background: "#f0f0f0",
-              margin: "0 0 12px",
-            }}
-          />
-          <p
-            style={{
-              fontSize: "clamp(13px, 2vw, 15px)",
-              color: "#1a1a1a",
-              lineHeight: 1.6,
-              margin: 0,
-              minHeight: 28,
-            }}
-          >
-            <TypingText text={draftText} active={t >= 1} />
-          </p>
-
-          {t >= 4 && (
-            <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end", position: "relative" }}>
-              <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                style={{
-                  border: "1px solid #1a1a1a",
-                  borderRadius: 8,
-                  padding: "8px 20px",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  background: "#ffffff",
-                  color: "#1a1a1a",
-                  cursor: "default",
-                }}
-              >
-                Envoyer
-              </motion.button>
-              <AnimatedCursor
-                fromX={60}
-                fromY={-30}
-                toX={16}
-                toY={4}
-                trigger={t >= 4}
-                delay={0}
-              />
-            </div>
-          )}
+        {/* Counter */}
+        <div style={{ fontSize: 64, fontWeight: 700, color: C.text, lineHeight: 1, marginBottom: 8, fontVariantNumeric: "tabular-nums" }}>
+          {count}
         </div>
-      </FadeIn>
+        <div style={{ fontSize: 18, color: C.muted, marginBottom: 20, fontWeight: 500 }}>
+          emails reçus
+        </div>
+
+        {/* Subtitle */}
+        <AnimatePresence>
+          {t > 2 && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              style={{ fontSize: 14, color: C.muted, maxWidth: 280, lineHeight: 1.6 }}
+            >
+              Donna lit chaque email et chaque pièce jointe
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </SceneWrapper>
   )
 }
 
-// ─── SCENE 5 — "Le bénéfice" ───
-function Scene5({ t }: { t: number }) {
+// ─── SCENE 2 — LE TRI INTELLIGENT ───
+function Scene2({ t }: { t: number }) {
+  const piles = [
+    { label: "Dossiers clients", count: 6, color: "blue" as const, delay: 0.3 },
+    { label: "A traiter", count: 3, color: "amber" as const, delay: 0.8 },
+    { label: "Bruit filtre", count: 80, color: "gray" as const, delay: 1.3 },
+  ]
+
   return (
     <SceneWrapper>
-      <FadeIn>
-        <p
-          style={{
-            fontSize: "clamp(64px, 14vw, 80px)",
-            fontWeight: 700,
-            color: "#1a1a1a",
-            textAlign: "center",
-            lineHeight: 1,
-            letterSpacing: "-2px",
-            margin: 0,
-          }}
-        >
-          2h
-        </p>
-      </FadeIn>
-      <FadeIn delay={0.3}>
-        <p
-          style={{
-            fontSize: "clamp(16px, 3vw, 20px)",
-            color: "#999",
-            textAlign: "center",
-            marginTop: 12,
-            fontWeight: 400,
-          }}
-        >
-          gagnées chaque matin
-        </p>
-      </FadeIn>
-      {t >= 2 && (
-        <FadeIn delay={0} slideUp style={{ marginTop: 28 }}>
-          <p
-            style={{
-              fontSize: "clamp(13px, 2vw, 16px)",
-              color: "#bbb",
-              textAlign: "center",
-              fontStyle: "italic",
-              maxWidth: 280,
-              lineHeight: 1.6,
-            }}
-          >
-            Du temps pour vos clients.
-            <br />
-            Pas pour votre boîte mail.
-          </p>
-        </FadeIn>
-      )}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        style={{ fontSize: 20, fontWeight: 600, color: C.text, textAlign: "center", marginBottom: 28 }}
+      >
+        Tri intelligent de vos emails
+      </motion.div>
+
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
+        {piles.map((pile) => (
+          <AnimatePresence key={pile.label}>
+            {t > pile.delay && (
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 280, damping: 20 }}
+              >
+                <Card style={{ padding: "20px 24px", textAlign: "center", minWidth: 120 }}>
+                  <div style={{
+                    fontSize: 36, fontWeight: 700, color: C.pill[pile.color]?.text ?? C.text,
+                    lineHeight: 1, marginBottom: 8,
+                  }}>
+                    {pile.count}
+                  </div>
+                  <div style={{ fontSize: 12, color: C.muted, fontWeight: 500 }}>
+                    {pile.label}
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        ))}
+      </div>
     </SceneWrapper>
   )
 }
 
-// ─── SCENE 6 — "CTA" ───
+// ─── SCENE 3 — LES ECHEANCES ───
+function Scene3({ t }: { t: number }) {
+  const days = Array.from({ length: 35 }, (_, i) => i + 1)
+  const deadlines: Record<number, string> = {
+    7: "#DC2626",
+    12: "#D97706",
+    18: "#DC2626",
+    22: "#DC2626",
+    25: "#D97706",
+    29: "#059669",
+    31: "#D97706",
+  }
+
+  const deadlineEntries = Object.entries(deadlines)
+
+  return (
+    <SceneWrapper>
+      <AnimatePresence>
+        {t > 0.3 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            style={{ textAlign: "center", marginBottom: 20 }}
+          >
+            <div style={{ fontSize: 20, fontWeight: 600, color: C.text, marginBottom: 6 }}>
+              7 echeances critiques detectees
+            </div>
+            <div style={{ fontSize: 13, color: C.muted }}>
+              Audiences, forclusions, delais d'appel
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {t > 0.6 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.45 }}
+          >
+            <Card style={{ padding: "16px 20px" }}>
+              {/* Day headers */}
+              <div style={{
+                display: "grid", gridTemplateColumns: "repeat(7, 1fr)",
+                gap: 4, marginBottom: 4,
+              }}>
+                {["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"].map((d) => (
+                  <div key={d} style={{ fontSize: 10, color: C.muted, textAlign: "center", fontWeight: 600, padding: "2px 0" }}>
+                    {d}
+                  </div>
+                ))}
+              </div>
+              {/* Days grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+                {days.map((day) => {
+                  const dotColor = deadlines[day]
+                  const dotDelay = dotColor ? deadlineEntries.findIndex(([d]) => Number(d) === day) * 0.18 + 1.2 : 0
+                  return (
+                    <div key={day} style={{ position: "relative", textAlign: "center" }}>
+                      <div style={{ fontSize: 11, color: day > 30 ? "#ddd" : "#999", padding: "3px 0" }}>
+                        {day <= 31 ? day : ""}
+                      </div>
+                      {dotColor && t > dotDelay && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                          style={{
+                            width: 6, height: 6, borderRadius: "50%",
+                            background: dotColor,
+                            margin: "0 auto",
+                            position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
+                          }}
+                        />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </SceneWrapper>
+  )
+}
+
+// ─── SCENE 4 — LES RESUMES ───
+function Scene4({ t }: { t: number }) {
+  const fullText = "Audience de conciliation le 22 avril. Reponse attendue avant le 18."
+  const displayedLength = Math.floor(Math.min((t - 1.5) / 3.5 * fullText.length, fullText.length))
+  const displayed = t > 1.5 ? fullText.slice(0, displayedLength) : ""
+
+  return (
+    <SceneWrapper>
+      <AnimatePresence>
+        {t > 0.4 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            style={{ width: "100%", maxWidth: 380 }}
+          >
+            <Card style={{ padding: "20px 22px" }}>
+              {/* Email header */}
+              <div style={{ marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
+                <div style={{ fontSize: 11, color: C.muted, marginBottom: 3 }}>
+                  De : <span style={{ fontWeight: 600, color: C.text }}>Greffe TJ Paris</span>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
+                  Convocation audience Dupont
+                </div>
+              </div>
+
+              {/* Donna summary */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8, fontWeight: 600 }}>
+                  Resume Donna
+                </div>
+                <div style={{ fontSize: 13, color: C.text, lineHeight: 1.65, minHeight: 44 }}>
+                  {displayed}
+                  {displayed.length < fullText.length && t > 1.5 && (
+                    <motion.span
+                      animate={{ opacity: [1, 0, 1] }}
+                      transition={{ duration: 0.6, repeat: Infinity }}
+                      style={{ display: "inline-block", width: 2, height: 14, background: C.text, verticalAlign: "text-bottom", marginLeft: 1 }}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Button */}
+              <AnimatePresence>
+                {t > 4.5 && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <motion.div
+                      animate={{ boxShadow: ["0 0 0px rgba(26,26,26,0.1)", "0 4px 20px rgba(26,26,26,0.18)", "0 0 0px rgba(26,26,26,0.1)"] }}
+                      transition={{ duration: 1.6, repeat: Infinity }}
+                      style={{
+                        background: C.text, color: "#fff",
+                        borderRadius: 10, padding: "10px 18px",
+                        fontSize: 12, fontWeight: 600, textAlign: "center", cursor: "pointer",
+                      }}
+                    >
+                      Reponse generee par Donna
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </SceneWrapper>
+  )
+}
+
+// ─── SCENE 5 — LE RESULTAT ───
+function Scene5({ t }: { t: number }) {
+  const pills = [
+    { label: "Dossiers classes", delay: 1.2, color: "blue" as const },
+    { label: "Echeances surveillees", delay: 1.7, color: "green" as const },
+    { label: "Reponses pretes", delay: 2.2, color: "gray" as const },
+  ]
+
+  return (
+    <SceneWrapper>
+      <AnimatePresence>
+        {t > 0.3 && (
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 18 }}
+            style={{ textAlign: "center", marginBottom: 24 }}
+          >
+            <div style={{ fontSize: 72, fontWeight: 700, color: C.text, lineHeight: 1 }}>
+              2h
+            </div>
+            <div style={{ fontSize: 18, color: C.muted, fontWeight: 500, marginTop: 8 }}>
+              gagnees par jour
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+        {pills.map((pill) => (
+          <AnimatePresence key={pill.label}>
+            {t > pill.delay && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+              >
+                <Pill color={pill.color}>{pill.label}</Pill>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        ))}
+      </div>
+    </SceneWrapper>
+  )
+}
+
+// ─── SCENE 6 — CTA ───
 function Scene6({ t }: { t: number }) {
   return (
     <SceneWrapper>
-      <FadeIn>
-        <p
-          style={{
-            fontSize: "clamp(36px, 8vw, 52px)",
-            fontWeight: 300,
-            color: "#1a1a1a",
-            textAlign: "center",
-            letterSpacing: "4px",
-            margin: 0,
-          }}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.7 }}
+        style={{ textAlign: "center" }}
+      >
+        {/* Logo */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          style={{ fontSize: 36, fontWeight: 700, color: C.text, marginBottom: 8, letterSpacing: -1 }}
         >
           Donna
-        </p>
-      </FadeIn>
-      <FadeIn delay={0.4}>
-        <p
-          style={{
-            fontSize: "clamp(13px, 2vw, 16px)",
-            color: "#999",
-            textAlign: "center",
-            marginTop: 12,
-            fontWeight: 400,
-          }}
-        >
-          L'assistante qui veille pendant que vous plaidez
-        </p>
-      </FadeIn>
-      {t >= 1.5 && (
-        <FadeIn delay={0} slideUp style={{ marginTop: 32 }}>
-          <button
-            style={{
-              border: "1px solid #1a1a1a",
-              borderRadius: 8,
-              padding: "12px 32px",
-              fontSize: "clamp(13px, 2vw, 15px)",
-              fontWeight: 600,
-              background: "#ffffff",
-              color: "#1a1a1a",
-              cursor: "default",
-              letterSpacing: "0.2px",
-            }}
-          >
-            Essayer gratuitement
-          </button>
-          <p
-            style={{
-              fontSize: "clamp(11px, 1.6vw, 13px)",
-              color: "#bbb",
-              textAlign: "center",
-              marginTop: 10,
-            }}
-          >
-            Gratuit 14 jours
-          </p>
-        </FadeIn>
-      )}
+        </motion.div>
+
+        <AnimatePresence>
+          {t > 1 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              style={{ fontSize: 14, color: C.muted, marginBottom: 28 }}
+            >
+              +150 avocats nous font confiance
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {t > 1.8 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              style={{
+                display: "inline-block",
+                border: `2px solid ${C.text}`,
+                borderRadius: 12,
+                padding: "12px 28px",
+                fontSize: 14,
+                fontWeight: 600,
+                color: C.text,
+                cursor: "pointer",
+              }}
+            >
+              Essayer gratuitement
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </SceneWrapper>
   )
 }
+
+// ─── SCENE LABELS ───
+const SCENE_LABELS = [
+  "La boite mail",
+  "Le tri intelligent",
+  "Les echeances",
+  "Les resumes",
+  "Le resultat",
+  "Decouvrir Donna",
+]
 
 // ─── MAIN COMPONENT ───
 export default function DashboardCinematic({ className = "" }: Props) {
@@ -619,68 +476,73 @@ export default function DashboardCinematic({ className = "" }: Props) {
   const ref = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
-    ref.current = setInterval(() => {
-      setT((p) => {
-        const next = parseFloat((p + 0.1).toFixed(1))
-        return next >= TOTAL ? 0 : next
-      })
-    }, 100)
-    return () => {
-      if (ref.current) clearInterval(ref.current)
-    }
+    ref.current = setInterval(() => setT((p) => {
+      const next = p + 0.1
+      return next >= TOTAL ? 0 : next
+    }), 100)
+    return () => { if (ref.current) clearInterval(ref.current) }
   }, [])
 
-  const scene = Math.min(Math.floor(t / SCENE_DURATION), TOTAL_SCENES - 1)
+  const scene = Math.floor(t / SCENE_DURATION)
   const st = t - scene * SCENE_DURATION
 
-  const scenes = [Scene1, Scene2, Scene3, Scene4, Scene5, Scene6]
-  const SceneComponent = scenes[scene]
-
   return (
-    <div
-      className={className}
-      style={{
-        width: "100%",
-        borderRadius: 20,
-        overflow: "hidden",
-        boxShadow: "0 4px 32px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)",
-        border: "1px solid #eeeeee",
-        background: "#fafafa",
-      }}
-    >
-      <div style={{ position: "relative", minHeight: 420 }}>
-        <AnimatePresence mode="wait">
-          <SceneComponent key={`scene-${scene}`} t={st} />
-        </AnimatePresence>
-      </div>
+    <div className={className} style={{
+      width: "100%",
+      borderRadius: 20,
+      overflow: "hidden",
+      boxShadow: "0 4px 40px rgba(0,0,0,0.08)",
+      border: `1px solid rgba(0,0,0,0.07)`,
+      background: C.bg,
+    }}>
+      {/* Gradient background layer */}
+      <div style={{
+        position: "relative",
+        background: "radial-gradient(ellipse at 30% 50%, rgba(255,200,200,0.15), rgba(200,200,255,0.1), rgba(255,255,255,0)), #fafafa",
+        minHeight: 420,
+      }}>
+        {/* Scene content */}
+        <div style={{ position: "relative", minHeight: 420 }}>
+          <AnimatePresence mode="wait">
+            {scene === 0 && <Scene1 key="s1" t={st} />}
+            {scene === 1 && <Scene2 key="s2" t={st} />}
+            {scene === 2 && <Scene3 key="s3" t={st} />}
+            {scene === 3 && <Scene4 key="s4" t={st} />}
+            {scene === 4 && <Scene5 key="s5" t={st} />}
+            {scene === 5 && <Scene6 key="s6" t={st} />}
+          </AnimatePresence>
+        </div>
 
-      {/* Bottom navigation — 6 dots */}
-      <div
-        style={{
-          padding: "10px 20px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: 8,
-          borderTop: "1px solid #f0f0f0",
-          background: "#ffffff",
-        }}
-      >
-        {Array.from({ length: TOTAL_SCENES }, (_, i) => (
-          <motion.div
-            key={i}
-            animate={{
-              width: i === scene ? 10 : 8,
-              height: i === scene ? 10 : 8,
-              background: i === scene ? "#1a1a1a" : "#d0d0d0",
-            }}
-            transition={{ duration: 0.25 }}
-            style={{
-              borderRadius: "50%",
-              flexShrink: 0,
-            }}
-          />
-        ))}
+        {/* Bottom progress bar + scene label */}
+        <div style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          padding: "12px 20px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          borderTop: `1px solid rgba(0,0,0,0.05)`,
+          background: "rgba(255,255,255,0.7)",
+          backdropFilter: "blur(6px)",
+        }}>
+          {/* Dots */}
+          <div style={{ display: "flex", gap: 6 }}>
+            {Array.from({ length: 6 }, (_, i) => (
+              <div
+                key={i}
+                style={{
+                  width: i === scene ? 20 : 6,
+                  height: 6,
+                  borderRadius: 99,
+                  background: i === scene ? C.text : "#D1D5DB",
+                  transition: "all 0.3s ease",
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Scene label */}
+          <div style={{ fontSize: 11, color: C.muted, fontWeight: 500 }}>
+            {SCENE_LABELS[scene] ?? ""}
+          </div>
+        </div>
       </div>
     </div>
   )
