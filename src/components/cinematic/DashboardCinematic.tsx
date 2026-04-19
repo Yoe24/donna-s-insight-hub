@@ -538,10 +538,7 @@ export default function DashboardCinematic({ className = "" }: Props) {
             ))}
           </div>
 
-          {/* Scene label */}
-          <div style={{ fontSize: 11, color: C.muted, fontWeight: 500 }}>
-            {SCENE_LABELS[scene] ?? ""}
-          </div>
+          {/* Scene label - hidden */}
         </div>
       </div>
     </div>
