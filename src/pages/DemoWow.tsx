@@ -1568,6 +1568,7 @@ function MiniCalendar({ deadlineItems }: {
     return new Date(n.getFullYear(), n.getMonth(), 1)
   })
   const [tooltip, setTooltip] = useState<{ key: string; x: number; y: number } | null>(null)
+  const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null)
 
   const year = calMonth.getFullYear()
   const month = calMonth.getMonth()
@@ -1633,7 +1634,7 @@ function MiniCalendar({ deadlineItems }: {
         </span>
         <div style={{ display: "flex", gap: 2 }}>
           <button
-            onClick={() => setCalMonth(new Date(year, month - 1, 1))}
+            onClick={() => { setCalMonth(new Date(year, month - 1, 1)); setSelectedDayKey(null) }}
             style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 7px", borderRadius: 5, color: TEXT_MUTED, display: "flex", alignItems: "center", transition: "background 0.12s" }}
             onMouseEnter={e => (e.currentTarget.style.background = SIDEBAR_BG)}
             onMouseLeave={e => (e.currentTarget.style.background = "none")}
@@ -1642,7 +1643,7 @@ function MiniCalendar({ deadlineItems }: {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8L10 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
           <button
-            onClick={() => setCalMonth(new Date(year, month + 1, 1))}
+            onClick={() => { setCalMonth(new Date(year, month + 1, 1)); setSelectedDayKey(null) }}
             style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 7px", borderRadius: 5, color: TEXT_MUTED, display: "flex", alignItems: "center", transition: "background 0.12s" }}
             onMouseEnter={e => (e.currentTarget.style.background = SIDEBAR_BG)}
             onMouseLeave={e => (e.currentTarget.style.background = "none")}
@@ -1668,7 +1669,7 @@ function MiniCalendar({ deadlineItems }: {
           return (
             <button
               key={i}
-              onClick={() => setCalMonth(new Date(pm.year, pm.month, 1))}
+              onClick={() => { setCalMonth(new Date(pm.year, pm.month, 1)); setSelectedDayKey(null) }}
               style={{
                 flexShrink: 0,
                 padding: "3px 10px",
@@ -1721,6 +1722,7 @@ function MiniCalendar({ deadlineItems }: {
           const hasEvents = events.length > 0
           const hasUrgent = events.some(e => e.urgent)
           const isTooltipVisible = tooltip?.key === key
+          const isSelected = selectedDayKey === key
 
           // Border: right except last column, bottom except last row
           const col = i % 7
@@ -1737,7 +1739,7 @@ function MiniCalendar({ deadlineItems }: {
                 borderBottom,
                 minHeight: isMobile ? 46 : 56,
                 padding: isMobile ? "2px 2px 2px" : "2px 2px 2px",
-                background: isTooltipVisible ? "#fafafa" : BG,
+                background: isSelected ? "#f5f5f5" : isTooltipVisible ? "#fafafa" : BG,
                 cursor: hasEvents ? "pointer" : "default",
                 transition: "background 0.1s",
                 boxSizing: "border-box",
@@ -1750,7 +1752,10 @@ function MiniCalendar({ deadlineItems }: {
                 }
               }}
               onMouseLeave={() => { if (!isMobile) setTooltip(null) }}
-              onClick={() => hasEvents && setTooltip(isTooltipVisible ? null : { key, x: 0, y: 0 })}
+              onClick={() => {
+                if (!hasEvents) return
+                setSelectedDayKey(prev => prev === key ? null : key)
+              }}
             >
               {/* Numéro du jour — aligné en haut à droite */}
               <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 1 }}>
@@ -1837,6 +1842,107 @@ function MiniCalendar({ deadlineItems }: {
           )
         })}
       </div>
+
+      {/* Panneau détail jour sélectionné */}
+      <AnimatePresence>
+        {selectedDayKey && dlMap[selectedDayKey] && (
+          <motion.div
+            key={selectedDayKey}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.22, ease: [0.22, 0.61, 0.36, 1] }}
+            style={{
+              background: "#fff",
+              border: `1px solid #f0f0f0`,
+              borderRadius: 8,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.07)",
+              padding: "14px 16px",
+              margin: "8px 0 0",
+            }}
+          >
+            {/* En-tête panneau */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: TEXT_LIGHT, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>
+                {(() => {
+                  const parts = selectedDayKey.split("-")
+                  const d = new Date(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]))
+                  const MONTH_NAMES_FULL_LOCAL = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+                  return `${d.getDate()} ${MONTH_NAMES_FULL_LOCAL[d.getMonth()]} ${d.getFullYear()}`
+                })()}
+              </span>
+              <button
+                onClick={() => setSelectedDayKey(null)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: TEXT_LIGHT, padding: 2, display: "flex", alignItems: "center" }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Liste des échéances */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {dlMap[selectedDayKey].map((ev, ei) => {
+                const daysLeft = daysUntil(ev.date)
+                const isUrgent = daysLeft >= 0 && daysLeft < 7
+                return (
+                  <div
+                    key={ei}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 10,
+                      padding: "10px 12px",
+                      borderRadius: 7,
+                      border: `1px solid ${isUrgent ? "rgba(255,85,85,0.18)" : BORDER}`,
+                      background: isUrgent ? URGENT_BG : SIDEBAR_BG,
+                    }}
+                  >
+                    {/* Pastille couleur dossier */}
+                    <div style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: isUrgent ? URGENT : ev.dossierColor,
+                      flexShrink: 0,
+                      marginTop: 3,
+                    }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {/* Nom du dossier */}
+                      <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, marginBottom: 2 }}>{ev.dossierName}</div>
+                      {/* Type d'échéance */}
+                      <div style={{ fontSize: 12, color: TEXT_MUTED, lineHeight: 1.4, marginBottom: 4 }}>{ev.label}</div>
+                      {/* Date complète */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" as const }}>
+                        <span style={{ fontSize: 11, color: TEXT_LIGHT, display: "flex", alignItems: "center", gap: 3 }}>
+                          <Clock size={10} />
+                          {(() => {
+                            const MONTH_NAMES_FULL_LOCAL = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+                            return `${ev.date.getDate()} ${MONTH_NAMES_FULL_LOCAL[ev.date.getMonth()]} ${ev.date.getFullYear()}`
+                          })()}
+                        </span>
+                        {isUrgent && (
+                          <span style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            color: "#fff",
+                            background: URGENT,
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                            letterSpacing: "0.04em",
+                            textTransform: "uppercase" as const,
+                          }}>
+                            Urgent
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
