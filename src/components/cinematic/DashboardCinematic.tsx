@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { Mail, Calendar, Folder, CheckSquare } from "lucide-react"
 
 interface Props {
   theme?: "light" | "dark"
@@ -7,540 +8,608 @@ interface Props {
   chromeless?: boolean
 }
 
-// Scene durations (seconds): 6+6+6+6+6+6 = 36s cycle
-const SCENE_DURATION = 6
-const TOTAL = 36
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
 
-// Minimal color palette
-const C = {
-  bg: "#fafafa",
-  card: "#ffffff",
-  border: "rgba(0,0,0,0.07)",
-  text: "#1a1a1a",
-  muted: "#888888",
-  accent: "#1a1a1a",
-  pill: {
-    blue: { bg: "#EFF6FF", text: "#1D4ED8" },
-    green: { bg: "#ECFDF5", text: "#059669" },
-    amber: { bg: "#FFFBEB", text: "#D97706" },
-    red: { bg: "#FEF2F2", text: "#DC2626" },
-    gray: { bg: "#F3F4F6", text: "#374151" },
+const CYCLE_DURATION = 20000 // 20s total loop
+const TICK_MS = 80
+
+// Phase boundaries in ms
+const PHASE = {
+  input:   { start: 0,     end: 4000  },
+  process: { start: 4000,  end: 8000  },
+  outputs: { start: 8000,  end: 14000 },
+  hold:    { start: 14000, end: 18000 },
+  reset:   { start: 18000, end: 20000 },
+}
+
+// ─── STYLES ──────────────────────────────────────────────────────────────────
+
+const S = {
+  bg:        "#fafafa",
+  card:      "#ffffff",
+  cardDonna: "#f5f5f5",
+  border:    "#eeeeee",
+  text:      "#1a1a1a",
+  muted:     "#999999",
+  line:      "#dddddd",
+  dot:       "#999999",
+  shadow:    "0 2px 12px rgba(0,0,0,0.06)",
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+function fadeIn(delay = 0, duration = 0.8) {
+  return {
+    initial:    { opacity: 0, scale: 0.97 },
+    animate:    { opacity: 1, scale: 1 },
+    transition: { duration, delay, ease: "easeOut" },
   }
 }
 
-function Card({ children, style = {}, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
+function useIsMobile() {
+  const [mobile, setMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [])
+  return mobile
+}
+
+// ─── TRAVELLING DOT (CSS keyframes via inline style) ──────────────────────────
+
+let stylesInjected = false
+function injectStyles() {
+  if (stylesInjected || typeof document === "undefined") return
+  stylesInjected = true
+  const style = document.createElement("style")
+  style.textContent = `
+    @keyframes travelX {
+      0%   { left: 0%;   opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { left: 100%; opacity: 0; }
+    }
+    @keyframes travelY {
+      0%   { top: 0%;   opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+    @keyframes pulse-line {
+      0%, 100% { opacity: 0.4; }
+      50%       { opacity: 1;   }
+    }
+  `
+  document.head.appendChild(style)
+}
+
+// ─── CONNECTOR LINE ──────────────────────────────────────────────────────────
+
+function ConnectorH({ active, showDots }: { active: boolean; showDots: boolean }) {
+  useEffect(() => { injectStyles() }, [])
   return (
     <div style={{
-      background: C.card,
-      borderRadius: 16,
-      boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
-      border: `1px solid ${C.border}`,
-      ...style,
-    }} {...rest}>
-      {children}
+      position: "relative",
+      width: 64,
+      height: 2,
+      background: active ? S.line : "transparent",
+      transition: "background 0.4s ease",
+      alignSelf: "center",
+      flexShrink: 0,
+    }}>
+      {/* Arrowhead */}
+      {active && (
+        <div style={{
+          position: "absolute",
+          right: -1,
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: 0,
+          height: 0,
+          borderTop: "4px solid transparent",
+          borderBottom: "4px solid transparent",
+          borderLeft: `6px solid ${S.line}`,
+        }} />
+      )}
+      {/* Travelling dot */}
+      {showDots && (
+        <div style={{
+          position: "absolute",
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: 5,
+          height: 5,
+          borderRadius: "50%",
+          background: S.dot,
+          animation: "travelX 1.4s ease-in-out infinite",
+        }} />
+      )}
     </div>
   )
 }
 
-function Pill({ children, color = "gray" }: { children: React.ReactNode; color?: keyof typeof C.pill }) {
-  const s = C.pill[color]
+function ConnectorV({ active, showDots }: { active: boolean; showDots: boolean }) {
+  useEffect(() => { injectStyles() }, [])
   return (
-    <span style={{
-      display: "inline-block",
-      background: s.bg,
-      color: s.text,
-      borderRadius: 99,
-      padding: "4px 12px",
-      fontSize: 12,
-      fontWeight: 600,
+    <div style={{
+      position: "relative",
+      height: 32,
+      width: 2,
+      background: active ? S.line : "transparent",
+      transition: "background 0.4s ease",
+      alignSelf: "center",
+      flexShrink: 0,
     }}>
-      {children}
-    </span>
+      {active && (
+        <div style={{
+          position: "absolute",
+          bottom: -1,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 0,
+          height: 0,
+          borderLeft: "4px solid transparent",
+          borderRight: "4px solid transparent",
+          borderTop: `6px solid ${S.line}`,
+        }} />
+      )}
+      {showDots && (
+        <div style={{
+          position: "absolute",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 5,
+          height: 5,
+          borderRadius: "50%",
+          background: S.dot,
+          animation: "travelY 1.4s ease-in-out infinite",
+        }} />
+      )}
+    </div>
   )
 }
 
-// ─── SCENE WRAPPER ───
-function SceneWrapper({ children }: { children: React.ReactNode }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5, ease: "easeInOut" }}
-      style={{
-        position: "absolute", inset: 0,
-        display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        padding: "32px 24px",
-      }}
-    >
-      {children}
-    </motion.div>
-  )
-}
+// ─── INPUT CARD ───────────────────────────────────────────────────────────────
 
-// ─── SCENE 1 — LA BOITE MAIL ───
-function Scene1({ t }: { t: number }) {
-  const [count, setCount] = useState(0)
-  const target = 89
-
-  useEffect(() => {
-    if (t < 0.5) { setCount(0); return }
-    const elapsed = (t - 0.5) * 1000
-    const progress = Math.min(elapsed / 3500, 1)
-    setCount(Math.floor(progress * target))
-  }, [t])
-
-  return (
-    <SceneWrapper>
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        style={{ textAlign: "center" }}
-      >
-        {/* Icon */}
-        <motion.div
-          animate={{ scale: [1, 1.06, 1] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-          style={{
-            width: 64, height: 64, borderRadius: 20,
-            background: "#F3F4F6",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            margin: "0 auto 20px",
-            fontSize: 28,
-          }}
-        >
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="4" width="20" height="16" rx="2"/>
-            <path d="m2 7 10 6.5L22 7"/>
-          </svg>
-        </motion.div>
-
-        {/* Counter */}
-        <div style={{ fontSize: 64, fontWeight: 700, color: C.text, lineHeight: 1, marginBottom: 8, fontVariantNumeric: "tabular-nums" }}>
-          {count}
-        </div>
-        <div style={{ fontSize: 18, color: C.muted, marginBottom: 20, fontWeight: 500 }}>
-          emails reçus
-        </div>
-
-        {/* Subtitle */}
-        <AnimatePresence>
-          {t > 2 && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              style={{ fontSize: 14, color: C.muted, maxWidth: 280, lineHeight: 1.6 }}
-            >
-              Donna lit chaque email et chaque pièce jointe
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </SceneWrapper>
-  )
-}
-
-// ─── SCENE 2 — LE TRI INTELLIGENT ───
-function Scene2({ t }: { t: number }) {
-  const piles = [
-    { label: "Dossiers clients", count: 6, color: "blue" as const, delay: 0.3 },
-    { label: "A traiter", count: 3, color: "amber" as const, delay: 0.8 },
-    { label: "Bruit filtre", count: 80, color: "gray" as const, delay: 1.3 },
+function InputCard({ visible }: { visible: boolean }) {
+  const emails = [
+    "Greffe TJ Paris",
+    "Cabinet Dupont & Ass.",
+    "Mme Dubois — Syndic",
+    "Huissier Leclerc",
   ]
 
   return (
-    <SceneWrapper>
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        style={{ fontSize: 20, fontWeight: 600, color: C.text, textAlign: "center", marginBottom: 28 }}
-      >
-        Tri intelligent de vos emails
-      </motion.div>
-
-      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
-        {piles.map((pile) => (
-          <AnimatePresence key={pile.label}>
-            {t > pile.delay && (
-              <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 280, damping: 20 }}
-              >
-                <Card style={{ padding: "20px 24px", textAlign: "center", minWidth: 120 }}>
-                  <div style={{
-                    fontSize: 36, fontWeight: 700, color: C.pill[pile.color]?.text ?? C.text,
-                    lineHeight: 1, marginBottom: 8,
-                  }}>
-                    {pile.count}
-                  </div>
-                  <div style={{ fontSize: 12, color: C.muted, fontWeight: 500 }}>
-                    {pile.label}
-                  </div>
-                </Card>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        ))}
-      </div>
-    </SceneWrapper>
-  )
-}
-
-// ─── SCENE 3 — LES ECHEANCES ───
-function Scene3({ t }: { t: number }) {
-  const days = Array.from({ length: 35 }, (_, i) => i + 1)
-  const deadlines: Record<number, string> = {
-    7: "#DC2626",
-    12: "#D97706",
-    18: "#DC2626",
-    22: "#DC2626",
-    25: "#D97706",
-    29: "#059669",
-    31: "#D97706",
-  }
-
-  const deadlineEntries = Object.entries(deadlines)
-
-  return (
-    <SceneWrapper>
-      <AnimatePresence>
-        {t > 0.3 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            style={{ textAlign: "center", marginBottom: 20 }}
-          >
-            <div style={{ fontSize: 20, fontWeight: 600, color: C.text, marginBottom: 6 }}>
-              7 echeances critiques detectees
-            </div>
-            <div style={{ fontSize: 13, color: C.muted }}>
-              Audiences, forclusions, delais d'appel
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {t > 0.6 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.45 }}
-          >
-            <Card style={{ padding: "16px 20px" }}>
-              {/* Day headers */}
+    <AnimatePresence>
+      {visible && (
+        <motion.div {...fadeIn(0)} style={{ width: 148, flexShrink: 0 }}>
+          <div style={{
+            background: S.card,
+            border: `1px solid ${S.border}`,
+            borderRadius: 12,
+            boxShadow: S.shadow,
+            padding: "14px 14px 12px",
+          }}>
+            {/* Icon + title */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <div style={{
-                display: "grid", gridTemplateColumns: "repeat(7, 1fr)",
-                gap: 4, marginBottom: 4,
+                width: 28, height: 28, borderRadius: 8,
+                background: "#F3F4F6",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
               }}>
-                {["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"].map((d) => (
-                  <div key={d} style={{ fontSize: 10, color: C.muted, textAlign: "center", fontWeight: 600, padding: "2px 0" }}>
-                    {d}
-                  </div>
-                ))}
+                <Mail size={14} color={S.text} />
               </div>
-              {/* Days grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
-                {days.map((day) => {
-                  const dotColor = deadlines[day]
-                  const dotDelay = dotColor ? deadlineEntries.findIndex(([d]) => Number(d) === day) * 0.18 + 1.2 : 0
-                  return (
-                    <div key={day} style={{ position: "relative", textAlign: "center" }}>
-                      <div style={{ fontSize: 11, color: day > 30 ? "#ddd" : "#999", padding: "3px 0" }}>
-                        {day <= 31 ? day : ""}
-                      </div>
-                      {dotColor && t > dotDelay && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                          style={{
-                            width: 6, height: 6, borderRadius: "50%",
-                            background: dotColor,
-                            margin: "0 auto",
-                            position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
-                          }}
-                        />
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </SceneWrapper>
-  )
-}
-
-// ─── SCENE 4 — LES RESUMES ───
-function Scene4({ t }: { t: number }) {
-  const fullText = "Audience de conciliation le 22 avril. Reponse attendue avant le 18."
-  const displayedLength = Math.floor(Math.min((t - 1.5) / 3.5 * fullText.length, fullText.length))
-  const displayed = t > 1.5 ? fullText.slice(0, displayedLength) : ""
-
-  return (
-    <SceneWrapper>
-      <AnimatePresence>
-        {t > 0.4 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            style={{ width: "100%", maxWidth: 380 }}
-          >
-            <Card style={{ padding: "20px 22px" }}>
-              {/* Email header */}
-              <div style={{ marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
-                <div style={{ fontSize: 11, color: C.muted, marginBottom: 3 }}>
-                  De : <span style={{ fontWeight: 600, color: C.text }}>Greffe TJ Paris</span>
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
-                  Convocation audience Dupont
-                </div>
-              </div>
-
-              {/* Donna summary */}
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8, fontWeight: 600 }}>
-                  Resume Donna
-                </div>
-                <div style={{ fontSize: 13, color: C.text, lineHeight: 1.65, minHeight: 44 }}>
-                  {displayed}
-                  {displayed.length < fullText.length && t > 1.5 && (
-                    <motion.span
-                      animate={{ opacity: [1, 0, 1] }}
-                      transition={{ duration: 0.6, repeat: Infinity }}
-                      style={{ display: "inline-block", width: 2, height: 14, background: C.text, verticalAlign: "text-bottom", marginLeft: 1 }}
-                    />
-                  )}
-                </div>
-              </div>
-
-              {/* Button */}
-              <AnimatePresence>
-                {t > 4.5 && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    <motion.div
-                      animate={{ boxShadow: ["0 0 0px rgba(26,26,26,0.1)", "0 4px 20px rgba(26,26,26,0.18)", "0 0 0px rgba(26,26,26,0.1)"] }}
-                      transition={{ duration: 1.6, repeat: Infinity }}
-                      style={{
-                        background: C.text, color: "#fff",
-                        borderRadius: 10, padding: "10px 18px",
-                        fontSize: 12, fontWeight: 600, textAlign: "center", cursor: "pointer",
-                      }}
-                    >
-                      Reponse generee par Donna
-                    </motion.div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </SceneWrapper>
-  )
-}
-
-// ─── SCENE 5 — LE RESULTAT ───
-function Scene5({ t }: { t: number }) {
-  const pills = [
-    { label: "Dossiers classes", delay: 1.2, color: "blue" as const },
-    { label: "Echeances surveillees", delay: 1.7, color: "green" as const },
-    { label: "Reponses pretes", delay: 2.2, color: "gray" as const },
-  ]
-
-  return (
-    <SceneWrapper>
-      <AnimatePresence>
-        {t > 0.3 && (
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 260, damping: 18 }}
-            style={{ textAlign: "center", marginBottom: 24 }}
-          >
-            <div style={{ fontSize: 72, fontWeight: 700, color: C.text, lineHeight: 1 }}>
-              2h
+              <span style={{ fontSize: 12, fontWeight: 600, color: S.text }}>Votre boîte mail</span>
             </div>
-            <div style={{ fontSize: 18, color: C.muted, fontWeight: 500, marginTop: 8 }}>
-              gagnees par jour
+
+            {/* Email lines */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {emails.map((em, i) => (
+                <motion.div
+                  key={em}
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + i * 0.25, duration: 0.5 }}
+                  style={{
+                    height: 8,
+                    borderRadius: 99,
+                    background: "#eeeeee",
+                    width: `${75 + (i % 2) * 15}%`,
+                  }}
+                />
+              ))}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-        {pills.map((pill) => (
-          <AnimatePresence key={pill.label}>
-            {t > pill.delay && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35 }}
-              >
-                <Pill color={pill.color}>{pill.label}</Pill>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        ))}
-      </div>
-    </SceneWrapper>
-  )
-}
-
-// ─── SCENE 6 — CTA ───
-function Scene6({ t }: { t: number }) {
-  return (
-    <SceneWrapper>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.7 }}
-        style={{ textAlign: "center" }}
-      >
-        {/* Logo */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          style={{ fontSize: 36, fontWeight: 700, color: C.text, marginBottom: 8, letterSpacing: -1 }}
-        >
-          Donna
-        </motion.div>
-
-        <AnimatePresence>
-          {t > 1 && (
+            {/* Counter */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              style={{ fontSize: 14, color: C.muted, marginBottom: 28 }}
+              transition={{ delay: 1.4, duration: 0.5 }}
+              style={{ marginTop: 10, fontSize: 11, color: S.muted, fontVariantNumeric: "tabular-nums" }}
             >
-              +150 avocats nous font confiance
+              89 emails
             </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {t > 1.8 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4 }}
-              style={{
-                display: "inline-block",
-                border: `2px solid ${C.text}`,
-                borderRadius: 12,
-                padding: "12px 28px",
-                fontSize: 14,
-                fontWeight: 600,
-                color: C.text,
-                cursor: "pointer",
-              }}
-            >
-              Essayer gratuitement
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </SceneWrapper>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 
-// ─── SCENE LABELS ───
-const SCENE_LABELS = [
-  "La boite mail",
-  "Le tri intelligent",
-  "Les echeances",
-  "Les resumes",
-  "Le resultat",
-  "Decouvrir Donna",
-]
+// ─── DONNA CARD ───────────────────────────────────────────────────────────────
 
-// ─── MAIN COMPONENT ───
-export default function DashboardCinematic({ className = "" }: Props) {
-  const [t, setT] = useState(0)
-  const ref = useRef<ReturnType<typeof setInterval> | null>(null)
+function DonnaCard({ visible, processing }: { visible: boolean; processing: boolean }) {
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div {...fadeIn(0, 0.6)} style={{ flexShrink: 0 }}>
+          <div style={{
+            background: S.cardDonna,
+            border: `1px solid ${S.border}`,
+            borderRadius: 14,
+            boxShadow: S.shadow,
+            padding: "18px 20px",
+            textAlign: "center",
+            minWidth: 96,
+          }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: S.text, letterSpacing: -0.5, marginBottom: 8 }}>
+              Donna
+            </div>
+            {/* Activity pulse */}
+            <div style={{ display: "flex", justifyContent: "center", gap: 3 }}>
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: 4,
+                    height: 4,
+                    borderRadius: "50%",
+                    background: processing ? S.text : "#cccccc",
+                    animation: processing ? `pulse-line 1.2s ease-in-out ${i * 0.3}s infinite` : "none",
+                    transition: "background 0.4s ease",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
 
-  useEffect(() => {
-    ref.current = setInterval(() => setT((p) => {
-      const next = p + 0.1
-      return next >= TOTAL ? 0 : next
-    }), 100)
-    return () => { if (ref.current) clearInterval(ref.current) }
-  }, [])
+// ─── OUTPUT CARDS ─────────────────────────────────────────────────────────────
 
-  const scene = Math.floor(t / SCENE_DURATION)
-  const st = t - scene * SCENE_DURATION
+function CalendarCard({ visible }: { visible: boolean }) {
+  const entries = [
+    { day: "22 avr", label: "Audience Dupont" },
+    { day: "24 avr", label: "Conclusions Martin" },
+    { day: "30 avr", label: "Médiation Dubois" },
+  ]
 
   return (
-    <div className={className} style={{
-      width: "100%",
-      borderRadius: 20,
-      overflow: "hidden",
-      boxShadow: "0 4px 40px rgba(0,0,0,0.08)",
-      border: `1px solid rgba(0,0,0,0.07)`,
-      background: C.bg,
-    }}>
-      {/* Gradient background layer */}
-      <div style={{
-        position: "relative",
-        background: "radial-gradient(ellipse at 30% 50%, rgba(255,200,200,0.15), rgba(200,200,255,0.1), rgba(255,255,255,0)), #fafafa",
-        minHeight: 420,
-      }}>
-        {/* Scene content */}
-        <div style={{ position: "relative", minHeight: 420 }}>
-          <AnimatePresence mode="wait">
-            {scene === 0 && <Scene1 key="s1" t={st} />}
-            {scene === 1 && <Scene2 key="s2" t={st} />}
-            {scene === 2 && <Scene3 key="s3" t={st} />}
-            {scene === 3 && <Scene4 key="s4" t={st} />}
-            {scene === 4 && <Scene5 key="s5" t={st} />}
-            {scene === 5 && <Scene6 key="s6" t={st} />}
-          </AnimatePresence>
+    <AnimatePresence>
+      {visible && (
+        <motion.div {...fadeIn(0)}>
+          <div style={{
+            background: S.card,
+            border: `1px solid ${S.border}`,
+            borderRadius: 12,
+            boxShadow: S.shadow,
+            padding: "12px 14px",
+            width: 160,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+              <Calendar size={13} color={S.muted} />
+              <span style={{ fontSize: 11, fontWeight: 600, color: S.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                Vos échéances
+              </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {entries.map((e, i) => (
+                <motion.div
+                  key={e.day}
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.3, duration: 0.5 }}
+                  style={{ display: "flex", gap: 8, alignItems: "baseline" }}
+                >
+                  <span style={{ fontSize: 10, color: S.muted, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{e.day}</span>
+                  <span style={{ fontSize: 11, color: S.text, fontWeight: 500 }}>{e.label}</span>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
+function DossiersCard({ visible }: { visible: boolean }) {
+  const dossiers = [
+    { name: "Martin", matter: "Prud'hommes", color: "#DBEAFE" },
+    { name: "Dupont", matter: "Référé",      color: "#FEF9C3" },
+    { name: "Dubois", matter: "Copropriété", color: "#DCFCE7" },
+  ]
+
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div {...fadeIn(0)}>
+          <div style={{
+            background: S.card,
+            border: `1px solid ${S.border}`,
+            borderRadius: 12,
+            boxShadow: S.shadow,
+            padding: "12px 14px",
+            width: 160,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+              <Folder size={13} color={S.muted} />
+              <span style={{ fontSize: 11, fontWeight: 600, color: S.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                Dossiers classés
+              </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {dossiers.map((d, i) => (
+                <motion.div
+                  key={d.name}
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.3, duration: 0.5 }}
+                  style={{ display: "flex", alignItems: "center", gap: 7 }}
+                >
+                  <div style={{
+                    width: 20, height: 16, borderRadius: 4,
+                    background: d.color,
+                    flexShrink: 0,
+                  }} />
+                  <span style={{ fontSize: 11, color: S.text, fontWeight: 500 }}>
+                    {d.name} <span style={{ color: S.muted, fontWeight: 400 }}>– {d.matter}</span>
+                  </span>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
+function TodoCard({ visible }: { visible: boolean }) {
+  const tasks = [
+    "Répondre au greffe",
+    "Valider brouillon Dupont",
+    "Relire conclusions",
+  ]
+
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div {...fadeIn(0)}>
+          <div style={{
+            background: S.card,
+            border: `1px solid ${S.border}`,
+            borderRadius: 12,
+            boxShadow: S.shadow,
+            padding: "12px 14px",
+            width: 160,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+              <CheckSquare size={13} color={S.muted} />
+              <span style={{ fontSize: 11, fontWeight: 600, color: S.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                Actions du jour
+              </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              {tasks.map((task, i) => (
+                <motion.div
+                  key={task}
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.3, duration: 0.5 }}
+                  style={{ display: "flex", alignItems: "flex-start", gap: 7 }}
+                >
+                  <div style={{
+                    width: 12, height: 12, borderRadius: 3,
+                    border: `1.5px solid ${S.line}`,
+                    flexShrink: 0, marginTop: 1,
+                  }} />
+                  <span style={{ fontSize: 11, color: S.text }}>{task}</span>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
+// ─── DESKTOP LAYOUT ───────────────────────────────────────────────────────────
+
+function DesktopPipeline({ ms }: { ms: number }) {
+  const showInput    = ms >= PHASE.input.start
+  const showArrow1   = ms >= PHASE.process.start
+  const showDots1    = ms >= PHASE.process.start + 200 && ms < PHASE.outputs.start
+  const showDonna    = ms >= PHASE.process.start
+  const processing   = ms >= PHASE.process.start && ms < PHASE.outputs.start
+  const showArrows2  = ms >= PHASE.outputs.start
+  const showDots2    = ms >= PHASE.outputs.start + 200 && ms < PHASE.hold.start
+  const showCalendar = ms >= PHASE.outputs.start
+  const showDossiers = ms >= PHASE.outputs.start + 1500
+  const showTodo     = ms >= PHASE.outputs.start + 3000
+  const showTagline  = ms >= PHASE.hold.start
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "32px 24px" }}>
+      {/* Main row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0, width: "100%" }}>
+        {/* INPUT */}
+        <InputCard visible={showInput} />
+
+        {/* Arrow 1 */}
+        <div style={{ marginLeft: 8, marginRight: 8 }}>
+          <ConnectorH active={showArrow1} showDots={showDots1} />
         </div>
 
-        {/* Bottom progress bar + scene label */}
-        <div style={{
-          position: "absolute", bottom: 0, left: 0, right: 0,
-          padding: "12px 20px",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          borderTop: `1px solid rgba(0,0,0,0.05)`,
-          background: "rgba(255,255,255,0.7)",
-          backdropFilter: "blur(6px)",
-        }}>
-          {/* Dots */}
-          <div style={{ display: "flex", gap: 6 }}>
-            {Array.from({ length: 6 }, (_, i) => (
-              <div
-                key={i}
-                style={{
-                  width: i === scene ? 20 : 6,
-                  height: 6,
-                  borderRadius: 99,
-                  background: i === scene ? C.text : "#D1D5DB",
-                  transition: "all 0.3s ease",
-                }}
-              />
-            ))}
+        {/* DONNA */}
+        <DonnaCard visible={showDonna} processing={processing} />
+
+        {/* Arrow 2 block: vertical stack of 3 outputs */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginLeft: 8 }}>
+          {/* Line to Calendar */}
+          <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+            <ConnectorH active={showArrows2} showDots={showDots2} />
+            <div style={{ marginLeft: 8 }}>
+              <CalendarCard visible={showCalendar} />
+            </div>
           </div>
 
-          {/* Scene label - hidden */}
+          {/* Line to Dossiers */}
+          <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+            <ConnectorH active={showArrows2} showDots={showDots2} />
+            <div style={{ marginLeft: 8 }}>
+              <DossiersCard visible={showDossiers} />
+            </div>
+          </div>
+
+          {/* Line to Todo */}
+          <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+            <ConnectorH active={showArrows2} showDots={showDots2} />
+            <div style={{ marginLeft: 8 }}>
+              <TodoCard visible={showTodo} />
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Tagline */}
+      <AnimatePresence>
+        {showTagline && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            style={{
+              marginTop: 32,
+              fontSize: 13,
+              color: S.muted,
+              textAlign: "center",
+            }}
+          >
+            Connectez votre boîte mail. Donna s'occupe du reste.
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─── MOBILE LAYOUT ────────────────────────────────────────────────────────────
+
+function MobilePipeline({ ms }: { ms: number }) {
+  const showInput    = ms >= PHASE.input.start
+  const showArrow1   = ms >= PHASE.process.start
+  const showDots1    = ms >= PHASE.process.start + 200 && ms < PHASE.outputs.start
+  const showDonna    = ms >= PHASE.process.start
+  const processing   = ms >= PHASE.process.start && ms < PHASE.outputs.start
+  const showArrows2  = ms >= PHASE.outputs.start
+  const showDots2    = ms >= PHASE.outputs.start + 200 && ms < PHASE.hold.start
+  const showCalendar = ms >= PHASE.outputs.start
+  const showDossiers = ms >= PHASE.outputs.start + 1500
+  const showTodo     = ms >= PHASE.outputs.start + 3000
+  const showTagline  = ms >= PHASE.hold.start
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "24px 16px", gap: 0 }}>
+      <InputCard visible={showInput} />
+
+      <ConnectorV active={showArrow1} showDots={showDots1} />
+
+      <DonnaCard visible={showDonna} processing={processing} />
+
+      <ConnectorV active={showArrows2} showDots={showDots2} />
+
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: "100%" }}>
+        <CalendarCard visible={showCalendar} />
+        <DossiersCard visible={showDossiers} />
+        <TodoCard     visible={showTodo} />
+      </div>
+
+      <AnimatePresence>
+        {showTagline && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            style={{ marginTop: 24, fontSize: 12, color: S.muted, textAlign: "center" }}
+          >
+            Connectez votre boîte mail. Donna s'occupe du reste.
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
+
+export default function DashboardCinematic({ className = "" }: Props) {
+  const [ms, setMs] = useState(0)
+  const [globalVisible, setGlobalVisible] = useState(true)
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const isMobile = useIsMobile()
+
+  useEffect(() => {
+    tickRef.current = setInterval(() => {
+      setMs((prev) => {
+        const next = prev + TICK_MS
+        if (next >= CYCLE_DURATION) {
+          // Trigger reset fade
+          setGlobalVisible(false)
+          setTimeout(() => {
+            setMs(0)
+            setGlobalVisible(true)
+          }, 600)
+          return prev // hold during fade
+        }
+        return next
+      })
+    }, TICK_MS)
+    return () => { if (tickRef.current) clearInterval(tickRef.current) }
+  }, [])
+
+  return (
+    <div
+      className={className}
+      style={{
+        width: "100%",
+        borderRadius: 20,
+        overflow: "hidden",
+        boxShadow: "0 4px 40px rgba(0,0,0,0.08)",
+        border: `1px solid rgba(0,0,0,0.07)`,
+        background: S.bg,
+        minHeight: isMobile ? 480 : 340,
+      }}
+    >
+      <motion.div
+        animate={{ opacity: globalVisible ? 1 : 0 }}
+        transition={{ duration: 0.5, ease: "easeInOut" }}
+        style={{ width: "100%", minHeight: "inherit" }}
+      >
+        {isMobile
+          ? <MobilePipeline ms={ms} />
+          : <DesktopPipeline ms={ms} />
+        }
+      </motion.div>
     </div>
   )
 }
