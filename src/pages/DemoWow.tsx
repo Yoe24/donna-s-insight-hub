@@ -1625,10 +1625,10 @@ function MiniCalendar({ deadlineItems }: {
       {/* En-tête : mois + année + flèches */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "14px 16px 10px",
+        padding: "10px 14px 8px",
         borderBottom: `1px solid #eee`,
       }}>
-        <span style={{ fontSize: 15, fontWeight: 600, color: TEXT }}>
+        <span style={{ fontSize: 16, fontWeight: 600, color: TEXT }}>
           {MONTH_NAMES_FULL[month]} {year}
         </span>
         <div style={{ display: "flex", gap: 2 }}>
@@ -1655,7 +1655,7 @@ function MiniCalendar({ deadlineItems }: {
 
       {/* Barre de mois scrollable */}
       <div style={{
-        display: "flex", gap: 6, overflowX: "auto", padding: "10px 16px",
+        display: "flex", gap: 4, overflowX: "auto", padding: "7px 12px",
         borderBottom: `1px solid #eee`,
         scrollbarWidth: "none",
         msOverflowStyle: "none",
@@ -1671,7 +1671,7 @@ function MiniCalendar({ deadlineItems }: {
               onClick={() => setCalMonth(new Date(pm.year, pm.month, 1))}
               style={{
                 flexShrink: 0,
-                padding: "4px 11px",
+                padding: "3px 10px",
                 borderRadius: 20,
                 border: isActive ? `1.5px solid ${ACCENT}` : `1px solid ${BORDER}`,
                 background: isActive ? ACCENT : "transparent",
@@ -1735,13 +1735,13 @@ function MiniCalendar({ deadlineItems }: {
                 position: "relative",
                 borderRight,
                 borderBottom,
-                minHeight: isMobile ? 50 : 72,
-                padding: isMobile ? "2px 2px 2px" : "5px 5px 4px",
+                minHeight: isMobile ? 46 : 56,
+                padding: isMobile ? "2px 2px 2px" : "2px 2px 2px",
                 background: isTooltipVisible ? "#fafafa" : BG,
                 cursor: hasEvents ? "pointer" : "default",
                 transition: "background 0.1s",
                 boxSizing: "border-box",
-                overflow: "hidden",
+                overflow: isMobile ? "visible" : "hidden",
               }}
               onMouseEnter={e => {
                 if (hasEvents && !isMobile) {
@@ -1753,15 +1753,15 @@ function MiniCalendar({ deadlineItems }: {
               onClick={() => hasEvents && setTooltip(isTooltipVisible ? null : { key, x: 0, y: 0 })}
             >
               {/* Numéro du jour — aligné en haut à droite */}
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: isMobile ? 1 : 3 }}>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 1 }}>
                 <span style={{
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: isMobile ? 18 : 24,
-                  height: isMobile ? 18 : 24,
+                  width: isMobile ? 17 : 20,
+                  height: isMobile ? 17 : 20,
                   borderRadius: "50%",
-                  fontSize: isMobile ? 10 : 12,
+                  fontSize: isMobile ? 11 : 12,
                   fontWeight: isTodayCell ? 700 : 400,
                   color: isTodayCell ? "#fff" : cell.currentMonth ? TEXT : TEXT_LIGHT,
                   background: isTodayCell ? ACCENT : "transparent",
@@ -1775,13 +1775,13 @@ function MiniCalendar({ deadlineItems }: {
               {/* Blocs d'échéances : pastilles sur mobile, texte sur desktop */}
               {hasEvents && (
                 isMobile ? (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "flex-end", justifyContent: "center" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center", justifyContent: "center", marginTop: 1 }}>
                     {events.slice(0, 3).map((ev, ei) => (
                       <div
                         key={ei}
                         style={{
-                          width: 8,
-                          height: 8,
+                          width: 7,
+                          height: 7,
                           borderRadius: "50%",
                           background: ev.urgent ? URGENT : ev.dossierColor,
                           flexShrink: 0,
@@ -1790,15 +1790,15 @@ function MiniCalendar({ deadlineItems }: {
                     ))}
                   </div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    {events.slice(0, 3).map((ev, ei) => (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    {events.slice(0, 2).map((ev, ei) => (
                       <div
                         key={ei}
                         style={{
                           borderLeft: ev.urgent ? `2px solid ${URGENT}` : `2px solid ${ev.dossierColor}`,
                           background: ev.urgent ? URGENT_BG : `${ev.dossierColor}12`,
                           borderRadius: "0 3px 3px 0",
-                          padding: "1px 4px",
+                          padding: "1px 3px",
                           fontSize: 10,
                           fontWeight: 500,
                           color: ev.urgent ? URGENT : ev.dossierColor,
@@ -1806,16 +1806,16 @@ function MiniCalendar({ deadlineItems }: {
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap" as const,
                           maxWidth: "100%",
-                          lineHeight: 1.5,
+                          lineHeight: 1.4,
                           boxSizing: "border-box",
                         }}
                       >
                         {ev.label}
                       </div>
                     ))}
-                    {events.length > 3 && (
-                      <div style={{ fontSize: 9, color: TEXT_LIGHT, paddingLeft: 4 }}>
-                        +{events.length - 3} de plus
+                    {events.length > 2 && (
+                      <div style={{ fontSize: 9, color: TEXT_LIGHT, paddingLeft: 3 }}>
+                        +{events.length - 2} de plus
                       </div>
                     )}
                   </div>
@@ -1891,75 +1891,76 @@ function EcheancesSection({ isMobile }: { isMobile: boolean }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
-      style={{ marginBottom: 20 }}
+      style={{ marginBottom: 16 }}
     >
       {/* Titre de section */}
-      <div style={{ marginBottom: 14, marginTop: 4 }}>
+      <div style={{ marginBottom: 10, marginTop: 2 }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: TEXT_LIGHT, textTransform: "uppercase" as const, letterSpacing: "0.12em" }}>
           VOS ÉCHÉANCES
         </span>
       </div>
 
-      {/* Calendrier Google Calendar style */}
-      <MiniCalendar deadlineItems={calItems} />
+      {/* Calendrier Google Calendar style — max-width sur desktop */}
+      <div style={{ maxWidth: isMobile ? "100%" : 600, width: "100%", boxSizing: "border-box" }}>
+        <MiniCalendar deadlineItems={calItems} />
 
-      {/* Boutons de connexion */}
-      <div style={{
-        display: "flex",
-        flexDirection: isMobile ? "column" : "row",
-        gap: 10,
-        marginTop: 14,
-      }}>
-        <button
-          onClick={() => console.log("Bientôt disponible")}
-          style={{
-            flex: 1,
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            padding: isMobile ? "12px 16px" : "9px 16px",
-            minHeight: isMobile ? 44 : "auto",
-            borderRadius: 9,
-            border: `1px solid ${BORDER}`,
-            background: BG,
-            color: TEXT_MUTED,
-            fontSize: 12,
-            fontWeight: 500,
-            cursor: "pointer",
-            fontFamily: "inherit",
-            transition: "border-color 0.15s, color 0.15s",
-            width: isMobile ? "100%" : "auto",
-            boxSizing: "border-box",
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = ACCENT; (e.currentTarget as HTMLButtonElement).style.color = ACCENT }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; (e.currentTarget as HTMLButtonElement).style.color = TEXT_MUTED }}
-        >
-          <Calendar size={14} />
-          Connecter Google Calendar
-        </button>
-        <button
-          onClick={() => console.log("Bientôt disponible")}
-          style={{
-            flex: 1,
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            padding: isMobile ? "12px 16px" : "9px 16px",
-            minHeight: isMobile ? 44 : "auto",
-            borderRadius: 9,
-            border: `1px solid ${BORDER}`,
-            background: BG,
-            color: TEXT_MUTED,
-            fontSize: 12,
-            fontWeight: 500,
-            cursor: "pointer",
-            fontFamily: "inherit",
-            transition: "border-color 0.15s, color 0.15s",
-            width: isMobile ? "100%" : "auto",
-            boxSizing: "border-box",
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = ACCENT; (e.currentTarget as HTMLButtonElement).style.color = ACCENT }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; (e.currentTarget as HTMLButtonElement).style.color = TEXT_MUTED }}
-        >
-          <Calendar size={14} />
-          Connecter Outlook
-        </button>
+        {/* Boutons de connexion */}
+        <div style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          gap: 8,
+          marginTop: 10,
+          justifyContent: isMobile ? "stretch" : "flex-start",
+        }}>
+          <button
+            onClick={() => console.log("Bientôt disponible")}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              padding: isMobile ? "12px 16px" : "8px 16px",
+              minHeight: isMobile ? 44 : "auto",
+              borderRadius: 8,
+              border: `1px solid #ddd`,
+              background: BG,
+              color: "#737373",
+              fontSize: 12,
+              fontWeight: 400,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              transition: "border-color 0.15s, color 0.15s, background 0.15s",
+              width: isMobile ? "100%" : "auto",
+              boxSizing: "border-box",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#bbb"; (e.currentTarget as HTMLButtonElement).style.background = "#fafafa" }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#ddd"; (e.currentTarget as HTMLButtonElement).style.background = BG }}
+          >
+            <Calendar size={12} />
+            Connecter Google Calendar
+          </button>
+          <button
+            onClick={() => console.log("Bientôt disponible")}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              padding: isMobile ? "12px 16px" : "8px 16px",
+              minHeight: isMobile ? 44 : "auto",
+              borderRadius: 8,
+              border: `1px solid #ddd`,
+              background: BG,
+              color: "#737373",
+              fontSize: 12,
+              fontWeight: 400,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              transition: "border-color 0.15s, color 0.15s, background 0.15s",
+              width: isMobile ? "100%" : "auto",
+              boxSizing: "border-box",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#bbb"; (e.currentTarget as HTMLButtonElement).style.background = "#fafafa" }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#ddd"; (e.currentTarget as HTMLButtonElement).style.background = BG }}
+          >
+            <Calendar size={12} />
+            Connecter Outlook
+          </button>
+        </div>
       </div>
     </motion.div>
   )
