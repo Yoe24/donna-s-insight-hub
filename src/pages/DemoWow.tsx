@@ -1242,7 +1242,270 @@ function PhaseAScanZone({ mailCount, currentEmailSubject, isMobile, donnaLines, 
   )
 }
 
-// ─── Cinematic Phase B: dossier being processed (main area) ───
+// ─── Cinematic Phase B (NOUVEAU): extraction dates → calendrier ───
+
+interface CalendarExtractionItem {
+  source: "email" | "pj"
+  icon: string
+  from: string
+  text: string
+  date: string
+  dossier: string
+  color: string
+  // Parsed pour le MiniCalendar
+  parsedDate: Date
+}
+
+const CALENDAR_EXTRACTIONS: CalendarExtractionItem[] = [
+  { source: "email", icon: "📧", from: "Greffe TJ Paris", text: "Audience conciliation", date: "22 avril", dossier: "Martin", color: DOSSIER_COLORS["d1"], parsedDate: new Date(new Date().getFullYear(), 3, 22) },
+  { source: "pj", icon: "📎", from: "Convocation_JAF_Dupont.pdf", text: "Forclusion assignation", date: "23 avril", dossier: "Dupont", color: DOSSIER_COLORS["d2"], parsedDate: new Date(new Date().getFullYear(), 3, 23) },
+  { source: "email", icon: "📧", from: "Me Martin (avocat)", text: "Dépôt conclusions", date: "24 avril", dossier: "Martin", color: DOSSIER_COLORS["d1"], parsedDate: new Date(new Date().getFullYear(), 3, 24) },
+  { source: "pj", icon: "📎", from: "Convention_divorce_Bernard.pdf", text: "Signature convention", date: "25 avril", dossier: "Bernard", color: DOSSIER_COLORS["d5"], parsedDate: new Date(new Date().getFullYear(), 3, 25) },
+  { source: "email", icon: "📧", from: "Syndic Les Tilleuls", text: "Médiation syndic", date: "30 avril", dossier: "Dubois", color: DOSSIER_COLORS["d3"], parsedDate: new Date(new Date().getFullYear(), 3, 30) },
+  { source: "pj", icon: "📎", from: "Acte_vente_Roux.pdf", text: "Signature acte", date: "15 mai", dossier: "Roux", color: DOSSIER_COLORS["d4"], parsedDate: new Date(new Date().getFullYear(), 4, 15) },
+  { source: "email", icon: "📧", from: "Notaire succession", text: "Déclaration succession", date: "2 août", dossier: "Succession", color: DOSSIER_COLORS["d6"], parsedDate: new Date(new Date().getFullYear(), 7, 2) },
+]
+
+function PhaseCalendarExtraction({ active, isMobile }: { active: boolean; isMobile: boolean }) {
+  const [visibleCount, setVisibleCount] = useState(0)
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [showSummary, setShowSummary] = useState(false)
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+
+  useEffect(() => {
+    if (!active) {
+      setVisibleCount(0)
+      setShowCalendar(false)
+      setShowSummary(false)
+      timersRef.current.forEach(t => clearTimeout(t))
+      timersRef.current = []
+      return
+    }
+    const add = (fn: () => void, delay: number) => {
+      const t = setTimeout(fn, delay)
+      timersRef.current.push(t)
+    }
+    // 0.5s : le calendrier apparaît
+    add(() => setShowCalendar(true), 500)
+    // Chaque extraction : 2s d'intervalle, à partir de 1.5s
+    CALENDAR_EXTRACTIONS.forEach((_, i) => {
+      add(() => setVisibleCount(i + 1), 1500 + i * 2000)
+    })
+    // Après la dernière extraction + 1.5s : afficher le résumé
+    add(() => setShowSummary(true), 1500 + CALENDAR_EXTRACTIONS.length * 2000 + 1000)
+
+    return () => { timersRef.current.forEach(t => clearTimeout(t)) }
+  }, [active])
+
+  // Construire les items du calendrier progressivement
+  const calendarItems = CALENDAR_EXTRACTIONS.slice(0, visibleCount).map(ex => ({
+    date: ex.parsedDate,
+    label: ex.text,
+    dossierName: ex.dossier,
+    dossierColor: ex.color,
+    urgent: false,
+  }))
+
+  const lastExtraction = visibleCount > 0 ? CALENDAR_EXTRACTIONS[visibleCount - 1] : null
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
+      style={{ border: `1px solid ${BORDER}`, borderRadius: 16, padding: isMobile ? "20px 16px" : "24px 28px", background: BG, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+    >
+      {/* En-tête Donna */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 16 }}>
+        <div style={{ width: 22, height: 22, borderRadius: "50%", background: TEXT, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>D</div>
+        <div style={{ flex: 1 }}>
+          {!showSummary ? (
+            <motion.p
+              animate={{ opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 1.8, repeat: Infinity }}
+              style={{ fontSize: 13, color: TEXT, margin: 0, lineHeight: 1.5 }}
+            >
+              J'analyse les emails et pièces jointes pour détecter chaque échéance...
+            </motion.p>
+          ) : (
+            <motion.p
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              style={{ fontSize: 13, fontWeight: 600, color: TEXT, margin: 0 }}
+            >
+              7 dates critiques identifiées. Votre calendrier judiciaire est à jour.
+            </motion.p>
+          )}
+        </div>
+      </div>
+
+      {/* Calendrier — apparaît dès showCalendar */}
+      <AnimatePresence>
+        {showCalendar && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            style={{ border: `1px solid ${BORDER}`, borderRadius: 12, overflow: "hidden", marginBottom: 14 }}
+          >
+            <MiniCalendarCinematic deadlineItems={calendarItems} visibleCount={visibleCount} isMobile={isMobile} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Zone d'extraction — dernière ligne visible */}
+      <AnimatePresence mode="wait">
+        {lastExtraction && !showSummary && (
+          <motion.div
+            key={visibleCount}
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35 }}
+            style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 14px",
+              borderRadius: 10,
+              background: SIDEBAR_BG,
+              border: `1px solid ${BORDER}`,
+            }}
+          >
+            <span style={{ fontSize: 16, flexShrink: 0 }}>{lastExtraction.icon}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: 12, color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
+                <span style={{ fontWeight: 600, color: TEXT }}>{lastExtraction.from}</span>
+                {" → "}
+                <span style={{ fontWeight: 500, color: lastExtraction.color }}>{lastExtraction.text}</span>
+                {" "}
+                <span style={{ color: TEXT_MUTED }}>{lastExtraction.date}</span>
+              </span>
+            </div>
+            {/* Pastille animée */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.5, type: "spring", stiffness: 400, damping: 18 }}
+              style={{ width: 10, height: 10, borderRadius: "50%", background: lastExtraction.color, flexShrink: 0 }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  )
+}
+
+// ─── MiniCalendar simplifié pour la cinématique (sans interactions) ───
+function MiniCalendarCinematic({ deadlineItems, visibleCount, isMobile }: {
+  deadlineItems: { date: Date; label: string; dossierName: string; dossierColor: string; urgent: boolean }[]
+  visibleCount: number
+  isMobile: boolean
+}) {
+  const [calMonth] = useState(() => {
+    const n = new Date()
+    return new Date(n.getFullYear(), n.getMonth(), 1)
+  })
+
+  const year = calMonth.getFullYear()
+  const month = calMonth.getMonth()
+
+  const MONTH_NAMES_FULL = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+  const DAY_NAMES = ["L", "M", "M", "J", "V", "S", "D"]
+
+  const today = new Date()
+  const todayYear = today.getFullYear()
+  const todayMonth = today.getMonth()
+  const todayDate = today.getDate()
+
+  const dlMap: Record<string, typeof deadlineItems> = {}
+  deadlineItems.forEach(item => {
+    const key = `${item.date.getFullYear()}-${item.date.getMonth()}-${item.date.getDate()}`
+    if (!dlMap[key]) dlMap[key] = []
+    dlMap[key].push(item)
+  })
+
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const daysInPrevMonth = new Date(year, month, 0).getDate()
+
+  type Cell = { day: number; currentMonth: boolean; dateObj: Date }
+  const cells: Cell[] = []
+  for (let i = 0; i < firstDow; i++) {
+    const d = daysInPrevMonth - firstDow + 1 + i
+    cells.push({ day: d, currentMonth: false, dateObj: new Date(year, month - 1, d) })
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ day: d, currentMonth: true, dateObj: new Date(year, month, d) })
+  }
+  const remaining = 42 - cells.length
+  for (let d = 1; d <= remaining; d++) {
+    cells.push({ day: d, currentMonth: false, dateObj: new Date(year, month + 1, d) })
+  }
+
+  return (
+    <div style={{ background: BG, width: "100%" }}>
+      {/* Header mois */}
+      <div style={{ display: "flex", alignItems: "center", padding: "8px 12px 6px", borderBottom: `1px solid #f0f0f0` }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>
+          {MONTH_NAMES_FULL[month]} {year}
+        </span>
+      </div>
+      {/* En-têtes jours */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderBottom: `1px solid #f0f0f0` }}>
+        {DAY_NAMES.map((d, i) => (
+          <div key={i} style={{ textAlign: "center", fontSize: 10, fontWeight: 500, color: TEXT_LIGHT, padding: "4px 0", letterSpacing: "0.04em" }}>{d}</div>
+        ))}
+      </div>
+      {/* Grille */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
+        {cells.map((cell, i) => {
+          const key = `${cell.dateObj.getFullYear()}-${cell.dateObj.getMonth()}-${cell.dateObj.getDate()}`
+          const events = cell.currentMonth ? (dlMap[key] || []) : []
+          const isTodayCell = cell.currentMonth && cell.day === todayDate && month === todayMonth && year === todayYear
+          const col = i % 7
+          const row = Math.floor(i / 7)
+          const borderRight = col < 6 ? `1px solid #f0f0f0` : "none"
+          const borderBottom = row < 5 ? `1px solid #f0f0f0` : "none"
+
+          return (
+            <div key={i} style={{ borderRight, borderBottom, minHeight: isMobile ? 38 : 44, padding: "2px", boxSizing: "border-box" }}>
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <span style={{
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  width: isMobile ? 16 : 18, height: isMobile ? 16 : 18,
+                  borderRadius: "50%",
+                  fontSize: isMobile ? 10 : 11,
+                  fontWeight: isTodayCell ? 700 : 400,
+                  color: isTodayCell ? "#fff" : cell.currentMonth ? TEXT : TEXT_LIGHT,
+                  background: isTodayCell ? ACCENT : "transparent",
+                  lineHeight: 1,
+                }}>
+                  {cell.day}
+                </span>
+              </div>
+              {events.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+                  {events.map((ev, ei) => (
+                    <motion.div
+                      key={ei}
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 22, delay: ei * 0.05 }}
+                      style={{ width: isMobile ? 7 : 9, height: isMobile ? 7 : 9, borderRadius: "50%", background: ev.dossierColor, flexShrink: 0 }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Cinematic Phase C (ex-B): dossier being processed (main area) ───
 function PhaseBDossierFocus({ dossier, donnaLines, donnaActive, showCheck, dossierIdx }: {
   dossier: typeof DOSSIERS[0]
   donnaLines: string[]
@@ -2053,7 +2316,7 @@ function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, 
   animPhase: number
 }) {
   const visible = DOSSIERS.slice(0, visibleDossierCount)
-  const cinematicHighlight = animPhase === 1 ? DOSSIERS[Math.min(visibleDossierCount - 1, DOSSIERS.length - 1)]?.id : null
+  const cinematicHighlight = animPhase === 2 ? DOSSIERS[Math.min(visibleDossierCount - 1, DOSSIERS.length - 1)]?.id : null
 
   return (
     <>
@@ -2063,16 +2326,16 @@ function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, 
           <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#0D0D0D", color: "#FFFFFF", letterSpacing: "0.05em" }}>DÉMO</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 2.2, repeat: animPhase < 4 ? Infinity : 0 }}
-            style={{ width: 6, height: 6, borderRadius: "50%", background: animPhase < 4 ? ACCENT : GREEN, flexShrink: 0 }} />
+          <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 2.2, repeat: animPhase < 5 ? Infinity : 0 }}
+            style={{ width: 6, height: 6, borderRadius: "50%", background: animPhase < 5 ? ACCENT : GREEN, flexShrink: 0 }} />
           <span style={{ fontSize: 11, color: TEXT_MUTED }}>
-            {animPhase < 4 ? "Analyse en cours..." : "À jour · il y a 2 min"}
+            {animPhase < 5 ? "Analyse en cours..." : "À jour · il y a 2 min"}
           </span>
         </div>
       </div>
 
       <div style={{ padding: "10px 6px" }}>
-        <button onClick={() => onDossierClick(null)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 6, background: activeDossierId === null && animPhase >= 4 ? ACCENT_BG : "transparent", marginBottom: 2, width: "100%", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
+        <button onClick={() => onDossierClick(null)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 6, background: activeDossierId === null && animPhase >= 5 ? ACCENT_BG : "transparent", marginBottom: 2, width: "100%", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
           <LayoutDashboard size={14} style={{ color: activeDossierId === null ? ACCENT : TEXT_MUTED, flexShrink: 0 }} />
           <div style={{ fontSize: 13, fontWeight: activeDossierId === null ? 600 : 400, color: activeDossierId === null ? TEXT : TEXT_MUTED }}>Tableau de bord</div>
         </button>
@@ -2093,10 +2356,10 @@ function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, 
                 initial={{ opacity: 0, x: -12 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                onClick={() => animPhase >= 4 && onDossierClick(d)}
+                onClick={() => animPhase >= 5 && onDossierClick(d)}
                 style={{
                   display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", marginBottom: 2,
-                  cursor: animPhase >= 4 ? "pointer" : "default",
+                  cursor: animPhase >= 5 ? "pointer" : "default",
                   borderRadius: 6,
                   background: isActive ? ACCENT_BG : "transparent",
                   borderLeft: isActive ? `3px solid ${ACCENT}` : "3px solid transparent",
@@ -2108,7 +2371,7 @@ function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, 
                   <div style={{ fontSize: 12, fontWeight: isActive ? 600 : 400, color: isActive ? TEXT : TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</div>
                   <div style={{ fontSize: 10, color: TEXT_LIGHT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.domain}</div>
                 </div>
-                {isActive && animPhase === 1 && (
+                {isActive && animPhase === 2 && (
                   <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }} style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />
                 )}
               </motion.div>
@@ -2137,13 +2400,13 @@ const PHASE_A_DONNA_LINES = [
   "89 emails reçus ce mois-ci. Je vais les trier pour vous.",
 ]
 
-// Textes Phase C — Donna construit le briefing
+// Textes Phase D (ex-C) — Donna construit le briefing
 const PHASE_C_DONNA_LINES = [
   "Bonjour Alexandra. 19 emails lus. 3 tâches identifiées.",
   "9 étaient du bruit, je m'en suis occupée. Il vous reste 3 brouillons de réponse à valider, tout est prêt.",
 ]
 
-// Textes Phase D — ROI
+// Textes Phase E (ex-D) — ROI
 const PHASE_D_DONNA_LINES = [
   "J'ai lu, trié et organisé les pièces jointes par dossier de 89 emails durant ces 24 dernières heures.",
   "Demain matin à 8h, votre prochain tableau de bord sera prêt automatiquement.",
@@ -2171,10 +2434,11 @@ export default function DemoV3() {
 
   // ─── Animation phases ───
   // 0 = Phase A (scan, 0-10s)
-  // 1 = Phase B (dossiers, 10-64s, ~9s par dossier, 5 lignes chacun)
-  // 2 = Phase C (briefing, 64-78s)
-  // 3 = Phase D (ROI, 78-90s)
-  // 4 = Phase E (interactive, 90s+)
+  // 1 = Phase B (NOUVEAU calendrier, 10-26s)
+  // 2 = Phase C (dossiers, 26-80s, ~9s par dossier)
+  // 3 = Phase D (briefing, 80-94s)
+  // 4 = Phase E (ROI, 94-106s)
+  // 5 = Phase F (interactive, 106s+)
   const [animPhase, setAnimPhase] = useState(0)
   const [mailCount, setMailCount] = useState(0)
   const [currentEmailIdx, setCurrentEmailIdx] = useState(0)
@@ -2206,7 +2470,7 @@ export default function DemoV3() {
     timersRef.current.forEach(t => clearTimeout(t))
     timersRef.current = []
     if (emailIntervalRef.current) clearInterval(emailIntervalRef.current)
-    setAnimPhase(4)
+    setAnimPhase(5)
     setMailCount(89)
     setVisibleDossierCount(DOSSIERS.length)
     setActiveCinematicDossierIdx(-1)
@@ -2241,7 +2505,6 @@ export default function DemoV3() {
     }, 1000)
 
     // Dossiers appear DURING scan (progressive discovery)
-    // Dossier 1 appears at ~15 emails, dossier 2 at ~30, etc.
     const dossierAppearTimes = [3000, 4500, 5500, 6500, 7200, 8000]
     dossierAppearTimes.forEach((delay, i) => {
       addTimer(() => {
@@ -2255,13 +2518,17 @@ export default function DemoV3() {
       setPhaseAFiltering(true)
     }, 8500)
 
-    // === PHASE B: 10-64s — dossiers detail (~9s each for 5 lines) ===
-    // Dossiers already visible in sidebar, now Donna explains each one
-    const dossierStartTimes = [10000, 19000, 28000, 37000, 46000, 55000]
+    // === PHASE B (NOUVEAU): 10-26s — extraction dates → calendrier ===
+    addTimer(() => {
+      if (emailIntervalRef.current) { clearInterval(emailIntervalRef.current); emailIntervalRef.current = null }
+      setAnimPhase(1)
+    }, 10000)
+
+    // === PHASE C: 26-80s — dossiers detail (~9s each for 6 dossiers) ===
+    const dossierStartTimes = [26000, 35000, 44000, 53000, 62000, 71000]
     dossierStartTimes.forEach((delay, i) => {
       addTimer(() => {
-        if (emailIntervalRef.current) { clearInterval(emailIntervalRef.current); emailIntervalRef.current = null }
-        setAnimPhase(1)
+        setAnimPhase(2)
         setActiveCinematicDossierIdx(i)
         setDossierShowCheck(false)
         setDossierDonnaActive(false)
@@ -2274,9 +2541,9 @@ export default function DemoV3() {
       }, delay)
     })
 
-    // === PHASE C: 64s — briefing construction ===
+    // === PHASE D: 80s — briefing construction ===
     addTimer(() => {
-      setAnimPhase(2)
+      setAnimPhase(3)
       setActiveCinematicDossierIdx(-1)
       setDossierDonnaActive(false)
       setPhaseCActive(true)
@@ -2284,20 +2551,20 @@ export default function DemoV3() {
       addTimer(() => setVisibleTaskCount(1), 3000)
       addTimer(() => setVisibleTaskCount(2), 6000)
       addTimer(() => setVisibleTaskCount(3), 9000)
-    }, 64000)
+    }, 80000)
 
-    // === PHASE D: 78s — ROI ===
-    addTimer(() => {
-      setAnimPhase(3)
-      setRoiVisible(true)
-      setPhaseDActive(true)
-    }, 78000)
-
-    // === PHASE E: 90s — interactive ===
+    // === PHASE E: 94s — ROI ===
     addTimer(() => {
       setAnimPhase(4)
+      setRoiVisible(true)
+      setPhaseDActive(true)
+    }, 94000)
+
+    // === PHASE F: 106s — interactive ===
+    addTimer(() => {
+      setAnimPhase(5)
       setAnimDone(true)
-    }, 90000)
+    }, 106000)
 
     return () => {
       timersRef.current.forEach(t => clearTimeout(t))
@@ -2422,10 +2689,19 @@ export default function DemoV3() {
               )}
             </AnimatePresence>
 
-            {/* PHASE B: dossier focus */}
+            {/* PHASE B (NOUVEAU): extraction dates → calendrier */}
             <AnimatePresence mode="wait">
-              {animPhase === 1 && currentCinematicDossier && (
-                <motion.div key={`phaseB-${currentCinematicDossier.id}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }} style={{ marginBottom: 20 }}>
+              {animPhase === 1 && (
+                <motion.div key="phaseB-calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }} style={{ marginBottom: 20 }}>
+                  <PhaseCalendarExtraction active={animPhase === 1} isMobile={isMobile} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* PHASE C: dossier focus */}
+            <AnimatePresence mode="wait">
+              {animPhase === 2 && currentCinematicDossier && (
+                <motion.div key={`phaseC-${currentCinematicDossier.id}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }} style={{ marginBottom: 20 }}>
                   <PhaseBDossierFocus
                     dossier={currentCinematicDossier}
                     donnaLines={currentDonnaLines}
@@ -2439,7 +2715,7 @@ export default function DemoV3() {
 
             {/* BLOC UNIQUE — Cercle emails + message Donna */}
             <AnimatePresence>
-              {animPhase >= 2 && (
+              {animPhase >= 3 && (
                 <motion.div key="donna-bloc" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }} style={{ marginBottom: 20 }}>
                   <div style={{
                     background: BG,
@@ -2494,7 +2770,7 @@ export default function DemoV3() {
                             <ArrowLeft size={13} /> Retour aux tâches
                           </button>
                         </div>
-                      ) : animPhase >= 4 ? (
+                      ) : animPhase >= 5 ? (
                         /* Texte statique post-cinématique */
                         <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.7, margin: 0 }}>
                           <strong>Bonjour Alexandra.</strong> <strong>19 emails</strong> lus ces dernières 24h. <strong>3 tâches</strong> identifiées.
@@ -2516,9 +2792,9 @@ export default function DemoV3() {
             </AnimatePresence>
 
 
-            {/* Échéances à surveiller — visible en phase 4 uniquement */}
+            {/* Échéances à surveiller — visible en phase 5 (interactif) uniquement */}
             <AnimatePresence>
-              {animPhase >= 4 && activeTab === "todo" && (
+              {animPhase >= 5 && activeTab === "todo" && (
                 <motion.div key="echeances" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
                   <EcheancesSection isMobile={isMobile} />
                 </motion.div>
@@ -2527,7 +2803,7 @@ export default function DemoV3() {
 
             {/* Tasks — onglet To-do list */}
             <AnimatePresence>
-              {visibleTaskCount > 0 && animPhase >= 2 && activeTab === "todo" && (
+              {visibleTaskCount > 0 && animPhase >= 3 && activeTab === "todo" && (
                 <motion.div key="tasks" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} style={{ marginBottom: 8 }}>
                   {/* Titre collapsible "Tâches créées par Donna" */}
                   <div
@@ -2576,7 +2852,7 @@ export default function DemoV3() {
 
             {/* Inbox — onglet Inbox */}
             <AnimatePresence>
-              {animPhase >= 2 && activeTab === "inbox" && (
+              {animPhase >= 3 && activeTab === "inbox" && (
                 <motion.div key="inbox" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} style={{ marginBottom: 8 }}>
                   {/* En-tête inbox : titre à gauche, filtres à droite */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 0 }}>
