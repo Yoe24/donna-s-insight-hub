@@ -1621,12 +1621,12 @@ function MiniCalendar({ deadlineItems }: {
   const isCurrentMonth = year === calMonth.getFullYear() && month === calMonth.getMonth()
 
   return (
-    <div style={{ background: BG, border: `1px solid ${BORDER}`, width: "100%", maxWidth: "100%", boxSizing: "border-box", overflow: "hidden" }}>
+    <div style={{ background: BG, width: "100%", maxWidth: "100%", boxSizing: "border-box", overflow: "hidden" }}>
       {/* En-tête : mois + année + flèches */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "10px 14px 8px",
-        borderBottom: `1px solid #eee`,
+        borderBottom: `1px solid #f0f0f0`,
       }}>
         <span style={{ fontSize: 16, fontWeight: 600, color: TEXT }}>
           {MONTH_NAMES_FULL[month]} {year}
@@ -1656,7 +1656,7 @@ function MiniCalendar({ deadlineItems }: {
       {/* Barre de mois scrollable */}
       <div style={{
         display: "flex", gap: 4, overflowX: "auto", padding: "7px 12px",
-        borderBottom: `1px solid #eee`,
+        borderBottom: `1px solid #f0f0f0`,
         scrollbarWidth: "none",
         msOverflowStyle: "none",
         WebkitOverflowScrolling: "touch",
@@ -1694,7 +1694,7 @@ function MiniCalendar({ deadlineItems }: {
       <div style={{
         display: "grid", gridTemplateColumns: "repeat(7, 1fr)",
         width: "100%", boxSizing: "border-box",
-        borderBottom: `1px solid #eee`,
+        borderBottom: `1px solid #f0f0f0`,
       }}>
         {DAY_NAMES.map((d, i) => (
           <div key={i} style={{
@@ -1725,8 +1725,8 @@ function MiniCalendar({ deadlineItems }: {
           // Border: right except last column, bottom except last row
           const col = i % 7
           const row = Math.floor(i / 7)
-          const borderRight = col < 6 ? `1px solid #eee` : "none"
-          const borderBottom = row < 5 ? `1px solid #eee` : "none"
+          const borderRight = col < 6 ? `1px solid #f0f0f0` : "none"
+          const borderBottom = row < 5 ? `1px solid #f0f0f0` : "none"
 
           return (
             <div
@@ -1772,54 +1772,27 @@ function MiniCalendar({ deadlineItems }: {
                 </span>
               </div>
 
-              {/* Blocs d'échéances : pastilles sur mobile, texte sur desktop */}
+              {/* Blocs d'échéances : pastilles sur mobile ET desktop */}
               {hasEvents && (
-                isMobile ? (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center", justifyContent: "center", marginTop: 1 }}>
-                    {events.slice(0, 3).map((ev, ei) => (
-                      <div
-                        key={ei}
-                        style={{
-                          width: 7,
-                          height: 7,
-                          borderRadius: "50%",
-                          background: ev.urgent ? URGENT : ev.dossierColor,
-                          flexShrink: 0,
-                        }}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                    {events.slice(0, 2).map((ev, ei) => (
-                      <div
-                        key={ei}
-                        style={{
-                          borderLeft: ev.urgent ? `2px solid ${URGENT}` : `2px solid ${ev.dossierColor}`,
-                          background: ev.urgent ? URGENT_BG : `${ev.dossierColor}12`,
-                          borderRadius: "0 3px 3px 0",
-                          padding: "1px 3px",
-                          fontSize: 10,
-                          fontWeight: 500,
-                          color: ev.urgent ? URGENT : ev.dossierColor,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap" as const,
-                          maxWidth: "100%",
-                          lineHeight: 1.4,
-                          boxSizing: "border-box",
-                        }}
-                      >
-                        {ev.label}
-                      </div>
-                    ))}
-                    {events.length > 2 && (
-                      <div style={{ fontSize: 9, color: TEXT_LIGHT, paddingLeft: 3 }}>
-                        +{events.length - 2} de plus
-                      </div>
-                    )}
-                  </div>
-                )
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+                  {events.slice(0, isMobile ? 3 : 4).map((ev, ei) => (
+                    <div
+                      key={ei}
+                      style={{
+                        width: isMobile ? 7 : 10,
+                        height: isMobile ? 7 : 10,
+                        borderRadius: "50%",
+                        background: ev.urgent ? URGENT : ev.dossierColor,
+                        flexShrink: 0,
+                      }}
+                    />
+                  ))}
+                  {!isMobile && events.length > 4 && (
+                    <div style={{ fontSize: 9, color: TEXT_LIGHT, lineHeight: 1 }}>
+                      +{events.length - 4}
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Tooltip au survol */}
@@ -1900,8 +1873,8 @@ function EcheancesSection({ isMobile }: { isMobile: boolean }) {
         </span>
       </div>
 
-      {/* Calendrier Google Calendar style — max-width sur desktop */}
-      <div style={{ maxWidth: isMobile ? "100%" : 600, width: "100%", boxSizing: "border-box" }}>
+      {/* Calendrier Google Calendar style — pleine largeur */}
+      <div style={{ width: "100%", boxSizing: "border-box" }}>
         <MiniCalendar deadlineItems={calItems} />
 
         {/* Boutons de connexion */}
