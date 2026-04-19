@@ -7,9 +7,9 @@ interface Props {
   chromeless?: boolean
 }
 
-// 4 scenes × ~8s = 32s cycle
-const CYCLE = 32
-const SCENES = [0, 8, 16, 24] // start times
+// 5 scenes × ~8s = 40s cycle
+const CYCLE = 40
+const SCENES = [0, 8, 16, 24, 32] // start times
 
 const C = {
   bg: "#FFFFFF", sidebar: "#F9FAFB", card: "#F3F4F6", border: "#E5E7EB",
@@ -32,11 +32,11 @@ export default function DashboardCinematic({ className = "" }: Props) {
     return () => clearInterval(timer)
   }, [])
 
-  const scene = t < 8 ? 0 : t < 16 ? 1 : t < 24 ? 2 : 3
+  const scene = t < 8 ? 0 : t < 16 ? 1 : t < 24 ? 2 : t < 32 ? 3 : 4
   const st = t - SCENES[scene] // scene-local time
 
   // Sidebar: which nav item is active
-  const navActive = scene === 3 ? "briefing" : "dossiers"
+  const navActive = scene === 4 ? "briefing" : scene === 3 ? "calendrier" : "dossiers"
   // Which folder is highlighted
   const activeFolderIdx = scene === 1 ? 0 : scene === 2 ? 1 : -1
 
@@ -44,6 +44,8 @@ export default function DashboardCinematic({ className = "" }: Props) {
   const foldersVisible = scene === 0
     ? [st > 4, st > 5, st > 6]
     : [true, true, true]
+
+  const statusLabel = scene === 0 ? "Analyse en cours..." : scene === 1 ? "Dossier ouvert" : scene === 2 ? "Dossier ouvert" : scene === 3 ? "Échéances détectées" : "Briefing prêt"
 
   return (
     <div className={className} style={{
@@ -61,7 +63,7 @@ export default function DashboardCinematic({ className = "" }: Props) {
         }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 2 }}>Donna</div>
           <div style={{ fontSize: 10, color: C.green, marginBottom: 24 }}>
-            ● {scene === 0 ? "Analyse en cours..." : scene === 1 ? "Dossier ouvert" : scene === 2 ? "Dossier ouvert" : "Briefing prêt"}
+            ● {statusLabel}
           </div>
 
           {/* Nav: Tableau de bord */}
@@ -113,6 +115,19 @@ export default function DashboardCinematic({ className = "" }: Props) {
             </AnimatePresence>
           ))}
 
+          {/* Nav: Calendrier */}
+          <div style={{ marginTop: 8 }}>
+            <motion.div
+              animate={{
+                background: navActive === "calendrier" ? C.accentBg : "transparent",
+                color: navActive === "calendrier" ? C.accent : C.muted,
+              }}
+              style={{ fontSize: 12, padding: "7px 10px", borderRadius: 8, fontWeight: 500 }}
+            >
+              Calendrier
+            </motion.div>
+          </div>
+
           {/* Nav: Briefing */}
           <div style={{ marginTop: "auto" }}>
             <motion.div
@@ -133,7 +148,8 @@ export default function DashboardCinematic({ className = "" }: Props) {
             {scene === 0 && <SceneScan key="s0" t={st} />}
             {scene === 1 && <SceneDossierDupont key="s1" t={st} />}
             {scene === 2 && <SceneDossierSCI key="s2" t={st} />}
-            {scene === 3 && <SceneBriefing key="s3" t={st} />}
+            {scene === 3 && <SceneCalendrier key="s3" t={st} />}
+            {scene === 4 && <SceneBriefing key="s4" t={st} />}
           </AnimatePresence>
         </div>
 
@@ -178,6 +194,17 @@ function DonnaAgent({ scene, st }: { scene: number; st: number }) {
       label = "Mise en demeure prête"
     }
   } else if (scene === 3) {
+    if (st < 1.5) {
+      x = -110; y = 260   // sidebar: Calendrier nav
+      label = "Analyse des échéances..."
+    } else if (st < 4) {
+      x = 160; y = 80
+      label = "3 dates critiques détectées"
+    } else {
+      x = 200; y = 260
+      label = "Synchronisation calendrier..."
+    }
+  } else if (scene === 4) {
     if (st < 1.5) {
       x = -120; y = 300   // sidebar: Briefing nav
       label = "Retour au briefing..."
@@ -531,7 +558,139 @@ function SceneDossierSCI({ t }: { t: number }) {
   )
 }
 
-// ─── SCENE 3: BRIEFING / TO-DO ───
+// ─── SCENE 3: CALENDRIER / ÉCHÉANCES ───
+
+const CALENDAR_EVENTS = [
+  { day: 15, label: "Audience JAF — Dupont", color: C.red, urgent: true },
+  { day: 22, label: "Délai appel — SCI Tilleuls", color: "#F59E0B", urgent: false },
+  { day: 28, label: "Forclusion — Succession Martin", color: C.accent, urgent: false },
+]
+
+// April 2026 calendar: starts on Wednesday (index 2)
+const APRIL_DAYS = Array.from({ length: 30 }, (_, i) => i + 1)
+const APRIL_START_OFFSET = 2 // Wednesday
+
+function SceneCalendrier({ t }: { t: number }) {
+  const today = 19
+  const eventDays = CALENDAR_EVENTS.map(e => e.day)
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}
+      style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <div style={{ padding: "14px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Avril 2026</span>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: t > 1 ? 1 : 0, scale: t > 1 ? 1 : 0.85 }}
+          transition={{ duration: 0.35 }}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "4px 12px", borderRadius: 20,
+            background: "#FEF2F2", border: `1px solid ${C.red}30`,
+            fontSize: 11, fontWeight: 600, color: "#991B1B",
+          }}
+        >
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.red }} />
+          3 échéances détectées
+        </motion.div>
+      </div>
+
+      {/* Calendar grid */}
+      <div style={{ padding: "12px 20px 8px", flex: 1 }}>
+        {/* Day names */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }}>
+          {["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"].map(d => (
+            <div key={d} style={{ fontSize: 9, color: C.light, textAlign: "center", fontWeight: 600, textTransform: "uppercase" }}>{d}</div>
+          ))}
+        </div>
+
+        {/* Days grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+          {/* Empty cells for offset */}
+          {Array.from({ length: APRIL_START_OFFSET }).map((_, i) => (
+            <div key={`empty-${i}`} />
+          ))}
+          {APRIL_DAYS.map(day => {
+            const eventIdx = CALENDAR_EVENTS.findIndex(e => e.day === day)
+            const hasEvent = eventIdx >= 0
+            const isToday = day === today
+            const eventVisible = hasEvent && t > 1.5 + eventIdx * 1.2
+
+            return (
+              <motion.div
+                key={day}
+                style={{
+                  position: "relative",
+                  height: 32,
+                  borderRadius: 6,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: isToday ? C.accentBg : "transparent",
+                  border: isToday ? `1px solid ${C.accent}40` : "1px solid transparent",
+                }}
+              >
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: isToday ? 700 : hasEvent ? 600 : 400,
+                  color: isToday ? C.accent : hasEvent ? C.text : C.muted,
+                  lineHeight: 1,
+                }}>
+                  {day}
+                </span>
+                {hasEvent && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: eventVisible ? 1 : 0, scale: eventVisible ? 1 : 0 }}
+                    transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
+                    style={{
+                      width: 5, height: 5, borderRadius: "50%",
+                      background: CALENDAR_EVENTS[eventIdx].color,
+                      marginTop: 2,
+                    }}
+                  />
+                )}
+              </motion.div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Event list below calendar */}
+      <div style={{ padding: "4px 20px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+        {CALENDAR_EVENTS.map((ev, i) => (
+          <motion.div
+            key={ev.label}
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: t > 2.5 + i * 0.9 ? 1 : 0, x: t > 2.5 + i * 0.9 ? 0 : 12 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "7px 10px", borderRadius: 8,
+              background: i === 0 ? "#FEF2F2" : C.card,
+              border: `1px solid ${i === 0 ? C.red + "25" : C.border}`,
+            }}
+          >
+            <div style={{ width: 3, height: 28, borderRadius: 2, background: ev.color, flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ev.label}</div>
+              <div style={{ fontSize: 10, color: C.muted }}>15 avril 2026</div>
+            </div>
+            {ev.urgent && (
+              <span style={{ fontSize: 9, fontWeight: 700, color: C.red, background: "#FEF2F2", padding: "2px 6px", borderRadius: 4, border: `1px solid ${C.red}30`, flexShrink: 0 }}>
+                URGENT
+              </span>
+            )}
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  )
+}
+
+// ─── SCENE 4: BRIEFING / TO-DO ───
 
 const TASKS = [
   { title: "Dupont c/ Dupont", detail: "Confirmer présence audience JAF — 15 avril", color: C.red },

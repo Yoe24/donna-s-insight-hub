@@ -18,6 +18,7 @@ import {
   Lock,
   BrainCog,
   Trash2,
+  Calendar,
 } from "lucide-react";
 import { PublicNavbar } from "@/components/PublicNavbar";
 import { ScrollToTop } from "@/components/ScrollToTop";
@@ -60,9 +61,19 @@ const briefCards = [
     title: "Elle prépare vos réponses",
     text: "En un clic, Donna rédige un brouillon de réponse professionnelle dans votre style. Vous relisez, vous validez, vous envoyez.",
   },
+  {
+    icon: Calendar,
+    title: "Elle surveille vos échéances",
+    text: "Donna extrait chaque date critique de vos emails et pièces jointes : audiences, forclusions, délais d'appel. Tout est placé sur votre calendrier Google ou Outlook.",
+  },
 ];
 
 const features = [
+  {
+    icon: Calendar,
+    title: "Surveillance des échéances",
+    text: "Donna lit chaque email et pièce jointe pour détecter les dates critiques. Audiences, forclusions, délais d'appel : tout est automatiquement synchronisé avec votre calendrier.",
+  },
   {
     icon: Inbox,
     title: "Tri intelligent des emails",
@@ -125,6 +136,7 @@ const rotatingPhrases = [
   "trie vos mails.",
   "rédige vos réponses.",
   "classe vos dossiers.",
+  "surveille vos échéances.",
 ];
 
 const Index = () => {
@@ -285,7 +297,7 @@ const Index = () => {
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {briefCards.map((card, i) => (
                 <motion.div
                   key={card.title}
@@ -365,11 +377,12 @@ const Index = () => {
               Le temps gagné, chaque jour
             </motion.h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 text-center">
               {[
                 { big: "2h", sub: "gagnées par jour sur le traitement de vos emails" },
                 { big: "30", sub: "emails traités automatiquement chaque matin" },
                 { big: "1 clic", sub: "pour obtenir un brouillon de réponse professionnel" },
+                { big: "0", sub: "échéance oubliée — chaque date critique est détectée" },
               ].map((stat, i) => (
                 <motion.div
                   key={stat.big}
