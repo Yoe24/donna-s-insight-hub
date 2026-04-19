@@ -1558,27 +1558,29 @@ function PhaseCBriefing({ lines, active, isMobile, onAllDone }: {
   )
 }
 
-// ─── Mini Calendrier épuré — directement visible (pas derrière un bouton) ───
-function MiniCalendar({ deadlineItems, isMobile }: {
-  deadlineItems: { date: Date; label: string; dossierName: string; dossierColor: string }[]
-  isMobile: boolean
+// ─── Calendrier style Google Calendar — grille mensuelle complète ───
+function MiniCalendar({ deadlineItems }: {
+  deadlineItems: { date: Date; label: string; dossierName: string; dossierColor: string; urgent: boolean }[]
 }) {
   const [calMonth, setCalMonth] = useState(() => {
     const n = new Date()
     return new Date(n.getFullYear(), n.getMonth(), 1)
   })
-  const [hoveredDay, setHoveredDay] = useState<string | null>(null)
-  const [clickedDay, setClickedDay] = useState<string | null>(null)
+  const [tooltip, setTooltip] = useState<{ key: string; x: number; y: number } | null>(null)
 
   const year = calMonth.getFullYear()
   const month = calMonth.getMonth()
-  const MONTH_NAMES = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+
+  const MONTH_NAMES_FULL = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+  const MONTH_NAMES_SHORT = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
   const DAY_NAMES = ["L", "M", "M", "J", "V", "S", "D"]
 
   const today = new Date()
-  const isToday = (d: number) => d === today.getDate() && month === today.getMonth() && year === today.getFullYear()
+  const todayYear = today.getFullYear()
+  const todayMonth = today.getMonth()
+  const todayDate = today.getDate()
 
-  // Map date string → deadlines
+  // Build deadline map: key → items
   const dlMap: Record<string, typeof deadlineItems> = {}
   deadlineItems.forEach(item => {
     const key = `${item.date.getFullYear()}-${item.date.getMonth()}-${item.date.getDate()}`
@@ -1586,193 +1588,245 @@ function MiniCalendar({ deadlineItems, isMobile }: {
     dlMap[key].push(item)
   })
 
-  // Vue semaine (mobile) : 7 jours à partir du lundi de la semaine courante
-  const getWeekDays = () => {
-    const d = new Date(today)
-    const dow = (d.getDay() + 6) % 7 // 0=lundi
-    d.setDate(d.getDate() - dow)
-    return Array.from({ length: 7 }, (_, i) => {
-      const day = new Date(d)
-      day.setDate(d.getDate() + i)
-      return day
-    })
-  }
-
-  if (isMobile) {
-    // Vue semaine compacte
-    const weekDays = getWeekDays()
-    return (
-      <div style={{ background: BG, borderRadius: 14, border: `1px solid ${BORDER}`, padding: "14px 12px", overflowX: "auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(38px, 1fr))", gap: 4, minWidth: 280 }}>
-          {weekDays.map((day, i) => {
-            const key = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`
-            const events = dlMap[key] || []
-            const isTodayDay = day.getDate() === today.getDate() && day.getMonth() === today.getMonth() && day.getFullYear() === today.getFullYear()
-            const hasEvents = events.length > 0
-            const isActive = hoveredDay === key || clickedDay === key
-            return (
-              <div
-                key={i}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}
-              >
-                <span style={{ fontSize: 10, fontWeight: 500, color: TEXT_LIGHT, textTransform: "uppercase" }}>
-                  {["L", "M", "M", "J", "V", "S", "D"][i]}
-                </span>
-                <div
-                  onMouseEnter={() => hasEvents ? setHoveredDay(key) : undefined}
-                  onMouseLeave={() => setHoveredDay(null)}
-                  onClick={() => hasEvents ? setClickedDay(clickedDay === key ? null : key) : undefined}
-                  style={{
-                    position: "relative",
-                    width: 34, height: 34,
-                    borderRadius: "50%",
-                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    background: isTodayDay ? ACCENT : isActive && hasEvents ? SIDEBAR_BG : "transparent",
-                    cursor: hasEvents ? "pointer" : "default",
-                    border: hasEvents && !isTodayDay ? `1px solid ${BORDER}` : "1px solid transparent",
-                    transition: "background 0.15s",
-                  }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: isTodayDay ? 700 : 400, color: isTodayDay ? "#fff" : hasEvents ? TEXT : TEXT_MUTED, lineHeight: 1 }}>
-                    {day.getDate()}
-                  </span>
-                  {hasEvents && (
-                    <div style={{ display: "flex", gap: 2, marginTop: 2 }}>
-                      {events.slice(0, 2).map((ev, ei) => (
-                        <div key={ei} style={{ width: 4, height: 4, borderRadius: "50%", background: ev.dossierColor }} />
-                      ))}
-                    </div>
-                  )}
-                  {(isActive) && hasEvents && (
-                    <div style={{
-                      position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
-                      background: "#fff", color: TEXT, borderRadius: 10, padding: "8px 10px",
-                      fontSize: 11, lineHeight: 1.5, zIndex: 20,
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.12)", minWidth: 160, maxWidth: 220,
-                      border: `1px solid ${BORDER}`, pointerEvents: "none", whiteSpace: "normal" as const,
-                    }}>
-                      {events.map((ev, ei) => (
-                        <div key={ei} style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: ei < events.length - 1 ? 6 : 0 }}>
-                          <div style={{ width: 7, height: 7, borderRadius: "50%", background: ev.dossierColor, flexShrink: 0, marginTop: 3 }} />
-                          <div>
-                            <div style={{ fontWeight: 600, color: TEXT, fontSize: 11 }}>{ev.dossierName}</div>
-                            <div style={{ color: TEXT_MUTED, fontSize: 10 }}>{ev.label}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    )
-  }
-
-  // Vue mensuelle (desktop)
-  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7
+  // Build full 6-row grid (42 cells)
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7 // 0=lundi
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const cells: (number | null)[] = []
-  for (let i = 0; i < firstDow; i++) cells.push(null)
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+  const daysInPrevMonth = new Date(year, month, 0).getDate()
+
+  type Cell = { day: number; currentMonth: boolean; dateObj: Date }
+  const cells: Cell[] = []
+
+  // Days from previous month
+  for (let i = 0; i < firstDow; i++) {
+    const d = daysInPrevMonth - firstDow + 1 + i
+    cells.push({ day: d, currentMonth: false, dateObj: new Date(year, month - 1, d) })
+  }
+  // Current month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ day: d, currentMonth: true, dateObj: new Date(year, month, d) })
+  }
+  // Next month days to fill 42 cells
+  const remaining = 42 - cells.length
+  for (let d = 1; d <= remaining; d++) {
+    cells.push({ day: d, currentMonth: false, dateObj: new Date(year, month + 1, d) })
+  }
+
+  // Month pill bar: current month ± 5 months
+  const pillMonths = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(todayYear, todayMonth + i - 2, 1)
+    return { year: d.getFullYear(), month: d.getMonth() }
+  })
+
+  const isCurrentMonth = year === calMonth.getFullYear() && month === calMonth.getMonth()
 
   return (
-    <div style={{ background: BG, borderRadius: 14, border: `1px solid ${BORDER}`, padding: "20px 18px" }}>
-      {/* Navigation mois */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <button
-          onClick={() => setCalMonth(new Date(year, month - 1, 1))}
-          style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 6, color: TEXT_MUTED, display: "flex", alignItems: "center", transition: "background 0.12s" }}
-          onMouseEnter={e => (e.currentTarget.style.background = SIDEBAR_BG)}
-          onMouseLeave={e => (e.currentTarget.style.background = "none")}
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8L10 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-        </button>
-        <span style={{ fontSize: 13, fontWeight: 600, color: TEXT, letterSpacing: "0.01em" }}>{MONTH_NAMES[month]} {year}</span>
-        <button
-          onClick={() => setCalMonth(new Date(year, month + 1, 1))}
-          style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 6, color: TEXT_MUTED, display: "flex", alignItems: "center", transition: "background 0.12s" }}
-          onMouseEnter={e => (e.currentTarget.style.background = SIDEBAR_BG)}
-          onMouseLeave={e => (e.currentTarget.style.background = "none")}
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-        </button>
+    <div style={{ background: BG, border: `1px solid ${BORDER}` }}>
+      {/* En-tête : mois + année + flèches */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "14px 16px 10px",
+        borderBottom: `1px solid #eee`,
+      }}>
+        <span style={{ fontSize: 15, fontWeight: 600, color: TEXT }}>
+          {MONTH_NAMES_FULL[month]} {year}
+        </span>
+        <div style={{ display: "flex", gap: 2 }}>
+          <button
+            onClick={() => setCalMonth(new Date(year, month - 1, 1))}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 7px", borderRadius: 5, color: TEXT_MUTED, display: "flex", alignItems: "center", transition: "background 0.12s" }}
+            onMouseEnter={e => (e.currentTarget.style.background = SIDEBAR_BG)}
+            onMouseLeave={e => (e.currentTarget.style.background = "none")}
+            aria-label="Mois précédent"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8L10 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+          <button
+            onClick={() => setCalMonth(new Date(year, month + 1, 1))}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 7px", borderRadius: 5, color: TEXT_MUTED, display: "flex", alignItems: "center", transition: "background 0.12s" }}
+            onMouseEnter={e => (e.currentTarget.style.background = SIDEBAR_BG)}
+            onMouseLeave={e => (e.currentTarget.style.background = "none")}
+            aria-label="Mois suivant"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+        </div>
       </div>
 
-      {/* En-têtes jours */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 6 }}>
+      {/* Barre de mois scrollable */}
+      <div style={{
+        display: "flex", gap: 6, overflowX: "auto", padding: "10px 16px",
+        borderBottom: `1px solid #eee`,
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+      }}>
+        {pillMonths.map((pm, i) => {
+          const isActive = pm.year === year && pm.month === month
+          return (
+            <button
+              key={i}
+              onClick={() => setCalMonth(new Date(pm.year, pm.month, 1))}
+              style={{
+                flexShrink: 0,
+                padding: "4px 11px",
+                borderRadius: 20,
+                border: isActive ? `1.5px solid ${ACCENT}` : `1px solid ${BORDER}`,
+                background: isActive ? ACCENT : "transparent",
+                color: isActive ? "#fff" : TEXT_MUTED,
+                fontSize: 11,
+                fontWeight: isActive ? 600 : 400,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: "all 0.15s",
+                whiteSpace: "nowrap" as const,
+              }}
+            >
+              {MONTH_NAMES_SHORT[pm.month]}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* En-têtes jours de semaine */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "repeat(7, 1fr)",
+        borderBottom: `1px solid #eee`,
+      }}>
         {DAY_NAMES.map((d, i) => (
-          <div key={i} style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: TEXT_LIGHT, padding: "2px 0", letterSpacing: "0.05em" }}>{d}</div>
+          <div key={i} style={{
+            textAlign: "center",
+            fontSize: 11,
+            fontWeight: 500,
+            color: TEXT_LIGHT,
+            padding: "6px 0",
+            letterSpacing: "0.04em",
+          }}>{d}</div>
         ))}
       </div>
 
-      {/* Grille jours */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
-        {cells.map((day, i) => {
-          if (day === null) return <div key={`e-${i}`} />
-          const key = `${year}-${month}-${day}`
-          const events = dlMap[key] || []
-          const dayIsToday = isToday(day)
+      {/* Grille 6x7 */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
+        {cells.map((cell, i) => {
+          const key = `${cell.dateObj.getFullYear()}-${cell.dateObj.getMonth()}-${cell.dateObj.getDate()}`
+          const events = cell.currentMonth ? (dlMap[key] || []) : []
+          const isTodayCell = cell.currentMonth &&
+            cell.day === todayDate &&
+            month === todayMonth &&
+            year === todayYear
           const hasEvents = events.length > 0
-          const isHov = hoveredDay === key || clickedDay === key
+          const hasUrgent = events.some(e => e.urgent)
+          const isTooltipVisible = tooltip?.key === key
+
+          // Border: right except last column, bottom except last row
+          const col = i % 7
+          const row = Math.floor(i / 7)
+          const borderRight = col < 6 ? `1px solid #eee` : "none"
+          const borderBottom = row < 5 ? `1px solid #eee` : "none"
 
           return (
             <div
-              key={`d-${day}`}
-              onMouseEnter={() => hasEvents ? setHoveredDay(key) : undefined}
-              onMouseLeave={() => setHoveredDay(null)}
-              onClick={() => hasEvents ? setClickedDay(clickedDay === key ? null : key) : undefined}
+              key={i}
               style={{
                 position: "relative",
-                textAlign: "center",
-                padding: "6px 2px 5px",
-                borderRadius: 8,
-                background: dayIsToday ? ACCENT : isHov && hasEvents ? SIDEBAR_BG : "transparent",
+                borderRight,
+                borderBottom,
+                minHeight: 72,
+                padding: "5px 5px 4px",
+                background: isTooltipVisible ? "#fafafa" : BG,
                 cursor: hasEvents ? "pointer" : "default",
-                transition: "background 0.12s",
+                transition: "background 0.1s",
               }}
+              onMouseEnter={e => {
+                if (hasEvents) {
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                  setTooltip({ key, x: rect.left, y: rect.top })
+                }
+              }}
+              onMouseLeave={() => setTooltip(null)}
+              onClick={() => hasEvents && setTooltip(isTooltipVisible ? null : { key, x: 0, y: 0 })}
             >
-              <span style={{ fontSize: 12, fontWeight: dayIsToday ? 700 : 400, color: dayIsToday ? "#fff" : hasEvents ? TEXT : TEXT_MUTED, lineHeight: 1, display: "block" }}>
-                {day}
-              </span>
-              {/* Points discrets couleur dossier */}
+              {/* Numéro du jour — aligné en haut à droite */}
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 3 }}>
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 24,
+                  height: 24,
+                  borderRadius: "50%",
+                  fontSize: 12,
+                  fontWeight: isTodayCell ? 700 : 400,
+                  color: isTodayCell ? "#fff" : cell.currentMonth ? TEXT : TEXT_LIGHT,
+                  background: isTodayCell ? ACCENT : "transparent",
+                  lineHeight: 1,
+                }}>
+                  {cell.day}
+                </span>
+              </div>
+
+              {/* Blocs d'échéances */}
               {hasEvents && (
-                <div style={{ display: "flex", justifyContent: "center", gap: 2, marginTop: 3 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   {events.slice(0, 3).map((ev, ei) => (
-                    <div key={ei} style={{ width: 4, height: 4, borderRadius: "50%", background: dayIsToday ? "rgba(255,255,255,0.8)" : ev.dossierColor, flexShrink: 0 }} />
+                    <div
+                      key={ei}
+                      style={{
+                        borderLeft: ev.urgent ? `2px solid ${URGENT}` : `2px solid ${ev.dossierColor}`,
+                        background: ev.urgent ? URGENT_BG : `${ev.dossierColor}12`,
+                        borderRadius: "0 3px 3px 0",
+                        padding: "1px 4px",
+                        fontSize: 10,
+                        fontWeight: 500,
+                        color: ev.urgent ? URGENT : ev.dossierColor,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap" as const,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {ev.label}
+                    </div>
                   ))}
+                  {events.length > 3 && (
+                    <div style={{ fontSize: 9, color: TEXT_LIGHT, paddingLeft: 4 }}>
+                      +{events.length - 3} de plus
+                    </div>
+                  )}
                 </div>
               )}
-              {/* Tooltip élégant au survol */}
-              {isHov && hasEvents && (
+
+              {/* Tooltip au survol */}
+              {isTooltipVisible && hasEvents && (
                 <div style={{
                   position: "absolute",
-                  bottom: "calc(100% + 8px)",
-                  left: "50%",
-                  transform: "translateX(-50%)",
+                  top: "calc(100% + 4px)",
+                  left: col >= 4 ? "auto" : 0,
+                  right: col >= 4 ? 0 : "auto",
+                  zIndex: 30,
                   background: "#fff",
-                  color: TEXT,
-                  borderRadius: 10,
-                  padding: "10px 12px",
-                  fontSize: 11,
-                  lineHeight: 1.6,
-                  zIndex: 20,
-                  boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
-                  minWidth: 180,
-                  maxWidth: 230,
                   border: `1px solid ${BORDER}`,
+                  borderRadius: 10,
+                  boxShadow: "0 6px 24px rgba(0,0,0,0.10)",
+                  padding: "10px 12px",
+                  minWidth: 200,
+                  maxWidth: 260,
                   pointerEvents: "none",
-                  whiteSpace: "normal" as const,
-                  textAlign: "left",
                 }}>
                   {events.map((ev, ei) => (
-                    <div key={ei} style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: ei < events.length - 1 ? 7 : 0 }}>
-                      <div style={{ width: 7, height: 7, borderRadius: "50%", background: ev.dossierColor, flexShrink: 0, marginTop: 4 }} />
+                    <div key={ei} style={{
+                      display: "flex", alignItems: "flex-start", gap: 8,
+                      marginBottom: ei < events.length - 1 ? 8 : 0,
+                    }}>
+                      <div style={{
+                        width: 3, alignSelf: "stretch", borderRadius: 2,
+                        background: ev.urgent ? URGENT : ev.dossierColor,
+                        flexShrink: 0, marginTop: 2,
+                      }} />
                       <div>
-                        <div style={{ fontWeight: 600, color: TEXT, fontSize: 11 }}>{ev.dossierName}</div>
-                        <div style={{ color: TEXT_MUTED, fontSize: 10 }}>{ev.label}</div>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: TEXT, lineHeight: 1.4 }}>{ev.dossierName}</div>
+                        <div style={{ fontSize: 10, color: TEXT_MUTED, lineHeight: 1.4 }}>{ev.label}</div>
+                        {ev.urgent && (
+                          <div style={{ fontSize: 9, color: URGENT, fontWeight: 600, marginTop: 2 }}>Urgent</div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1782,20 +1836,6 @@ function MiniCalendar({ deadlineItems, isMobile }: {
           )
         })}
       </div>
-
-      {/* Légende dossiers (uniquement si des échéances existent ce mois) */}
-      {deadlineItems.some(item => item.date.getMonth() === month && item.date.getFullYear() === year) && (
-        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${BORDER}`, display: "flex", flexWrap: "wrap", gap: "6px 14px" }}>
-          {deadlineItems
-            .filter((item, idx, arr) => arr.findIndex(a => a.dossierName === item.dossierName) === idx && item.date.getMonth() === month && item.date.getFullYear() === year)
-            .map((item, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <div style={{ width: 7, height: 7, borderRadius: "50%", background: item.dossierColor, flexShrink: 0 }} />
-                <span style={{ fontSize: 10, color: TEXT_MUTED }}>{item.dossierName}</span>
-              </div>
-            ))}
-        </div>
-      )}
     </div>
   )
 }
@@ -1807,9 +1847,16 @@ function EcheancesSection({ isMobile }: { isMobile: boolean }) {
     d.deadlines.map(dl => {
       const parsed = parseFrenchDate(dl.date)
       if (!parsed) return null
-      return { date: parsed, label: dl.label, dossierName: d.name, dossierColor: DOSSIER_COLORS[d.id] || "#888" }
+      const remaining = Math.round((parsed.getTime() - new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()).getTime()) / (1000 * 60 * 60 * 24))
+      return {
+        date: parsed,
+        label: dl.label,
+        dossierName: d.name,
+        dossierColor: DOSSIER_COLORS[d.id] || "#888",
+        urgent: dl.urgent || remaining <= 7,
+      }
     })
-  ).filter(Boolean) as { date: Date; label: string; dossierName: string; dossierColor: string }[]
+  ).filter(Boolean) as { date: Date; label: string; dossierName: string; dossierColor: string; urgent: boolean }[]
 
   return (
     <motion.div
@@ -1825,8 +1872,8 @@ function EcheancesSection({ isMobile }: { isMobile: boolean }) {
         </span>
       </div>
 
-      {/* Calendrier mensuel / semaine directement visible */}
-      <MiniCalendar deadlineItems={calItems} isMobile={isMobile} />
+      {/* Calendrier Google Calendar style */}
+      <MiniCalendar deadlineItems={calItems} />
 
       {/* Boutons de connexion */}
       <div style={{
