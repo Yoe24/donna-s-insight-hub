@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { LayoutDashboard, Settings, LogOut, Mail, InboxIcon, MoreHorizontal, Pencil, ArrowRightLeft, Trash2, Tag } from "lucide-react";
+import { LayoutDashboard, Settings, LogOut, Mail, InboxIcon, MoreHorizontal, Pencil, ArrowRightLeft, Trash2, Tag, CalendarDays } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,6 +35,7 @@ const navItems = [
   { title: "Briefing", subtitle: "Votre journée en un coup d'œil", url: "/dashboard", icon: LayoutDashboard },
   // TODO: Réactiver le Fil d'actualité post-MVP
   // { title: "Fil d'actualité", subtitle: "Les emails analysés par Donna", url: "/fil", icon: Mail, tourId: "fil" },
+  { title: "Calendrier", subtitle: "Échéances et audiences", url: "/calendar", icon: CalendarDays },
   { title: "Configurez-moi", subtitle: "Personnalisez votre assistante", url: "/configuration", icon: Settings },
 ];
 
