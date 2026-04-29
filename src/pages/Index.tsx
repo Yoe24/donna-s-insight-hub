@@ -242,23 +242,28 @@ const Index = () => {
 
         {/* ───── SECTION — CONNECTÉ À VOS OUTILS ───── */}
         <section className="bg-background border-t border-border/30">
-          <div className="max-w-4xl mx-auto px-6 sm:px-10 py-10 md:py-14 text-center">
-            <p className="text-xs font-sans font-medium tracking-[0.15em] uppercase text-gray-400 mb-8">
-              Connecté à vos outils
+          <div className="max-w-5xl mx-auto px-6 sm:px-10 py-12 md:py-16 text-center">
+            <p className="text-sm font-sans font-medium tracking-[0.15em] uppercase text-gray-500 mb-10">
+              Connecté à votre écosystème
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-10 sm:gap-14">
+            <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 sm:gap-x-16">
               {[
                 { src: "/logos/gmail.svg", alt: "Gmail" },
-                { src: "/logos/outlook.svg", alt: "Microsoft Outlook" },
                 { src: "/logos/googlecalendar.svg", alt: "Google Calendar" },
+                { src: "/logos/googledrive.svg", alt: "Google Drive" },
+                { src: "/logos/googlemeet.svg", alt: "Google Meet" },
+                { src: "/logos/outlook.svg", alt: "Microsoft Outlook" },
                 { src: "/logos/microsoft365.svg", alt: "Microsoft 365" },
+                { src: "/logos/microsoftteams.svg", alt: "Microsoft Teams" },
+                { src: "/logos/microsoftword.svg", alt: "Microsoft Word" },
+                { src: "/logos/onedrive.svg", alt: "OneDrive" },
               ].map((logo) => (
                 <img
                   key={logo.alt}
                   src={logo.src}
                   alt={logo.alt}
                   title={logo.alt}
-                  className="h-8 w-auto opacity-40 grayscale transition-all duration-300 hover:opacity-80 hover:grayscale-0"
+                  className="h-12 w-auto transition-transform duration-300 hover:scale-110"
                 />
               ))}
             </div>
