@@ -240,6 +240,31 @@ const Index = () => {
           </div>
         </section>
 
+        {/* ───── SECTION — CONNECTÉ À VOS OUTILS ───── */}
+        <section className="bg-background border-t border-border/30">
+          <div className="max-w-4xl mx-auto px-6 sm:px-10 py-10 md:py-14 text-center">
+            <p className="text-xs font-sans font-medium tracking-[0.15em] uppercase text-gray-400 mb-8">
+              Connecté à vos outils
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-10 sm:gap-14">
+              {[
+                { src: "/logos/gmail.svg", alt: "Gmail" },
+                { src: "/logos/outlook.svg", alt: "Microsoft Outlook" },
+                { src: "/logos/googlecalendar.svg", alt: "Google Calendar" },
+                { src: "/logos/microsoft365.svg", alt: "Microsoft 365" },
+              ].map((logo) => (
+                <img
+                  key={logo.alt}
+                  src={logo.src}
+                  alt={logo.alt}
+                  title={logo.alt}
+                  className="h-8 w-auto opacity-40 grayscale transition-all duration-300 hover:opacity-80 hover:grayscale-0"
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* ───── SECTION — SÉCURITÉ (remonté après le hero) ───── */}
         <section className="bg-background">
           <div className="max-w-5xl mx-auto px-6 sm:px-10 lg:px-16 py-20 md:py-28 text-center">
