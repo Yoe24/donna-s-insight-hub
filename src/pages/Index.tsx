@@ -240,6 +240,36 @@ const Index = () => {
           </div>
         </section>
 
+        {/* ───── SECTION — CONNECTÉ À VOS OUTILS ───── */}
+        <section className="bg-background border-t border-border/30">
+          <div className="max-w-5xl mx-auto px-6 sm:px-10 py-12 md:py-16 text-center">
+            <p className="text-sm font-sans font-medium tracking-[0.15em] uppercase text-gray-500 mb-10">
+              Connecté à votre écosystème
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 sm:gap-x-16">
+              {[
+                { src: "/logos/gmail.svg", alt: "Gmail" },
+                { src: "/logos/googlecalendar.svg", alt: "Google Calendar" },
+                { src: "/logos/googledrive.svg", alt: "Google Drive" },
+                { src: "/logos/googlemeet.svg", alt: "Google Meet" },
+                { src: "/logos/outlook.svg", alt: "Microsoft Outlook" },
+                { src: "/logos/microsoft365.svg", alt: "Microsoft 365" },
+                { src: "/logos/microsoftteams.svg", alt: "Microsoft Teams" },
+                { src: "/logos/microsoftword.svg", alt: "Microsoft Word" },
+                { src: "/logos/onedrive.svg", alt: "OneDrive" },
+              ].map((logo) => (
+                <img
+                  key={logo.alt}
+                  src={logo.src}
+                  alt={logo.alt}
+                  title={logo.alt}
+                  className="h-12 w-auto transition-transform duration-300 hover:scale-110"
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* ───── SECTION — SÉCURITÉ (remonté après le hero) ───── */}
         <section className="bg-background">
           <div className="max-w-5xl mx-auto px-6 sm:px-10 lg:px-16 py-20 md:py-28 text-center">
