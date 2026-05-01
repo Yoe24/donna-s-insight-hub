@@ -8,6 +8,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { captureUserIdFromUrl, isDemo, getUserId } from "@/lib/auth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
+import LabHome from "./pages/lab/LabHome";
+import LabCalendar from "./pages/lab/LabCalendar";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -90,6 +92,8 @@ const App = () => (
             <Route path="/emails-autres" element={<ProtectedRoute><EmailsAutres /></ProtectedRoute>} />
 
             <Route path="/dossiers/:id" element={<ProtectedRoute><DossierDetail /></ProtectedRoute>} />
+            <Route path="/lab" element={<ProtectedRoute><LabHome /></ProtectedRoute>} />
+            <Route path="/lab/calendar" element={<ProtectedRoute><LabCalendar /></ProtectedRoute>} />
             <Route path="/v6" element={<ProtectedRoute><DashboardV6 /></ProtectedRoute>} />
             <Route path="/v1" element={<Suspense fallback={null}><LandingV1 /></Suspense>} />
             <Route path="/v2" element={<Suspense fallback={null}><LandingV2 /></Suspense>} />
