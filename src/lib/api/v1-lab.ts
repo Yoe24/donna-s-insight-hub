@@ -88,6 +88,12 @@ export interface ImportJobResult {
   status: string;
 }
 
+export interface ResetResult {
+  deleted_events: number;
+  deleted_attachments: number;
+  deleted_messages: number;
+}
+
 // ─── API functions ─────────────────────────────────────────────────────────────
 
 export interface FetchEventsFilters {
@@ -127,9 +133,13 @@ export async function patchEvent(
   });
 }
 
-export async function startImport(provider: 'gmail' | 'outlook'): Promise<ImportJobResult> {
+export async function startImport(
+  provider: 'gmail' | 'outlook',
+  opts?: { reset?: boolean }
+): Promise<ImportJobResult> {
   const userId = getUserId();
-  const url = `${BASE_URL}/api/v1/lab/import?user_id=${encodeURIComponent(userId)}`;
+  const resetParam = opts?.reset ? '&reset=1' : '';
+  const url = `${BASE_URL}/api/v1/lab/import?user_id=${encodeURIComponent(userId)}${resetParam}`;
   return safeFetch<ImportJobResult>(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -137,6 +147,31 @@ export async function startImport(provider: 'gmail' | 'outlook'): Promise<Import
   });
 }
 
+export async function resetLabSession(): Promise<ResetResult> {
+  const userId = getUserId();
+  const url = `${BASE_URL}/api/v1/lab/reset?user_id=${encodeURIComponent(userId)}`;
+  return safeFetch<ResetResult>(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
 export async function getImportStatus(job_id: string): Promise<unknown> {
   return safeFetch<unknown>(buildUrl(`/api/v1/lab/import/status/${job_id}`));
+}
+
+export async function getProcessStatus(job_id: string): Promise<{
+  job_id: string;
+  status: 'processing' | 'done' | 'error';
+  counts?: {
+    classified: number;
+    with_actionable: number;
+    events_extracted: number;
+    events_inserted: number;
+    errors: number;
+  };
+  error_msg?: string;
+  finished_at: string | null;
+}> {
+  return safeFetch(buildUrl(`/api/v1/lab/process/status/${job_id}`));
 }
