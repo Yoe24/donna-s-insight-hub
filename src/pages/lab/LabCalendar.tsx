@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { CalendarTimeline } from "@/components/lab/CalendarTimeline";
+import { CalendarGrid } from "@/components/lab/CalendarGrid";
 import { ToVerifyQueue } from "@/components/lab/ToVerifyQueue";
 import { SourceModal } from "@/components/lab/SourceModal";
 import { Button } from "@/components/ui/button";
@@ -256,7 +256,7 @@ export default function LabCalendar() {
         </div>
       )}
 
-      {/* ── Main layout: timeline + sidebar ── */}
+      {/* ── Main layout: calendar grid + sidebar ── */}
       {loading ? (
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
@@ -265,11 +265,11 @@ export default function LabCalendar() {
         </div>
       ) : (
         <div className="flex gap-6 items-start">
-          {/* Main timeline */}
+          {/* Main calendar grid */}
           <div className="flex-1 min-w-0">
-            <CalendarTimeline
+            <CalendarGrid
               events={events}
-              onSourceClick={handleSourceClick}
+              onEventClick={handleSourceClick}
               onActionDone={handleActionDone}
             />
           </div>
