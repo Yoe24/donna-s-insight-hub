@@ -53,6 +53,15 @@ function formatTimeLabel(time: string | null): string | null {
   return hhmm.replace(":", "h");
 }
 
+function cleanField(v: string | null | undefined): string | null {
+  if (!v) return null;
+  const t = v.trim();
+  if (!t) return null;
+  if (/^[.\-–—\/:]+$/.test(t)) return null;
+  if (/^(à préciser|n\/?a|inconnu|non renseigné|non précisé)$/i.test(t)) return null;
+  return t.replace(/^[:\s]+/, "");
+}
+
 export function SourceModal({ event, open, onClose }: SourceModalProps) {
   const [source, setSource] = useState<EventSource | null>(null);
   const [loading, setLoading] = useState(false);
@@ -120,35 +129,43 @@ export function SourceModal({ event, open, onClose }: SourceModalProps) {
             </div>
           )}
 
-          {/* Contextual details */}
-          {(event.client || event.counterparty || event.court_or_context || event.case_ref) && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-sm">
-              {event.client && (
-                <div>
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Client</p>
-                  <p>{event.client}</p>
-                </div>
-              )}
-              {event.counterparty && (
-                <div>
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Partie adverse</p>
-                  <p>{event.counterparty}</p>
-                </div>
-              )}
-              {event.court_or_context && (
-                <div className="sm:col-span-2">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Lieu / Tribunal</p>
-                  <p>{event.court_or_context}</p>
-                </div>
-              )}
-              {event.case_ref && (
-                <div>
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Référence</p>
-                  <p>{event.case_ref}</p>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Contextual details — only show fields with meaningful content */}
+          {(() => {
+            const cClient = cleanField(event.client);
+            const cCounter = cleanField(event.counterparty);
+            const cCourt = cleanField(event.court_or_context);
+            const cRef = cleanField(event.case_ref);
+            const hasAny = cClient || cCounter || cCourt || cRef;
+            if (!hasAny) return null;
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                {cClient && (
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Client</p>
+                    <p>{cClient}</p>
+                  </div>
+                )}
+                {cCounter && (
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Partie adverse</p>
+                    <p>{cCounter}</p>
+                  </div>
+                )}
+                {cCourt && (
+                  <div className="sm:col-span-2">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Lieu / Tribunal</p>
+                    <p>{cCourt}</p>
+                  </div>
+                )}
+                {cRef && (
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Référence</p>
+                    <p>{cRef}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Source excerpt */}
           {event.source_excerpt && (
