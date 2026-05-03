@@ -28,6 +28,15 @@ import { fetchEvents, startImport, getProcessStatus, type EventV1 } from "@/lib/
 import { getUserId } from "@/lib/auth";
 import { toast } from "sonner";
 
+const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
+  hearing:             { bg: "#fee2e2", text: "#b91c1c" },
+  filing_deadline:     { bg: "#ffedd5", text: "#c2410c" },
+  procedural_deadline: { bg: "#f3e8ff", text: "#7c3aed" },
+  commercial_deadline: { bg: "#dcfce7", text: "#15803d" },
+  meeting:             { bg: "#f3f4f6", text: "#6b7280" },
+  unknown:             { bg: "#f3f4f6", text: "#4b5563" },
+};
+
 // ─── Polling hook ─────────────────────────────────────────────────────────────
 
 // Polls /process/status/:job_id every 3s until done or error.
@@ -223,13 +232,39 @@ export default function LabCalendar() {
 
       {/* ── Banner this week ── */}
       {!loading && events.length > 0 && (
-        <div className="mb-5 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200">
+        <div className="mb-4 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200">
           <p className="text-sm text-amber-900">
             Cette semaine,{' '}
             <strong className="font-semibold">{thisWeekEvents.length}</strong>{' '}
             {thisWeekEvents.length > 1 ? 'dates clés' : thisWeekEvents.length === 1 ? 'date clé' : 'date clé'}{' '}
             à retenir.
           </p>
+        </div>
+      )}
+
+      {/* ── Légende des 5 types critiques ── */}
+      {!loading && events.length > 0 && (
+        <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: '#fee2e2', borderColor: '#b91c1c', borderWidth: 1 }} />
+            Audience
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: '#ffedd5', borderColor: '#c2410c', borderWidth: 1 }} />
+            Dépôt / Conclusions
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: '#f3e8ff', borderColor: '#7c3aed', borderWidth: 1 }} />
+            Clôture / Procédure
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: '#dcfce7', borderColor: '#15803d', borderWidth: 1 }} />
+            Échéance commerciale
+          </span>
+          <span className="inline-flex items-center gap-1.5 opacity-60">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: '#f3f4f6', borderColor: '#6b7280', borderWidth: 1 }} />
+            RDV
+          </span>
         </div>
       )}
 
@@ -281,22 +316,36 @@ export default function LabCalendar() {
                   return ev.date;
                 }
               })();
+              const dossier =
+                ev.client && ev.counterparty
+                  ? `${ev.client} c/ ${ev.counterparty}`
+                  : ev.client || (ev.counterparty ? `c/ ${ev.counterparty}` : null);
+              const isMeeting = ev.event_type === "meeting" || ev.event_type === "unknown";
+              const typeColor = TYPE_COLORS[ev.event_type] ?? TYPE_COLORS.unknown;
               return (
                 <li key={ev.id}>
                   <button
                     type="button"
                     onClick={() => handleSourceClick(ev)}
-                    className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-muted/50 transition-colors"
+                    className={`w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-muted/50 transition-colors ${isMeeting ? "opacity-70" : ""}`}
                   >
+                    <span
+                      className="shrink-0 w-1 h-7 rounded-full"
+                      style={{ background: typeColor.text }}
+                      aria-hidden
+                    />
                     <span className="shrink-0 w-36 text-xs font-medium text-muted-foreground capitalize">
                       {dateLabel}
                     </span>
-                    {ev.time && (
-                      <span className="shrink-0 w-12 text-xs text-muted-foreground tabular-nums">
-                        {ev.time.slice(0, 5)}
+                    <span className="shrink-0 w-12 text-xs text-muted-foreground tabular-nums">
+                      {ev.time ? ev.time.slice(0, 5) : ""}
+                    </span>
+                    <span className="text-sm truncate flex-1 font-medium">{ev.title}</span>
+                    {dossier && (
+                      <span className="shrink-0 max-w-[40%] truncate text-xs text-muted-foreground">
+                        {dossier}
                       </span>
                     )}
-                    <span className="text-sm truncate flex-1">{ev.title}</span>
                   </button>
                 </li>
               );

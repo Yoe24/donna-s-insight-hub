@@ -28,18 +28,27 @@ import {
 } from "@/components/ui/dialog";
 
 // ─── Color map by event type ──────────────────────────────────────────────────
+// 5 types critiques pour avocat contentieux = couleurs vives
+// "meeting" (RDV non critique) = gris désaturé pour le déprioriser
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  hearing:             { bg: "#fee2e2", text: "#b91c1c" },
-  filing_deadline:     { bg: "#ffedd5", text: "#c2410c" },
-  meeting:             { bg: "#dbeafe", text: "#1d4ed8" },
-  procedural_deadline: { bg: "#f3e8ff", text: "#7c3aed" },
-  commercial_deadline: { bg: "#dcfce7", text: "#15803d" },
-  unknown:             { bg: "#f3f4f6", text: "#4b5563" },
+  hearing:             { bg: "#fee2e2", text: "#b91c1c" }, // 🔴 Audience
+  filing_deadline:     { bg: "#ffedd5", text: "#c2410c" }, // 🟠 Dépôt / Conclusions
+  procedural_deadline: { bg: "#f3e8ff", text: "#7c3aed" }, // 🟣 Clôture / Procédure
+  commercial_deadline: { bg: "#dcfce7", text: "#15803d" }, // 🟢 Échéance commerciale
+  meeting:             { bg: "#f3f4f6", text: "#6b7280" }, // ⚪ RDV — déprioritisé (gris)
+  unknown:             { bg: "#f3f4f6", text: "#4b5563" }, // À préciser
 };
 
 function getTypeColor(eventType: string) {
   return TYPE_COLORS[eventType] ?? TYPE_COLORS.unknown;
+}
+
+function dossierLabel(ev: EventV1): string | null {
+  if (ev.client && ev.counterparty) return `${ev.client} c/ ${ev.counterparty}`;
+  if (ev.client) return ev.client;
+  if (ev.counterparty) return `c/ ${ev.counterparty}`;
+  return null;
 }
 
 // ─── DayEventsModal ───────────────────────────────────────────────────────────
@@ -139,6 +148,7 @@ function DayCell({
       <div className="flex flex-col gap-0.5 flex-1">
         {visible.map((ev) => {
           const { bg, text } = getTypeColor(ev.event_type);
+          const dossier = dossierLabel(ev);
           return (
             <button
               key={ev.id}
@@ -148,14 +158,17 @@ function DayCell({
                 e.stopPropagation();
                 onEventClick(ev);
               }}
-              title={ev.title}
+              title={dossier ? `${ev.title} — ${dossier}` : ev.title}
             >
               {ev.time && (
                 <span className="mr-1 font-normal opacity-75">
                   {ev.time.slice(0, 5)}
                 </span>
               )}
-              {ev.title}
+              <span className="font-semibold">{ev.title}</span>
+              {dossier && (
+                <span className="opacity-70 font-normal"> · {dossier}</span>
+              )}
             </button>
           );
         })}
