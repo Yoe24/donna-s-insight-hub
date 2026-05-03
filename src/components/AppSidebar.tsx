@@ -35,9 +35,35 @@ const DOMAINES = [
   "Droit des successions", "Droit pénal", "Bail commercial", "Gestion cabinet", "Autre",
 ];
 
+function shortName(full: string): string {
+  if (!full) return "Dossier";
+  // Strip everything after " — " or " - " or " | "
+  const stripped = full.split(/\s[—\-|]\s/)[0].trim();
+  // Remove leading/trailing quotes
+  return stripped.replace(/^["«»]|["«»]$/g, "").trim() || full;
+}
+
 function getInitials(name: string) {
-  if (!name) return "?";
-  return name.split(" ").filter(Boolean).map((w) => w[0]).join("").toUpperCase().slice(0, 2) || "?";
+  const short = shortName(name);
+  if (!short) return "?";
+  return short.split(" ").filter(Boolean).map((w) => w[0]).join("").toUpperCase().slice(0, 2) || "?";
+}
+
+// Deterministic pastel color from string hash
+const DOSSIER_COLORS: Array<{ bg: string; text: string }> = [
+  { bg: "bg-rose-100",    text: "text-rose-700" },
+  { bg: "bg-amber-100",   text: "text-amber-700" },
+  { bg: "bg-emerald-100", text: "text-emerald-700" },
+  { bg: "bg-sky-100",     text: "text-sky-700" },
+  { bg: "bg-violet-100",  text: "text-violet-700" },
+  { bg: "bg-orange-100",  text: "text-orange-700" },
+  { bg: "bg-teal-100",    text: "text-teal-700" },
+  { bg: "bg-pink-100",    text: "text-pink-700" },
+];
+function colorForDossier(id: string): { bg: string; text: string } {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return DOSSIER_COLORS[h % DOSSIER_COLORS.length];
 }
 
 interface BriefDossier {
@@ -214,20 +240,25 @@ export function AppSidebar() {
                               }
                             }}
                             className={cn(
-                              "w-full rounded-md px-2 py-2 text-sm font-sans transition-colors cursor-pointer",
+                              "w-full rounded-md pl-2 pr-8 py-2.5 text-sm font-sans transition-colors cursor-pointer",
                               active
                                 ? "bg-sidebar-accent text-sidebar-accent-foreground"
                                 : "hover:bg-sidebar-accent/50 text-sidebar-foreground"
                             )}
                           >
-                            <div className="flex items-center gap-2 w-full min-w-0">
+                            <div className="flex items-center gap-2.5 w-full min-w-0">
                               <div className="shrink-0">
-                                <div className={cn(
-                                  "h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-semibold",
-                                  active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                                )}>
-                                  {getInitials(dossier.nom_client)}
-                                </div>
+                                {(() => {
+                                  const color = colorForDossier(dossier.id);
+                                  return (
+                                    <div className={cn(
+                                      "h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-semibold",
+                                      active ? "bg-primary text-primary-foreground" : `${color.bg} ${color.text}`
+                                    )}>
+                                      {getInitials(dossier.nom_client)}
+                                    </div>
+                                  );
+                                })()}
                               </div>
                               {!collapsed && (
                                 <div className="flex-1 min-w-0">
@@ -246,17 +277,16 @@ export function AppSidebar() {
                                       onBlur={() => handleRenameConfirm(dossier.id)}
                                     />
                                   ) : (
-                                    <>
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="truncate text-sm font-medium leading-tight">{dossier.nom_client}</span>
-                                        {newEmails > 0 && (
-                                          <span className="inline-flex items-center justify-center h-4 min-w-[16px] rounded-full bg-foreground/10 text-[10px] font-semibold text-foreground px-1">
-                                            {newEmails}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <span className="text-[10px] text-muted-foreground truncate block">{dossier.domaine || "—"}</span>
-                                    </>
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <span className="truncate text-sm font-medium leading-tight">
+                                        {shortName(dossier.nom_client)}
+                                      </span>
+                                      {newEmails > 0 && (
+                                        <span className="shrink-0 inline-flex items-center justify-center h-4 min-w-[16px] rounded-full bg-foreground/10 text-[10px] font-semibold text-foreground px-1">
+                                          {newEmails}
+                                        </span>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               )}

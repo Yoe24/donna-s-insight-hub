@@ -8,11 +8,10 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { startOfWeek, endOfWeek, parseISO, isWithinInterval } from "date-fns";
+import { startOfWeek, endOfWeek, parseISO, isWithinInterval, format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { CalendarGrid } from "@/components/lab/CalendarGrid";
-import { ToVerifyQueue } from "@/components/lab/ToVerifyQueue";
 import { SourceModal } from "@/components/lab/SourceModal";
 import { Button } from "@/components/ui/button";
 import {
@@ -173,7 +172,6 @@ export default function LabCalendar() {
     }
   }
 
-  const allToVerify = events.filter((e) => e.status === 'to_verify');
   const isProcessing = rescanning || !!pollJobId;
 
   const thisWeekEvents = useMemo(() => {
@@ -189,46 +187,38 @@ export default function LabCalendar() {
     });
   }, [events]);
 
+  const sortedEvents = useMemo(() => {
+    return [...events].sort((a, b) => {
+      const dateCmp = a.date.localeCompare(b.date);
+      if (dateCmp !== 0) return dateCmp;
+      return (a.time ?? "").localeCompare(b.time ?? "");
+    });
+  }, [events]);
+
   return (
     <DashboardLayout>
-      {/* ── Top nav: Calendrier | Briefing ── */}
-      <div className="flex items-end gap-6 mb-5 border-b">
-        <Link
-          to="/lab/calendar"
-          className="pb-2 text-sm font-medium border-b-2 border-foreground text-foreground -mb-px"
-        >
-          Calendrier
-        </Link>
-        <Link
-          to="/dashboard"
-          className="pb-2 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground"
-        >
-          Briefing
-        </Link>
-        <div className="ml-auto pb-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2 text-muted-foreground hover:text-foreground"
-            onClick={handleRescanClick}
-            disabled={loading || isProcessing}
-          >
-            {isProcessing ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3.5 w-3.5" />
-            )}
-            <span className="text-xs">{isProcessing ? "Re-scan…" : "Re-scanner"}</span>
-          </Button>
+      {/* ── Accroche + Re-scanner ── */}
+      <div className="flex items-start justify-between gap-4 mb-5">
+        <div>
+          <h1 className="text-2xl font-serif font-semibold tracking-tight">Calendrier juridique</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Donna a analysé vos emails. Voici les dates clés à ne pas oublier.
+          </p>
         </div>
-      </div>
-
-      {/* ── Accroche ── */}
-      <div className="mb-5">
-        <h1 className="text-2xl font-serif font-semibold tracking-tight">Calendrier juridique</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Donna a analysé vos emails. Voici les dates clés à ne pas oublier.
-        </p>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2 text-muted-foreground hover:text-foreground shrink-0"
+          onClick={handleRescanClick}
+          disabled={loading || isProcessing}
+        >
+          {isProcessing ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="h-3.5 w-3.5" />
+          )}
+          <span className="text-xs">{isProcessing ? "Re-scan…" : "Re-scanner"}</span>
+        </Button>
       </div>
 
       {/* ── Banner this week ── */}
@@ -259,7 +249,7 @@ export default function LabCalendar() {
         </div>
       )}
 
-      {/* ── Main layout: calendar grid + sidebar ── */}
+      {/* ── Calendar grid (full width, no right sidebar) ── */}
       {loading ? (
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
@@ -267,26 +257,51 @@ export default function LabCalendar() {
           ))}
         </div>
       ) : (
-        <div className="flex gap-6 items-start">
-          {/* Main calendar grid */}
-          <div className="flex-1 min-w-0">
-            <CalendarGrid
-              events={events}
-              onEventClick={handleSourceClick}
-              onActionDone={handleActionDone}
-            />
-          </div>
+        <div className="min-w-0">
+          <CalendarGrid
+            events={events}
+            onEventClick={handleSourceClick}
+            onActionDone={handleActionDone}
+          />
+        </div>
+      )}
 
-          {/* Sidebar: "A vérifier" queue — only show when there are some */}
-          {allToVerify.length > 0 && (
-            <div className="w-72 shrink-0 border rounded-lg p-4 bg-card">
-              <ToVerifyQueue
-                events={events}
-                onSourceClick={handleSourceClick}
-                onActionDone={handleActionDone}
-              />
-            </div>
-          )}
+      {/* ── Chronological list of all dates, clickable ── */}
+      {!loading && sortedEvents.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+            Toutes les dates ({sortedEvents.length})
+          </h2>
+          <ul className="rounded-lg border divide-y bg-card">
+            {sortedEvents.map((ev) => {
+              const dateLabel = (() => {
+                try {
+                  return format(parseISO(ev.date), "EEE d MMM yyyy", { locale: fr });
+                } catch {
+                  return ev.date;
+                }
+              })();
+              return (
+                <li key={ev.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleSourceClick(ev)}
+                    className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-muted/50 transition-colors"
+                  >
+                    <span className="shrink-0 w-36 text-xs font-medium text-muted-foreground capitalize">
+                      {dateLabel}
+                    </span>
+                    {ev.time && (
+                      <span className="shrink-0 w-12 text-xs text-muted-foreground tabular-nums">
+                        {ev.time.slice(0, 5)}
+                      </span>
+                    )}
+                    <span className="text-sm truncate flex-1">{ev.title}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
 
