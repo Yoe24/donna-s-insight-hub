@@ -6,8 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { LayoutDashboard, Settings, LogOut, Mail, InboxIcon, MoreHorizontal, Pencil, ArrowRightLeft, Trash2, Tag, CalendarDays } from "lucide-react";
-import { NavLink } from "@/components/NavLink";
+import { LogOut, InboxIcon, MoreHorizontal, Pencil, ArrowRightLeft, Trash2, Tag } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDossiers } from "@/hooks/useDossiers";
@@ -28,16 +27,8 @@ import {
 } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { apiGet, apiPublicGet } from "@/lib/api";
+import { apiGet } from "@/lib/api";
 import { toast } from "sonner";
-
-const navItems = [
-  { title: "Briefing", subtitle: "Votre journée en un coup d'œil", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Calendrier", subtitle: "Audiences, dépôts, RDV extraits", url: "/lab/calendar", icon: CalendarDays },
-  // TODO: Réactiver le Fil d'actualité post-MVP
-  // { title: "Fil d'actualité", subtitle: "Les emails analysés par Donna", url: "/fil", icon: Mail, tourId: "fil" },
-  { title: "Configurez-moi", subtitle: "Personnalisez votre assistante", url: "/configuration", icon: Settings },
-];
 
 const DOMAINES = [
   "Droit du travail", "Droit de la famille", "Droit immobilier", "Droit commercial",
@@ -171,33 +162,6 @@ export function AppSidebar() {
         </div>
 
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {navItems.map((item) => (
-                  <SidebarMenuItem key={item.title} {...((item as any).tourId ? { "data-tour": (item as any).tourId } : {})}>
-                    <SidebarMenuButton asChild>
-                      <NavLink
-                        to={item.url}
-                        end
-                        className="hover:bg-sidebar-accent/50 rounded-lg px-3 py-2 text-sm font-sans text-sidebar-foreground transition-colors duration-200"
-                        activeClassName="bg-primary/10 text-sidebar-accent-foreground font-medium border-l-2 border-primary"
-                      >
-                        <item.icon className="mr-3 h-4 w-4" />
-                        {!collapsed && (
-                          <div>
-                            <span>{item.title}</span>
-                            {item.subtitle && <p className="text-[10px] text-muted-foreground leading-none mt-0.5">{item.subtitle}</p>}
-                          </div>
-                        )}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
           <SidebarGroup data-tour="dossiers">
             {!collapsed && (
               <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/70 px-3">
@@ -361,20 +325,6 @@ export function AppSidebar() {
         </SidebarContent>
 
         <SidebarFooter className="p-4 space-y-3">
-          {!collapsed && isDemo && (
-            <button
-              onClick={async () => {
-                try {
-                  const res = await apiPublicGet<{ auth_url: string }>("/api/import/gmail/auth");
-                  if (res?.auth_url) window.location.href = res.auth_url;
-                } catch { toast.error("Erreur lors de la connexion Gmail"); }
-              }}
-              className="text-xs text-primary hover:underline font-sans text-left"
-            >
-              Connecter Gmail pour de vrais dossiers →
-            </button>
-          )}
-
           <button
             onClick={() => setShowLogoutDialog(true)}
             className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors font-sans"

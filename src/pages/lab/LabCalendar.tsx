@@ -7,7 +7,9 @@
  *          Polling on /process/status/:job_id shows progress spinner.
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { startOfWeek, endOfWeek, parseISO, isWithinInterval } from "date-fns";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { CalendarGrid } from "@/components/lab/CalendarGrid";
 import { ToVerifyQueue } from "@/components/lab/ToVerifyQueue";
@@ -22,20 +24,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, Calendar, AlertCircle, Loader2 } from "lucide-react";
+import { RefreshCw, AlertCircle, Loader2 } from "lucide-react";
 import { fetchEvents, startImport, getProcessStatus, type EventV1 } from "@/lib/api/v1-lab";
 import { getUserId } from "@/lib/auth";
 import { toast } from "sonner";
-
-// ─── Filter bar ───────────────────────────────────────────────────────────────
-
-type StatusFilter = 'all' | 'auto' | 'to_verify';
-
-const STATUS_LABELS: Record<StatusFilter, string> = {
-  all: 'Tous',
-  auto: 'Confirmés auto',
-  to_verify: 'A vérifier',
-};
 
 // ─── Polling hook ─────────────────────────────────────────────────────────────
 
@@ -77,7 +69,6 @@ export default function LabCalendar() {
   const [events, setEvents] = useState<EventV1[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   // Source modal state
   const [sourceEvent, setSourceEvent] = useState<EventV1 | null>(null);
@@ -95,7 +86,7 @@ export default function LabCalendar() {
       const result = await fetchEvents({
         from: '2026-01-01',
         to: '2027-12-31',
-        status: statusFilter,
+        status: 'all',
       });
       setEvents(result.events);
     } catch (err: any) {
@@ -103,7 +94,7 @@ export default function LabCalendar() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, []);
 
   useEffect(() => {
     loadEvents();
@@ -185,60 +176,72 @@ export default function LabCalendar() {
   const allToVerify = events.filter((e) => e.status === 'to_verify');
   const isProcessing = rescanning || !!pollJobId;
 
+  const thisWeekEvents = useMemo(() => {
+    const now = new Date();
+    const start = startOfWeek(now, { weekStartsOn: 1 });
+    const end = endOfWeek(now, { weekStartsOn: 1 });
+    return events.filter((e) => {
+      try {
+        return isWithinInterval(parseISO(e.date), { start, end });
+      } catch {
+        return false;
+      }
+    });
+  }, [events]);
+
   return (
     <DashboardLayout>
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-muted-foreground" />
-            <h1 className="text-xl font-semibold">Calendrier juridique</h1>
-          </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {loading
-              ? "Chargement..."
-              : isProcessing
-              ? "Re-scan en cours..."
-              : `${events.length} événement${events.length > 1 ? 's' : ''} extrait${events.length > 1 ? 's' : ''} de vos emails`}
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          onClick={handleRescanClick}
-          disabled={loading || isProcessing}
+      {/* ── Top nav: Calendrier | Briefing ── */}
+      <div className="flex items-end gap-6 mb-5 border-b">
+        <Link
+          to="/lab/calendar"
+          className="pb-2 text-sm font-medium border-b-2 border-foreground text-foreground -mb-px"
         >
-          {isProcessing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
-          )}
-          {isProcessing ? "Re-scan en cours..." : "Re-scanner"}
-        </Button>
+          Calendrier
+        </Link>
+        <Link
+          to="/dashboard"
+          className="pb-2 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+        >
+          Briefing
+        </Link>
+        <div className="ml-auto pb-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 text-muted-foreground hover:text-foreground"
+            onClick={handleRescanClick}
+            disabled={loading || isProcessing}
+          >
+            {isProcessing ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3.5 w-3.5" />
+            )}
+            <span className="text-xs">{isProcessing ? "Re-scan…" : "Re-scanner"}</span>
+          </Button>
+        </div>
       </div>
 
-      {/* ── Status filter tabs ── */}
-      <div className="flex gap-1 mb-6 border-b pb-0">
-        {(Object.keys(STATUS_LABELS) as StatusFilter[]).map((key) => (
-          <button
-            key={key}
-            onClick={() => setStatusFilter(key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              statusFilter === key
-                ? 'border-foreground text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {STATUS_LABELS[key]}
-            {key === 'to_verify' && allToVerify.length > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center h-4 w-4 rounded-full text-xs bg-yellow-100 text-yellow-700">
-                {allToVerify.length}
-              </span>
-            )}
-          </button>
-        ))}
+      {/* ── Accroche ── */}
+      <div className="mb-5">
+        <h1 className="text-2xl font-serif font-semibold tracking-tight">Calendrier juridique</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Donna a analysé vos emails. Voici les dates clés à ne pas oublier.
+        </p>
       </div>
+
+      {/* ── Banner this week ── */}
+      {!loading && events.length > 0 && (
+        <div className="mb-5 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200">
+          <p className="text-sm text-amber-900">
+            Cette semaine,{' '}
+            <strong className="font-semibold">{thisWeekEvents.length}</strong>{' '}
+            {thisWeekEvents.length > 1 ? 'dates clés' : thisWeekEvents.length === 1 ? 'date clé' : 'date clé'}{' '}
+            à retenir.
+          </p>
+        </div>
+      )}
 
       {/* ── Error state ── */}
       {error && (
