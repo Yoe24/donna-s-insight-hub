@@ -316,10 +316,20 @@ export default function LabCalendar() {
                   return ev.date;
                 }
               })();
+              const cleanField = (v: string | null) => {
+                if (!v) return null;
+                const t = v.trim();
+                if (!t) return null;
+                if (/^[.\-–—\/]+$/.test(t)) return null;
+                if (/^(à préciser|n\/?a|inconnu|non renseigné|non précisé)$/i.test(t)) return null;
+                return t;
+              };
+              const cClient = cleanField(ev.client);
+              const cCounter = cleanField(ev.counterparty);
               const dossier =
-                ev.client && ev.counterparty
-                  ? `${ev.client} c/ ${ev.counterparty}`
-                  : ev.client || (ev.counterparty ? `c/ ${ev.counterparty}` : null);
+                cClient && cCounter
+                  ? `${cClient} c/ ${cCounter}`
+                  : cClient || (cCounter ? `c/ ${cCounter}` : null);
               const isMeeting = ev.event_type === "meeting" || ev.event_type === "unknown";
               const typeColor = TYPE_COLORS[ev.event_type] ?? TYPE_COLORS.unknown;
               return (

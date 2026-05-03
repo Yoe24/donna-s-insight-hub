@@ -44,10 +44,22 @@ function getTypeColor(eventType: string) {
   return TYPE_COLORS[eventType] ?? TYPE_COLORS.unknown;
 }
 
+function cleanField(v: string | null | undefined): string | null {
+  if (!v) return null;
+  const t = v.trim();
+  if (!t) return null;
+  // LLM placeholders: ".", "/", "-", "—", "à préciser", "n/a"
+  if (/^[.\-–—\/]+$/.test(t)) return null;
+  if (/^(à préciser|n\/?a|inconnu|non renseigné|non précisé)$/i.test(t)) return null;
+  return t;
+}
+
 function dossierLabel(ev: EventV1): string | null {
-  if (ev.client && ev.counterparty) return `${ev.client} c/ ${ev.counterparty}`;
-  if (ev.client) return ev.client;
-  if (ev.counterparty) return `c/ ${ev.counterparty}`;
+  const client = cleanField(ev.client);
+  const counter = cleanField(ev.counterparty);
+  if (client && counter) return `${client} c/ ${counter}`;
+  if (client) return client;
+  if (counter) return `c/ ${counter}`;
   return null;
 }
 
