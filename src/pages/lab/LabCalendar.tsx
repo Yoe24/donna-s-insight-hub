@@ -241,41 +241,13 @@ export default function LabCalendar() {
 
   return (
     <DashboardLayout>
-      {/* ── Accroche + Re-scanner ── */}
-      <div className="flex items-start justify-between gap-4 mb-5">
-        <div>
-          <h1 className="text-2xl font-serif font-semibold tracking-tight">Calendrier juridique</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Donna a analysé vos emails. Voici les dates clés à ne pas oublier.
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-2 text-muted-foreground hover:text-foreground shrink-0"
-          onClick={handleRescanClick}
-          disabled={loading || isProcessing}
-        >
-          {isProcessing ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <RefreshCw className="h-3.5 w-3.5" />
-          )}
-          <span className="text-xs">{isProcessing ? "Re-scan…" : "Re-scanner"}</span>
-        </Button>
+      {/* ── Accroche ── */}
+      <div className="mb-5">
+        <h1 className="text-2xl font-serif font-semibold tracking-tight">Calendrier juridique</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Donna a analysé vos emails. Voici les dates clés à ne pas oublier.
+        </p>
       </div>
-
-      {/* ── Banner this week ── */}
-      {!loading && events.length > 0 && (
-        <div className="mb-4 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200">
-          <p className="text-sm text-amber-900">
-            Cette semaine,{' '}
-            <strong className="font-semibold">{thisWeekEvents.length}</strong>{' '}
-            {thisWeekEvents.length > 1 ? 'dates clés' : thisWeekEvents.length === 1 ? 'date clé' : 'date clé'}{' '}
-            à retenir.
-          </p>
-        </div>
-      )}
 
       {/* ── Légende des 5 types critiques ── */}
       {!loading && events.length > 0 && (

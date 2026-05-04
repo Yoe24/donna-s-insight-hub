@@ -156,30 +156,34 @@ function DayCell({
         {format(date, "d")}
       </span>
 
-      {/* Event chips */}
-      <div className="flex flex-col gap-0.5 flex-1">
+      {/* Event chips — 2 lignes : affaire (gras) + raison (light) */}
+      <div className="flex flex-col gap-1 flex-1">
         {visible.map((ev) => {
           const { bg, text } = getTypeColor(ev.event_type);
           const dossier = dossierLabel(ev);
+          const primary = dossier ?? ev.title;
+          const secondary = dossier ? ev.title : null;
           return (
             <button
               key={ev.id}
-              className="w-full rounded px-1 py-0.5 text-xs font-medium truncate text-left leading-4"
+              className="w-full rounded px-1.5 py-1 text-xs text-left leading-tight"
               style={{ background: bg, color: text }}
               onClick={(e) => {
                 e.stopPropagation();
                 onEventClick(ev);
               }}
-              title={dossier ? `${ev.title} — ${dossier}` : ev.title}
+              title={dossier ? `${dossier} — ${ev.title}` : ev.title}
             >
-              {ev.time && (
-                <span className="mr-1 font-normal opacity-75">
-                  {ev.time.slice(0, 5)}
-                </span>
-              )}
-              <span className="font-semibold">{ev.title}</span>
-              {dossier && (
-                <span className="opacity-70 font-normal"> · {dossier}</span>
+              <div className="flex items-baseline gap-1">
+                {ev.time && (
+                  <span className="font-normal opacity-75 shrink-0">
+                    {ev.time.slice(0, 5)}
+                  </span>
+                )}
+                <span className="font-semibold truncate">{primary}</span>
+              </div>
+              {secondary && (
+                <div className="truncate opacity-75 font-normal">{secondary}</div>
               )}
             </button>
           );
