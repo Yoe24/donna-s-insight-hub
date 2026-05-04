@@ -8,7 +8,16 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { startOfWeek, endOfWeek, parseISO, isWithinInterval, format } from "date-fns";
+import {
+  startOfWeek,
+  endOfWeek,
+  startOfDay,
+  endOfDay,
+  addDays,
+  parseISO,
+  isWithinInterval,
+  format,
+} from "date-fns";
 import { fr } from "date-fns/locale";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { CalendarGrid } from "@/components/lab/CalendarGrid";
@@ -73,10 +82,18 @@ function usePollJob(
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+type TimeWindow = "24h" | "7d" | "30d";
+const WINDOW_LABELS: Record<TimeWindow, string> = {
+  "24h": "24h",
+  "7d": "7 jours",
+  "30d": "30 jours",
+};
+
 export default function LabCalendar() {
   const [events, setEvents] = useState<EventV1[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [timeWindow, setTimeWindow] = useState<TimeWindow>("7d");
 
   // Source modal state
   const [sourceEvent, setSourceEvent] = useState<EventV1 | null>(null);
@@ -204,6 +221,24 @@ export default function LabCalendar() {
     });
   }, [events]);
 
+  const filteredEvents = useMemo(() => {
+    const now = new Date();
+    const start = startOfDay(now);
+    const end =
+      timeWindow === "24h"
+        ? endOfDay(addDays(now, 1))
+        : timeWindow === "7d"
+        ? endOfDay(addDays(now, 7))
+        : endOfDay(addDays(now, 30));
+    return sortedEvents.filter((e) => {
+      try {
+        return isWithinInterval(parseISO(e.date), { start, end });
+      } catch {
+        return false;
+      }
+    });
+  }, [sortedEvents, timeWindow]);
+
   return (
     <DashboardLayout>
       {/* ── Accroche + Re-scanner ── */}
@@ -301,14 +336,37 @@ export default function LabCalendar() {
         </div>
       )}
 
-      {/* ── Chronological list of all dates, clickable ── */}
+      {/* ── Chronological list filtered by time window ── */}
       {!loading && sortedEvents.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-            Toutes les dates ({sortedEvents.length})
-          </h2>
+          <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              À venir
+            </h2>
+            <div className="inline-flex rounded-md border overflow-hidden text-xs">
+              {(Object.keys(WINDOW_LABELS) as TimeWindow[]).map((w) => (
+                <button
+                  key={w}
+                  type="button"
+                  onClick={() => setTimeWindow(w)}
+                  className={`px-3 py-1.5 font-medium transition-colors ${
+                    timeWindow === w
+                      ? "bg-foreground text-background"
+                      : "bg-background text-muted-foreground hover:text-foreground"
+                  } ${w !== "24h" ? "border-l" : ""}`}
+                >
+                  {WINDOW_LABELS[w]}
+                </button>
+              ))}
+            </div>
+          </div>
+          {filteredEvents.length === 0 ? (
+            <div className="rounded-lg border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+              Aucune date dans cette fenêtre.
+            </div>
+          ) : (
           <ul className="rounded-lg border divide-y bg-card">
-            {sortedEvents.map((ev) => {
+            {filteredEvents.map((ev) => {
               const dateLabel = (() => {
                 try {
                   return format(parseISO(ev.date), "EEE d MMM yyyy", { locale: fr });
@@ -361,6 +419,7 @@ export default function LabCalendar() {
               );
             })}
           </ul>
+          )}
         </div>
       )}
 
