@@ -29,6 +29,7 @@ import FilActualite from "./pages/FilActualite";
 import EmailsAutres from "./pages/EmailsAutres";
 import DonnaChat from "./components/DonnaChat";
 import DashboardV6 from "./pages/DashboardV6";
+import DashboardWow from "./pages/DashboardWow";
 
 const LandingV1 = lazy(() => import("./pages/LandingV1"));
 const LandingV2 = lazy(() => import("./pages/LandingV2"));
@@ -85,8 +86,9 @@ const App = () => (
             <Route path="/tarifs" element={<Tarifs />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/mentions-legales" element={<MentionsLegales />} />
-            <Route path="/dashboard" element={<ProtectedRoute><DashboardV6 /></ProtectedRoute>} />
-            <Route path="/dashboard-legacy" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardWow /></ProtectedRoute>} />
+            <Route path="/dashboard-legacy" element={<ProtectedRoute><DashboardV6 /></ProtectedRoute>} />
+            <Route path="/dashboard-v6" element={<ProtectedRoute><DashboardV6 /></ProtectedRoute>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="/fil" element={<ProtectedRoute><FilActualite /></ProtectedRoute>} />
             <Route path="/emails-autres" element={<ProtectedRoute><EmailsAutres /></ProtectedRoute>} />
