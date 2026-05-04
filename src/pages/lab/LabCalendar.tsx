@@ -36,6 +36,8 @@ import { RefreshCw, AlertCircle, Loader2 } from "lucide-react";
 import { fetchEvents, startImport, getProcessStatus, type EventV1 } from "@/lib/api/v1-lab";
 import { getUserId } from "@/lib/auth";
 import { toast } from "sonner";
+import { useDossiers } from "@/hooks/useDossiers";
+import { colorForClient } from "@/lib/dossierColors";
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
   hearing:             { bg: "#fee2e2", text: "#b91c1c" },
@@ -94,6 +96,7 @@ export default function LabCalendar() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeWindow, setTimeWindow] = useState<TimeWindow>("7d");
+  const { dossiers } = useDossiers();
 
   // Source modal state
   const [sourceEvent, setSourceEvent] = useState<EventV1 | null>(null);
@@ -302,6 +305,7 @@ export default function LabCalendar() {
         <div className="min-w-0">
           <CalendarGrid
             events={events}
+            dossiers={dossiers}
             onEventClick={handleSourceClick}
             onActionDone={handleActionDone}
           />
@@ -361,7 +365,10 @@ export default function LabCalendar() {
                   ? `${cClient} c/ ${cCounter}`
                   : cClient || (cCounter ? `c/ ${cCounter}` : null);
               const isMeeting = ev.event_type === "meeting" || ev.event_type === "unknown";
-              const typeColor = TYPE_COLORS[ev.event_type] ?? TYPE_COLORS.unknown;
+              const dossierColor = colorForClient(ev.client, ev.counterparty, dossiers);
+              const lineColor = dossierColor
+                ? { text: dossierColor.text }
+                : (TYPE_COLORS[ev.event_type] ?? TYPE_COLORS.unknown);
               return (
                 <li key={ev.id}>
                   <button
@@ -371,7 +378,7 @@ export default function LabCalendar() {
                   >
                     <span
                       className="shrink-0 w-1 h-7 rounded-full"
-                      style={{ background: typeColor.text }}
+                      style={{ background: lineColor.text }}
                       aria-hidden
                     />
                     <span className="shrink-0 w-36 text-xs font-medium text-muted-foreground capitalize">

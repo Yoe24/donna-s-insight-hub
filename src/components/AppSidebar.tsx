@@ -50,20 +50,11 @@ function getInitials(name: string) {
   return short.split(" ").filter(Boolean).map((w) => w[0]).join("").toUpperCase().slice(0, 2) || "?";
 }
 
-// 8 couleurs pastel ordonnées en alternance chaud/froid pour éviter
-// que deux teintes proches se retrouvent côte à côte dans la liste.
-const DOSSIER_COLORS: Array<{ bg: string; text: string }> = [
-  { bg: "bg-rose-100",    text: "text-rose-700" },
-  { bg: "bg-sky-100",     text: "text-sky-700" },
-  { bg: "bg-amber-100",   text: "text-amber-700" },
-  { bg: "bg-violet-100",  text: "text-violet-700" },
-  { bg: "bg-emerald-100", text: "text-emerald-700" },
-  { bg: "bg-orange-100",  text: "text-orange-700" },
-  { bg: "bg-teal-100",    text: "text-teal-700" },
-  { bg: "bg-pink-100",    text: "text-pink-700" },
-];
+import { colorByIndex as sharedColorByIndex } from "@/lib/dossierColors";
+
 function colorByIndex(index: number): { bg: string; text: string } {
-  return DOSSIER_COLORS[index % DOSSIER_COLORS.length];
+  const c = sharedColorByIndex(index);
+  return { bg: c.bgClass, text: c.textClass };
 }
 
 interface BriefDossier {

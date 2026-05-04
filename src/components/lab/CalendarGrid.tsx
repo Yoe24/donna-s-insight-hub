@@ -19,6 +19,7 @@ import { fr } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { EventV1 } from "@/lib/api/v1-lab";
+import { colorForClient } from "@/lib/dossierColors";
 import { EventCard } from "./EventCard";
 import {
   Dialog,
@@ -42,6 +43,19 @@ const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
 
 function getTypeColor(eventType: string) {
   return TYPE_COLORS[eventType] ?? TYPE_COLORS.unknown;
+}
+
+// Use the dossier color when the event matches a known dossier (by client/counterparty name).
+// Falls back to the type color otherwise.
+function getEventColor(
+  ev: EventV1,
+  dossiers: Array<{ nom_client: string }> | undefined
+): { bg: string; text: string } {
+  if (dossiers && dossiers.length > 0) {
+    const dossierColor = colorForClient(ev.client, ev.counterparty, dossiers);
+    if (dossierColor) return { bg: dossierColor.bg, text: dossierColor.text };
+  }
+  return getTypeColor(ev.event_type);
 }
 
 function cleanField(v: string | null | undefined): string | null {
@@ -123,6 +137,7 @@ interface DayCellProps {
   date: Date;
   events: EventV1[];
   isCurrentMonth: boolean;
+  dossiers?: Array<{ nom_client: string }>;
   onCellClick: (date: Date, events: EventV1[]) => void;
   onEventClick: (event: EventV1) => void;
 }
@@ -131,6 +146,7 @@ function DayCell({
   date,
   events,
   isCurrentMonth,
+  dossiers,
   onCellClick,
   onEventClick,
 }: DayCellProps) {
@@ -159,7 +175,7 @@ function DayCell({
       {/* Event chips — 2 lignes : affaire (gras) + raison (light) */}
       <div className="flex flex-col gap-1 flex-1">
         {visible.map((ev) => {
-          const { bg, text } = getTypeColor(ev.event_type);
+          const { bg, text } = getEventColor(ev, dossiers);
           const dossier = dossierLabel(ev);
           const primary = dossier ?? ev.title;
           const secondary = dossier ? ev.title : null;
@@ -204,6 +220,7 @@ function DayCell({
 export interface CalendarGridProps {
   events: EventV1[];
   initialDate?: Date;
+  dossiers?: Array<{ nom_client: string }>;
   onEventClick: (event: EventV1) => void;
   onActionDone: (id: string, action: "confirm" | "dismiss") => void;
 }
@@ -211,6 +228,7 @@ export interface CalendarGridProps {
 export function CalendarGrid({
   events,
   initialDate,
+  dossiers,
   onEventClick,
   onActionDone,
 }: CalendarGridProps) {
@@ -318,6 +336,7 @@ export function CalendarGrid({
                   date={date}
                   events={dayEvents}
                   isCurrentMonth={isSameMonth(date, currentMonth)}
+                  dossiers={dossiers}
                   onCellClick={handleCellClick}
                   onEventClick={onEventClick}
                 />
@@ -343,7 +362,7 @@ export function CalendarGrid({
           )
           .slice(0, 20)
           .map(({ dateStr, ev }) => {
-            const { bg, text } = getTypeColor(ev.event_type);
+            const { bg, text } = getEventColor(ev, dossiers);
             return (
               <button
                 key={ev.id}
