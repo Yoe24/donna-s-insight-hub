@@ -204,8 +204,6 @@ export interface CalendarGridProps {
   onActionDone: (id: string, action: "confirm" | "dismiss") => void;
 }
 
-type ViewMode = "month" | "week";
-
 export function CalendarGrid({
   events,
   initialDate,
@@ -215,7 +213,6 @@ export function CalendarGrid({
   const [currentMonth, setCurrentMonth] = useState<Date>(
     startOfMonth(initialDate ?? new Date())
   );
-  const [viewMode, setViewMode] = useState<ViewMode>("month");
 
   // Day events modal state
   const [dayModalOpen, setDayModalOpen] = useState(false);
@@ -290,39 +287,10 @@ export function CalendarGrid({
           </Button>
         </div>
 
-        {/* View toggle */}
-        <div className="flex items-center rounded-md border overflow-hidden text-xs">
-          <button
-            className={`px-3 py-1.5 font-medium transition-colors ${
-              viewMode === "month"
-                ? "bg-foreground text-background"
-                : "bg-background text-muted-foreground hover:text-foreground"
-            }`}
-            onClick={() => setViewMode("month")}
-          >
-            Mois
-          </button>
-          <button
-            className={`px-3 py-1.5 font-medium transition-colors border-l ${
-              viewMode === "week"
-                ? "bg-foreground text-background"
-                : "bg-background text-muted-foreground hover:text-foreground"
-            }`}
-            onClick={() => setViewMode("week")}
-          >
-            Semaine
-          </button>
-        </div>
       </div>
 
-      {viewMode === "week" ? (
-        // ── Week view: stub V1 ─────────────────────────────────────────────
-        <div className="flex items-center justify-center h-48 rounded-lg border border-dashed text-sm text-muted-foreground">
-          Vue semaine — disponible prochainement
-        </div>
-      ) : (
-        // ── Month grid ────────────────────────────────────────────────────
-        <div className="rounded-lg border overflow-hidden bg-gray-200 grid grid-cols-1 gap-px flex-1">
+      {/* ── Month grid ── */}
+      <div className="rounded-lg border overflow-hidden bg-gray-200 grid grid-cols-1 gap-px flex-1">
           {/* Day headers */}
           <div className="grid grid-cols-7 gap-px bg-gray-200">
             {DAY_HEADERS.map((d) => (
@@ -352,8 +320,7 @@ export function CalendarGrid({
               );
             })}
           </div>
-        </div>
-      )}
+      </div>
 
       {/* ── Mobile fallback: list view below grid on small screens ── */}
       <div className="md:hidden mt-4 space-y-2">
