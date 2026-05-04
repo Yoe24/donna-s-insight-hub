@@ -5,13 +5,14 @@
  * No hardcoded demo data — the API serves demo content for the demo user_id.
  */
 
-import { useState, useEffect, useRef } from "react";
-import { LogOut, InboxIcon, MoreHorizontal, Pencil, ArrowRightLeft, Trash2, Tag } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { LogOut, InboxIcon, MoreHorizontal, Pencil, ArrowRightLeft, Trash2, Tag, RefreshCw, Loader2 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDossiers } from "@/hooks/useDossiers";
-import { isDemo as isDemoCheck, logout as authLogout } from "@/lib/auth";
-import { Badge } from "@/components/ui/badge";
+import { logout as authLogout } from "@/lib/auth";
+import { startImport, getProcessStatus } from "@/lib/api/v1-lab";
+import { getUserId } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
@@ -75,12 +76,55 @@ interface BriefDossier {
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const { dossiers: liveDossiers, loading } = useDossiers();
-  const isDemo = isDemoCheck();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await startImport("gmail", { reset: false });
+      const userId = getUserId();
+      const processRes = await fetch(
+        `https://api.donna-legal.com/api/v1/lab/process?user_id=${encodeURIComponent(userId)}`,
+        { method: "POST", headers: { "Content-Type": "application/json" } }
+      );
+      const processData = await processRes.json();
+      const jobId = processData?.job_id ?? null;
+      if (!jobId) {
+        toast.success("Boîte mail à jour.");
+        setRefreshing(false);
+        return;
+      }
+      // Poll until done
+      const interval = setInterval(async () => {
+        try {
+          const status = await getProcessStatus(jobId);
+          if (status.status === "done") {
+            clearInterval(interval);
+            setRefreshing(false);
+            toast.success("Nouveaux événements ajoutés.");
+            // Reload page so calendar picks up new events
+            window.location.reload();
+          } else if (status.status === "error") {
+            clearInterval(interval);
+            setRefreshing(false);
+            toast.error("Refresh échoué.");
+          }
+        } catch {
+          /* keep polling */
+        }
+      }, 3000);
+    } catch {
+      setRefreshing(false);
+      toast.error("Refresh échoué.");
+    }
+  }, [refreshing]);
 
   const [briefDossiers, setBriefDossiers] = useState<BriefDossier[]>([]);
   const [unclassifiedCount, setUnclassifiedCount] = useState(0);
@@ -165,25 +209,27 @@ export function AppSidebar() {
             <h2 className="text-xl font-serif font-bold text-sidebar-foreground">
               {collapsed ? "D" : "Donna"}
             </h2>
-            {!collapsed && (
-              <Badge
-                className={cn(
-                  "text-[9px] font-semibold px-1.5 py-0 h-4 rounded",
-                  isDemo
-                    ? "bg-amber-100 text-amber-700 border-amber-200"
-                    : "bg-emerald-100 text-emerald-700 border-emerald-200"
-                )}
-                variant="outline"
-              >
-                {isDemo ? "DÉMO" : "LIVE"}
-              </Badge>
-            )}
           </Link>
-          {!collapsed && (
-            <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              À jour · Dernière analyse il y a 2 min
-            </p>
+          {!collapsed && user?.email && (
+            <div className="mt-2 flex items-center gap-1.5">
+              <p className="text-[11px] text-muted-foreground truncate flex-1" title={user.email}>
+                {user.email}
+              </p>
+              <button
+                type="button"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 transition-colors disabled:opacity-50"
+                title="Rafraîchir la boîte mail"
+                aria-label="Rafraîchir"
+              >
+                {refreshing ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+              </button>
+            </div>
           )}
         </div>
 
