@@ -50,21 +50,20 @@ function getInitials(name: string) {
   return short.split(" ").filter(Boolean).map((w) => w[0]).join("").toUpperCase().slice(0, 2) || "?";
 }
 
-// Deterministic pastel color from string hash
+// 8 couleurs pastel ordonnées en alternance chaud/froid pour éviter
+// que deux teintes proches se retrouvent côte à côte dans la liste.
 const DOSSIER_COLORS: Array<{ bg: string; text: string }> = [
   { bg: "bg-rose-100",    text: "text-rose-700" },
-  { bg: "bg-amber-100",   text: "text-amber-700" },
-  { bg: "bg-emerald-100", text: "text-emerald-700" },
   { bg: "bg-sky-100",     text: "text-sky-700" },
+  { bg: "bg-amber-100",   text: "text-amber-700" },
   { bg: "bg-violet-100",  text: "text-violet-700" },
+  { bg: "bg-emerald-100", text: "text-emerald-700" },
   { bg: "bg-orange-100",  text: "text-orange-700" },
   { bg: "bg-teal-100",    text: "text-teal-700" },
   { bg: "bg-pink-100",    text: "text-pink-700" },
 ];
-function colorForDossier(id: string): { bg: string; text: string } {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return DOSSIER_COLORS[h % DOSSIER_COLORS.length];
+function colorByIndex(index: number): { bg: string; text: string } {
+  return DOSSIER_COLORS[index % DOSSIER_COLORS.length];
 }
 
 interface BriefDossier {
@@ -267,7 +266,7 @@ export function AppSidebar() {
                       </div>
                     )
                   ) : (
-                    localDossiers.map((dossier) => {
+                    localDossiers.map((dossier, dIdx) => {
                       const active = location.pathname === `/dossiers/${dossier.id}`;
                       const briefInfo = getBriefInfo(dossier.id);
                       const newEmails = briefInfo?.new_emails_count ?? 0;
@@ -295,7 +294,7 @@ export function AppSidebar() {
                             <div className="flex items-center gap-2.5 w-full min-w-0">
                               <div className="shrink-0">
                                 {(() => {
-                                  const color = colorForDossier(dossier.id);
+                                  const color = colorByIndex(dIdx);
                                   return (
                                     <div className={cn(
                                       "h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-semibold",
@@ -385,17 +384,6 @@ export function AppSidebar() {
                 </SidebarMenu>
               </ScrollArea>
 
-              {!collapsed && unclassifiedCount > 0 && (
-                <div className="px-3 pt-2 pb-1">
-                  <button
-                    onClick={() => navigate("/emails-autres")}
-                    className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
-                  >
-                    <InboxIcon className="h-3.5 w-3.5" />
-                    <span>Emails non classés ({unclassifiedCount})</span>
-                  </button>
-                </div>
-              )}
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
