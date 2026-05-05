@@ -242,6 +242,20 @@ export default function LabCalendar() {
     });
   }, [sortedEvents, timeWindow]);
 
+  // Upcoming events (next 7 days) for "À venir cette semaine" card
+  const upcoming = useMemo(() => {
+    const now = new Date();
+    const horizon = addDays(now, 7);
+    return events
+      .filter((ev) => {
+        const d = parseISO(ev.date);
+        return d >= startOfDay(now) && d <= endOfDay(horizon);
+      })
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 5);
+  }, [events]);
+
   return (
     <DashboardLayout>
       {/* ── Accroche ── */}
@@ -251,6 +265,53 @@ export default function LabCalendar() {
           Donna a analysé vos emails. Voici les dates clés à ne pas oublier.
         </p>
       </div>
+
+      {/* ── À venir cette semaine ── */}
+      {!loading && upcoming.length > 0 && (
+        <div className="mb-6 rounded-2xl border border-border bg-gradient-to-br from-foreground/[0.02] to-transparent px-5 py-4">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              À venir cette semaine
+            </h2>
+            <span className="text-[11px] tabular-nums text-muted-foreground/70">
+              {upcoming.length} échéance{upcoming.length > 1 ? "s" : ""}
+            </span>
+          </div>
+          <ul className="divide-y divide-border/40">
+            {upcoming.map((ev) => {
+              const dateObj = parseISO(ev.date);
+              const dateStr = format(dateObj, "EEE d MMM", { locale: fr });
+              const daysUntil = Math.ceil((dateObj.getTime() - Date.now()) / 86400000);
+              const dossierColor = colorForClient(ev.client, ev.counterparty, dossiers, ev.case_ref);
+              const tone = dossierColor ?? TYPE_COLORS[ev.event_type] ?? TYPE_COLORS.unknown;
+              const cClient = (ev.client || "").split(/\s+(SAS|SARL|SA|SCI|SASU|SNC|EURL|GIE)\b/i)[0].trim();
+              const cCounter = (ev.counterparty || "").split(/\s+(SAS|SARL|SA|SCI|SASU|SNC|EURL|GIE)\b/i)[0].trim();
+              const titleParts = cClient && cCounter ? `${cClient} c/ ${cCounter}` : cClient || cCounter || ev.title;
+              return (
+                <li key={ev.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleSourceClick(ev.id)}
+                    className="w-full flex items-center gap-4 py-3 text-left hover:bg-foreground/[0.02] rounded-md px-2 -mx-2 transition-colors"
+                  >
+                    <span className="shrink-0 inline-block h-2.5 w-2.5 rounded-full" style={{ background: tone.text }} />
+                    <span className="shrink-0 text-xs font-medium text-foreground tabular-nums w-24 capitalize">
+                      {dateStr}
+                    </span>
+                    <span className="flex-1 min-w-0 text-sm text-foreground truncate">
+                      <span className="font-semibold">{titleParts}</span>
+                      <span className="text-muted-foreground"> — {ev.title}</span>
+                    </span>
+                    <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                      {daysUntil <= 0 ? "Aujourd'hui" : `J-${daysUntil}`}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
 
       {/* ── Légende des 5 types critiques ── */}
       {!loading && events.length > 0 && (

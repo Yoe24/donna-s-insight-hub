@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { OnboardingWizard } from "@/components/lab/OnboardingWizard";
 import { toast } from "sonner";
 
 const DOMAINES = [
@@ -66,10 +67,12 @@ export function AppSidebar() {
   const location = useLocation();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   const handleRefresh = useCallback(async () => {
     if (refreshing) return;
     setRefreshing(true);
+    setWizardOpen(true);
     try {
       await startImport("gmail", { reset: false });
       const userId = getUserId();
@@ -80,22 +83,19 @@ export function AppSidebar() {
       const processData = await processRes.json();
       const jobId = processData?.job_id ?? null;
       if (!jobId) {
-        toast.success("Boîte mail à jour.");
-        setRefreshing(false);
+        // Pas de job — on laisse tout de même la cinématique se jouer ~30s
         return;
       }
-      // Poll until done
+      // Poll until done — la cinématique tourne en parallèle. Si elle finit
+      // avant le job, on garde le wizard sur la dernière étape jusqu'au done.
       const interval = setInterval(async () => {
         try {
           const status = await getProcessStatus(jobId);
           if (status.status === "done") {
             clearInterval(interval);
-            setRefreshing(false);
-            toast.success("Nouveaux événements ajoutés.");
-            // Reload page so calendar picks up new events
-            window.location.reload();
           } else if (status.status === "error") {
             clearInterval(interval);
+            setWizardOpen(false);
             setRefreshing(false);
             toast.error("Refresh échoué.");
           }
@@ -104,10 +104,18 @@ export function AppSidebar() {
         }
       }, 3000);
     } catch {
+      setWizardOpen(false);
       setRefreshing(false);
       toast.error("Refresh échoué.");
     }
   }, [refreshing]);
+
+  const handleWizardComplete = useCallback(() => {
+    setWizardOpen(false);
+    setRefreshing(false);
+    toast.success("Calendrier mis à jour.");
+    window.location.reload();
+  }, []);
 
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -163,6 +171,7 @@ export function AppSidebar() {
 
   return (
     <>
+      <OnboardingWizard open={wizardOpen} onComplete={handleWizardComplete} />
       <Sidebar collapsible="icon" className="border-r border-border">
         <div className="px-4 py-6">
           <Link to="/dashboard" className="flex items-center gap-2">
