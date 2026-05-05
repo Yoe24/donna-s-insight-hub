@@ -72,7 +72,11 @@ export function AppSidebar() {
   const handleRefresh = useCallback(async () => {
     if (refreshing) return;
     setRefreshing(true);
-    setWizardOpen(true);
+    // La cinématique d'onboarding ne joue qu'à la première connexion.
+    // Pour la rejouer (ex: tournage démo), supprimer la clé
+    // `donna_onboarding_seen` dans localStorage.
+    const isFirstRun = localStorage.getItem("donna_onboarding_seen") !== "1";
+    if (isFirstRun) setWizardOpen(true);
     try {
       await startImport("gmail", { reset: false });
       const userId = getUserId();
@@ -83,16 +87,23 @@ export function AppSidebar() {
       const processData = await processRes.json();
       const jobId = processData?.job_id ?? null;
       if (!jobId) {
-        // Pas de job — on laisse tout de même la cinématique se jouer ~30s
+        if (!isFirstRun) {
+          setRefreshing(false);
+          toast.success("Boîte mail à jour.");
+        }
         return;
       }
-      // Poll until done — la cinématique tourne en parallèle. Si elle finit
-      // avant le job, on garde le wizard sur la dernière étape jusqu'au done.
       const interval = setInterval(async () => {
         try {
           const status = await getProcessStatus(jobId);
           if (status.status === "done") {
             clearInterval(interval);
+            if (!isFirstRun) {
+              setRefreshing(false);
+              toast.success("Calendrier mis à jour.");
+              window.location.reload();
+            }
+            // Si firstRun: on attend handleWizardComplete pour reload
           } else if (status.status === "error") {
             clearInterval(interval);
             setWizardOpen(false);
@@ -111,6 +122,7 @@ export function AppSidebar() {
   }, [refreshing]);
 
   const handleWizardComplete = useCallback(() => {
+    localStorage.setItem("donna_onboarding_seen", "1");
     setWizardOpen(false);
     setRefreshing(false);
     toast.success("Calendrier mis à jour.");
