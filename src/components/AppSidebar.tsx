@@ -229,8 +229,6 @@ export function AppSidebar() {
                   ) : (
                     localDossiers.map((dossier, dIdx) => {
                       const active = location.pathname === `/dossiers/${dossier.id}`;
-                      const briefInfo = getBriefInfo(dossier.id);
-                      const newEmails = briefInfo?.new_emails_count ?? 0;
                       const isRenaming = renamingId === dossier.id;
 
                       return (
