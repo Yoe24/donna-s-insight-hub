@@ -45,14 +45,14 @@ function getTypeColor(eventType: string) {
   return TYPE_COLORS[eventType] ?? TYPE_COLORS.unknown;
 }
 
-// Use the dossier color when the event matches a known dossier (by client/counterparty name).
+// Use the dossier color when the event matches a known dossier (multi-critères : case_ref → opposing_party → nom_client).
 // Falls back to the type color otherwise.
 function getEventColor(
   ev: EventV1,
-  dossiers: Array<{ nom_client: string }> | undefined
+  dossiers: Array<{ nom_client: string; opposing_party?: string | null; case_reference?: string | null }> | undefined
 ): { bg: string; text: string } {
   if (dossiers && dossiers.length > 0) {
-    const dossierColor = colorForClient(ev.client, ev.counterparty, dossiers);
+    const dossierColor = colorForClient(ev.client, ev.counterparty, dossiers, ev.case_ref);
     if (dossierColor) return { bg: dossierColor.bg, text: dossierColor.text };
   }
   return getTypeColor(ev.event_type);

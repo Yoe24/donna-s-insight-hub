@@ -21,6 +21,10 @@ export interface Dossier {
   dernier_echange_date: string;
   nouveaux_emails?: number;
   nouvelles_pieces?: number;
+  /** Partie adverse — utilisée pour matcher les events au dossier */
+  opposing_party?: string | null;
+  /** Réf de procédure (ex: RG 2026/00892) — match exact event.case_ref */
+  case_reference?: string | null;
 }
 
 /** Raw shape returned by GET /api/dossiers */
@@ -39,6 +43,8 @@ interface ApiDossier {
   document_count?: number;
   dernier_echange_date?: string;
   updated_at?: string;
+  opposing_party?: string | null;
+  case_reference?: string | null;
 }
 
 /** Normalize API dossier to frontend Dossier shape */
@@ -52,6 +58,8 @@ function normalizeDossier(raw: ApiDossier): Dossier {
     dernier_echange_date: raw.dernier_echange_date || raw.updated_at || "",
     nouveaux_emails: raw.email_count,
     nouvelles_pieces: raw.document_count,
+    opposing_party: raw.opposing_party ?? null,
+    case_reference: raw.case_reference ?? null,
   };
 }
 

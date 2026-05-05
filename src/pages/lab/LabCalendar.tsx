@@ -365,7 +365,7 @@ export default function LabCalendar() {
                   ? `${cClient} c/ ${cCounter}`
                   : cClient || (cCounter ? `c/ ${cCounter}` : null);
               const isMeeting = ev.event_type === "meeting" || ev.event_type === "unknown";
-              const dossierColor = colorForClient(ev.client, ev.counterparty, dossiers);
+              const dossierColor = colorForClient(ev.client, ev.counterparty, dossiers, ev.case_ref);
               const lineColor = dossierColor
                 ? { text: dossierColor.text }
                 : (TYPE_COLORS[ev.event_type] ?? TYPE_COLORS.unknown);

@@ -18,19 +18,94 @@ export function colorByIndex(index: number): DossierColor {
   return DOSSIER_COLORS[index % DOSSIER_COLORS.length];
 }
 
-// Match un nom client/adverse à un dossier (par premier mot du nom_client).
+// ─── Matching event ↔ dossier (multi-critères, scoré) ───────────────────────
+//
+// Trois signaux, par ordre de fiabilité :
+//   1. case_reference (RG 2026/00892) — match exact normalisé → score 100 (lock)
+//   2. opposing_party (Distri-Plus SARL) — premier mot ↔ event.counterparty → score 50
+//   3. nom_client (premier mot) — match dans event.client + event.counterparty → score 10
+//
+// Pourquoi pas un seul critère : pour un vrai cabinet, plusieurs dossiers
+// peuvent partager un mot du client (ex: "SAS"), ou un même opposing_party
+// peut apparaître côté client d'une autre affaire. La référence de procédure
+// départage avec certitude.
+
+export interface DossierMatchInput {
+  nom_client: string;
+  opposing_party?: string | null;
+  case_reference?: string | null;
+}
+
+function normalize(s: string | null | undefined): string {
+  return (s ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function firstWord(s: string | null | undefined): string {
+  const norm = normalize(s);
+  return norm.split(" ")[0] || "";
+}
+
+function scoreDossier(
+  d: DossierMatchInput,
+  client: string,
+  counterparty: string,
+  caseRef: string
+): number {
+  // 1. case_reference exact (after normalizing) → 100
+  const dRef = normalize(d.case_reference);
+  if (dRef && caseRef && (dRef === caseRef || caseRef.includes(dRef) || dRef.includes(caseRef))) {
+    return 100;
+  }
+
+  // 2. opposing_party premier mot dans (client OU counterparty)
+  // Les rôles peuvent s'inverser dans un thread (ex: mail du greffe où l'event.client
+  // pointe vers la partie adverse du dossier). On cherche dans les deux.
+  const dOpp = firstWord(d.opposing_party);
+  if (dOpp && (client.includes(dOpp) || counterparty.includes(dOpp))) {
+    return 50;
+  }
+
+  // 3. nom_client premier mot dans (client OU counterparty)
+  const dClient = firstWord(d.nom_client);
+  if (dClient && (client.includes(dClient) || counterparty.includes(dClient))) {
+    return 10;
+  }
+
+  return 0;
+}
+
+// Renvoie l'index du dossier le mieux matché, ou -1 si aucun match.
+export function findDossierIndex(
+  clientName: string | null | undefined,
+  counterpartyName: string | null | undefined,
+  caseRef: string | null | undefined,
+  dossiers: DossierMatchInput[]
+): number {
+  const c = normalize(clientName);
+  const cp = normalize(counterpartyName);
+  const ref = normalize(caseRef);
+
+  let bestIdx = -1;
+  let bestScore = 0;
+  for (let i = 0; i < dossiers.length; i++) {
+    const score = scoreDossier(dossiers[i], c, cp, ref);
+    if (score > bestScore) {
+      bestScore = score;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
 // Renvoie la couleur du dossier matchant, ou null si pas de match.
+// Conserve la signature legacy 2-args (client + counterparty) pour
+// compatibilité avec l'ancien code, et accepte un 4ème arg optionnel case_ref.
 export function colorForClient(
   clientName: string | null | undefined,
   counterpartyName: string | null | undefined,
-  dossiers: Array<{ nom_client: string }>
+  dossiers: DossierMatchInput[],
+  caseRef?: string | null
 ): DossierColor | null {
-  const haystack = `${clientName ?? ""} ${counterpartyName ?? ""}`.toLowerCase();
-  for (let i = 0; i < dossiers.length; i++) {
-    const keyword = (dossiers[i].nom_client.split(/\s/)[0] || "").toLowerCase();
-    if (keyword && haystack.includes(keyword)) {
-      return colorByIndex(i);
-    }
-  }
-  return null;
+  const idx = findDossierIndex(clientName, counterpartyName, caseRef ?? null, dossiers);
+  return idx >= 0 ? colorByIndex(idx) : null;
 }
