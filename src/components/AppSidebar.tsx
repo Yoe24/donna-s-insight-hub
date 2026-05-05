@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { LogOut, InboxIcon, MoreHorizontal, Pencil, ArrowRightLeft, Trash2, Tag, RefreshCw, Loader2 } from "lucide-react";
+import { LogOut, MoreHorizontal, Pencil, ArrowRightLeft, Trash2, Tag, RefreshCw, Loader2 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDossiers } from "@/hooks/useDossiers";
@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { apiGet } from "@/lib/api";
 import { toast } from "sonner";
 
 const DOMAINES = [
@@ -55,12 +54,6 @@ import { colorByIndex as sharedColorByIndex } from "@/lib/dossierColors";
 function colorByIndex(index: number): { bg: string; text: string } {
   const c = sharedColorByIndex(index);
   return { bg: c.bgClass, text: c.textClass };
-}
-
-interface BriefDossier {
-  dossier_id: string;
-  needs_immediate_attention: boolean;
-  new_emails_count: number;
 }
 
 export function AppSidebar() {
@@ -116,9 +109,6 @@ export function AppSidebar() {
     }
   }, [refreshing]);
 
-  const [briefDossiers, setBriefDossiers] = useState<BriefDossier[]>([]);
-  const [unclassifiedCount, setUnclassifiedCount] = useState(0);
-
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -126,26 +116,8 @@ export function AppSidebar() {
   const renameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    console.log("[AppSidebar] liveDossiers from API:", liveDossiers);
     setLocalDossiers(liveDossiers);
   }, [liveDossiers]);
-
-  useEffect(() => {
-    const fetchBriefData = async () => {
-      try {
-        const brief = await apiGet<any>("/api/briefs/today");
-        setBriefDossiers(brief?.content?.dossiers || []);
-      } catch { /* silent */ }
-      try {
-        const emails = await apiGet<any[]>("/api/emails");
-        const unclassified = (emails || []).filter((e) => !e.dossier_id);
-        setUnclassifiedCount(unclassified.length);
-      } catch { /* silent */ }
-    };
-    fetchBriefData();
-    const interval = setInterval(fetchBriefData, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (renamingId && renameInputRef.current) {
@@ -153,8 +125,6 @@ export function AppSidebar() {
       renameInputRef.current.select();
     }
   }, [renamingId]);
-
-  const getBriefInfo = (dossierId: string) => briefDossiers.find((bd) => bd.dossier_id === dossierId);
 
   const handleLogout = async () => {
     await signOut().catch(() => {});
@@ -313,16 +283,9 @@ export function AppSidebar() {
                                       onBlur={() => handleRenameConfirm(dossier.id)}
                                     />
                                   ) : (
-                                    <div className="flex items-center gap-1.5 min-w-0">
-                                      <span className="truncate text-sm font-medium leading-tight">
-                                        {shortName(dossier.nom_client)}
-                                      </span>
-                                      {newEmails > 0 && (
-                                        <span className="shrink-0 inline-flex items-center justify-center h-4 min-w-[16px] rounded-full bg-foreground/10 text-[10px] font-semibold text-foreground px-1">
-                                          {newEmails}
-                                        </span>
-                                      )}
-                                    </div>
+                                    <span className="truncate text-sm font-medium leading-tight block">
+                                      {shortName(dossier.nom_client)}
+                                    </span>
                                   )}
                                 </div>
                               )}
