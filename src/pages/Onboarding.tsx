@@ -35,6 +35,15 @@ const Onboarding = () => {
     }
     captureUserIdFromUrl();
 
+    // Demo reset: if backend signals demo_reset=1, wipe all onboarding/tour
+    // state so the cinematic replays from scratch on every OAuth cycle.
+    if (searchParams.get("demo_reset") === "1") {
+      localStorage.removeItem("donna_onboarding_seen");
+      localStorage.removeItem("donna_demo_tour_completed");
+      localStorage.removeItem("donna_chat_history");
+      console.log("[DemoReset] Frontend localStorage cleared for demo user");
+    }
+
     if (isImporting || isDemoParam) {
       if (isDemoParam) {
         setReady(true);
