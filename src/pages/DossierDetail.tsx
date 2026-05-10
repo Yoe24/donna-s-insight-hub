@@ -10,7 +10,7 @@ import { useParams, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, File, Mail, Image, RefreshCw, MoreHorizontal, Pencil, Tag, Archive, ArrowRightLeft } from "lucide-react";
+import { ArrowLeft, FileText, File, Mail, Image, RefreshCw, MoreHorizontal, Pencil, Tag, Archive, ArrowRightLeft, FolderOpen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { Email } from "@/hooks/useEmails";
@@ -89,6 +89,8 @@ interface ApiDossierDetailData {
   echeances?: ApiEcheance[];
   resume_pj?: string | null;
   last_summary_update?: string | null;
+  // Google Drive integration
+  drive_folder_id?: string | null;
 }
 
 interface DossierDocument {
@@ -115,6 +117,7 @@ interface DossierDetailData {
   documents: DossierDocument[];
   echeances: ApiEcheance[];
   last_summary_update: string | null;
+  drive_folder_id?: string | null;
 }
 
 const statutBadge = (statut: string) => {
@@ -212,6 +215,7 @@ function normalizeDossier(data: ApiDossierDetailData): DossierDetailData {
     documents: rawDocs.map(normalizeDocument),
     echeances: data.echeances || [],
     last_summary_update: data.last_summary_update || null,
+    drive_folder_id: data.drive_folder_id ?? null,
   };
 }
 
@@ -388,6 +392,31 @@ const DossierDetailPage = () => {
                 {lastExchangeDate !== "—" && <p>Dernier échange : {lastExchangeDate}</p>}
                 <p>{sortedEmails.length} emails · {sortedDocs.length} documents</p>
               </div>
+              {/* Google Drive button */}
+              {dossier.drive_folder_id ? (
+                <a
+                  href={`https://drive.google.com/drive/folders/${dossier.drive_folder_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Ouvrir le dossier dans Google Drive"
+                >
+                  <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
+                    <FolderOpen className="h-3.5 w-3.5" />
+                    Drive
+                  </Button>
+                </a>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 h-8 text-xs opacity-50 cursor-not-allowed"
+                  disabled
+                  title="Synchronisation en cours…"
+                >
+                  <FolderOpen className="h-3.5 w-3.5" />
+                  Drive
+                </Button>
+              )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-muted transition-colors">
