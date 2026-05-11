@@ -153,6 +153,14 @@ function ScanScreen() {
     }
   }, [status?.status]);
 
+  // Auto-redirect to dashboard 2s after canProceed becomes true
+  useEffect(() => {
+    if (canProceed) {
+      const timer = setTimeout(() => navigate("/dashboard", { replace: true }), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [canProceed, navigate]);
+
   const isDone = status?.status === "done" || status?.status === "completed";
   const isError = status?.status === "error";
   const progress = status?.progress ?? 0;
@@ -265,7 +273,12 @@ function ScanScreen() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
+              className="flex flex-col items-center gap-3"
             >
+              <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
+                <span className="text-xl">✓</span>
+                <span>Onboarding terminé — redirection en cours…</span>
+              </div>
               <Button
                 size="lg"
                 className="w-full rounded-xl"
