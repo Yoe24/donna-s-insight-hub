@@ -34,6 +34,7 @@ const MicrosoftIcon = () => (
 
 const Login = () => {
   const [gmailLoading, setGmailLoading] = useState(false);
+  const [outlookLoading, setOutlookLoading] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -60,6 +61,20 @@ const Login = () => {
       console.error("Error getting auth URL:", error);
       toast.error("Impossible de se connecter à Gmail. Réessayez.");
       setGmailLoading(false);
+    }
+  };
+
+  const handleConnectOutlook = async () => {
+    setOutlookLoading(true);
+    try {
+      const data = await apiPublicGet<{ auth_url: string }>("/api/import/outlook/auth");
+      if (data?.auth_url) {
+        window.location.href = data.auth_url;
+      }
+    } catch (error) {
+      console.error("Error getting Outlook auth URL:", error);
+      toast.error("Impossible de se connecter à Outlook. Réessayez.");
+      setOutlookLoading(false);
     }
   };
 
@@ -197,16 +212,18 @@ const Login = () => {
               </button>
 
               {/* Outlook button */}
-              <div className="space-y-1.5">
-                <button
-                  disabled
-                  className="w-full min-h-[56px] rounded-xl border border-border bg-background text-foreground font-medium text-sm font-sans flex items-center justify-center gap-3 opacity-50 cursor-not-allowed"
-                >
+              <button
+                onClick={handleConnectOutlook}
+                disabled={outlookLoading}
+                className="w-full min-h-[56px] rounded-xl border border-border bg-background text-foreground font-medium text-sm font-sans flex items-center justify-center gap-3 hover:border-primary transition-colors disabled:opacity-60"
+              >
+                {outlookLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
                   <MicrosoftIcon />
-                  Commencer avec Outlook
-                </button>
-                <p className="text-xs text-muted-foreground text-center italic font-sans">Bientôt disponible</p>
-              </div>
+                )}
+                Commencer avec Outlook →
+              </button>
 
 
               {/* Separator + fallback login */}
