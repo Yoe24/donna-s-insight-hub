@@ -147,8 +147,30 @@ export function AppSidebar() {
   }, [renamingId]);
 
   const handleLogout = async () => {
+    // 1. Call backend to wipe all user data (emails, dossiers, configs, Drive folder)
+    try {
+      const userId = getUserId();
+      await fetch(
+        `https://api.donna-legal.com/api/auth/logout?user_id=${encodeURIComponent(userId)}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+      );
+    } catch (err) {
+      // Non-blocking: log but always proceed with signOut
+      console.warn('[Logout] Backend wipe failed (non-blocking):', err);
+    }
+
+    // 2. Clear all local state
+    localStorage.removeItem('donna_onboarding_seen');
+    localStorage.removeItem('donna_demo_tour_completed');
+    localStorage.removeItem('donna_chat_history');
+
+    // 3. Supabase signOut
     await signOut().catch(() => {});
-    authLogout();
+
+    // 4. Full auth reset + redirect to homepage
+    localStorage.removeItem('donna_user_id');
+    localStorage.removeItem('donna_demo_mode');
+    window.location.href = '/';
   };
 
   const handleRenameStart = (id: string, currentName: string) => {
@@ -377,7 +399,7 @@ export function AppSidebar() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-center text-lg">Voulez-vous vraiment vous déconnecter ?</AlertDialogTitle>
             <AlertDialogDescription className="text-center text-sm text-muted-foreground">
-              Vous devrez vous reconnecter pour accéder à votre espace Donna.
+              Toutes vos donnees (dossiers, emails, configuration) seront supprimees. Au prochain login, Donna repartira de zero.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row justify-center gap-3 sm:justify-center">
