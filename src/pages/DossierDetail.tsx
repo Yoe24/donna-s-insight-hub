@@ -91,6 +91,8 @@ interface ApiDossierDetailData {
   last_summary_update?: string | null;
   // Google Drive integration
   drive_folder_id?: string | null;
+  // OneDrive integration
+  onedrive_folder_id?: string | null;
 }
 
 interface DossierDocument {
@@ -118,6 +120,7 @@ interface DossierDetailData {
   echeances: ApiEcheance[];
   last_summary_update: string | null;
   drive_folder_id?: string | null;
+  onedrive_folder_id?: string | null;
 }
 
 const statutBadge = (statut: string) => {
@@ -216,6 +219,7 @@ function normalizeDossier(data: ApiDossierDetailData): DossierDetailData {
     echeances: data.echeances || [],
     last_summary_update: data.last_summary_update || null,
     drive_folder_id: data.drive_folder_id ?? null,
+    onedrive_folder_id: (data as any).onedrive_folder_id ?? null,
   };
 }
 
@@ -416,6 +420,20 @@ const DossierDetailPage = () => {
                   <FolderOpen className="h-3.5 w-3.5" />
                   Drive
                 </Button>
+              )}
+              {/* OneDrive button — shown when folder has been synced */}
+              {dossier.onedrive_folder_id && (
+                <a
+                  href={`https://onedrive.live.com/?id=${encodeURIComponent(dossier.onedrive_folder_id)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Ouvrir le dossier dans OneDrive"
+                >
+                  <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs border-blue-300 text-blue-700 hover:bg-blue-50">
+                    <FolderOpen className="h-3.5 w-3.5" />
+                    OneDrive
+                  </Button>
+                </a>
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

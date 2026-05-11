@@ -14,6 +14,7 @@ import { Loader2, Mail, User, Wand2, X, AlertTriangle, CheckCircle2, Trash2, Log
 import { apiGet, apiPut, apiPublicGet, apiDelete } from "@/lib/api";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { isDemoMode } from "@/hooks/useDemoMode";
+import { MicrosoftIntegrations } from "@/components/MicrosoftIntegrations";
 
 const Configuration = () => {
   const isDemo = isDemoMode();
@@ -185,7 +186,22 @@ const Configuration = () => {
             </div>
           </div>
 
-          <Accordion type="multiple" defaultValue={["connexion", "profil"]} className="space-y-3">
+          <Accordion type="multiple" defaultValue={["connexion", "profil", "microsoft"]} className="space-y-3">
+
+            {/* Section Microsoft */}
+            {!isDemo && (
+              <AccordionItem value="microsoft" className="rounded-2xl border border-border bg-card shadow-sm px-1">
+                <AccordionTrigger className="px-5 py-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <span className="text-base leading-none">🪟</span>
+                    <span className="text-sm font-medium">Intégrations Microsoft</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-5 pb-5">
+                  <MicrosoftIntegrations />
+                </AccordionContent>
+              </AccordionItem>
+            )}
 
             {/* Section 1 — Connexion */}
             <AccordionItem value="connexion" className="rounded-2xl border border-border bg-card shadow-sm px-1">
