@@ -198,11 +198,14 @@ function buildRealBriefing({
     emails_traites: treatedEmails,
     dossiers,
     stats: {
-      total_analyses: allEmails.length,
+      // Use the period-filtered emails so the dashboard counter matches the
+      // brief narrative ("X emails reçus cette nuit"). Previously this read
+      // allEmails.length, which gave a different number than the brief.
+      total_analyses: filteredEmails.length,
       action_required: toDoEmails.length,
       auto_traites: treatedEmails.length,
-      temps_gagne_minutes: Math.round(allEmails.length * 2.5),
-      brouillons_generes: allEmails.filter((e) => e.brouillon).length,
+      temps_gagne_minutes: Math.round(filteredEmails.length * 2.5),
+      brouillons_generes: filteredEmails.filter((e) => e.brouillon).length,
       streak_jours: 0,
       brief_lu: true,
     },
