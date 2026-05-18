@@ -90,33 +90,27 @@ export default function LandingV6() {
         }}>
           <InteractiveBackground />
 
-          {/* Logo monogram centered behind */}
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1,
-          }}>
-            <div style={{
-              width: "min(360px, 55vw)",
-              height: "min(360px, 55vw)",
-              borderRadius: "32px",
-              background: "linear-gradient(140deg, #0d0d0d 0%, #1f1f1f 100%)",
-              boxShadow: "0 40px 120px rgba(13,13,13,0.35), inset 0 1px 0 rgba(255,255,255,0.06)",
+          {/* Giant D watermark behind text */}
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              inset: 0,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              zIndex: 1,
+              pointerEvents: "none",
               fontFamily: "'Playfair Display', serif",
               fontWeight: 700,
-              fontSize: "min(220px, 34vw)",
-              lineHeight: 1,
-              color: "#ffffff",
-              transform: "rotate(-6deg)",
-              opacity: 0.95,
-            }}>D</div>
-          </div>
+              fontSize: "min(720px, 90vw)",
+              lineHeight: 0.85,
+              color: "#0d0d0d",
+              opacity: 0.045,
+              letterSpacing: "-0.06em",
+              userSelect: "none",
+            }}
+          >D</div>
 
           <div style={{
             position: "relative",
