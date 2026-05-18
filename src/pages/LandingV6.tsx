@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
 import { ArrowRight, Shield, Lock, Server, FileCheck, Mail, FolderOpen, Sparkles } from "lucide-react"
 import LenisProvider from "@/components/motion/LenisProvider"
+import HeroOrb from "@/components/motion/HeroOrb"
 import MarqueeIntegrations from "@/components/motion/MarqueeIntegrations"
 import InteractiveBackground from "@/components/motion/InteractiveBackground"
 import ScrollReveal from "@/components/motion/ScrollReveal"
@@ -82,119 +83,112 @@ export default function LandingV6() {
         <section style={{
           position: "relative",
           minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           padding: "120px 32px 80px",
           overflow: "hidden",
         }}>
           <InteractiveBackground />
 
-          {/* Giant D watermark behind text */}
-          <div
-            aria-hidden
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 1,
-              pointerEvents: "none",
-              fontFamily: "'Playfair Display', serif",
-              fontWeight: 700,
-              fontSize: "min(720px, 90vw)",
-              lineHeight: 0.85,
-              color: "#0d0d0d",
-              opacity: 0.045,
-              letterSpacing: "-0.06em",
-              userSelect: "none",
-            }}
-          >D</div>
-
-          <div style={{
+          <div className="hero-grid" style={{
             position: "relative",
             zIndex: 2,
-            maxWidth: 1080,
+            maxWidth: 1320,
             margin: "0 auto",
-            textAlign: "center",
-            pointerEvents: "none",
+            display: "grid",
+            gridTemplateColumns: "1.05fr 0.95fr",
+            gap: 48,
+            alignItems: "center",
+            minHeight: "calc(100vh - 200px)",
           }}>
-            <ScrollReveal y={24}>
-              <p style={{
-                fontSize: 13,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: "#2563EB",
-                fontWeight: 600,
-                marginBottom: 24,
-              }}>
-                L'IA juridique des avocats
-              </p>
-              <h1 style={{
-                fontFamily: "'Playfair Display', serif",
-                fontSize: "clamp(48px, 8.5vw, 112px)",
-                lineHeight: 0.98,
-                letterSpacing: "-0.035em",
-                fontWeight: 700,
-                margin: "0 0 32px",
-                color: "#0d0d0d",
-              }}>
-                Accéder à des réponses<br />
-                juridiques <em style={{ fontStyle: "italic", color: "#2563EB" }}>fiables</em>.
-              </h1>
-              <p style={{
-                fontSize: "clamp(15px, 1.5vw, 18px)",
-                color: "#525252",
-                maxWidth: 560,
-                margin: "0 auto 44px",
-                lineHeight: 1.65,
-              }}>
-                Donna lit vos emails, classe vos dossiers et prépare vos réponses chaque matin.
-                En 5 minutes, vous savez tout.
-              </p>
-              <div style={{
-                display: "inline-flex",
-                gap: 14,
-                flexWrap: "wrap",
-                justifyContent: "center",
-                pointerEvents: "auto",
-              }}>
-                <Link to="/demo" style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "16px 32px",
-                  borderRadius: 999,
-                  background: "#0d0d0d",
-                  color: "#fff",
-                  fontSize: 14.5,
+            {/* LEFT — copy */}
+            <div>
+              <ScrollReveal y={24}>
+                <p style={{
+                  fontSize: 13,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "#2563EB",
                   fontWeight: 600,
-                  textDecoration: "none",
-                  boxShadow: "0 10px 40px rgba(13,13,13,0.25)",
-                  transition: "transform 200ms ease",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)" }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)" }}
-                >
-                  Voir la démo <ArrowRight size={16} />
-                </Link>
-                <Link to="/securite" style={{
-                  padding: "16px 32px",
-                  borderRadius: 999,
-                  background: "rgba(255,255,255,0.7)",
-                  backdropFilter: "blur(8px)",
-                  color: "#0d0d0d",
-                  fontSize: 14.5,
-                  fontWeight: 500,
-                  textDecoration: "none",
-                  border: "1px solid rgba(0,0,0,0.08)",
+                  marginBottom: 24,
                 }}>
-                  Sécurité
-                </Link>
-              </div>
-            </ScrollReveal>
+                  L'IA juridique des avocats
+                </p>
+                <h1 style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontSize: "clamp(44px, 6.4vw, 96px)",
+                  lineHeight: 0.96,
+                  letterSpacing: "-0.035em",
+                  fontWeight: 700,
+                  margin: "0 0 28px",
+                  color: "#0d0d0d",
+                }}>
+                  Accéder à des réponses juridiques <em style={{ fontStyle: "italic", color: "#2563EB" }}>fiables</em>.
+                </h1>
+                <p style={{
+                  fontSize: "clamp(15px, 1.4vw, 19px)",
+                  color: "#525252",
+                  maxWidth: 520,
+                  margin: "0 0 40px",
+                  lineHeight: 1.65,
+                }}>
+                  Donna lit vos emails, classe vos dossiers et prépare vos réponses chaque matin.
+                  En 5 minutes, vous savez tout.
+                </p>
+                <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                  <Link to="/demo" style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "16px 32px",
+                    borderRadius: 999,
+                    background: "#0d0d0d",
+                    color: "#fff",
+                    fontSize: 14.5,
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    boxShadow: "0 10px 40px rgba(13,13,13,0.25)",
+                    transition: "transform 200ms ease",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)" }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)" }}
+                  >
+                    Voir la démo <ArrowRight size={16} />
+                  </Link>
+                  <Link to="/securite" style={{
+                    padding: "16px 32px",
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,0.7)",
+                    backdropFilter: "blur(8px)",
+                    color: "#0d0d0d",
+                    fontSize: 14.5,
+                    fontWeight: 500,
+                    textDecoration: "none",
+                    border: "1px solid rgba(0,0,0,0.08)",
+                  }}>
+                    Sécurité
+                  </Link>
+                </div>
+              </ScrollReveal>
+            </div>
+
+            {/* RIGHT — 3D orb */}
+            <div style={{ position: "relative", height: "min(620px, 75vh)" }}>
+              <HeroOrb />
+            </div>
           </div>
+
+          <style>{`
+            @media (max-width: 900px) {
+              .hero-grid {
+                grid-template-columns: 1fr !important;
+                gap: 24px !important;
+              }
+              .hero-grid > div:last-child {
+                height: 60vw !important;
+                min-height: 320px;
+                max-height: 480px;
+              }
+            }
+          `}</style>
         </section>
 
         {/* Marquee integrations */}
