@@ -2472,7 +2472,7 @@ export default function DemoV3() {
     timersRef.current = []
     if (emailIntervalRef.current) clearInterval(emailIntervalRef.current)
     setAnimPhase(5)
-    setMailCount(89)
+    setMailCount(52)
     setVisibleDossierCount(DOSSIERS.length)
     setActiveCinematicDossierIdx(-1)
     setDossierDonnaActive(false)
@@ -2486,86 +2486,69 @@ export default function DemoV3() {
     setAnimDone(true)
   }, [])
 
-  // ─── Animation sequence ───
+  // ─── Animation sequence (simplified — pain → relief, no calendar) ───
   useEffect(() => {
-    // === PHASE A: 0-10s — scan emails ===
-    // 0s: start email counter
+    // === PHASE A: 0-5s — boîte mail surchargée → tri rapide ===
     addTimer(() => {
       emailIntervalRef.current = setInterval(() => {
         setCurrentEmailIdx(i => (i + 1) % SIMULATED_EMAILS.length)
-      }, 200)
-      const milestones = [3, 8, 14, 22, 30, 40, 50, 60, 70, 78, 83, 86, 88, 89]
+      }, 140)
+      const milestones = [4, 10, 18, 27, 36, 43, 48, 51, 52]
       milestones.forEach((target, i) => {
-        addTimer(() => setMailCount(target), 500 + i * (8500 / milestones.length))
+        addTimer(() => setMailCount(target), 300 + i * (4200 / milestones.length))
       })
-    }, 300)
+    }, 200)
 
-    // 1s: Donna Phase A starts speaking
-    addTimer(() => {
-      setPhaseADonnaActive(true)
-    }, 1000)
+    addTimer(() => setPhaseADonnaActive(true), 600)
 
-    // Dossiers appear DURING scan (progressive discovery)
-    const dossierAppearTimes = [3000, 4500, 5500, 6500, 7200, 8000]
+    // Dossiers appear progressively during the scan
+    const dossierAppearTimes = [1400, 2100, 2800, 3400, 4000, 4600]
     dossierAppearTimes.forEach((delay, i) => {
-      addTimer(() => {
-        setVisibleDossierCount(i + 1)
-      }, delay)
+      addTimer(() => setVisibleDossierCount(i + 1), delay)
     })
 
-    // 8.5s: Phase A filtering — compteur atteint 89, Donna "filtre le bruit"
+    // 5s: Phase A finishes — Donna "filtre le bruit"
     addTimer(() => {
       if (emailIntervalRef.current) { clearInterval(emailIntervalRef.current); emailIntervalRef.current = null }
       setPhaseAFiltering(true)
-    }, 8500)
+    }, 5000)
 
-    // === PHASE B (NOUVEAU): 10-26s — extraction dates → calendrier ===
-    addTimer(() => {
-      if (emailIntervalRef.current) { clearInterval(emailIntervalRef.current); emailIntervalRef.current = null }
-      setAnimPhase(1)
-    }, 10000)
-
-    // === PHASE C: 26-80s — dossiers detail (~9s each for 6 dossiers) ===
-    const dossierStartTimes = [26000, 35000, 44000, 53000, 62000, 71000]
+    // === PHASE C: 6-30s — dossiers detail (4s each × 6 = 24s) ===
+    const dossierStartTimes = [6000, 10000, 14000, 18000, 22000, 26000]
     dossierStartTimes.forEach((delay, i) => {
       addTimer(() => {
         setAnimPhase(2)
         setActiveCinematicDossierIdx(i)
         setDossierShowCheck(false)
         setDossierDonnaActive(false)
-        addTimer(() => {
-          setDossierDonnaActive(true)
-        }, 300)
-        addTimer(() => {
-          setDossierShowCheck(true)
-        }, 7500)
+        addTimer(() => setDossierDonnaActive(true), 200)
+        addTimer(() => setDossierShowCheck(true), 3300)
       }, delay)
     })
 
-    // === PHASE D: 80s — briefing construction ===
+    // === PHASE D: 30s — briefing : 3 actions claires + brouillon prêt ===
     addTimer(() => {
       setAnimPhase(3)
       setActiveCinematicDossierIdx(-1)
       setDossierDonnaActive(false)
       setPhaseCActive(true)
-      // Tasks appear progressively
-      addTimer(() => setVisibleTaskCount(1), 3000)
-      addTimer(() => setVisibleTaskCount(2), 6000)
-      addTimer(() => setVisibleTaskCount(3), 9000)
-    }, 80000)
+      addTimer(() => setVisibleTaskCount(1), 1200)
+      addTimer(() => setVisibleTaskCount(2), 2400)
+      addTimer(() => setVisibleTaskCount(3), 3600)
+    }, 30000)
 
-    // === PHASE E: 94s — ROI ===
+    // === PHASE E: 35s — ROI ===
     addTimer(() => {
       setAnimPhase(4)
       setRoiVisible(true)
       setPhaseDActive(true)
-    }, 94000)
+    }, 35000)
 
-    // === PHASE F: 106s — interactive ===
+    // === PHASE F: 40s — interactive ===
     addTimer(() => {
       setAnimPhase(5)
       setAnimDone(true)
-    }, 106000)
+    }, 40000)
 
     return () => {
       timersRef.current.forEach(t => clearTimeout(t))
@@ -2686,15 +2669,6 @@ export default function DemoV3() {
                     donnaActive={phaseADonnaActive}
                     isFiltering={phaseAFiltering}
                   />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* PHASE B (NOUVEAU): extraction dates → calendrier */}
-            <AnimatePresence mode="wait">
-              {animPhase === 1 && (
-                <motion.div key="phaseB-calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }} style={{ marginBottom: 20 }}>
-                  <PhaseCalendarExtraction active={animPhase === 1} isMobile={isMobile} />
                 </motion.div>
               )}
             </AnimatePresence>
