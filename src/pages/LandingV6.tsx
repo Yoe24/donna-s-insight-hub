@@ -1,9 +1,7 @@
 import { Link } from "react-router-dom"
 import { ArrowRight, Shield, Lock, Server, FileCheck, Mail, FolderOpen, Sparkles } from "lucide-react"
 import LenisProvider from "@/components/motion/LenisProvider"
-import HeroOrb from "@/components/motion/HeroOrb"
 import MarqueeIntegrations from "@/components/motion/MarqueeIntegrations"
-import InteractiveBackground from "@/components/motion/InteractiveBackground"
 import ScrollReveal from "@/components/motion/ScrollReveal"
 
 const FEATURES = [
@@ -54,139 +52,202 @@ export default function LandingV6() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          background: "rgba(255,255,255,0.72)",
-          backdropFilter: "blur(18px)",
-          borderBottom: "1px solid rgba(0,0,0,0.04)",
+          background: "transparent",
         }}>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 22, letterSpacing: "-0.02em" }}>Donna</span>
+          <span style={{
+            fontFamily: "'Playfair Display', serif",
+            fontWeight: 700,
+            fontSize: 22,
+            letterSpacing: "-0.02em",
+            color: "#ffffff",
+            mixBlendMode: "difference",
+          }}>Donna</span>
           <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
-            <Link to="/produit" style={{ color: "#525252", fontSize: 13.5, textDecoration: "none" }}>Produit</Link>
-            <Link to="/securite" style={{ color: "#525252", fontSize: 13.5, textDecoration: "none" }}>Sécurité</Link>
-            <Link to="/tarifs" style={{ color: "#525252", fontSize: 13.5, textDecoration: "none" }}>Tarifs</Link>
+            <Link to="/produit" style={{ color: "#ffffff", fontSize: 13.5, textDecoration: "none", mixBlendMode: "difference" }}>Produit</Link>
+            <Link to="/securite" style={{ color: "#ffffff", fontSize: 13.5, textDecoration: "none", mixBlendMode: "difference" }}>Sécurité</Link>
+            <Link to="/tarifs" style={{ color: "#ffffff", fontSize: 13.5, textDecoration: "none", mixBlendMode: "difference" }}>Tarifs</Link>
             <Link to="/demo" style={{
               padding: "10px 22px",
               borderRadius: 999,
-              background: "#0d0d0d",
-              color: "#fff",
+              background: "#ffffff",
+              color: "#0d0d0d",
               fontSize: 13.5,
               fontWeight: 600,
               textDecoration: "none",
-              transition: "transform 200ms ease, background 200ms ease",
+              transition: "transform 200ms ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "#2563EB"; e.currentTarget.style.transform = "translateY(-1px)" }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "#0d0d0d"; e.currentTarget.style.transform = "translateY(0)" }}
-            >Voir la démo</Link>
+            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)" }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)" }}
+            >Connexion <ArrowRight size={14} /></Link>
           </div>
         </nav>
 
-        {/* Hero */}
-        <section style={{
-          position: "relative",
-          minHeight: "100vh",
-          padding: "120px 32px 80px",
-          overflow: "hidden",
-        }}>
-          <InteractiveBackground />
-
-          <div className="hero-grid" style={{
+        {/* Hero — full-bleed background + centered copy (Ordalie pattern) */}
+        <section
+          className="hero-section"
+          style={{
             position: "relative",
-            zIndex: 2,
-            maxWidth: 1320,
-            margin: "0 auto",
-            display: "grid",
-            gridTemplateColumns: "1.05fr 0.95fr",
-            gap: 48,
-            alignItems: "center",
-            minHeight: "calc(100vh - 200px)",
-          }}>
-            {/* LEFT — copy */}
-            <div>
-              <ScrollReveal y={24}>
-                <p style={{
-                  fontSize: 13,
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                  color: "#2563EB",
-                  fontWeight: 600,
-                  marginBottom: 24,
-                }}>
-                  L'IA juridique des avocats
-                </p>
-                <h1 style={{
+            minHeight: "100vh",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            color: "#ffffff",
+          }}
+        >
+          {/* Background image cover with subtle ken-burns */}
+          <div
+            aria-hidden
+            className="hero-bg"
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: "url('/hero-bg.jpg')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              zIndex: 0,
+              willChange: "transform",
+            }}
+          />
+          {/* Subtle overlay for text legibility */}
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "radial-gradient(ellipse at center, rgba(13,13,13,0.0) 0%, rgba(13,13,13,0.25) 70%, rgba(13,13,13,0.45) 100%)",
+              zIndex: 1,
+            }}
+          />
+
+          {/* Hero content centered */}
+          <div
+            style={{
+              position: "relative",
+              zIndex: 2,
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              padding: "140px 24px 40px",
+            }}
+          >
+            <ScrollReveal y={28}>
+              <h1
+                style={{
                   fontFamily: "'Playfair Display', serif",
-                  fontSize: "clamp(44px, 6.4vw, 96px)",
-                  lineHeight: 0.96,
-                  letterSpacing: "-0.035em",
-                  fontWeight: 700,
-                  margin: "0 0 28px",
-                  color: "#0d0d0d",
-                }}>
-                  Accéder à des réponses juridiques <em style={{ fontStyle: "italic", color: "#2563EB" }}>fiables</em>.
-                </h1>
-                <p style={{
+                  fontSize: "clamp(72px, 14vw, 192px)",
+                  lineHeight: 0.95,
+                  letterSpacing: "-0.04em",
+                  fontWeight: 400,
+                  margin: "0 0 36px",
+                  color: "#ffffff",
+                  textShadow: "0 2px 30px rgba(13,13,13,0.18)",
+                }}
+              >
+                Donna<span style={{ color: "rgba(255,255,255,0.62)" }}>.</span>
+              </h1>
+              <p
+                style={{
                   fontSize: "clamp(15px, 1.4vw, 19px)",
-                  color: "#525252",
-                  maxWidth: 520,
-                  margin: "0 0 40px",
+                  color: "rgba(255,255,255,0.94)",
+                  maxWidth: 620,
+                  margin: "0 auto 40px",
                   lineHeight: 1.65,
-                }}>
-                  Donna lit vos emails, classe vos dossiers et prépare vos réponses chaque matin.
-                  En 5 minutes, vous savez tout.
-                </p>
-                <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                  <Link to="/demo" style={{
+                  textShadow: "0 1px 14px rgba(13,13,13,0.25)",
+                }}
+              >
+                Accédez à des réponses juridiques fiables en un instant. Donna lit vos emails,
+                classe vos dossiers et prépare vos réponses chaque matin.
+              </p>
+              <div style={{ display: "inline-flex", gap: 14, flexWrap: "wrap", justifyContent: "center" }}>
+                <Link
+                  to="/demo"
+                  style={{
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 8,
-                    padding: "16px 32px",
+                    padding: "15px 30px",
                     borderRadius: 999,
                     background: "#0d0d0d",
-                    color: "#fff",
+                    color: "#ffffff",
                     fontSize: 14.5,
                     fontWeight: 600,
                     textDecoration: "none",
-                    boxShadow: "0 10px 40px rgba(13,13,13,0.25)",
+                    boxShadow: "0 10px 36px rgba(13,13,13,0.35)",
                     transition: "transform 200ms ease",
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)" }}
                   onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)" }}
-                  >
-                    Voir la démo <ArrowRight size={16} />
-                  </Link>
-                  <Link to="/securite" style={{
-                    padding: "16px 32px",
+                >
+                  Essayez Donna <ArrowRight size={15} />
+                </Link>
+                <Link
+                  to="/contact"
+                  style={{
+                    padding: "15px 30px",
                     borderRadius: 999,
-                    background: "rgba(255,255,255,0.7)",
-                    backdropFilter: "blur(8px)",
+                    background: "rgba(255,255,255,0.92)",
                     color: "#0d0d0d",
                     fontSize: 14.5,
                     fontWeight: 500,
                     textDecoration: "none",
-                    border: "1px solid rgba(0,0,0,0.08)",
-                  }}>
-                    Sécurité
-                  </Link>
-                </div>
-              </ScrollReveal>
-            </div>
+                    backdropFilter: "blur(8px)",
+                  }}
+                >
+                  Contactez-nous
+                </Link>
+              </div>
+            </ScrollReveal>
+          </div>
 
-            {/* RIGHT — 3D orb */}
-            <div style={{ position: "relative", height: "min(620px, 75vh)" }}>
-              <HeroOrb />
+          {/* Bottom logo strip (Ordalie pattern) */}
+          <div
+            style={{
+              position: "relative",
+              zIndex: 2,
+              padding: "0 24px 40px",
+            }}
+          >
+            <div
+              style={{
+                maxWidth: 1100,
+                margin: "0 auto",
+                display: "flex",
+                gap: 56,
+                alignItems: "center",
+                justifyContent: "center",
+                flexWrap: "wrap",
+                opacity: 0.95,
+                filter: "brightness(0) invert(1)",
+              }}
+            >
+              {["gmail", "outlook", "microsoft365", "onedrive", "googledrive", "googlecalendar"].map((slug) => (
+                <img
+                  key={slug}
+                  src={`/logos/${slug}.svg`}
+                  alt=""
+                  style={{ height: 28, width: "auto", opacity: 0.92 }}
+                />
+              ))}
             </div>
           </div>
 
           <style>{`
-            @media (max-width: 900px) {
-              .hero-grid {
-                grid-template-columns: 1fr !important;
-                gap: 24px !important;
-              }
-              .hero-grid > div:last-child {
-                height: 60vw !important;
-                min-height: 320px;
-                max-height: 480px;
-              }
+            .hero-bg {
+              animation: heroKenBurns 22s ease-in-out infinite alternate;
+            }
+            @keyframes heroKenBurns {
+              0% { transform: scale(1) translate(0, 0); }
+              100% { transform: scale(1.08) translate(-1%, -1.5%); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .hero-bg { animation: none; }
             }
           `}</style>
         </section>
