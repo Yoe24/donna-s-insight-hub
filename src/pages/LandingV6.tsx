@@ -318,8 +318,14 @@ export default function LandingV6() {
         .lv6-hero-overlay {
           position: absolute; inset: 0;
           background:
-            radial-gradient(ellipse at center, rgba(13,13,13,0.05) 0%, rgba(13,13,13,0.32) 70%, rgba(13,13,13,0.55) 100%);
+            radial-gradient(ellipse at center, rgba(13,13,13,0.32) 0%, rgba(13,13,13,0.52) 70%, rgba(13,13,13,0.65) 100%);
           z-index: 1;
+        }
+        @media (max-width: 760px) {
+          .lv6-hero-overlay {
+            background:
+              linear-gradient(180deg, rgba(13,13,13,0.42) 0%, rgba(13,13,13,0.55) 50%, rgba(13,13,13,0.62) 100%);
+          }
         }
         .lv6-hero-content {
           position: relative;
