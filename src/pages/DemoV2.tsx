@@ -2403,7 +2403,7 @@ const PHASE_A_DONNA_LINES = [
 
 // Textes Phase D (ex-C) — Donna construit le briefing
 const PHASE_C_DONNA_LINES = [
-  "Bonjour Camille. 19 emails lus. 3 tâches identifiées.",
+  "Bonjour Camille. 52 emails lus. 3 tâches identifiées.",
   "9 étaient du bruit, je m'en suis occupée. Il vous reste 3 brouillons de réponse à valider, tout est prêt.",
 ]
 
@@ -2736,7 +2736,7 @@ export default function DemoV3() {
                         /* Vue Inbox activée */
                         <div>
                           <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.7, margin: "0 0 8px" }}>
-                            Vous consultez votre inbox. <strong>19 emails</strong> reçus dans les dernières 24 heures.
+                            Vous consultez votre inbox. <strong>52 emails</strong> reçus dans les dernières 24 heures.
                           </p>
                           <button
                             onClick={() => setActiveTab("todo")}
@@ -2748,7 +2748,7 @@ export default function DemoV3() {
                       ) : animPhase >= 5 ? (
                         /* Texte statique post-cinématique */
                         <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.7, margin: 0 }}>
-                          <strong>Bonjour Camille.</strong> <strong>19 emails</strong> lus ces dernières 24h. <strong>3 tâches</strong> identifiées.
+                          <strong>Bonjour Camille.</strong> <strong>52 emails</strong> lus ces dernières 24h. <strong>3 tâches</strong> identifiées.
                         </p>
                       ) : (
                         /* Texte animé pendant la cinématique */
