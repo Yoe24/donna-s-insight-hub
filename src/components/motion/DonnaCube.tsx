@@ -1,6 +1,5 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
-import { Environment } from "@react-three/drei"
-import { useRef, useMemo, Suspense } from "react"
+import { useRef, useMemo } from "react"
 import * as THREE from "three"
 
 function makeFaceTexture(size = 512) {
@@ -27,13 +26,12 @@ function Cube() {
 
   const materials = useMemo(() => {
     const tex = makeFaceTexture()
-    return Array.from({ length: 6 }, () =>
-      new THREE.MeshStandardMaterial({
-        map: tex,
-        roughness: 0.32,
-        metalness: 0.35,
-      })
-    )
+    const mat = new THREE.MeshStandardMaterial({
+      map: tex,
+      roughness: 0.38,
+      metalness: 0.25,
+    })
+    return [mat, mat, mat, mat, mat, mat]
   }, [])
 
   useFrame((_, dt) => {
@@ -59,13 +57,11 @@ export default function DonnaCube() {
       gl={{ antialias: true, alpha: true }}
       style={{ width: "100%", height: "100%" }}
     >
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[5, 5, 5]} intensity={1.2} />
-      <directionalLight position={[-3, -2, -4]} intensity={0.5} color="#2563EB" />
-      <Suspense fallback={null}>
-        <Cube />
-        <Environment preset="city" />
-      </Suspense>
+      <ambientLight intensity={0.75} />
+      <directionalLight position={[5, 5, 5]} intensity={1.4} />
+      <directionalLight position={[-4, -2, -5]} intensity={0.6} color="#2563EB" />
+      <directionalLight position={[0, -3, 3]} intensity={0.35} color="#ffffff" />
+      <Cube />
     </Canvas>
   )
 }
