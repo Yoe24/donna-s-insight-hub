@@ -2726,7 +2726,7 @@ export default function DemoV3() {
                       onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.15)" }}
                       onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.1)" }}
                     >
-                      <span style={{ fontSize: 18, fontWeight: 700, color: "#fff", lineHeight: 1 }}>19</span>
+                      <span style={{ fontSize: 18, fontWeight: 700, color: "#fff", lineHeight: 1 }}>52</span>
                       <span style={{ fontSize: 8, color: "rgba(255,255,255,0.75)", letterSpacing: "0.04em", textTransform: "uppercase" as const, marginTop: 2 }}>emails</span>
                     </button>
 
