@@ -1,12 +1,12 @@
 const LOGOS = [
   { src: "/logos/gmail.svg", alt: "Gmail" },
+  { src: "/logos/googlecalendar.svg", alt: "Google Calendar" },
+  { src: "/logos/googledrive.svg", alt: "Google Drive" },
   { src: "/logos/outlook.svg", alt: "Outlook" },
   { src: "/logos/microsoft365.svg", alt: "Microsoft 365" },
+  { src: "/logos/microsoftteams.svg", alt: "Microsoft Teams" },
+  { src: "/logos/microsoftword.svg", alt: "Microsoft Word" },
   { src: "/logos/onedrive.svg", alt: "OneDrive" },
-  { src: "/logos/googledrive.svg", alt: "Google Drive" },
-  { src: "/logos/googlecalendar.svg", alt: "Google Calendar" },
-  { src: "/logos/microsoftteams.svg", alt: "Teams" },
-  { src: "/logos/microsoftword.svg", alt: "Word" },
 ]
 
 export default function MarqueeIntegrations() {
@@ -16,7 +16,8 @@ export default function MarqueeIntegrations() {
       <div className="marquee-track">
         {items.map((logo, i) => (
           <div className="marquee-item" key={i}>
-            <img src={logo.src} alt={logo.alt} loading="lazy" />
+            <img src={logo.src} alt={logo.alt} title={logo.alt} loading="lazy" />
+            <span>{logo.alt}</span>
           </div>
         ))}
       </div>
@@ -24,28 +25,38 @@ export default function MarqueeIntegrations() {
         .marquee-mask {
           width: 100%;
           overflow: hidden;
-          mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
-          -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
+          -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
         }
         .marquee-track {
           display: flex;
           gap: 72px;
           width: max-content;
-          animation: marquee 38s linear infinite;
+          animation: marquee 42s linear infinite;
+          align-items: center;
         }
         .marquee-item {
-          height: 52px;
           display: flex;
+          flex-direction: column;
           align-items: center;
-          opacity: 0.78;
-          transition: opacity 240ms ease;
+          justify-content: center;
+          gap: 10px;
+          flex-shrink: 0;
+          width: 110px;
         }
-        .marquee-item:hover { opacity: 1; }
         .marquee-item img {
-          height: 100%;
-          width: auto;
+          height: 52px;
+          width: 52px;
           object-fit: contain;
-          filter: grayscale(100%) brightness(0);
+          transition: transform 220ms ease;
+        }
+        .marquee-item:hover img { transform: scale(1.1); }
+        .marquee-item span {
+          font-size: 12px;
+          color: #737373;
+          font-family: 'Inter', sans-serif;
+          font-weight: 500;
+          white-space: nowrap;
         }
         @keyframes marquee {
           0% { transform: translateX(0); }
