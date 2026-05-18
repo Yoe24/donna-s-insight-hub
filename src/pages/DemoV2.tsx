@@ -1201,7 +1201,7 @@ function PhaseAScanZone({ mailCount, currentEmailSubject, isMobile, donnaLines, 
       style={{ border: `1px solid ${BORDER}`, borderRadius: 16, padding: isMobile ? "20px 16px" : "28px 32px", background: BG, boxShadow: "0 1px 3px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column", alignItems: "center" }}
     >
       {/* Grand cercle centré */}
-      <ScanCircle size={120} count={mailCount} total={89} isFiltering={isFiltering} isFinal={false} />
+      <ScanCircle size={120} count={mailCount} total={52} isFiltering={isFiltering} isFinal={false} />
 
       {/* Texte sous le cercle */}
       <div style={{ marginTop: 16, textAlign: "center" }}>
@@ -1588,7 +1588,7 @@ function PhaseBDossierFocus({ dossier, donnaLines, donnaActive, showCheck, dossi
     >
       {/* Header: scan circle + dossier identity */}
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-        <ScanCircle size={60} count={89} total={89} isFiltering={false} isFinal={true} />
+        <ScanCircle size={60} count={52} total={52} isFiltering={false} isFinal={true} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 10, color: TEXT_LIGHT, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
             Dossier {dossierIdx + 1} / {DOSSIERS.length}
@@ -2398,7 +2398,7 @@ function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, 
 // Textes Phase A — Donna lors du scan
 const PHASE_A_DONNA_LINES = [
   "Je me connecte à votre boîte mail et j'analyse les 30 derniers jours...",
-  "89 emails reçus ce mois-ci. Je vais les trier pour vous.",
+  "52 emails reçus ce mois-ci. Je vais les trier pour vous.",
 ]
 
 // Textes Phase D (ex-C) — Donna construit le briefing
@@ -2409,7 +2409,7 @@ const PHASE_C_DONNA_LINES = [
 
 // Textes Phase E (ex-D) — ROI
 const PHASE_D_DONNA_LINES = [
-  "J'ai lu, trié et organisé les pièces jointes par dossier de 89 emails durant ces 24 dernières heures.",
+  "J'ai lu, trié et organisé les pièces jointes par dossier de 52 emails durant ces 24 dernières heures.",
   "Demain matin à 8h, votre prochain tableau de bord sera prêt automatiquement.",
 ]
 
@@ -3047,7 +3047,7 @@ export default function DemoV3() {
                     <div style={{ flex: 1 }}>
                       {/* Texte principal en gras */}
                       <div style={{ fontSize: isMobile ? 15 : 16, fontWeight: 700, color: TEXT, marginBottom: 8, lineHeight: 1.3 }}>
-                        89 emails lus, triés et classés en 4 minutes
+                        52 emails lus, triés et classés en 4 minutes
                       </div>
                       {/* Sous-texte */}
                       <p style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.65, margin: "0 0 10px" }}>
