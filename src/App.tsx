@@ -36,6 +36,7 @@ const LandingV2 = lazy(() => import("./pages/LandingV2"));
 const LandingV3 = lazy(() => import("./pages/LandingV3"));
 const LandingV4 = lazy(() => import("./pages/LandingV4"));
 const LandingV5 = lazy(() => import("./pages/LandingV5"));
+const LandingV6 = lazy(() => import("./pages/LandingV6"));
 const DemoV2 = lazy(() => import("./pages/DemoV2"));
 const DemoV3 = lazy(() => import("./pages/DemoV3"));
 const DemoWow = lazy(() => import("./pages/DemoWow"));
@@ -102,6 +103,7 @@ const App = () => (
             <Route path="/v3" element={<Suspense fallback={null}><LandingV3 /></Suspense>} />
             <Route path="/v4" element={<Suspense fallback={null}><LandingV4 /></Suspense>} />
             <Route path="/v5" element={<Suspense fallback={null}><LandingV5 /></Suspense>} />
+            <Route path="/motion" element={<Suspense fallback={null}><LandingV6 /></Suspense>} />
             <Route path="/demo" element={<Suspense fallback={null}><DemoWow /></Suspense>} />
             <Route path="/demo-v2" element={<Suspense fallback={null}><DemoV2 /></Suspense>} />
             <Route path="/demo-v3" element={<Suspense fallback={null}><DemoV3 /></Suspense>} />
