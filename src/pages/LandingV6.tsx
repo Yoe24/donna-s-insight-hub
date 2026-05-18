@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import {
   ArrowRight,
@@ -74,12 +75,22 @@ const SECURITY = [
 
 export default function LandingV6() {
   const heroLogosTrack = [...HERO_LOGOS, ...HERO_LOGOS, ...HERO_LOGOS]
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > 80)
+    }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   return (
     <LenisProvider>
       <div className="lv6-root">
         {/* Nav */}
-        <nav className="lv6-nav">
+        <nav className={`lv6-nav ${scrolled ? "lv6-nav-scrolled" : ""}`}>
           <span className="lv6-brand">Donna</span>
           <div className="lv6-nav-links">
             <Link to="/produit">Produit</Link>
@@ -259,6 +270,14 @@ export default function LandingV6() {
           align-items: center;
           justify-content: space-between;
           background: transparent;
+          transition: background 280ms ease, box-shadow 280ms ease, padding 280ms ease;
+        }
+        .lv6-nav-scrolled {
+          background: rgba(255,255,255,0.88);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+          padding: 12px 32px;
         }
         .lv6-brand {
           font-family: 'Playfair Display', serif;
@@ -266,8 +285,9 @@ export default function LandingV6() {
           font-size: 22px;
           letter-spacing: -0.02em;
           color: #ffffff;
-          mix-blend-mode: difference;
+          transition: color 280ms ease;
         }
+        .lv6-nav-scrolled .lv6-brand { color: #0d0d0d; }
         .lv6-nav-links {
           display: flex;
           gap: 28px;
@@ -277,21 +297,25 @@ export default function LandingV6() {
           color: #ffffff;
           font-size: 13.5px;
           text-decoration: none;
-          mix-blend-mode: difference;
+          transition: color 280ms ease;
         }
+        .lv6-nav-scrolled .lv6-nav-links a { color: #525252; }
         .lv6-nav-cta {
           padding: 10px 22px;
           border-radius: 999px;
           background: #ffffff !important;
           color: #0d0d0d !important;
           font-weight: 600;
-          mix-blend-mode: normal !important;
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          transition: transform 200ms ease;
+          transition: transform 200ms ease, background 280ms ease, color 280ms ease;
         }
         .lv6-nav-cta:hover { transform: translateY(-1px); }
+        .lv6-nav-scrolled .lv6-nav-cta {
+          background: #0d0d0d !important;
+          color: #ffffff !important;
+        }
 
         /* HERO */
         .lv6-hero {
