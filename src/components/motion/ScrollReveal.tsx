@@ -1,8 +1,4 @@
 import { useEffect, useRef, ReactNode } from "react"
-import gsap from "gsap"
-import { ScrollTrigger } from "gsap/ScrollTrigger"
-
-gsap.registerPlugin(ScrollTrigger)
 
 interface Props {
   children: ReactNode
@@ -18,23 +14,35 @@ export default function ScrollReveal({ children, delay = 0, y = 40, stagger = 0,
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const targets = stagger > 0 ? Array.from(el.children) : el
-    const ctx = gsap.context(() => {
-      gsap.from(targets, {
-        y,
-        opacity: 0,
-        duration: 0.9,
-        ease: "power3.out",
-        delay,
-        stagger: stagger || 0,
-        scrollTrigger: {
-          trigger: el,
-          start: "top 82%",
-          toggleActions: "play none none none",
-        },
-      })
-    }, el)
-    return () => ctx.revert()
+
+    const targets: HTMLElement[] = stagger > 0
+      ? Array.from(el.children).filter((c): c is HTMLElement => c instanceof HTMLElement)
+      : [el]
+
+    targets.forEach((t, i) => {
+      t.style.opacity = "0"
+      t.style.transform = `translateY(${y}px)`
+      t.style.transition = `opacity 800ms cubic-bezier(0.22,1,0.36,1) ${delay + i * stagger}s, transform 900ms cubic-bezier(0.22,1,0.36,1) ${delay + i * stagger}s`
+      t.style.willChange = "opacity, transform"
+    })
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const target = entry.target as HTMLElement
+            target.style.opacity = "1"
+            target.style.transform = "translateY(0)"
+            io.unobserve(target)
+          }
+        })
+      },
+      { threshold: 0.18, rootMargin: "0px 0px -8% 0px" }
+    )
+
+    targets.forEach((t) => io.observe(t))
+
+    return () => io.disconnect()
   }, [delay, y, stagger])
 
   return (
