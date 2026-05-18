@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom"
 import { ArrowRight, Shield, Lock, Server, FileCheck, Mail, FolderOpen, Sparkles } from "lucide-react"
 import LenisProvider from "@/components/motion/LenisProvider"
-import DonnaCube from "@/components/motion/DonnaCube"
 import MarqueeIntegrations from "@/components/motion/MarqueeIntegrations"
 import InteractiveBackground from "@/components/motion/InteractiveBackground"
 import ScrollReveal from "@/components/motion/ScrollReveal"
@@ -91,7 +90,7 @@ export default function LandingV6() {
         }}>
           <InteractiveBackground />
 
-          {/* 3D cube centered behind */}
+          {/* Logo monogram centered behind */}
           <div style={{
             position: "absolute",
             inset: 0,
@@ -99,11 +98,24 @@ export default function LandingV6() {
             alignItems: "center",
             justifyContent: "center",
             zIndex: 1,
-            opacity: 0.95,
           }}>
-            <div style={{ width: "min(560px, 70vw)", height: "min(560px, 70vw)" }}>
-              <DonnaCube />
-            </div>
+            <div style={{
+              width: "min(360px, 55vw)",
+              height: "min(360px, 55vw)",
+              borderRadius: "32px",
+              background: "linear-gradient(140deg, #0d0d0d 0%, #1f1f1f 100%)",
+              boxShadow: "0 40px 120px rgba(13,13,13,0.35), inset 0 1px 0 rgba(255,255,255,0.06)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontFamily: "'Playfair Display', serif",
+              fontWeight: 700,
+              fontSize: "min(220px, 34vw)",
+              lineHeight: 1,
+              color: "#ffffff",
+              transform: "rotate(-6deg)",
+              opacity: 0.95,
+            }}>D</div>
           </div>
 
           <div style={{
