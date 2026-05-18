@@ -1,30 +1,62 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Link } from "react-router-dom"
-import { GuidedTour } from "@/components/GuidedTour"
-import { isDemoTourCompleted, completeDemoTour } from "@/lib/tour-state"
 import {
   Settings, LayoutDashboard, Paperclip, Eye, Edit3, Send, ChevronRight, Mail,
-  ArrowUp, MessageCircle, X, Menu, ArrowLeft, Copy, Check, FileText, Download,
-  Calendar, AlertTriangle, CheckCircle2, Clock, ThumbsUp, Pencil, XCircle
+  ArrowUp, X, Menu, ArrowLeft, Copy, Check, FileText, Download,
+  Calendar, CheckCircle2, Clock, ThumbsUp, Pencil, XCircle,
+  SkipForward, ChevronDown, Zap
 } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 
-// ─── Palette ───
+// ─── Palette DemoWow — charte donna-legal.com ───
 const BG = "#FFFFFF"
 const SIDEBAR_BG = "#F9FAFB"
-const SIDEBAR_BORDER = "#E5E7EB"
-const TEXT = "#111827"
-const TEXT_MUTED = "#6B7280"
-const TEXT_LIGHT = "#9CA3AF"
-const ACCENT = "#2563EB"
-const ACCENT_BG = "#EFF6FF"
-const URGENT = "#EF4444"
+const SIDEBAR_BORDER = "#E5E5E5"
+const TEXT = "#0D0D0D"
+const TEXT_MUTED = "#737373"
+const TEXT_LIGHT = "#A0A0A0"
+const ACCENT = "#0D0D0D"
+const ACCENT_BG = "#F5F5F5"
+const URGENT = "#FF5555"
 const URGENT_BG = "#FEF2F2"
 const GREEN = "#10B981"
-const BORDER = "#E5E7EB"
+const BORDER = "#E5E5E5"
+const INITIALS_BG = "#E5E5E5"
+const INITIALS_TEXT = "#333"
 
-// ─── Hook ───
+// 6 couleurs uniques par dossier (pas par domaine), jamais deux pareilles côte à côte
+const DOSSIER_COLORS: Record<string, string> = {
+  "d1": "#2563EB",   // Jean-Pierre Martin — bleu
+  "d2": "#9333EA",   // Marie Dupont — violet
+  "d3": "#0891B2",   // Claire Dubois — teal
+  "d4": "#E11D48",   // Famille Roux — rose
+  "d5": "#D97706",   // Alice Bernard — ambre
+  "d6": "#059669",   // Succession Martin — vert émeraude
+}
+
+// ─── Dates dynamiques ───
+function getToday() {
+  const now = new Date()
+  const days = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"]
+  const months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+  return `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`
+}
+
+function getTodayShort() {
+  const now = new Date()
+  const months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+  return `${now.getDate()} ${months[now.getMonth()]}`
+}
+
+function getDaysAgo(n: number) {
+  const d = new Date()
+  d.setDate(d.getDate() - n)
+  const months = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
+  return `${d.getDate()} ${months[d.getMonth()]}`
+}
+
+// ─── Hook mobile ───
 function useIsMobile(bp = 768) {
   const [mobile, setMobile] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false)
   useEffect(() => {
@@ -42,161 +74,88 @@ function useIsMobile(bp = 768) {
 // ═══════════════════════════════════════════════════════
 
 const DOSSIERS = [
-  { id: "d1", initials: "JM", name: "Jean-Pierre Martin", type: "Droit du travail", color: "#2563EB",
-    summary: "Litige prud'homal en cours. M. Martin conteste son licenciement pour faute grave. Audience de conciliation prévue le 22 avril 2026. Enjeu principal : indemnités de licenciement (18 mois d'ancienneté) + dommages-intérêts pour licenciement sans cause réelle et sérieuse.",
-    status: "actif" as const, domain: "Travail",
+  { id: "d1", initials: "JG", name: "Vente Garnier — 75017", type: "Vente résidentiel", color: "#2C3E6B",
+    summary: "Mandat exclusif sur un 4 pièces 95 m² boulevard Berthier. Prix net vendeur 770 000 €. Première offre reçue à 750 000 €, contre-proposition envoyée. Signature du compromis prévue chez Me Vidal le 28 mai.",
+    status: "actif" as const, domain: "Vente",
     emails: [
-      { id: "e10", sender: "Jean-Pierre Martin", subject: "Documents demandés pour le dossier", date: "1 avril", resume: "M. Martin transmet ses 3 derniers bulletins de salaire et son contrat de travail comme demandé." },
-      { id: "e11", sender: "Me Laurent (adverse)", subject: "Conclusions en défense", date: "28 mars", resume: "L'employeur maintient la qualification de faute grave. Argument : absences répétées non justifiées." },
-      { id: "e12", sender: "Greffe CPH Paris", subject: "Convocation bureau de conciliation", date: "25 mars", resume: "Convocation pour le 22 avril 2026 à 9h30. Bureau de conciliation, section industrie." },
-      { id: "e13", sender: "Jean-Pierre Martin", subject: "Re: Attestations de collègues", date: "22 mars", resume: "M. Martin transmet 3 attestations de collègues confirmant qu'il avait prévenu son manager de ses absences." },
-      { id: "e14", sender: "Me Laurent (adverse)", subject: "Pièces complémentaires employeur", date: "20 mars", resume: "Transmission des registres de pointage et du règlement intérieur. L'employeur conteste les attestations." },
-      { id: "e15", sender: "Jean-Pierre Martin", subject: "Certificat médical", date: "18 mars", resume: "Certificat du Dr Benali attestant d'un arrêt de travail du 2 au 7 mars pour gastro-entérite aiguë." },
-      { id: "e16", sender: "CPAM Paris", subject: "Confirmation indemnités journalières", date: "15 mars", resume: "La CPAM confirme le versement des IJ pour la période du 2 au 7 mars 2026." },
-      { id: "e17", sender: "Jean-Pierre Martin", subject: "Question sur les indemnités", date: "12 mars", resume: "M. Martin demande une estimation des indemnités qu'il pourrait obtenir en cas de requalification." },
-      { id: "e18", sender: "Inspection du travail", subject: "Accusé réception signalement", date: "10 mars", resume: "L'inspection du travail accuse réception du signalement pour licenciement abusif." },
-      { id: "e19", sender: "Jean-Pierre Martin", subject: "Premier contact — contestation licenciement", date: "8 mars", resume: "Premier mail de M. Martin expliquant sa situation. Licencié le 15/03 pour faute grave, il conteste les motifs." },
+      { id: "e10", sender: "Jean & Sophie Garnier", subject: "Re: Contre-proposition 770 000 €", date: getDaysAgo(1), resume: "Les vendeurs acceptent la contre-proposition à 770 000 € si financement confirmé sous 10 jours." },
+      { id: "e11", sender: "Aurélie Vidal (notaire)", subject: "Compromis — projet à valider", date: getDaysAgo(3), resume: "Me Vidal envoie le projet de compromis. Demande de relire les conditions suspensives." },
+      { id: "e12", sender: "Camille Roux (acquéreur)", subject: "Offre d'achat 750 000 € net", date: getDaysAgo(6), resume: "Offre ferme à 750 000 € net vendeur. Apport personnel 230 000 €, prêt restant à finaliser." },
     ],
     documents: [
-      { id: "doc1", name: "Contrat_travail_Martin.pdf", type: "PDF", size: "245 Ko", date: "1 avril", resume: "CDI signé le 12/09/2024, poste de responsable logistique, salaire brut 3 200€/mois, clause de non-concurrence de 12 mois." },
-      { id: "doc2", name: "Lettre_licenciement.pdf", type: "PDF", size: "128 Ko", date: "15 mars", resume: "Licenciement pour faute grave notifié le 15/03/2026. Motifs invoqués : absences injustifiées les 2, 3 et 7 mars 2026." },
-      { id: "doc3", name: "Bulletins_salaire_Q4.pdf", type: "PDF", size: "312 Ko", date: "1 avril", resume: "Bulletins oct/nov/déc 2025. Salaire net moyen : 2 480€. Pas de prime ni variable sur la période." },
-      { id: "doc1b", name: "Attestations_collegues.pdf", type: "PDF", size: "189 Ko", date: "22 mars", resume: "3 attestations de collègues (M. Fabre, Mme Lopez, M. Chen) confirmant que M. Martin avait prévenu son supérieur de ses absences par SMS." },
-      { id: "doc1c", name: "Certificat_medical_Benali.pdf", type: "PDF", size: "56 Ko", date: "18 mars", resume: "Certificat médical du Dr Benali. Arrêt prescrit du 2 au 7 mars 2026. Diagnostic : gastro-entérite aiguë." },
-      { id: "doc1d", name: "Registre_pointage_mars.xlsx", type: "XLSX", size: "78 Ko", date: "20 mars", resume: "Registre de pointage du mois de mars. Absences de M. Martin relevées les 2, 3, 4, 5, 6 et 7 mars. Aucune mention de justificatif dans le système." },
-      { id: "doc1e", name: "Reglement_interieur.pdf", type: "PDF", size: "1.4 Mo", date: "20 mars", resume: "Règlement intérieur de la société LogiTrans. Article 12 : toute absence non justifiée sous 48h constitue une faute. Article 15 : procédure disciplinaire obligatoire avant licenciement." },
-      { id: "doc1f", name: "Captures_SMS_manager.jpg", type: "JPG", size: "2.1 Mo", date: "22 mars", resume: "Captures d'écran de SMS entre M. Martin et son manager M. Duval. Messages du 2 mars à 7h12 : 'Bonjour, je suis malade, je ne pourrai pas venir'. Réponse du manager : 'OK bon rétablissement'." },
-      { id: "doc1g", name: "Simulation_indemnites.docx", type: "DOCX", size: "34 Ko", date: "12 mars", resume: "Estimation préparée par le cabinet : indemnité légale de licenciement (2 700€) + dommages-intérêts pour licenciement sans cause (6 à 12 mois de salaire, soit 19 200€ à 38 400€)." },
+      { id: "doc1", name: "Mandat_exclusif_Garnier.pdf", type: "PDF", size: "412 Ko", date: getDaysAgo(45), resume: "Mandat exclusif de vente 3 mois. Honoraires 4 % TTC à la charge du vendeur." },
+      { id: "doc2", name: "Diagnostics_DDT_Berthier.pdf", type: "PDF", size: "3.1 Mo", date: getDaysAgo(28), resume: "DPE classe C, plomb absent, amiante absent, électricité conforme." },
     ],
     deadlines: [
-      { date: "22 avril 2026", label: "Audience bureau de conciliation", urgent: true },
-      { date: "15 avril 2026", label: "Date limite dépôt conclusions", urgent: true },
-      { date: "10 avril 2026", label: "Transmission pièces à l'adversaire", urgent: false },
+      { date: "28 mai 2026", label: "Signature compromis chez Me Vidal", urgent: true },
+      { date: "30 mai 2026", label: "Versement séquestre 10 %", urgent: true },
     ],
   },
-  { id: "d2", initials: "MD", name: "Marie Dupont", type: "Litige commercial", color: "#7C3AED",
-    summary: "Contentieux commercial avec la société TechnoPlus SARL. Factures impayées pour un montant de 34 200€. Mise en demeure envoyée le 20 mars. Délai de réponse expiré. Prochaine étape : assignation en référé-provision.",
+  { id: "d2", initials: "ML", name: "Recherche Lemaire — Yvelines", type: "Mandat de recherche", color: "#2C3E6B",
+    summary: "Marc Lemaire recherche une maison familiale 700–850 000 € entre Voisins-le-Bretonneux et Saint-Germain-en-Laye. 3 biens sélectionnés, visites planifiées samedi.",
+    status: "actif" as const, domain: "Recherche",
+    emails: [
+      { id: "e20", sender: "Marc Lemaire", subject: "Re: Sélection 3 biens — confirmation visites", date: getDaysAgo(1), resume: "Marc valide les 3 créneaux samedi : Voisins 10h, Marly 14h, Saint-Germain 16h." },
+      { id: "e21", sender: "Agence Foncia (mandataire)", subject: "Disponibilité Marly-le-Roi 825 000 €", date: getDaysAgo(2), resume: "Le bien Marly est encore disponible. Propriétaire ouvert à une offre raisonnable." },
+    ],
+    documents: [
+      { id: "doc3", name: "Mandat_recherche_Lemaire.pdf", type: "PDF", size: "188 Ko", date: getDaysAgo(20), resume: "Mandat de recherche 6 mois. Critères : 5 pièces minimum, jardin, garage." },
+    ],
+    deadlines: [
+      { date: "Samedi 24 mai 2026", label: "3 visites Voisins / Marly / Saint-Germain", urgent: true },
+    ],
+  },
+  { id: "d3", initials: "LB", name: "Bureaux Bernard — Levallois", type: "Bail commercial", color: "#2C3E6B",
+    summary: "Recherche d'un plateau 200 m² pour la startup de Lucie Bernard à Levallois-Perret. Plateau 4ᵉ étage rue Anatole France identifié, négociation du loyer en cours (proposition 32 €/m², contre-offre 28 €/m²).",
     status: "actif" as const, domain: "Commercial",
     emails: [
-      { id: "e20", sender: "Marie Dupont", subject: "Re: Point sur le contentieux TechnoPlus", date: "2 avril", resume: "Mme Dupont confirme qu'aucun règlement n'est intervenu. Elle souhaite accélérer la procédure." },
-      { id: "e21", sender: "Me Garnier (TechnoPlus)", subject: "Demande de délai de paiement", date: "30 mars", resume: "L'avocat de TechnoPlus propose un échelonnement sur 6 mois. Reconnaît la dette mais invoque des difficultés de trésorerie." },
-      { id: "e22", sender: "Marie Dupont", subject: "Tr: Relance n°3 restée sans réponse", date: "28 mars", resume: "Mme Dupont transfère sa 3e relance amiable restée sans réponse depuis 15 jours." },
-      { id: "e23", sender: "Huissier Maître Petit", subject: "PV de signification — mise en demeure", date: "25 mars", resume: "L'huissier confirme la remise en main propre de la mise en demeure au gérant de TechnoPlus le 24 mars." },
-      { id: "e24", sender: "Marie Dupont", subject: "Bon de commande original", date: "22 mars", resume: "Mme Dupont envoie le bon de commande signé par le gérant de TechnoPlus pour la prestation de conseil en transformation digitale." },
-      { id: "e25", sender: "Expert-comptable Mme Dupont", subject: "Relevé de compte client TechnoPlus", date: "20 mars", resume: "L'expert-comptable fournit le relevé montrant 3 factures échues : 60j, 90j et 120j de retard." },
-      { id: "e26", sender: "Marie Dupont", subject: "Premier contact — recouvrement TechnoPlus", date: "15 mars", resume: "Mme Dupont explique la situation : prestation réalisée entre sept et déc 2025, 3 factures impayées totalisant 34 200€." },
-      { id: "e27", sender: "Greffe Tribunal Commerce", subject: "Extrait Kbis TechnoPlus SARL", date: "18 mars", resume: "Kbis à jour de TechnoPlus SARL. Capital social : 10 000€. Gérant : M. Philippe Renaud. Siège : 45 rue de la Paix, Paris 2e." },
-      { id: "e28", sender: "Me Garnier (TechnoPlus)", subject: "Re: Mise en demeure — contestation partielle", date: "1 avril", resume: "Me Garnier conteste la facture F-2025-118 (10 000€) arguant que la prestation n'a pas été livrée complètement." },
-      { id: "e29", sender: "Marie Dupont", subject: "Preuve livraison prestation complète", date: "2 avril", resume: "Mme Dupont transmet les PV de recette signés par TechnoPlus pour les 3 prestations, y compris F-2025-118." },
+      { id: "e30", sender: "Lucie Bernard", subject: "Re: Plateau Anatole France — décision OK", date: getDaysAgo(1), resume: "Lucie valide le plateau si le loyer descend à 28 €/m² HT et si la franchise est de 2 mois." },
+      { id: "e31", sender: "Gérance Sopra (bailleur)", subject: "Re: Contre-proposition 28 €/m² HT", date: getDaysAgo(2), resume: "Le bailleur étudie. Réponse promise pour vendredi. Position : 30 €/m² + 1 mois de franchise." },
     ],
     documents: [
-      { id: "doc4", name: "Factures_impayees_recap.pdf", type: "PDF", size: "89 Ko", date: "20 mars", resume: "3 factures impayées : F-2025-089 (12 400€), F-2025-102 (11 800€), F-2025-118 (10 000€). Total : 34 200€ TTC." },
-      { id: "doc4b", name: "Bon_commande_TechnoPlus.pdf", type: "PDF", size: "134 Ko", date: "22 mars", resume: "Bon de commande n°BC-2025-034 signé par M. Renaud (TechnoPlus). Prestation : conseil en transformation digitale. Montant total : 34 200€ HT." },
-      { id: "doc4c", name: "Mise_en_demeure_TechnoPlus.pdf", type: "PDF", size: "98 Ko", date: "20 mars", resume: "Mise en demeure de payer 34 200€ sous 8 jours. Envoi par huissier. Mention de l'article L.441-10 du Code de commerce (pénalités de retard)." },
-      { id: "doc4d", name: "PV_signification_huissier.pdf", type: "PDF", size: "167 Ko", date: "25 mars", resume: "PV de signification par Me Petit, huissier. Remise en main propre au gérant M. Renaud le 24/03/2026 à 10h45 au siège social." },
-      { id: "doc4e", name: "Releve_compte_client.xlsx", type: "XLSX", size: "45 Ko", date: "20 mars", resume: "Balance âgée : F-2025-089 (échue 120j, 12 400€), F-2025-102 (échue 90j, 11 800€), F-2025-118 (échue 60j, 10 000€). Intérêts de retard calculés : 1 890€." },
-      { id: "doc4f", name: "PV_recette_F2025-118.pdf", type: "PDF", size: "78 Ko", date: "2 avril", resume: "PV de recette signé par M. Renaud le 15/12/2025. Prestation livraison SI complète. Mention : 'Conforme au cahier des charges'." },
-      { id: "doc4g", name: "Kbis_TechnoPlus.pdf", type: "PDF", size: "210 Ko", date: "18 mars", resume: "Extrait Kbis au 18/03/2026. TechnoPlus SARL, RCS Paris B 812 345 678. Capital : 10 000€. Activité : services informatiques." },
-      { id: "doc4h", name: "Contrat_prestation_conseil.pdf", type: "PDF", size: "1.8 Mo", date: "15 mars", resume: "Contrat cadre de prestation de conseil entre Dupont Consulting et TechnoPlus SARL. Durée : sept 2025 à fév 2026. Clause de paiement : 30 jours fin de mois." },
+      { id: "doc4", name: "Projet_bail_3-6-9_Levallois.pdf", type: "PDF", size: "612 Ko", date: getDaysAgo(8), resume: "Bail commercial 3-6-9. Dépôt de garantie 3 mois de loyer." },
     ],
     deadlines: [
-      { date: "10 avril 2026", label: "Assignation en référé-provision", urgent: true },
-      { date: "8 avril 2026", label: "Réponse délai de paiement adverse", urgent: false },
+      { date: "23 mai 2026", label: "Réponse bailleur attendue", urgent: true },
     ],
   },
-  { id: "d3", initials: "CD", name: "Claire Dubois", type: "Litige immobilier", color: "#059669",
-    summary: "Trouble de voisinage — Mme Dubois se plaint de nuisances sonores répétées (travaux non autorisés par la copropriété). Constat d'huissier effectué le 25 mars. Médiation en cours avec le syndic.",
-    status: "actif" as const, domain: "Immobilier",
+  { id: "d4", initials: "FR", name: "Succession Roux — 92", type: "Succession immobilière", color: "#2C3E6B",
+    summary: "Vente d'un 3 pièces 68 m² à Boulogne issu d'une succession à trois héritiers. Estimation 620 000 €. Mandat exclusif signé. Première proposition à 595 000 € en cours de discussion.",
+    status: "en_attente" as const, domain: "Succession",
     emails: [
-      { id: "e30", sender: "Claire Dubois", subject: "Nouveaux travaux ce week-end", date: "2 avril", resume: "Mme Dubois signale que le voisin (M. Legrand, 4e étage) a repris les travaux samedi malgré la médiation." },
-      { id: "e31", sender: "Syndic Foncia Neuilly", subject: "Re: Demande intervention travaux non autorisés", date: "1 avril", resume: "Le syndic confirme qu'aucune autorisation AG n'a été donnée pour les travaux de M. Legrand. Mise en demeure envoyée." },
-      { id: "e32", sender: "Me Huissier Bertrand", subject: "Constat de nuisances — rapport définitif", date: "28 mars", resume: "Constat d'huissier réalisé le 25 mars. Bruit mesuré à 72 dB dans l'appartement Dubois (norme : 30 dB). Travaux de démolition de cloison sans autorisation." },
-      { id: "e33", sender: "Claire Dubois", subject: "Photos des fissures dans mon plafond", date: "26 mars", resume: "Mme Dubois envoie 6 photos montrant des fissures apparues au plafond de sa chambre, directement sous l'appartement de M. Legrand." },
-      { id: "e34", sender: "Mairie de Neuilly", subject: "Réponse demande permis de travaux", date: "25 mars", resume: "La mairie confirme qu'aucune déclaration de travaux n'a été déposée par M. Legrand pour l'adresse concernée." },
-      { id: "e35", sender: "Expert BTP M. Roche", subject: "Devis expertise fissures", date: "24 mars", resume: "Devis d'expertise pour évaluer les fissures et déterminer si les travaux du 4e en sont la cause. Montant : 1 200€ HT." },
-      { id: "e36", sender: "Claire Dubois", subject: "Historique des nuisances", date: "20 mars", resume: "Mme Dubois récapitule : travaux depuis le 1er février, 6 jours/semaine, de 8h à 20h. Plainte au syndic le 10 février, sans effet." },
-      { id: "e37", sender: "Syndic Foncia Neuilly", subject: "PV AG copropriété 2025", date: "22 mars", resume: "Le syndic transmet le PV de la dernière AG. Aucune résolution autorisant des travaux au 4e étage." },
-      { id: "e38", sender: "Claire Dubois", subject: "Main courante déposée", date: "15 mars", resume: "Mme Dubois a déposé une main courante au commissariat de Neuilly pour tapage diurne répété." },
-      { id: "e39", sender: "Claire Dubois", subject: "Premier contact — nuisances voisinage", date: "10 mars", resume: "Premier mail. Mme Dubois habite au 3e étage du 12 avenue Peretti, Neuilly. Travaux bruyants au 4e depuis 6 semaines." },
+      { id: "e40", sender: "Famille Roux (indivision)", subject: "Re: Proposition 595 000 € — accord à 610 000 €", date: getDaysAgo(1), resume: "Les 3 héritiers acceptent à 610 000 € net vendeur. Position commune." },
     ],
     documents: [
-      { id: "doc5", name: "Constat_huissier_25mars.pdf", type: "PDF", size: "2.4 Mo", date: "28 mars", resume: "Constat de Me Bertrand. Bruits mesurés à 72 dB (seuil : 30 dB). Photos de chantier visible depuis le palier. Cloison en cours de démolition sans étayage." },
-      { id: "doc5b", name: "Photos_fissures_plafond.jpg", type: "JPG", size: "4.8 Mo", date: "26 mars", resume: "6 photos haute résolution montrant des fissures au plafond de la chambre (3e étage). Fissures de 0,5 à 2 mm, orientation longitudinale." },
-      { id: "doc5c", name: "PV_AG_copro_2025.pdf", type: "PDF", size: "890 Ko", date: "22 mars", resume: "PV de l'AG du 15/01/2025. 23 résolutions votées. Aucune concernant des travaux au lot n°12 (4e étage, M. Legrand)." },
-      { id: "doc5d", name: "Mise_demeure_syndic_Legrand.pdf", type: "PDF", size: "67 Ko", date: "1 avril", resume: "Mise en demeure du syndic à M. Legrand de cesser immédiatement tous travaux non autorisés sous peine de poursuites." },
-      { id: "doc5e", name: "Devis_expertise_BTP_Roche.pdf", type: "PDF", size: "112 Ko", date: "24 mars", resume: "Devis de M. Roche, expert BTP agréé. Expertise des fissures + recherche du lien de causalité avec les travaux. 1 200€ HT, délai 10 jours." },
-      { id: "doc5f", name: "Main_courante_commissariat.pdf", type: "PDF", size: "89 Ko", date: "15 mars", resume: "Main courante n°2026/MC/1234 déposée le 15/03/2026 au commissariat de Neuilly. Objet : tapage diurne répété depuis le 1er février." },
-      { id: "doc5g", name: "Reponse_mairie_permis.pdf", type: "PDF", size: "45 Ko", date: "25 mars", resume: "Courrier de la mairie de Neuilly. Aucune déclaration préalable ni permis de construire déposé par M. Legrand pour le 12 avenue Peretti." },
-      { id: "doc5h", name: "Reglement_copropriete.pdf", type: "PDF", size: "3.2 Mo", date: "10 mars", resume: "Règlement de copropriété. Art. 8 : travaux modifiant la structure nécessitent autorisation AG à majorité art. 25. Art. 9 : horaires travaux autorisés 9h-12h / 14h-18h en semaine." },
+      { id: "doc5", name: "Mandat_exclusif_Roux.pdf", type: "PDF", size: "298 Ko", date: getDaysAgo(34), resume: "Mandat exclusif vente succession. Honoraires 4,5 % TTC à la charge acquéreur." },
     ],
     deadlines: [
-      { date: "15 avril 2026", label: "Médiation avec le syndic", urgent: false },
-      { date: "30 avril 2026", label: "Audience référé si médiation échoue", urgent: true },
+      { date: "25 mai 2026", label: "Réponse définitive acheteur", urgent: true },
     ],
   },
-  { id: "d4", initials: "FR", name: "Famille Roux", type: "Immobilier", color: "#D97706",
-    summary: "Acquisition immobilière — compromis signé le 10 mars pour un bien à Neuilly (485 000€). Conditions suspensives : prêt bancaire (réponse attendue le 10 avril) + diagnostics techniques. Acte authentique prévu le 15 mai.",
-    status: "en_attente" as const, domain: "Immobilier",
+  { id: "d5", initials: "RR", name: "Café du Marché — Paris 12", type: "Vente fonds de commerce", color: "#2C3E6B",
+    summary: "Vente d'un fonds de commerce de restauration rue de Reuilly. Prix demandé 385 000 € (licence IV incluse). Promesse signée sous condition d'autorisation préfectorale et financement bancaire.",
+    status: "actif" as const, domain: "Commerce",
     emails: [
-      { id: "e40", sender: "Famille Roux", subject: "Re: Offre de prêt reçue de la BNP", date: "2 avril", resume: "Les Roux ont reçu l'offre de prêt BNP : 388 000€ sur 25 ans à 3,2%. Ils demandent si les conditions sont acceptables." },
-      { id: "e41", sender: "Me Durand (notaire)", subject: "Projet acte authentique", date: "1 avril", resume: "Le notaire transmet le projet d'acte authentique pour relecture. Acte prévu le 15 mai à 14h." },
-      { id: "e42", sender: "Agence Century 21 Neuilly", subject: "Diagnostics techniques — résultats", date: "30 mars", resume: "Tous les diagnostics sont conformes sauf l'amiante : présence dans les dalles de sol du sous-sol. Devis désamiantage : 4 500€." },
-      { id: "e43", sender: "BNP Paribas — Service Prêts", subject: "Accord de principe prêt immobilier", date: "28 mars", resume: "Accord de principe pour un prêt de 388 000€. Taux : 3,2% fixe, durée 25 ans. Mensualité : 1 870€. Assurance : 0,34%." },
-      { id: "e44", sender: "Famille Roux", subject: "Question sur la clause amiante", date: "31 mars", resume: "M. Roux demande si la présence d'amiante peut être un motif de renégociation du prix ou d'annulation." },
-      { id: "e45", sender: "Me Durand (notaire)", subject: "Compromis signé — confirmation", date: "10 mars", resume: "Confirmation de la signature du compromis. Dépôt de garantie de 48 500€ (10%) reçu sur le compte séquestre." },
-      { id: "e46", sender: "Assurance MMA", subject: "Devis assurance emprunteur", date: "25 mars", resume: "Devis assurance emprunteur : 85€/mois pour le couple. Couverture décès, PTIA, ITT. Délégation d'assurance possible." },
-      { id: "e47", sender: "Famille Roux", subject: "Visite contre-expertise plomberie", date: "22 mars", resume: "Les Roux souhaitent faire une contre-expertise de la plomberie car l'agent a mentionné des tuyaux en plomb." },
-      { id: "e48", sender: "Agence Century 21 Neuilly", subject: "Coordonnées vendeur pour état des lieux", date: "20 mars", resume: "L'agence transmet les coordonnées du vendeur pour organiser un pré-état des lieux avant la signature." },
-      { id: "e49", sender: "Famille Roux", subject: "Premier contact — achat appartement Neuilly", date: "5 mars", resume: "La famille Roux souhaite acquérir un T4 au 8 rue de Chartres, Neuilly. Budget max : 500 000€. Besoin d'accompagnement juridique." },
-      { id: "e49b", sender: "Courtier Cafpi", subject: "Comparatif offres de prêt", date: "26 mars", resume: "Le courtier présente 3 offres : BNP (3,2%), Crédit Agricole (3,35%), LCL (3,45%). Recommande la BNP." },
+      { id: "e50", sender: "Préfecture de Paris", subject: "Re: Demande autorisation licence IV", date: getDaysAgo(2), resume: "Dossier en cours d'instruction. Délai prévu 6 à 8 semaines. Pièces complètes." },
     ],
     documents: [
-      { id: "doc6", name: "Compromis_vente_Neuilly.pdf", type: "PDF", size: "2.8 Mo", date: "10 mars", resume: "Compromis de vente du T4, 8 rue de Chartres, Neuilly. Prix : 485 000€. Conditions suspensives : obtention prêt avant le 10 avril, diagnostics conformes." },
-      { id: "doc6b", name: "Diagnostics_techniques.pdf", type: "PDF", size: "5.6 Mo", date: "30 mars", resume: "Dossier complet de diagnostics : DPE (classe C), plomb (négatif), électricité (conforme), gaz (conforme), amiante (positif — dalles sol sous-sol)." },
-      { id: "doc6c", name: "Offre_pret_BNP.pdf", type: "PDF", size: "345 Ko", date: "2 avril", resume: "Offre de prêt BNP Paribas. Montant : 388 000€, taux fixe 3,2%, durée 300 mois, mensualité 1 870€. TAEG : 3,89%." },
-      { id: "doc6d", name: "Projet_acte_authentique.pdf", type: "PDF", size: "1.6 Mo", date: "1 avril", resume: "Projet d'acte de vente par Me Durand. Date prévue : 15/05/2026 à 14h. Prix net vendeur : 485 000€. Frais de notaire estimés : 36 375€." },
-      { id: "doc6e", name: "Devis_desamiantage.pdf", type: "PDF", size: "78 Ko", date: "30 mars", resume: "Devis société AmiClean. Retrait dalles amiantées sous-sol (18m²). Montant : 4 500€ TTC. Délai : 3 jours ouvrés." },
-      { id: "doc6f", name: "Comparatif_prets.xlsx", type: "XLSX", size: "56 Ko", date: "26 mars", resume: "Comparatif 3 banques. BNP : 3,2% / 1 870€/mois. CA : 3,35% / 1 910€/mois. LCL : 3,45% / 1 935€/mois. Économie BNP vs LCL sur 25 ans : 19 500€." },
-      { id: "doc6g", name: "Plan_appartement_T4.pdf", type: "PDF", size: "890 Ko", date: "5 mars", resume: "Plan du T4, 92m², 4e étage avec ascenseur. 3 chambres, séjour 28m², cuisine équipée, 2 SdB, balcon 8m², cave." },
-      { id: "doc6h", name: "Devis_assurance_MMA.pdf", type: "PDF", size: "123 Ko", date: "25 mars", resume: "Assurance emprunteur MMA. Quotité 50/50. Cotisation : 85€/mois. Couverture : décès, PTIA, ITT 90j franchise. Tarif garanti 10 ans." },
+      { id: "doc6", name: "Promesse_achat_fonds.pdf", type: "DOCX", size: "245 Ko", date: getDaysAgo(15), resume: "Promesse d'achat 385 000 €. Conditions : autorisation préfecture + accord BPI." },
     ],
     deadlines: [
-      { date: "15 mai 2026", label: "Signature acte authentique chez notaire", urgent: true },
-      { date: "20 avril 2026", label: "Retour offre de prêt BNP", urgent: false },
-      { date: "12 avril 2026", label: "Fin travaux désamiantage", urgent: false },
+      { date: "8 juin 2026", label: "Réponse préfecture autorisation licence IV", urgent: true },
     ],
   },
-  { id: "d5", initials: "AB", name: "Alice Bernard", type: "Droit de la famille", color: "#DC2626",
-    summary: "Procédure de divorce par consentement mutuel. Convention en cours de rédaction. Points restants : partage du bien commun (appartement estimé 320 000€) + garde alternée des 2 enfants (Léa, 8 ans et Hugo, 5 ans).",
-    status: "actif" as const, domain: "Famille",
+  { id: "d6", initials: "A7", name: "VEFA Atelier 7 — T3", type: "VEFA livraison", color: "#2C3E6B",
+    summary: "Suivi VEFA pour l'acquéreur d'un T3 dans la résidence Atelier 7 (promoteur Nexity). Livraison confirmée pour le 18 juin. Reste à régler l'appel de fonds final (5 %) et l'état des lieux.",
+    status: "actif" as const, domain: "Neuf",
     emails: [
-      { id: "e50", sender: "Alice Bernard", subject: "Re: Convention — OK pour la garde alternée", date: "2 avril", resume: "Mme Bernard accepte la garde alternée une semaine sur deux. Elle souhaite que le domicile familial soit le point de référence scolaire." },
-      { id: "e51", sender: "Me Vidal (avocat M. Bernard)", subject: "Proposition partage bien commun", date: "1 avril", resume: "Me Vidal propose que M. Bernard rachète la part de Mme Bernard (160 000€) avec un prêt, ou vente du bien et partage 50/50." },
-      { id: "e52", sender: "Notaire Me Blanc", subject: "Estimation bien immobilier", date: "30 mars", resume: "Le notaire estime l'appartement à 320 000€ (valeur marché). Restant dû sur le prêt : 145 000€. Actif net : 175 000€." },
-      { id: "e53", sender: "Alice Bernard", subject: "Relevé patrimoine commun", date: "28 mars", resume: "Mme Bernard envoie le relevé des comptes joints et l'épargne commune : livret A (12 400€), PEL (28 000€), assurance-vie (15 600€)." },
-      { id: "e54", sender: "Me Vidal (avocat M. Bernard)", subject: "Accord de principe pension alimentaire", date: "25 mars", resume: "M. Bernard accepte 350€/mois/enfant soit 700€/mois au total. Indexation annuelle sur l'indice INSEE." },
-      { id: "e55", sender: "Alice Bernard", subject: "Attestation revenus 2025", date: "22 mars", resume: "Mme Bernard transmet son avis d'imposition. Revenus 2025 : 42 000€ net. Poste : cadre RH chez Danone." },
-      { id: "e56", sender: "Me Vidal (avocat M. Bernard)", subject: "Attestation revenus M. Bernard", date: "22 mars", resume: "Revenus 2025 de M. Bernard : 58 000€ net. Poste : directeur technique chez Capgemini." },
-      { id: "e57", sender: "Alice Bernard", subject: "Calendrier scolaire enfants", date: "20 mars", resume: "Calendrier scolaire de Léa (CE2, école Pasteur) et Hugo (GS, maternelle Curie). Vacances : dates à répartir." },
-      { id: "e58", sender: "Psychologue Mme Faure", subject: "Attestation suivi enfants", date: "18 mars", resume: "La psychologue atteste que les enfants vivent bien la séparation. Recommande une garde alternée régulière pour la stabilité." },
-      { id: "e59", sender: "Alice Bernard", subject: "Premier contact — divorce consentement mutuel", date: "10 mars", resume: "Mme Bernard souhaite divorcer à l'amiable. Mariée depuis 2016, 2 enfants. Accord de principe avec M. Bernard sur le principe." },
-      { id: "e59b", sender: "Banque LCL", subject: "Situation prêt immobilier", date: "15 mars", resume: "Capital restant dû : 145 000€. Mensualité : 980€. Fin du prêt : mars 2034. Possibilité de désolidarisation sous conditions." },
-      { id: "e59c", sender: "Alice Bernard", subject: "Planning garde proposé", date: "1 avril", resume: "Mme Bernard propose un planning de garde : semaines paires chez elle, impaires chez M. Bernard. Vacances 50/50." },
+      { id: "e60", sender: "Nexity Promoteur", subject: "Livraison Atelier 7 — 18 juin confirmée", date: getDaysAgo(2), resume: "Date livraison confirmée. Convocation état des lieux à 14h le 18 juin." },
     ],
     documents: [
-      { id: "doc7", name: "Livret_famille.pdf", type: "PDF", size: "567 Ko", date: "10 mars", resume: "Livret de famille. Mariage le 18/06/2016 à Paris 15e. Enfants : Léa née le 12/04/2018, Hugo né le 23/09/2021." },
-      { id: "doc7b", name: "Estimation_appartement_Me_Blanc.pdf", type: "PDF", size: "234 Ko", date: "30 mars", resume: "Estimation notariale du bien commun : T3, 75m², 15 rue de Vaugirard Paris 15e. Valeur : 320 000€. Méthode : comparaison avec transactions récentes du quartier." },
-      { id: "doc7c", name: "Avis_imposition_2025_Bernard_A.pdf", type: "PDF", size: "189 Ko", date: "22 mars", resume: "Avis d'imposition 2025 de Mme Alice Bernard. Revenu net imposable : 42 000€. Impôt : 3 840€. 1 part fiscale." },
-      { id: "doc7d", name: "Avis_imposition_2025_Bernard_P.pdf", type: "PDF", size: "195 Ko", date: "22 mars", resume: "Avis d'imposition 2025 de M. Paul Bernard. Revenu net imposable : 58 000€. Impôt : 7 200€. 1 part fiscale." },
-      { id: "doc7e", name: "Releve_comptes_joints.pdf", type: "PDF", size: "78 Ko", date: "28 mars", resume: "Solde compte joint : 3 200€. Livret A joint : 12 400€. PEL Mme Bernard : 28 000€. Assurance-vie M. Bernard : 15 600€." },
-      { id: "doc7f", name: "Attestation_psychologue.pdf", type: "PDF", size: "56 Ko", date: "18 mars", resume: "Attestation de Mme Faure, psychologue. Suivi de Léa et Hugo depuis janvier 2026. Les enfants s'adaptent bien. Recommande garde alternée 1 semaine/1 semaine." },
-      { id: "doc7g", name: "Projet_convention_divorce.docx", type: "DOCX", size: "89 Ko", date: "2 avril", resume: "Projet de convention. Garde alternée, pension 700€/mois, vente du bien et partage 50/50 de l'actif net, prestation compensatoire : non demandée." },
-      { id: "doc7h", name: "Situation_pret_LCL.pdf", type: "PDF", size: "112 Ko", date: "15 mars", resume: "Tableau d'amortissement prêt LCL. Capital initial : 250 000€ en 2019. Restant dû : 145 000€. Mensualité : 980€. Fin : mars 2034." },
-      { id: "doc7i", name: "Planning_garde_alternee.xlsx", type: "XLSX", size: "34 Ko", date: "1 avril", resume: "Planning proposé : semaines paires chez Mme Bernard, impaires chez M. Bernard. Vacances Noël : alternance annuelle. Été : 3 semaines chacun." },
+      { id: "doc7", name: "Contrat_VEFA_Atelier7.pdf", type: "PDF", size: "1.9 Mo", date: getDaysAgo(180), resume: "Contrat VEFA signé. Prix total 412 000 €. Échéancier 35/35/25/5." },
     ],
     deadlines: [
-      { date: "25 avril 2026", label: "Signature convention de divorce", urgent: true },
-      { date: "18 avril 2026", label: "Réponse M. Bernard sur pension", urgent: false },
+      { date: "18 juin 2026", label: "Livraison + état des lieux Atelier 7", urgent: false },
     ],
   },
 ]
@@ -204,107 +163,291 @@ const DOSSIERS = [
 const TASKS = [
   {
     id: 1,
-    dossier: "Dupont c/ Dupont",
-    dossier_id: "d-dupont",
-    tribunal: "Tribunal de Grande Instance de Paris",
-    date: "Aujourd'hui, 15h06",
-    title: "Convocation audience JAF — Dupont c/ Dupont — 15 avril 2026",
+    dossier: "Vente Garnier — 75017",
+    dossier_id: "d1",
+    tribunal: "Étude Vidal — Notaire",
+    date: `Aujourd'hui, 09h12`,
+    title: "Compromis Garnier — projet à valider avant signature 28 mai",
     urgent: true,
-    desc: "Le greffe du JAF convoque les parties à une audience le 15 avril 2026 à 14h00, salle 12. L'objet porte sur les mesures provisoires (résidence des enfants, pension alimentaire).",
+    context: "Le notaire envoie le projet de compromis. Réponse attendue avant les vendeurs.",
+    desc: "Me Vidal transmet le projet de compromis pour la vente Garnier (770 000 €). Conditions suspensives à relire : prêt acquéreur Camille Roux + état hypothécaire vendeur.",
     tags: [
-      { name: "convocation_jaf_15avril.pdf", type: "PDF", size: "156 Ko", resume: "Convocation officielle du greffe du JAF de Paris. Audience fixée au 15 avril 2026 à 14h00, salle 12. Objet : mesures provisoires (résidence enfants, pension alimentaire). Parties convoquées : M. et Mme Dupont." },
-      { name: "ordonnance_jaf_provisoir.pdf", type: "PDF", size: "203 Ko", resume: "Ordonnance de non-conciliation du 12 mars 2026. Le juge a fixé la résidence provisoire des enfants chez la mère. Pension alimentaire provisoire : 400€/mois. Audience au fond renvoyée au 15 avril." },
+      { name: "Compromis_Garnier_v2.pdf", type: "PDF", size: "1.2 Mo", resume: "Projet de compromis. Prix net 770 000 €. Séquestre 10 %. Signature prévue le 28 mai." },
+      { name: "Plan_appartement_Berthier.pdf", type: "PDF", size: "486 Ko", resume: "Plan métré 95,3 m² loi Carrez. 4 pièces, 2 chambres + bureau." },
     ],
     status: "sent" as const,
-    email_from: "Greffe du JAF <greffe.jaf@tgi-paris.justice.fr>",
-    email_to: "Me Alexandra Fernandez <a.fernandez@cabinet-fernandez.fr>",
-    email_cc: "Me Karim Benzara <k.benzara@avocats-paris.fr>",
-    email_date: "3 avril 2026, 15:06",
-    resume: "Le greffe du Juge aux Affaires Familiales de Paris vous convoque à une audience le 15 avril 2026 à 14h00. L'objet porte sur les mesures provisoires dans l'affaire Dupont c/ Dupont : résidence des enfants et pension alimentaire. Les conclusions adverses de Me Benzara ont été déposées le 28 mars.",
-    corps_original: "Madame le Conseil,\n\nNous avons l'honneur de vous informer que l'audience relative à l'affaire n°2026/01234 — Dupont c/ Dupont — a été fixée au 15 avril 2026 à 14h00, salle 12 du Tribunal de Grande Instance de Paris.\n\nL'objet de cette audience porte sur les mesures provisoires :\n- Résidence des enfants mineurs\n- Fixation de la pension alimentaire\n- Organisation du droit de visite et d'hébergement\n\nVous êtes priée de bien vouloir transmettre vos conclusions au plus tard 5 jours avant l'audience.\n\nVeuillez agréer, Madame le Conseil, l'expression de nos salutations distinguées.\n\nLe Greffier en Chef",
-    draft: "Madame, Monsieur,\n\nJ'accuse réception de la convocation à l'audience du 15 avril 2026 à 14h00 (affaire n°2026/01234 — Dupont c/ Dupont).\n\nJe vous confirme la présence de ma cliente, Mme Dupont, assistée de mon cabinet.\n\nNos conclusions seront transmises dans le délai imparti.\n\nVeuillez agréer, Madame, Monsieur, l'expression de mes salutations distinguées.\n\nMe Alexandra Fernandez\nAvocate au Barreau de Paris",
+    email_from: "Aurélie Vidal <a.vidal@etude-vidal-paris.fr>",
+    email_to: "Camille Bertrand <camille@agence-bertrand.fr>",
+    email_cc: "Jean & Sophie Garnier <garnier.js@gmail.com>",
+    email_date: `${getTodayShort()}, 09:12`,
+    resume: "Me Vidal envoie le projet de compromis Garnier. À relire avant le 28 mai.",
+    corps_original: "Bonjour Camille,\n\nVeuillez trouver ci-joint le projet de compromis pour la vente Garnier (770 000 €).\n\nMerci de me confirmer les conditions suspensives avant lundi.\n\nCordialement,\nMe Aurélie Vidal",
+    draft: "Bonjour Aurélie,\n\nBien reçu le projet, merci.\n\nDeux retours :\n— Condition prêt à porter à 60 jours (vs 45)\n— Précision sur la quote-part charges en cours\n\nJe valide avec les Garnier ce matin et vous reviens d'ici 14h.\n\nBien à vous,\nCamille Bertrand\nAgence Bertrand Immobilier",
   },
   {
     id: 2,
-    dossier: "SCI Les Tilleuls",
-    dossier_id: "d-tilleuls",
-    tribunal: "M. Karim Benzara",
-    date: "Aujourd'hui, 12h06",
-    title: "Loyers impayés — situation critique — besoin d'action urgente",
+    dossier: "Bureaux Bernard — Levallois",
+    dossier_id: "d3",
+    tribunal: "Lucie Bernard (cliente)",
+    date: `Aujourd'hui, 08h41`,
+    title: "Plateau Levallois — Lucie pousse pour 28 €/m², bailleur recule",
     urgent: true,
-    desc: "M. Benzara, gérant de la SCI Les Tilleuls, signale que le locataire commercial (restaurant Le Soleil d'Or) n'a pas payé les loyers des mois de janvier, février et mars 2026, soit 3 × 4 200 €.",
+    context: "La cliente accepte le bien si le loyer baisse. Le bailleur fait traîner.",
+    desc: "Lucie Bernard valide le plateau Anatole France si loyer 28 €/m² HT + 2 mois de franchise. Le bailleur Sopra propose 30 €/m² + 1 mois. Réponse attendue vendredi.",
     tags: [
-      { name: "bail_commercial_sci.pdf", type: "PDF", size: "892 Ko", resume: "Bail commercial signé le 01/01/2023 entre SCI Les Tilleuls (bailleur) et SARL Le Soleil d'Or (preneur). Loyer mensuel : 4 200€ HT. Durée : 9 ans. Clause résolutoire en cas de non-paiement après commandement de payer resté infructueux 1 mois." },
-      { name: "mise_en_demeure_model.docx", type: "DOCX", size: "45 Ko", resume: "Modèle de mise en demeure préparé par Donna. Destinataire : SARL Le Soleil d'Or. Montant réclamé : 12 600€ (3 mois × 4 200€). Délai de 8 jours pour régulariser avant commandement de payer par huissier." },
+      { name: "Projet_bail_3-6-9_Levallois.pdf", type: "PDF", size: "612 Ko", resume: "Bail commercial 3-6-9. Dépôt garantie 3 mois. Surface 198 m² utiles." },
     ],
     status: "draft" as const,
-    email_from: "Karim Benzara <k.benzara@gmail.com>",
-    email_to: "Me Alexandra Fernandez <a.fernandez@cabinet-fernandez.fr>",
+    email_from: "Lucie Bernard <lucie@kotori-tech.io>",
+    email_to: "Camille Bertrand <camille@agence-bertrand.fr>",
     email_cc: "",
-    email_date: "3 avril 2026, 12:06",
-    resume: "M. Benzara, gérant de la SCI Les Tilleuls, signale une situation urgente de loyers impayés. Le locataire commercial (restaurant Le Soleil d'Or) accumule 3 mois d'impayés pour un total de 12 600€. Il demande une action rapide pour protéger ses droits.",
-    corps_original: "Maître,\n\nJe me permets de vous écrire en urgence concernant la SCI Les Tilleuls dont je suis le gérant.\n\nLe restaurant Le Soleil d'Or, notre locataire commercial au 12 rue des Tilleuls, n'a toujours pas réglé les loyers de janvier, février et mars 2026.\n\nCela représente 3 mois × 4 200€ = 12 600€ d'impayés.\n\nJ'ai tenté de joindre le gérant M. Tran à plusieurs reprises sans succès. La situation devient critique car j'ai moi-même des échéances bancaires à honorer.\n\nPouvez-vous prendre les mesures nécessaires le plus rapidement possible ?\n\nCordialement,\nKarim Benzara",
-    draft: "Monsieur Tran,\n\nJe me permets de vous écrire au nom de mon client, M. Karim Benzara, gérant de la SCI Les Tilleuls, propriétaire des locaux commerciaux situés au 12 rue des Tilleuls que vous occupez.\n\nÀ ce jour, les loyers des mois de janvier, février et mars 2026 restent impayés, soit un montant total de 12 600€ (3 × 4 200€ HT).\n\nConformément aux dispositions du bail commercial et aux articles L. 145-41 du Code de commerce, je vous mets en demeure de régulariser l'intégralité des loyers dus dans un délai de 8 jours à compter de la réception de la présente.\n\nÀ défaut, nous serons contraints d'engager les voies de recouvrement, incluant un commandement de payer par voie d'huissier.\n\nVeuillez agréer, Monsieur, l'expression de mes salutations distinguées.\n\nMe Alexandra Fernandez\nAvocate au Barreau de Paris",
+    email_date: `${getTodayShort()}, 08:41`,
+    resume: "Lucie accepte si 28 €/m² + 2 mois franchise. Bailleur propose 30 € + 1 mois.",
+    corps_original: "Camille,\n\nOn y est presque. Je signe si on tombe à 28 €/m² avec 2 mois de franchise. Au-dessus je passe à un autre plateau.\n\nMerci de pousser le bailleur.\n\nLucie",
+    draft: "Bonjour Sopra,\n\nNous avons un retour client clair sur le plateau Anatole France : signature possible à 28 €/m² HT avec 2 mois de franchise.\n\nC'est une cliente solide (Kotori Tech, série A bouclée), bail 9 ans ferme envisagé.\n\nMerci de me confirmer votre position vendredi 12h dernier délai, sans quoi nous étudions une seconde piste.\n\nCordialement,\nCamille Bertrand",
   },
   {
     id: 3,
-    dossier: "Succession Martin",
-    dossier_id: "d-martin",
-    tribunal: "Cabinet Moreau",
-    date: "Hier, 16h22",
-    title: "Pièces complémentaires — dossier succession Martin",
+    dossier: "Recherche Lemaire — Yvelines",
+    dossier_id: "d2",
+    tribunal: "Marc Lemaire (client)",
+    date: "Hier, 18h22",
+    title: "Confirmation 3 visites samedi — Voisins / Marly / Saint-Germain",
     urgent: false,
-    desc: "Le cabinet Moreau transmet les pièces complémentaires demandées pour le dossier de succession Martin : acte de naissance, certificat de décès, inventaire notarial.",
+    context: "Le client confirme sa disponibilité. Caler les RDV avec les 3 propriétaires.",
+    desc: "Marc Lemaire valide les 3 créneaux samedi : 10h Voisins, 14h Marly, 16h Saint-Germain. À confirmer auprès des 3 propriétaires + Foncia (mandataire Marly).",
     tags: [
-      { name: "acte_naissance_martin.pdf", type: "PDF", size: "67 Ko", resume: "Acte de naissance de feu M. Robert Martin, né le 14/06/1948 à Lyon 3e. Mentions marginales : mariage le 22/09/1975, décès le 02/02/2026." },
-      { name: "certificat_deces.pdf", type: "PDF", size: "42 Ko", resume: "Certificat de décès de M. Robert Martin, décédé le 02/02/2026 à son domicile. Cause naturelle." },
-      { name: "inventaire_notarial.pdf", type: "PDF", size: "1.2 Mo", resume: "Inventaire préliminaire établi par Me Durand, notaire. Actif successoral estimé : 780 000€ (bien immobilier 520 000€ + comptes bancaires 180 000€ + divers 80 000€). Passif : 12 000€. Héritiers : 2 enfants (parts égales)." },
+      { name: "Fiche_visite_3biens.pdf", type: "PDF", size: "1.8 Mo", resume: "Fiches détaillées : surfaces, prix, état, points d'attention pour chaque bien." },
     ],
-    status: "pending" as const,
-    email_from: "Cabinet Moreau <contact@cabinet-moreau.fr>",
-    email_to: "Me Alexandra Fernandez <a.fernandez@cabinet-fernandez.fr>",
+    status: "draft" as const,
+    email_from: "Marc Lemaire <marc.lemaire@gmail.com>",
+    email_to: "Camille Bertrand <camille@agence-bertrand.fr>",
     email_cc: "",
-    email_date: "2 avril 2026, 16:22",
-    resume: "Le Cabinet Moreau transmet 3 pièces complémentaires pour le dossier de succession Martin : acte de naissance, certificat de décès et inventaire notarial préliminaire. L'actif successoral est estimé à 780 000€. Deux héritiers en parts égales.",
-    corps_original: "Chère Consœur,\n\nVeuillez trouver ci-joint les pièces complémentaires que vous nous aviez demandées pour le dossier de succession de M. Robert Martin :\n\n1. Acte de naissance avec mentions marginales\n2. Certificat de décès\n3. Inventaire notarial préliminaire établi par Me Durand\n\nL'inventaire fait apparaître un actif successoral estimé à 780 000€, dont un bien immobilier à Neuilly évalué à 520 000€.\n\nNous restons à votre disposition pour toute question.\n\nConfraternellement,\nCabinet Moreau",
-    draft: "Cher Confrère,\n\nJ'accuse bonne réception des pièces complémentaires relatives au dossier de succession Martin, à savoir :\n- Acte de naissance avec mentions marginales\n- Certificat de décès\n- Inventaire notarial préliminaire (Me Durand)\n\nJ'ai bien noté l'estimation de l'actif successoral à 780 000€. Je procède à l'analyse de l'inventaire et reviendrai vers vous sous 10 jours avec mes observations.\n\nConfraternellement,\n\nMe Alexandra Fernandez\nAvocate au Barreau de Paris",
+    email_date: "Hier, 18:22",
+    resume: "Marc valide les 3 visites samedi. Confirmer les créneaux aux propriétaires.",
+    corps_original: "Camille,\n\nOK pour les 3 visites samedi : 10h Voisins, 14h Marly, 16h Saint-Germain.\n\nÀ samedi,\nMarc",
+    draft: "Bonjour,\n\nJe vous confirme la visite de samedi 24 mai avec mon client M. Lemaire (mandat recherche).\n\nCréneaux retenus :\n— Voisins-le-Bretonneux : 10h00\n— Marly-le-Roi : 14h00\n— Saint-Germain-en-Laye : 16h00\n\nMerci de me confirmer le bon déroulement et de prévoir les clefs / accès.\n\nBien à vous,\nCamille Bertrand\nAgence Bertrand Immobilier",
   },
 ]
+
+// ─── Emails Inbox (dossiers + bruit) ───
+const INBOX_EMAILS = [
+  // Dossiers
+  ...([
+    { id: "e10", sender: "Jean & Sophie Garnier", subject: "Re: Contre-proposition 770 000 €", date: getDaysAgo(1), resume: "Les vendeurs acceptent la contre-proposition à 770 000 € si financement confirmé sous 10 jours.", dossier: "Garnier", isBruit: false },
+    { id: "e11", sender: "Aurélie Vidal (notaire)", subject: "Compromis — projet à valider", date: getDaysAgo(3), resume: "Me Vidal envoie le projet de compromis. Demande de relire les conditions suspensives.", dossier: "Garnier", isBruit: false },
+    { id: "e12", sender: "Camille Roux (acquéreur)", subject: "Offre d'achat 750 000 € net", date: getDaysAgo(6), resume: "Offre ferme à 750 000 € net vendeur. Apport personnel 230 000 €.", dossier: "Garnier", isBruit: false },
+    { id: "e20", sender: "Marc Lemaire", subject: "Re: Sélection 3 biens — confirmation visites", date: getDaysAgo(1), resume: "Marc valide les 3 créneaux samedi : Voisins 10h, Marly 14h, Saint-Germain 16h.", dossier: "Lemaire", isBruit: false },
+    { id: "e21", sender: "Agence Foncia (Marly)", subject: "Disponibilité Marly-le-Roi 825 000 €", date: getDaysAgo(2), resume: "Le bien Marly est encore disponible. Propriétaire ouvert à une offre raisonnable.", dossier: "Lemaire", isBruit: false },
+    { id: "e30", sender: "Lucie Bernard", subject: "Re: Plateau Anatole France — décision OK", date: getDaysAgo(1), resume: "Lucie valide le plateau si le loyer descend à 28 €/m² HT et si la franchise est de 2 mois.", dossier: "Bernard", isBruit: false },
+    { id: "e31", sender: "Gérance Sopra (bailleur)", subject: "Re: Contre-proposition 28 €/m² HT", date: getDaysAgo(2), resume: "Bailleur étudie. Position : 30 €/m² + 1 mois de franchise. Réponse vendredi.", dossier: "Bernard", isBruit: false },
+    { id: "e40", sender: "Famille Roux (indivision)", subject: "Re: Proposition 595 000 € — accord à 610 000 €", date: getDaysAgo(1), resume: "Les 3 héritiers acceptent à 610 000 € net vendeur. Position commune.", dossier: "Roux", isBruit: false },
+    { id: "e50", sender: "Préfecture de Paris", subject: "Re: Demande autorisation licence IV", date: getDaysAgo(2), resume: "Dossier en cours d'instruction. Délai prévu 6 à 8 semaines.", dossier: "Café du Marché", isBruit: false },
+    { id: "e60", sender: "Nexity Promoteur", subject: "Livraison Atelier 7 — 18 juin confirmée", date: getDaysAgo(2), resume: "Date livraison confirmée. État des lieux à 14h.", dossier: "Atelier 7", isBruit: false },
+  ] as const),
+  // Bruit
+  { id: "b1", sender: "SeLoger Pro", subject: "12 nouvelles annonces 75017 cette semaine", date: getDaysAgo(0), resume: "Synthèse des nouveaux biens publiés dans votre périmètre.", dossier: null, isBruit: true },
+  { id: "b2", sender: "FNAIM", subject: "Cotisation 2026 — rappel échéance 30 mai", date: getDaysAgo(2), resume: "Votre cotisation annuelle est à régler avant le 30 mai.", dossier: null, isBruit: true },
+  { id: "b3", sender: "LinkedIn", subject: "5 personnes ont consulté votre profil", date: getDaysAgo(1), resume: "Activité récente sur votre profil cette semaine.", dossier: null, isBruit: true },
+  { id: "b4", sender: "MeilleursAgents", subject: "Estimation Berthier mise à jour", date: getDaysAgo(3), resume: "Tendance prix +1,2 % sur le quartier Berthier le mois dernier.", dossier: null, isBruit: true },
+  { id: "b5", sender: "Banque Populaire — pro", subject: "Relevé de compte commission — avril 2026", date: getDaysAgo(4), resume: "Votre relevé mensuel commissions est disponible.", dossier: null, isBruit: true },
+  { id: "b6", sender: "Le Figaro Immobilier", subject: "Flash : nouveau DPE renforcé en 2026", date: getDaysAgo(1), resume: "Les passoires thermiques retirées du marché locatif.", dossier: null, isBruit: true },
+  { id: "b7", sender: "BPCE Immobilier", subject: "Taux crédit semaine 21 — actualisation", date: getDaysAgo(0), resume: "Taux moyen 25 ans : 3,18 % (stable).", dossier: null, isBruit: true },
+  { id: "b8", sender: "Yousign", subject: "Document signé — mandat exclusif Roux", date: getDaysAgo(5), resume: "Le mandat exclusif a été signé électroniquement.", dossier: null, isBruit: true },
+  { id: "b9", sender: "DPE-Diagnostic 75", subject: "Devis diagnostics complets — appart Berthier", date: getDaysAgo(3), resume: "Devis : 380 € TTC pour le pack complet DPE + plomb + amiante.", dossier: null, isBruit: true },
+]
+
+// ─── Sujets de mails simulés ───
+const SIMULATED_EMAILS = [
+  "Compromis Garnier — projet à valider avant 28 mai",
+  "Offre d'achat 750 000 € — appartement Berthier",
+  "Re: Plateau Levallois — décision OK à 28 €/m²",
+  "Confirmation visite samedi 10h — Voisins-le-Bretonneux",
+  "Re: Mandat exclusif Roux — signature scannée",
+  "Disponibilité Marly-le-Roi 825 000 € — propriétaire OK",
+  "Diagnostic DPE + plomb + amiante — appart Berthier",
+  "Nexity — livraison Atelier 7 confirmée 18 juin",
+  "Promesse achat Café du Marché — 385 000 €",
+  "Offre prêt BNP confirmée — dossier Roux 540 000 €",
+  "Re: Visite Saint-Germain 16h — propriétaire absent",
+  "Estimation MeilleursAgents — Boulogne 92",
+  "Photos appartement Berthier — pack pro reportage",
+  "PV d'assemblée générale copropriété Berthier",
+  "Devis Yousign — mandat exclusif Roux",
+  "Préfecture — autorisation licence IV reçue",
+  "Notification refus offre 595 000 € — héritiers Roux",
+  "Demande délai dépôt dossier prêt — acquéreur",
+  "Rapport expertise humidité — fonds Café du Marché",
+  "Procès-verbal état des lieux — sortie locataire 92",
+  "Mandat de recherche signé — M. Marc Lemaire",
+  "Re: Contre-proposition Sopra — 30 €/m² + 1 mois",
+  "Bilan 3 ans Café du Marché — analyse BPI",
+  "Attestation prêt principal — acquéreur Camille Roux",
+  "Plan métré 95 m² loi Carrez — appart Berthier",
+  "Convocation rendez-vous notaire — étude Vidal",
+  "Accord de principe BPI — financement fonds 280 000 €",
+  "Relevé commissions Avril — 12 400 €",
+  "Photos chantier livraison — résidence Atelier 7",
+  "Acte authentique préparation — étude Vidal",
+  "Bon de visite signé — Mme Roux acquéreur",
+  "Re: Diagnostics complémentaires — copropriété Berthier",
+  "Compte rendu négociation Sopra — Anatole France",
+  "Note d'information VEFA Atelier 7 — appel solde",
+  "Mise en relation acquéreur — investisseur Patrimoine 75",
+  "Re: Planning visites samedi 24 mai — confirmation",
+  "Rapport diagnostic gaz / électricité — appart Berthier",
+  "Re: Proposition acquéreur Marly — 805 000 €",
+  "Courrier ville de Paris — alignement bâti rue Berthier",
+  "Comparatif courtiers — Cafpi vs Vousfinancer",
+]
+
+// ─── Narration de Donna pour chaque dossier (Phase B) ───
+// Chaque dossier = 5 lignes : résumé + échanges + PJ + échéances + conclusion
+const DOSSIER_DONNA_LINES: string[][] = [
+  [
+    "Vente Garnier, 4 pièces boulevard Berthier. Vous attendez le retour des vendeurs sur la contre-proposition à 770 000 €.",
+    "3 échanges entre les vendeurs, l'acquéreur Roux et Me Vidal. Je les remets dans l'ordre.",
+    "2 pièces jointes extraites, renommées et classées : le mandat exclusif et le pack diagnostics.",
+    "Urgent : signature du compromis le 28 mai et versement séquestre 10 % le 30. Je bloque le créneau.",
+    "Dossier Garnier prêt.",
+  ],
+  [
+    "Mandat de recherche Marc Lemaire, maison familiale dans les Yvelines.",
+    "2 échanges : Marc valide les 3 visites samedi, Foncia confirme la dispo du bien Marly.",
+    "1 pièce jointe extraite, renommée et classée : le mandat de recherche.",
+    "Échéance : 3 visites samedi 24 mai (10h Voisins, 14h Marly, 16h Saint-Germain). Je prépare les fiches.",
+    "Dossier Lemaire prêt.",
+  ],
+  [
+    "Plateau Levallois 200 m² pour la startup de Lucie Bernard.",
+    "2 échanges : Lucie accepte si 28 €/m², le bailleur Sopra propose 30 €/m².",
+    "1 pièce jointe extraite, renommée et classée : le projet de bail 3-6-9.",
+    "Le bailleur doit répondre vendredi 23 mai. Je prépare une relance ferme à envoyer si pas de retour à 12h.",
+    "Dossier Bernard prêt.",
+  ],
+  [
+    "Succession Roux à Boulogne, 3 héritiers, prix demandé 620 000 €.",
+    "1 échange : les 3 héritiers acceptent à 610 000 €. Position commune confirmée.",
+    "1 pièce jointe extraite, renommée et classée : le mandat exclusif succession.",
+    "Échéance : réponse définitive de l'acheteur le 25 mai. Je surveille la boîte mail.",
+    "Dossier Roux prêt.",
+  ],
+  [
+    "Vente fonds de commerce Café du Marché, restaurant Paris 12, 385 000 €.",
+    "1 échange avec la Préfecture : autorisation licence IV en cours d'instruction.",
+    "1 pièce jointe extraite, renommée et classée : la promesse d'achat.",
+    "Délai préfecture 6 à 8 semaines, point d'étape le 8 juin. Je vous rappellerai à J-7.",
+    "Dossier Café du Marché prêt.",
+  ],
+  [
+    "Suivi VEFA Atelier 7 pour l'acquéreur du T3, livraison Nexity confirmée le 18 juin.",
+    "1 échange avec Nexity : convocation état des lieux à 14h le 18 juin.",
+    "1 pièce jointe extraite, renommée et classée : le contrat VEFA original.",
+    "Solde de 5 % à appeler la semaine du 9 juin. Je vous préviens lundi 9.",
+    "Dossier Atelier 7 prêt.",
+  ],
+]
+
+// ─── Détails affichés pour chaque dossier pendant la cinématique ───
+const DOSSIER_CINEMATIC_DETAILS = [
+  { emails: 3, attachments: 2, deadline: "28 mai" },
+  { emails: 2, attachments: 1, deadline: "24 mai" },
+  { emails: 2, attachments: 1, deadline: "23 mai" },
+  { emails: 1, attachments: 1, deadline: "25 mai" },
+  { emails: 1, attachments: 1, deadline: "8 juin" },
+  { emails: 1, attachments: 1, deadline: "18 juin" },
+]
+
+// ─── Utilitaire : parse "22 avril 2026" → Date JS ───
+function parseFrenchDate(s: string): Date | null {
+  const MONTHS: Record<string, number> = {
+    "janvier": 0, "février": 1, "mars": 2, "avril": 3, "mai": 4, "juin": 5,
+    "juillet": 6, "août": 7, "septembre": 8, "octobre": 9, "novembre": 10, "décembre": 11,
+  }
+  const parts = s.trim().split(" ")
+  if (parts.length < 2) return null
+  const day = parseInt(parts[0], 10)
+  const month = MONTHS[parts[1]?.toLowerCase()]
+  const year = parts[2] ? parseInt(parts[2], 10) : new Date().getFullYear()
+  if (isNaN(day) || month === undefined) return null
+  return new Date(year, month, day)
+}
+
+// ─── Utilitaire : jours restants avant une date ───
+function daysUntil(d: Date): number {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+}
+
+// ─── Urgency color selon jours restants ───
+function urgencyColor(days: number): string {
+  if (days < 0) return "#9CA3AF"   // passée — gris
+  if (days < 7) return URGENT      // rouge
+  if (days < 14) return "#D97706"  // orange
+  return GREEN                      // vert
+}
 
 // ─── Chat data ───
 interface ChatMessage { role: "user" | "assistant"; content: string; ts: number }
 
 const WELCOME: ChatMessage = {
   role: "assistant",
-  content: `Alexandra, c'est Donna 👋\n\nJ'ai fait le tour de tes dossiers ce matin. Deux points qui méritent ton attention :\n\n⚡ **Audience JAF le 15 avril** — les conclusions adverses sont arrivées, j'ai préparé ta fiche. Il reste 12 jours.\n\n⚡ **SCI Tilleuls** — 3 mois d'impayés (12 600 €). La mise en demeure est prête, chaque jour de retard fragilise ta position.\n\nJe connais tes dossiers, tes échéances et tes pièces. Demande-moi ce que tu veux — même un truc que tu demanderais normalement à ton stagiaire.`,
+  content: `Camille, c'est Donna 👋\n\nJ'ai fait le tour de ta boîte ce matin. Deux points qui méritent ton attention :\n\n⚡ **Compromis Garnier — signature le 28 mai** — Me Vidal a envoyé le projet de compromis et attend ton retour sur les conditions suspensives.\n\n⚡ **Plateau Levallois — Lucie pousse pour 28 €/m²** — le bailleur Sopra doit répondre vendredi. J'ai un brouillon de relance ferme prêt si pas de retour à midi.\n\nJe connais tes biens, tes clients et tes échéances. Demande-moi ce que tu veux — même un truc que tu demanderais normalement à ton assistant.`,
   ts: Date.now(),
 }
 
 const SUGGESTIONS = [
-  "Prépare-moi pour l'audience JAF",
-  "Montre-moi la situation Tilleuls",
+  "Prépare-moi pour la signature Garnier",
+  "Où en est la négociation Levallois ?",
+  "Fais-moi le récap des visites samedi",
   "Qu'est-ce que je risque d'oublier ?",
-  "Calcule les loyers impayés",
-  "Rédige la relance Greffe Nanterre",
 ]
 
 function getDemoResponse(q: string): string {
   const s = q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-  if (s.includes("audience") || s.includes("jaf") || s.includes("15 avril") || s.includes("prepare"))
-    return `**Fiche de préparation — Audience JAF du 15 avril 2026**\n\n📍 **Lieu :** TGI Paris — Salle 12 — 14h00\n\n**Objet :** Mesures provisoires\n- Résidence des enfants\n- Pension alimentaire (adverse : 450€/mois)\n\n**Chronologie :**\n- 12 mars : requête initiale\n- 28 mars : conclusions adverses (Me Benzara)\n- 3 avril : convocation reçue\n\n**Points de friction :**\n1. Résidence principale contestée — stabilité scolaire\n2. Pension : client estime max 350€\n\n**Pièces à emporter :**\n- Ordonnance JAF provisoire\n- Relevés de compte (3 mois)\n- Attestations d'hébergement\n\n✅ Brouillon de conclusions prêt.`
-  if (s.includes("tilleul") || s.includes("loyer") || s.includes("benzara") || s.includes("sci") || s.includes("calcul") || s.includes("montant"))
-    return `**SCI Les Tilleuls — Loyers impayés**\n\n| Mois | Montant |\n|------|--------|\n| Janvier | 4 200 € |\n| Février | 4 200 € |\n| Mars | 4 200 € |\n| **Total** | **12 600 €** |\n\n**Actions :**\n1. Mise en demeure LRAR (modèle prêt)\n2. Commandement de payer (huissier, si pas de réponse sous 8j)\n3. Assignation en référé\n\n✉️ Mise en demeure prête à valider.`
-  if (s.includes("oubli") || s.includes("manque") || s.includes("verifie") || s.includes("filet") || s.includes("rien rater") || s.includes("passe entre"))
-    return `**Alertes — 3 points d'attention**\n\n1. **SCI Les Tilleuls** — Mise en demeure non envoyée. Chaque jour fragilise la procédure. → Brouillon prêt.\n\n2. **Succession Martin** — Pièces du Cabinet Moreau pas encore classées. → Accuser réception.\n\n3. **Greffe TGI Nanterre** — Notification de jugement reçue. Délai d'appel : 30 jours.\n\n✅ Aucun délai de prescription imminent sur les autres dossiers.`
-  if (s.includes("relance") || s.includes("greffe") || s.includes("nanterre") || s.includes("redige") || s.includes("brouillon"))
-    return `**Brouillon — Greffe TGI Nanterre**\n\n---\n\nMadame, Monsieur,\n\nJ'accuse réception de la notification de jugement n°2026/1847.\n\nJe reviendrai vers vous dans les meilleurs délais concernant les suites éventuelles.\n\nSalutations distinguées.\n\n*Me Alexandra Fernandez*\n*Barreau de Paris*\n\n---\n\n✏️ Ajuster avant envoi ?`
-  if (s.includes("succession") || (s.includes("martin") && !s.includes("jean")))
-    return `**Succession Martin**\n\n📄 Pièces reçues :\n- Acte de naissance\n- Certificat de décès\n- Inventaire notarial (actif : 780 000€)\n\n**Prochaine étape :** Analyser l'inventaire.\n\n⏳ Déclaration de succession : 6 mois max.`
-  if (s.includes("dossier") || s.includes("affaire") || s.includes("client"))
-    return `**5 dossiers actifs :**\n\n1. 🔴 **Dupont c/ Dupont** — JAF 15 avril\n2. 🔴 **SCI Les Tilleuls** — 12 600€ impayés\n3. 🟡 **Succession Martin** — Pièces à classer\n4. 🟢 **Jean-Pierre Martin** — Attente client\n5. 🟢 **Alice Bernard** — Procédure en cours`
-  if (s.includes("email") || s.includes("mail") || s.includes("briefing") || s.includes("matin") || s.includes("recu"))
-    return `**Briefing — 12 emails reçus**\n\n**3 urgents :**\n- 🔴 Greffe JAF → Audience 15 avril\n- 🔴 M. Benzara → Impayés Tilleuls\n- 🔴 Greffe Nanterre → Notification jugement\n\n**2 à traiter :**\n- 🟡 Cabinet Moreau → Succession Martin\n- 🟡 Me Benzara → Conclusions\n\n**9 filtrés** (newsletters, prospection)\n\n✅ 3 brouillons prêts.`
-  return `Essayez :\n- *"Prépare-moi pour l'audience JAF"*\n- *"Calcule les loyers Tilleuls"*\n- *"Qu'est-ce que je risque d'oublier ?"*\n- *"Où en est la succession Martin ?"*`
+  if (s.includes("garnier") || s.includes("compromis") || s.includes("signature") || s.includes("prepare"))
+    return `**Fiche de préparation — Signature compromis Garnier**\n\n**Date :** 28 mai 2026 — Étude Me Aurélie Vidal — Paris 17\n\n**Prix net vendeur :** 770 000 €\n**Acquéreur :** Camille Roux (apport 230 000 €, prêt en cours)\n\n**Points à valider avant rendez-vous :**\n1. Condition prêt : porter à 60 jours (vs 45 proposés)\n2. Quote-part charges de copro en cours\n3. État hypothécaire vendeur\n\n**Pièces à apporter :**\n- Mandat exclusif signé\n- Pack diagnostics complet\n- Plan métré loi Carrez\n\nProjet de réponse à Me Vidal prêt à envoyer.`
+  if (s.includes("levallois") || s.includes("bernard") || s.includes("plateau") || s.includes("negociation"))
+    return `**Plateau Levallois — Bernard / Sopra**\n\n| Position | Loyer | Franchise |\n|---|---|---|\n| Cliente Bernard | **28 €/m² HT** | 2 mois |\n| Bailleur Sopra | 30 €/m² HT | 1 mois |\n| Écart | -2 €/m² | +1 mois |\n\n**Échéance bailleur :** vendredi 23 mai 12h\n\n**Actions :**\n1. Relance ferme Sopra envoyée si pas de retour à 12h\n2. Préparer plan B (plateau Champerret)\n\nBrouillon de relance prêt à envoyer.`
+  if (s.includes("visite") || s.includes("samedi") || s.includes("lemaire") || s.includes("yvelines"))
+    return `**Visites samedi 24 mai — Mandat Lemaire**\n\n| Heure | Bien | Prix | Mandataire |\n|---|---|---|---|\n| 10h00 | Voisins-le-Bretonneux | 745 000 € | Particulier |\n| 14h00 | Marly-le-Roi | 825 000 € | Foncia |\n| 16h00 | Saint-Germain-en-Laye | 790 000 € | Particulier |\n\n**Points d'attention par bien :**\n- Voisins : DPE D, à anticiper côté financement vert\n- Marly : propriétaire négociable selon Foncia\n- Saint-Germain : pas de garage, à confirmer parking\n\nFiches de visite imprimables prêtes.`
+  if (s.includes("oubli") || s.includes("manque") || s.includes("verifie"))
+    return `**3 points d'attention**\n\n1. **Roux — Succession 92** — réponse acheteur attendue le 25 mai. Relance prête.\n\n2. **Café du Marché** — point Préfecture à J-7 le 1ᵉʳ juin pour la licence IV.\n\n3. **Atelier 7 (Nexity)** — appel de solde 5 % à anticiper semaine du 9 juin.`
+  return `Essayez :\n- *"Prépare-moi pour la signature Garnier"*\n- *"Où en est la négociation Levallois ?"*\n- *"Fais-moi le récap des visites samedi"*`
+}
+
+// ═══════════════════════════════════════════════════════
+// ─── TYPING HOOK ───
+// Retourne le texte en cours de frappe + si terminé
+// ═══════════════════════════════════════════════════════
+function useTypingText(targetText: string, active: boolean, charsPerSec = 35) {
+  const [displayed, setDisplayed] = useState("")
+  const [done, setDone] = useState(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    if (!active) {
+      setDisplayed("")
+      setDone(false)
+      return
+    }
+    setDisplayed("")
+    setDone(false)
+    let idx = 0
+    const msPerChar = 1000 / charsPerSec
+    intervalRef.current = setInterval(() => {
+      idx += 1
+      setDisplayed(targetText.slice(0, idx))
+      if (idx >= targetText.length) {
+        clearInterval(intervalRef.current!)
+        setDone(true)
+      }
+    }, msPerChar)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [targetText, active, charsPerSec])
+
+  return { displayed, done }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -313,88 +456,154 @@ function getDemoResponse(q: string): string {
 
 type TaskStatus = "sent" | "draft" | "pending"
 
-function StatusBadge({ status }: { status: TaskStatus }) {
-  const map: Record<TaskStatus, { label: string; bg: string; color: string }> = {
-    sent: { label: "Mail envoyé", bg: "#F0FDF4", color: "#16A34A" },
-    draft: { label: "Brouillon prêt", bg: ACCENT_BG, color: ACCENT },
-    pending: { label: "À traiter", bg: "#FEF9EC", color: "#B45309" },
-  }
-  const s = map[status]
-  return <span style={{ padding: "3px 10px", borderRadius: 20, background: s.bg, color: s.color, fontSize: 11, fontWeight: 600 }}>{s.label}</span>
-}
-
-// ─── TaskCard ───
-function TaskCard({ task, delay, onView, onDraft, onTreat, treated }: {
-  task: typeof TASKS[0]; delay: number
-  onView: () => void; onDraft: () => void; onTreat: () => void; treated: boolean
+// ─── Task Card — design DemoWow glassmorphism ───
+function SlimTaskCard({ task, onExpand, expanded, onDraft, onTreat, treated }: {
+  task: typeof TASKS[0]
+  onExpand: () => void
+  expanded: boolean
+  onDraft: () => void
+  onTreat: () => void
+  treated: boolean
 }) {
+  const [hovered, setHovered] = useState(false)
+
   if (treated) {
     return (
       <motion.div
-        initial={{ opacity: 1 }} animate={{ opacity: 0.55 }}
+        initial={{ opacity: 1 }} animate={{ opacity: 0.42 }}
         transition={{ duration: 0.3 }}
-        style={{ border: `1px solid ${BORDER}`, borderRadius: 10, marginBottom: 12, overflow: "hidden", background: "#F9FAFB" }}
+        style={{ border: `1px solid ${BORDER}`, borderRadius: 16, padding: "14px 20px", marginBottom: 10, background: BG, display: "flex", alignItems: "center", gap: 10 }}
       >
-        <div style={{ padding: "14px 18px 0" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-            <div style={{ fontSize: 11, color: TEXT_MUTED }}><span style={{ color: TEXT_LIGHT, fontWeight: 500 }}>{task.dossier}</span>{" · "}{task.tribunal}</div>
-            <span style={{ fontSize: 11, color: TEXT_LIGHT, flexShrink: 0, marginLeft: 12 }}>{task.date}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <CheckCircle2 size={16} color={GREEN} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: TEXT_MUTED, textDecoration: "line-through" }}>{task.title}</span>
-          </div>
-        </div>
-        <div style={{ padding: "10px 18px 14px", display: "flex", justifyContent: "flex-end", borderTop: `1px solid ${BORDER}` }}>
-          <button onClick={onTreat} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 6, border: `1px solid ${GREEN}30`, background: "#F0FDF4", color: GREEN, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
-            <CheckCircle2 size={13} /> Mail envoyé
-          </button>
-        </div>
+        <button
+          onClick={onTreat}
+          title="Marquer comme non traité"
+          style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${GREEN}`, background: GREEN, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, padding: 0 }}
+        >
+          <Check size={10} color="#fff" />
+        </button>
+        <span style={{ fontSize: 14, color: TEXT_MUTED, textDecoration: "line-through", flex: 1 }}>{task.title}</span>
       </motion.div>
     )
   }
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      style={{ border: `1px solid ${BORDER}`, borderRadius: 10, marginBottom: 12, overflow: "hidden", background: BG }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        border: `1px solid ${BORDER}`,
+        borderRadius: 16,
+        marginBottom: 12,
+        overflow: "hidden",
+        background: BG,
+        boxShadow: hovered
+          ? "0 4px 12px rgba(0,0,0,0.06)"
+          : "0 1px 3px rgba(0,0,0,0.04)",
+        transform: hovered ? "translateY(-1px)" : "translateY(0)",
+        transition: "all 0.3s ease",
+      }}
     >
-      <div style={{ padding: "14px 18px 0" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-          <div style={{ fontSize: 11, color: TEXT_MUTED }}><span style={{ color: TEXT, fontWeight: 500 }}>{task.dossier}</span>{" · "}{task.tribunal}</div>
-          <span style={{ fontSize: 11, color: TEXT_LIGHT, flexShrink: 0, marginLeft: 12 }}>{task.date}</span>
+      <div style={{ padding: "16px 20px" }}>
+        {/* Ligne 1 : checkbox + titre */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+          {/* Checkbox discret */}
+          <button
+            onClick={e => { e.stopPropagation(); onTreat() }}
+            title="Marquer comme traité"
+            style={{ width: 17, height: 17, borderRadius: "50%", border: `1.5px solid ${BORDER}`, background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, marginTop: 2, padding: 0, transition: "border-color 0.15s" }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = TEXT_MUTED)}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = BORDER)}
+          />
+          {/* Dossier + titre + contexte cliquables pour expand */}
+          <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={onExpand}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 }}>Dossier {task.dossier}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, lineHeight: 1.35, marginBottom: 4 }}>{task.title}</div>
+            {/* Phrase contextuelle actionnable */}
+            {(task as any).context && (
+              <div style={{ fontSize: 12, color: TEXT_MUTED, lineHeight: 1.5 }}>{(task as any).context}</div>
+            )}
+          </div>
         </div>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
-          {task.urgent && <span style={{ width: 6, height: 6, borderRadius: "50%", background: URGENT, flexShrink: 0, marginTop: 6 }} />}
-          <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, lineHeight: 1.4 }}>{task.title}</div>
-        </div>
-        {task.urgent && <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 4, background: URGENT_BG, color: URGENT, fontSize: 11, fontWeight: 600, marginBottom: 8 }}>⚡ Urgent</span>}
-        <p style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.65, marginBottom: 10 }}>{task.desc}</p>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-          {task.tags.map(tag => (
-            <span key={tag.name} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 4, background: "#F9FAFB", border: `1px solid ${BORDER}`, fontSize: 11, color: TEXT_MUTED }}>
-              <Paperclip size={10} /> {tag.name}
-            </span>
-          ))}
+        {/* Ligne 2 : bouton Réponse générée par Donna — toujours visible sur toutes les tâches */}
+        <div style={{ marginTop: 12, marginLeft: 27 }}>
+          <button
+            onClick={e => { e.stopPropagation(); onDraft() }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.9" }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1" }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 24px", borderRadius: 8, border: "none", background: "#0D0D0D", color: "#FFFFFF", fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 500, transition: "opacity 0.2s" }}
+          >
+            <Edit3 size={13} /> Réponse générée par Donna
+          </button>
         </div>
       </div>
-      <div style={{ padding: "10px 18px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: `1px solid ${BORDER}` }}>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onView} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}><Eye size={13} /> Voir</button>
-          <button onClick={onDraft} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}><Edit3 size={13} /> Brouillon</button>
-        </div>
-        <button onClick={onTreat} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 6, border: `1px solid ${BORDER}`, background: "#FEF9EC", color: "#B45309", fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
-          <Clock size={13} /> Mail en attente
-        </button>
-      </div>
+      {/* Expand : vue détaillée style DemoV2 */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28 }}
+            style={{ overflow: "hidden" }}
+          >
+            <div style={{ padding: "14px 20px 18px 20px", borderTop: `1px solid ${BORDER}` }}>
+              {/* En-tête email */}
+              <div style={{ background: SIDEBAR_BG, borderRadius: 8, padding: "12px 14px", marginBottom: 14, fontSize: 12, lineHeight: 1.8, border: `1px solid ${BORDER}` }}>
+                <div><span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 36 }}>De</span> <span style={{ fontWeight: 600, color: TEXT }}>{task.email_from}</span></div>
+                <div><span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 36 }}>À</span> <span style={{ color: TEXT }}>{task.email_to}</span></div>
+                {task.email_cc && <div><span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 36 }}>Cc</span> <span style={{ color: TEXT }}>{task.email_cc}</span></div>}
+                <div><span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 36 }}>Date</span> <span style={{ color: TEXT }}>{task.email_date}</span></div>
+              </div>
+              {/* Section Résumé Donna */}
+              <div style={{ background: ACCENT_BG, borderRadius: 8, padding: "12px 14px", marginBottom: 14, border: `1px solid rgba(37,99,235,0.12)` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700 }}>D</div>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: ACCENT }}>Résumé Donna</span>
+                </div>
+                <p style={{ fontSize: 13, color: TEXT, lineHeight: 1.65, margin: 0 }}>{task.resume}</p>
+              </div>
+              {/* Lien email original */}
+              <button
+                onClick={e => { e.stopPropagation(); onDraft() }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", fontSize: 12, color: ACCENT, fontFamily: "inherit", marginBottom: 12, textDecoration: "underline", padding: 0 }}
+              >
+                <Mail size={12} /> Voir l'email original
+              </button>
+              {/* Pièces jointes */}
+              {task.tags.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Pièces jointes</div>
+                  {task.tags.map(tag => (
+                    <div key={tag.name} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 7, border: `1px solid ${BORDER}`, background: BG, marginBottom: 5 }}>
+                      <FileText size={15} color={ACCENT} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 500, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tag.name}</div>
+                        <div style={{ fontSize: 10, color: TEXT_LIGHT }}>{tag.type} · {tag.size}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Bouton Générer une réponse */}
+              <button
+                onClick={e => { e.stopPropagation(); onDraft() }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.9" }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1" }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, width: "100%", padding: "10px 24px", borderRadius: 8, background: "#0D0D0D", color: "#FFFFFF", border: "none", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "opacity 0.2s" }}
+              >
+                <Edit3 size={14} /> Générer une réponse
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
 
-// ═══════════════════════════════════════════════════════
-// ─── EMAIL DRAWER ───
-// ═══════════════════════════════════════════════════════
-
+// ─── Email Drawer — style DemoV2 ───
 function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
   task: typeof TASKS[0]; mode: "view" | "draft"; onClose: () => void; isMobile: boolean
 }) {
@@ -430,39 +639,44 @@ function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
     <motion.div
       initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
       transition={{ type: "spring", damping: 28, stiffness: 300 }}
-      style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: isMobile ? "100%" : "min(680px, 55vw)", background: BG, zIndex: 80, display: "flex", flexDirection: "column", boxShadow: "-4px 0 30px rgba(0,0,0,0.1)", borderLeft: `1px solid ${BORDER}` }}
+      style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: isMobile ? "100%" : "min(680px, 55vw)", background: BG, zIndex: 80, display: "flex", flexDirection: "column", boxShadow: "-4px 0 30px rgba(0,0,0,0.08)", borderLeft: `1px solid ${BORDER}` }}
     >
-      {/* Header */}
+      {/* Header avec onglets Voir / Brouillon */}
       <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
         <button onClick={onClose} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontSize: 13, color: TEXT_MUTED, fontFamily: "inherit" }}>
           <ArrowLeft size={16} /> Retour
         </button>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
-          <button onClick={() => setActiveMode("view")} style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${activeMode === "view" ? ACCENT : BORDER}`, background: activeMode === "view" ? ACCENT_BG : BG, color: activeMode === "view" ? ACCENT : TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 500 }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
+          <button
+            onClick={() => setActiveMode("view")}
+            style={{ padding: "5px 13px", borderRadius: 6, border: `1px solid ${activeMode === "view" ? ACCENT : BORDER}`, background: activeMode === "view" ? ACCENT_BG : BG, color: activeMode === "view" ? ACCENT : TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 500 }}
+          >
             <Eye size={12} style={{ marginRight: 4, verticalAlign: -1 }} /> Voir
           </button>
-          <button onClick={handleGenerateDraft} style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${activeMode === "draft" ? ACCENT : BORDER}`, background: activeMode === "draft" ? ACCENT_BG : BG, color: activeMode === "draft" ? ACCENT : TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 500 }}>
+          <button
+            onClick={handleGenerateDraft}
+            style={{ padding: "5px 13px", borderRadius: 6, border: `1px solid ${activeMode === "draft" ? ACCENT : BORDER}`, background: activeMode === "draft" ? ACCENT_BG : BG, color: activeMode === "draft" ? ACCENT : TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 500 }}
+          >
             <Edit3 size={12} style={{ marginRight: 4, verticalAlign: -1 }} /> Brouillon
           </button>
         </div>
       </div>
 
-      {/* Content */}
       <div style={{ flex: 1, overflowY: "auto", padding: "24px 24px" }}>
         {activeMode === "view" ? (
           <>
-            {/* Subject */}
-            <h2 style={{ fontSize: 20, fontWeight: 600, color: TEXT, marginBottom: 16, lineHeight: 1.3 }}>{task.title}</h2>
+            {/* Titre email */}
+            <h2 style={{ fontSize: 19, fontWeight: 600, color: TEXT, marginBottom: 16, lineHeight: 1.3 }}>{task.title}</h2>
 
-            {/* Metadata */}
-            <div style={{ background: "#F9FAFB", borderRadius: 10, padding: "14px 16px", marginBottom: 20, fontSize: 12, lineHeight: 1.8, border: `1px solid ${BORDER}` }}>
-              <div><span style={{ color: TEXT_LIGHT, width: 32, display: "inline-block" }}>De</span> <span style={{ color: TEXT }}>{task.email_from}</span></div>
-              <div><span style={{ color: TEXT_LIGHT, width: 32, display: "inline-block" }}>À</span> <span style={{ color: TEXT }}>{task.email_to}</span></div>
-              {task.email_cc && <div><span style={{ color: TEXT_LIGHT, width: 32, display: "inline-block" }}>Cc</span> <span style={{ color: TEXT }}>{task.email_cc}</span></div>}
-              <div><span style={{ color: TEXT_LIGHT, width: 32, display: "inline-block" }}>Date</span> <span style={{ color: TEXT }}>{task.email_date}</span></div>
+            {/* Métadonnées email */}
+            <div style={{ background: SIDEBAR_BG, borderRadius: 10, padding: "14px 16px", marginBottom: 20, fontSize: 12, lineHeight: 1.9, border: `1px solid ${BORDER}` }}>
+              <div><span style={{ color: TEXT_LIGHT, width: 36, display: "inline-block" }}>De</span> <span style={{ fontWeight: 500, color: TEXT }}>{task.email_from}</span></div>
+              <div><span style={{ color: TEXT_LIGHT, width: 36, display: "inline-block" }}>À</span> <span style={{ color: TEXT }}>{task.email_to}</span></div>
+              {task.email_cc && <div><span style={{ color: TEXT_LIGHT, width: 36, display: "inline-block" }}>Cc</span> <span style={{ color: TEXT }}>{task.email_cc}</span></div>}
+              <div><span style={{ color: TEXT_LIGHT, width: 36, display: "inline-block" }}>Date</span> <span style={{ color: TEXT }}>{task.email_date}</span></div>
             </div>
 
-            {/* Donna's summary */}
+            {/* Résumé Donna */}
             <div style={{ background: ACCENT_BG, borderRadius: 10, padding: "16px 18px", marginBottom: 20, border: `1px solid rgba(37,99,235,0.12)` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                 <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 10, fontWeight: 700 }}>D</div>
@@ -471,16 +685,16 @@ function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
               <p style={{ fontSize: 13, color: TEXT, lineHeight: 1.7, margin: 0 }}>{task.resume}</p>
             </div>
 
-            {/* Original email */}
+            {/* Lien email original */}
             <div style={{ marginBottom: 20 }}>
-              <button onClick={() => setShowOriginal(o => !o)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontSize: 12, color: TEXT_MUTED, fontFamily: "inherit", marginBottom: 8 }}>
+              <button onClick={() => setShowOriginal(o => !o)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontSize: 12, color: ACCENT, fontFamily: "inherit", marginBottom: 8, textDecoration: "underline", padding: 0 }}>
                 <Mail size={13} /> {showOriginal ? "Masquer l'email original" : "Voir l'email original"}
                 <ChevronRight size={12} style={{ transform: showOriginal ? "rotate(90deg)" : "none", transition: "transform 0.2s" }} />
               </button>
               <AnimatePresence>
                 {showOriginal && (
                   <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden" }}>
-                    <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "14px 16px", border: `1px solid ${BORDER}`, fontSize: 13, color: TEXT, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                    <div style={{ background: SIDEBAR_BG, borderRadius: 8, padding: "14px 16px", border: `1px solid ${BORDER}`, fontSize: 13, color: TEXT, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
                       {task.corps_original}
                     </div>
                   </motion.div>
@@ -491,10 +705,10 @@ function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
             {/* Pièces jointes */}
             {task.tags.length > 0 && (
               <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: TEXT_LIGHT, letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 10 }}>Pièces jointes</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Pièces jointes</div>
                 {task.tags.map(tag => (
                   <button key={tag.name} onClick={() => setSelectedAttachment(tag)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, marginBottom: 6, cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "background 0.15s" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#F9FAFB")}
+                    onMouseEnter={e => (e.currentTarget.style.background = SIDEBAR_BG)}
                     onMouseLeave={e => (e.currentTarget.style.background = BG)}
                   >
                     <FileText size={18} color={ACCENT} />
@@ -508,19 +722,24 @@ function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
               </div>
             )}
 
-            {/* Generate draft CTA */}
-            <button onClick={handleGenerateDraft} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "12px 20px", borderRadius: 8, background: ACCENT, color: "#fff", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+            {/* Bouton Générer une réponse */}
+            <button
+              onClick={handleGenerateDraft}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.9" }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1" }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "10px 24px", borderRadius: 8, background: "#0D0D0D", color: "#FFFFFF", border: "none", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "opacity 0.2s" }}
+            >
               <Edit3 size={15} /> Générer une réponse
             </button>
           </>
         ) : (
-          /* DRAFT MODE */
+          /* VUE BROUILLON — style DemoV2 */
           <>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: TEXT, marginBottom: 4 }}>Brouillon de réponse</h2>
             <p style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 16 }}>Re: {task.title}</p>
 
             {draftLoading ? (
-              <div style={{ background: "#F9FAFB", borderRadius: 10, padding: 20, border: `1px solid ${BORDER}` }}>
+              <div style={{ background: SIDEBAR_BG, borderRadius: 10, padding: 20, border: `1px solid ${BORDER}` }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                   <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700 }}>D</div>
                   <span style={{ fontSize: 12, color: ACCENT, fontWeight: 500 }}>Donna rédige...</span>
@@ -534,37 +753,40 @@ function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
               </div>
             ) : (
               <>
+                {/* Textarea éditable style lettre */}
                 <textarea
                   value={draftText}
                   onChange={e => setDraftText(e.target.value)}
-                  style={{ width: "100%", minHeight: 280, padding: "16px 18px", borderRadius: 10, border: `1.5px solid ${BORDER}`, background: "#FAFAFA", fontSize: 13, color: TEXT, lineHeight: 1.7, fontFamily: "inherit", resize: "vertical", outline: "none" }}
+                  style={{ width: "100%", minHeight: 300, padding: "18px 20px", borderRadius: 10, border: `1.5px solid ${BORDER}`, background: "#FAFAFA", fontSize: 13, color: TEXT, lineHeight: 1.75, fontFamily: "Georgia, serif", resize: "vertical", outline: "none", boxSizing: "border-box" }}
                   onFocus={e => (e.target.style.borderColor = ACCENT)}
                   onBlur={e => (e.target.style.borderColor = BORDER)}
                 />
+
+                {/* Bouton Copier */}
                 <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                   <button onClick={handleCopy} style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 20px", borderRadius: 8, background: "#111827", color: "#fff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                     {copied ? <><Check size={14} /> Copié !</> : <><Copy size={14} /> Copier</>}
                   </button>
                 </div>
 
-                {/* Feedback */}
-                <div style={{ marginTop: 20, padding: "16px 18px", borderRadius: 10, background: "#F9FAFB", border: `1px solid ${BORDER}` }}>
+                {/* Feedback — "Ce brouillon vous convient ?" */}
+                <div style={{ marginTop: 20, padding: "16px 18px", borderRadius: 10, background: SIDEBAR_BG, border: `1px solid ${BORDER}` }}>
                   {feedback ? (
                     <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: GREEN }}>
                       <CheckCircle2 size={16} /> Merci ! Donna apprend de vos retours.
                     </div>
                   ) : (
                     <>
-                      <p style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 10 }}>Ce brouillon vous convient ?</p>
+                      <p style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 10, fontWeight: 500 }}>Ce brouillon vous convient ?</p>
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         {[
                           { key: "parfait", icon: ThumbsUp, label: "Parfait", color: GREEN },
                           { key: "modifier", icon: Pencil, label: "Quelques modifications", color: "#D97706" },
                           { key: "erreur", icon: XCircle, label: "Erreurs", color: URGENT },
                         ].map(fb => (
-                          <button key={fb.key} onClick={() => setFeedback(fb.key)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}
-                            onMouseEnter={e => { (e.currentTarget.style.borderColor = fb.color); (e.currentTarget.style.color = fb.color) }}
-                            onMouseLeave={e => { (e.currentTarget.style.borderColor = BORDER); (e.currentTarget.style.color = TEXT_MUTED) }}
+                          <button key={fb.key} onClick={() => setFeedback(fb.key)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "8px 14px", borderRadius: 7, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}
+                            onMouseEnter={e => { (e.currentTarget.style.borderColor = fb.color); (e.currentTarget.style.color = fb.color); (e.currentTarget.style.background = `${fb.color}08`) }}
+                            onMouseLeave={e => { (e.currentTarget.style.borderColor = BORDER); (e.currentTarget.style.color = TEXT_MUTED); (e.currentTarget.style.background = BG) }}
                           >
                             <fb.icon size={13} /> {fb.label}
                           </button>
@@ -579,19 +801,18 @@ function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
         )}
       </div>
 
-      {/* Attachment preview modal */}
+      {/* Modal pièce jointe */}
       <AnimatePresence>
         {selectedAttachment && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 90, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 90, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
             onClick={() => setSelectedAttachment(null)}
           >
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+            <motion.div initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              style={{ background: BG, borderRadius: 12, width: "100%", maxWidth: 700, maxHeight: "80vh", display: "flex", flexDirection: isMobile ? "column" : "row", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}
+              style={{ background: BG, borderRadius: 12, width: "100%", maxWidth: 700, maxHeight: "80vh", display: "flex", flexDirection: isMobile ? "column" : "row", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}
             >
-              {/* Preview side */}
-              <div style={{ flex: 1, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 200, padding: 24 }}>
+              <div style={{ flex: 1, background: SIDEBAR_BG, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 200, padding: 24 }}>
                 <div style={{ textAlign: "center" }}>
                   <FileText size={48} color={TEXT_LIGHT} style={{ marginBottom: 12 }} />
                   <div style={{ fontSize: 14, fontWeight: 500, color: TEXT }}>{selectedAttachment.name}</div>
@@ -601,7 +822,6 @@ function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
                   </button>
                 </div>
               </div>
-              {/* Resume side */}
               <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -620,100 +840,75 @@ function EmailDrawer({ task, mode: initialMode, onClose, isMobile }: {
   )
 }
 
-// ═══════════════════════════════════════════════════════
-// ─── DOSSIER DETAIL VIEW ───
-// ═══════════════════════════════════════════════════════
-
+// ─── Dossier Detail View ───
 function DossierDetailView({ dossier, onClose, isMobile }: {
   dossier: typeof DOSSIERS[0]; onClose: () => void; isMobile: boolean
 }) {
   const [selectedDoc, setSelectedDoc] = useState<typeof dossier.documents[0] | null>(null)
   const [selectedEmail, setSelectedEmail] = useState<typeof dossier.emails[0] | null>(null)
-  const statusColors = { actif: GREEN, en_attente: "#D97706", "archivé": TEXT_LIGHT }
+  const statusColors = { actif: GREEN, en_attente: TEXT_MUTED, "archivé": TEXT_LIGHT }
 
   return (
-    <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px" : "32px 32px" }}>
-      {/* Header */}
+    <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px" : "32px 40px" }}>
       <div style={{ marginBottom: 24 }}>
         <button onClick={onClose} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontSize: 13, color: TEXT_MUTED, fontFamily: "inherit", marginBottom: 16 }}>
-          <ArrowLeft size={16} /> Retour au briefing
+          <ArrowLeft size={16} /> Retour au tableau de bord
         </button>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-          <div style={{ width: 40, height: 40, borderRadius: "50%", background: dossier.color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 15, fontWeight: 700 }}>{dossier.initials}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 8 }}>
+          <div style={{ width: 42, height: 42, borderRadius: "50%", background: INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", color: INITIALS_TEXT, fontSize: 14, fontWeight: 700 }}>{dossier.initials}</div>
           <div>
-            <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 600, color: TEXT, margin: 0, lineHeight: 1.2 }}>{dossier.name}</h1>
+            <h1 style={{ fontSize: isMobile ? 21 : 25, fontWeight: 600, color: TEXT, margin: 0, lineHeight: 1.2 }}>{dossier.name}</h1>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-              <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: `${statusColors[dossier.status]}15`, color: statusColors[dossier.status], fontWeight: 600 }}>{dossier.status === "actif" ? "Actif" : dossier.status === "en_attente" ? "En attente" : "Archivé"}</span>
-              <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: "#F3F4F6", color: TEXT_MUTED }}>{dossier.domain}</span>
+              <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: SIDEBAR_BG, color: TEXT_MUTED, border: `1px solid ${BORDER}`, fontWeight: 500 }}>{dossier.status === "actif" ? "Actif" : dossier.status === "en_attente" ? "En attente" : "Archivé"}</span>
+              <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: SIDEBAR_BG, color: TEXT_MUTED, border: `1px solid ${BORDER}` }}>{dossier.domain}</span>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Summary */}
-      <div style={{ background: ACCENT_BG, borderRadius: 10, padding: "16px 18px", marginBottom: 24, border: `1px solid rgba(37,99,235,0.12)` }}>
+      <div style={{ background: ACCENT_BG, borderRadius: 8, padding: "16px 18px", marginBottom: 24, border: `1px solid rgba(44,62,107,0.12)` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700 }}>D</div>
+          <div style={{ width: 22, height: 22, borderRadius: "50%", background: TEXT, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700 }}>D</div>
           <span style={{ fontSize: 12, fontWeight: 600, color: ACCENT }}>Résumé Donna</span>
         </div>
         <p style={{ fontSize: 13, color: TEXT, lineHeight: 1.7, margin: 0 }}>{dossier.summary}</p>
       </div>
-
-      {/* Two columns: Échanges + Documents */}
       <div style={{ display: "flex", gap: 20, flexDirection: isMobile ? "column" : "row" }}>
-        {/* Échanges */}
         <div style={{ flex: 3 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>
             Échanges ({dossier.emails.length})
           </div>
-          {dossier.emails.length === 0 ? (
-            <div style={{ padding: 20, textAlign: "center", color: TEXT_LIGHT, fontSize: 13, background: "#F9FAFB", borderRadius: 8, border: `1px solid ${BORDER}` }}>
-              Aucun échange pour le moment
-            </div>
-          ) : (
-            dossier.emails.map(email => (
-              <div key={email.id} onClick={() => setSelectedEmail(email)} style={{ padding: "12px 16px", borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 8, cursor: "pointer", transition: "background 0.15s" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#F9FAFB")}
-                onMouseLeave={e => (e.currentTarget.style.background = BG)}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>{email.sender}</span>
-                  <span style={{ fontSize: 11, color: TEXT_LIGHT }}>{email.date}</span>
-                </div>
-                <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 4 }}>{email.subject}</div>
-                <div style={{ fontSize: 11, color: TEXT_LIGHT }}>{email.resume}</div>
+          {dossier.emails.map(email => (
+            <div key={email.id} onClick={() => setSelectedEmail(email)} style={{ padding: "12px 16px", borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 8, cursor: "pointer", transition: "background 0.15s" }}
+              onMouseEnter={e => (e.currentTarget.style.background = SIDEBAR_BG)}
+              onMouseLeave={e => (e.currentTarget.style.background = BG)}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                <span style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>{email.sender}</span>
+                <span style={{ fontSize: 11, color: TEXT_LIGHT }}>{email.date}</span>
               </div>
-            ))
-          )}
+              <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 4 }}>{email.subject}</div>
+              <div style={{ fontSize: 11, color: TEXT_LIGHT }}>{email.resume}</div>
+            </div>
+          ))}
         </div>
-
-        {/* Documents */}
         <div style={{ flex: 2 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>
             Documents ({dossier.documents.length})
           </div>
-          {dossier.documents.length === 0 ? (
-            <div style={{ padding: 20, textAlign: "center", color: TEXT_LIGHT, fontSize: 13, background: "#F9FAFB", borderRadius: 8, border: `1px solid ${BORDER}` }}>
-              Aucun document
-            </div>
-          ) : (
-            dossier.documents.map(doc => (
-              <button key={doc.id} onClick={() => setSelectedDoc(doc)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, marginBottom: 6, cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "background 0.15s" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#F9FAFB")}
-                onMouseLeave={e => (e.currentTarget.style.background = BG)}
-              >
-                <FileText size={16} color={ACCENT} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</div>
-                  <div style={{ fontSize: 11, color: TEXT_LIGHT }}>{doc.type} · {doc.size} · {doc.date}</div>
-                </div>
-              </button>
-            ))
-          )}
+          {dossier.documents.map(doc => (
+            <button key={doc.id} onClick={() => setSelectedDoc(doc)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, marginBottom: 6, cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "background 0.15s" }}
+              onMouseEnter={e => (e.currentTarget.style.background = SIDEBAR_BG)}
+              onMouseLeave={e => (e.currentTarget.style.background = BG)}
+            >
+              <FileText size={16} color={ACCENT} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</div>
+                <div style={{ fontSize: 11, color: TEXT_LIGHT }}>{doc.type} · {doc.size} · {doc.date}</div>
+              </div>
+            </button>
+          ))}
         </div>
       </div>
-
-      {/* Échéances */}
       {dossier.deadlines && dossier.deadlines.length > 0 && (
         <div style={{ marginTop: 24 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
@@ -721,16 +916,11 @@ function DossierDetailView({ dossier, onClose, isMobile }: {
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {dossier.deadlines.map((dl, i) => (
-              <div key={i} style={{
-                padding: "10px 16px", borderRadius: 8,
-                border: `1px solid ${dl.urgent ? "rgba(239,68,68,0.3)" : BORDER}`,
-                background: dl.urgent ? URGENT_BG : "#F9FAFB",
-                flex: "1 1 200px", minWidth: 200,
-              }}>
+              <div key={i} style={{ padding: "10px 16px", borderRadius: 8, border: `1px solid ${dl.urgent ? "rgba(192,57,43,0.25)" : BORDER}`, background: dl.urgent ? URGENT_BG : SIDEBAR_BG, flex: "1 1 200px", minWidth: 200 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
                   <Clock size={12} color={dl.urgent ? URGENT : TEXT_MUTED} />
                   <span style={{ fontSize: 12, fontWeight: 600, color: dl.urgent ? URGENT : TEXT }}>{dl.date}</span>
-                  {dl.urgent && <span style={{ fontSize: 9, fontWeight: 600, color: URGENT, background: "rgba(239,68,68,0.1)", padding: "1px 5px", borderRadius: 3 }}>URGENT</span>}
+                  {dl.urgent && <span style={{ fontSize: 9, fontWeight: 700, color: URGENT, background: "rgba(192,57,43,0.1)", padding: "1px 5px", borderRadius: 3, letterSpacing: "0.05em" }}>URGENT</span>}
                 </div>
                 <div style={{ fontSize: 12, color: TEXT_MUTED }}>{dl.label}</div>
               </div>
@@ -739,18 +929,17 @@ function DossierDetailView({ dossier, onClose, isMobile }: {
         </div>
       )}
 
-      {/* Document preview modal */}
       <AnimatePresence>
         {selectedDoc && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 90, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 90, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
             onClick={() => setSelectedDoc(null)}
           >
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+            <motion.div initial={{ scale: 0.96 }} animate={{ scale: 1 }} exit={{ scale: 0.96 }}
               onClick={e => e.stopPropagation()}
-              style={{ background: BG, borderRadius: 12, width: "100%", maxWidth: 700, maxHeight: "80vh", display: "flex", flexDirection: isMobile ? "column" : "row", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}
+              style={{ background: BG, borderRadius: 12, width: "100%", maxWidth: 700, maxHeight: "80vh", display: "flex", flexDirection: isMobile ? "column" : "row", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}
             >
-              <div style={{ flex: 1, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 200, padding: 24 }}>
+              <div style={{ flex: 1, background: SIDEBAR_BG, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 200, padding: 24 }}>
                 <div style={{ textAlign: "center" }}>
                   <FileText size={48} color={TEXT_LIGHT} style={{ marginBottom: 12 }} />
                   <div style={{ fontSize: 14, fontWeight: 500, color: TEXT }}>{selectedDoc.name}</div>
@@ -763,7 +952,7 @@ function DossierDetailView({ dossier, onClose, isMobile }: {
               <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 10, fontWeight: 700 }}>D</div>
+                    <div style={{ width: 24, height: 24, borderRadius: "50%", background: TEXT, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 10, fontWeight: 700 }}>D</div>
                     <span style={{ fontSize: 13, fontWeight: 600, color: ACCENT }}>Résumé Donna</span>
                   </div>
                   <button onClick={() => setSelectedDoc(null)} style={{ background: "none", border: "none", cursor: "pointer", color: TEXT_MUTED }}><X size={18} /></button>
@@ -775,48 +964,41 @@ function DossierDetailView({ dossier, onClose, isMobile }: {
         )}
       </AnimatePresence>
 
-      {/* Email preview modal */}
       <AnimatePresence>
         {selectedEmail && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 90, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 90, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
             onClick={() => setSelectedEmail(null)}
           >
-            <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
+            <motion.div initial={{ scale: 0.96, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 10 }}
               onClick={e => e.stopPropagation()}
-              style={{ background: BG, borderRadius: 12, width: "100%", maxWidth: 640, maxHeight: "80vh", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", display: "flex", flexDirection: "column" }}
+              style={{ background: BG, borderRadius: 12, width: "100%", maxWidth: 640, maxHeight: "80vh", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", display: "flex", flexDirection: "column" }}
             >
-              {/* Email header */}
               <div style={{ padding: "20px 24px", borderBottom: `1px solid ${BORDER}` }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                   <div style={{ fontSize: 16, fontWeight: 600, color: TEXT }}>{selectedEmail.subject}</div>
                   <button onClick={() => setSelectedEmail(null)} style={{ background: "none", border: "none", cursor: "pointer", color: TEXT_MUTED, padding: 4 }}><X size={18} /></button>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: dossier.color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 700 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", color: INITIALS_TEXT, fontSize: 13, fontWeight: 700 }}>
                     {selectedEmail.sender.charAt(0)}
                   </div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{selectedEmail.sender}</div>
-                    <div style={{ fontSize: 11, color: TEXT_LIGHT }}>à Me Fernandez · {selectedEmail.date}</div>
+                    <div style={{ fontSize: 11, color: TEXT_LIGHT }}>à Camille · {selectedEmail.date}</div>
                   </div>
                 </div>
               </div>
-
-              {/* Email body */}
               <div style={{ flex: 1, padding: "20px 24px", overflowY: "auto" }}>
                 <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.8 }}>
-                  <p style={{ margin: "0 0 16px" }}>Bonjour Me Fernandez,</p>
+                  <p style={{ margin: "0 0 16px" }}>Bonjour Camille,</p>
                   <p style={{ margin: "0 0 16px" }}>{selectedEmail.resume}</p>
-                  <p style={{ margin: "0 0 16px" }}>N'hésitez pas à me contacter si vous avez besoin d'informations complémentaires.</p>
                   <p style={{ margin: 0 }}>Cordialement,<br />{selectedEmail.sender}</p>
                 </div>
               </div>
-
-              {/* Donna analysis footer */}
               <div style={{ padding: "14px 24px", borderTop: `1px solid ${BORDER}`, background: ACCENT_BG }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700 }}>D</div>
+                  <div style={{ width: 20, height: 20, borderRadius: "50%", background: TEXT, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700 }}>D</div>
                   <span style={{ fontSize: 11, fontWeight: 600, color: ACCENT }}>Analyse Donna</span>
                 </div>
                 <p style={{ fontSize: 12, color: TEXT_MUTED, lineHeight: 1.6, margin: 0 }}>{selectedEmail.resume}</p>
@@ -829,10 +1011,7 @@ function DossierDetailView({ dossier, onClose, isMobile }: {
   )
 }
 
-// ═══════════════════════════════════════════════════════
-// ─── CHAT PANEL ───
-// ═══════════════════════════════════════════════════════
-
+// ─── Chat markdown ───
 const mdComponents = {
   p: ({ children }: any) => <p style={{ margin: "0 0 6px", lineHeight: 1.65 }}>{children}</p>,
   strong: ({ children }: any) => <strong style={{ fontWeight: 600, color: TEXT }}>{children}</strong>,
@@ -841,141 +1020,1374 @@ const mdComponents = {
   ol: ({ children }: any) => <ol style={{ margin: "4px 0", paddingLeft: 16 }}>{children}</ol>,
   li: ({ children }: any) => <li style={{ marginBottom: 4, fontSize: 13 }}>{children}</li>,
   table: ({ children }: any) => <table style={{ borderCollapse: "collapse", width: "100%", margin: "8px 0", fontSize: 12 }}>{children}</table>,
-  th: ({ children }: any) => <th style={{ padding: "4px 8px", border: `1px solid ${BORDER}`, background: "#F3F4F6", fontSize: 11, fontWeight: 600 }}>{children}</th>,
+  th: ({ children }: any) => <th style={{ padding: "4px 8px", border: `1px solid ${BORDER}`, background: SIDEBAR_BG, fontSize: 11, fontWeight: 600 }}>{children}</th>,
   td: ({ children }: any) => <td style={{ padding: "4px 8px", border: `1px solid ${BORDER}` }}>{children}</td>,
   hr: () => <hr style={{ border: "none", borderTop: `1px solid ${BORDER}`, margin: "8px 0" }} />,
-  code: ({ children }: any) => <code style={{ background: "#F3F4F6", padding: "1px 4px", borderRadius: 3, fontSize: 12 }}>{children}</code>,
+  code: ({ children }: any) => <code style={{ background: SIDEBAR_BG, padding: "1px 4px", borderRadius: 3, fontSize: 12 }}>{children}</code>,
 }
 
-function DonnaChatPanel({ isOpen, onToggle, isMobile }: { isOpen: boolean; onToggle: () => void; isMobile: boolean }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME])
-  const [input, setInput] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [showSuggestions, setShowSuggestions] = useState(true)
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+// ─── DonnaVoice: affiche les lignes de Donna en séquence avec effet typing ───
+function DonnaVoice({ lines, active, onAllDone }: {
+  lines: string[]
+  active: boolean
+  onAllDone?: () => void
+}) {
+  const [lineIdx, setLineIdx] = useState(0)
+  const [typedLines, setTypedLines] = useState<string[]>([])
+  const [currentTyped, setCurrentTyped] = useState("")
+  const [allDone, setAllDone] = useState(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const scrollToBottom = useCallback(() => {
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50)
-  }, [])
+  useEffect(() => {
+    if (!active) {
+      setLineIdx(0)
+      setTypedLines([])
+      setCurrentTyped("")
+      setAllDone(false)
+      return
+    }
+    // Start typing the current line
+    let charIdx = 0
+    const line = lines[0] || ""
+    setCurrentTyped("")
+    setTypedLines([])
+    setLineIdx(0)
 
-  useEffect(() => { scrollToBottom() }, [messages, loading, scrollToBottom])
-  useEffect(() => { if (isOpen && textareaRef.current) setTimeout(() => textareaRef.current?.focus(), 300) }, [isOpen])
+    function typeLine(lIdx: number) {
+      const target = lines[lIdx]
+      if (!target) {
+        setAllDone(true)
+        onAllDone?.()
+        return
+      }
+      let ci = 0
+      setCurrentTyped("")
+      intervalRef.current = setInterval(() => {
+        ci += 1
+        setCurrentTyped(target.slice(0, ci))
+        if (ci >= target.length) {
+          clearInterval(intervalRef.current!)
+          // After 1.4s pause, move to next line
+          timeoutRef.current = setTimeout(() => {
+            setTypedLines(prev => [...prev, target])
+            setCurrentTyped("")
+            setLineIdx(lIdx + 1)
+            typeLine(lIdx + 1)
+          }, 1400)
+        }
+      }, 1000 / 35) // ~35 chars/sec
+    }
 
-  const send = async (text: string) => {
-    const trimmed = text.trim()
-    if (!trimmed || loading) return
-    setShowSuggestions(false)
-    setMessages(prev => [...prev, { role: "user", content: trimmed, ts: Date.now() }])
-    setInput("")
-    if (textareaRef.current) textareaRef.current.style.height = "auto"
-    setLoading(true)
-    await new Promise(r => setTimeout(r, 900 + Math.random() * 800))
-    setMessages(prev => [...prev, { role: "assistant", content: getDemoResponse(trimmed), ts: Date.now() }])
-    setLoading(false)
-  }
+    typeLine(0)
 
-  const handleKey = (e: React.KeyboardEvent) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input) } }
-  const autoResize = () => { const el = textareaRef.current; if (!el) return; el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px" }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [active, lines.join("|")])
 
-  // Collapsed state (desktop)
-  if (!isOpen && !isMobile) {
-    return (
-      <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-        style={{ width: 56, flexShrink: 0, borderLeft: `1px solid ${BORDER}`, background: SIDEBAR_BG, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 16, gap: 12, cursor: "pointer", position: "relative" }}
-        onClick={onToggle}
-      >
-        <div style={{ position: "relative" }}>
-          <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, fontWeight: 700 }}>D</div>
-          <div style={{ position: "absolute", bottom: -1, right: -1, width: 10, height: 10, borderRadius: "50%", background: GREEN, border: `2px solid ${SIDEBAR_BG}` }} />
+  if (!active) return null
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {typedLines.map((line, i) => (
+        <motion.div key={i} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+          style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.6 }}
+        >
+          {line}
+        </motion.div>
+      ))}
+      {currentTyped && (
+        <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.6 }}>
+          {currentTyped}
+          <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ duration: 0.65, repeat: Infinity }}
+            style={{ display: "inline-block", width: 2, height: 13, background: ACCENT, marginLeft: 2, verticalAlign: "text-bottom" }} />
         </div>
-        <div style={{ writingMode: "vertical-rl", textOrientation: "mixed", fontSize: 11, color: TEXT_MUTED, letterSpacing: "0.02em", whiteSpace: "nowrap", userSelect: "none" }}>Donna est là</div>
-        <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }} transition={{ duration: 2, repeat: Infinity }} style={{ width: 8, height: 8, borderRadius: "50%", background: ACCENT, marginTop: 4 }} />
-      </motion.div>
-    )
-  }
+      )}
+    </div>
+  )
+}
 
-  if (!isOpen && isMobile) return null
-
-  const panelStyle: React.CSSProperties = isMobile
-    ? { position: "fixed", inset: 0, zIndex: 100, background: BG, display: "flex", flexDirection: "column" }
-    : { width: 380, flexShrink: 0, borderLeft: `1px solid ${BORDER}`, display: "flex", flexDirection: "column", background: BG, height: "100%" }
+// ─── Cercle de scan unifié (réutilisé Phase A, B, C) ───
+function ScanCircle({ size, count, total, isFiltering, isFinal }: {
+  size: number
+  count: number
+  total: number
+  isFiltering?: boolean
+  isFinal?: boolean
+}) {
+  const r = (size / 2) * 0.9 - 5
+  const circumference = 2 * Math.PI * r
+  const progress = isFinal ? 1 : Math.min(1, count / total)
+  const dashOffset = circumference * (1 - progress)
+  const cx = size / 2
+  const cy = size / 2
+  const displayCount = count
 
   return (
     <motion.div
-      initial={isMobile ? { y: "100%" } : { width: 0, opacity: 0 }}
-      animate={isMobile ? { y: 0 } : { width: 380, opacity: 1 }}
-      exit={isMobile ? { y: "100%" } : { width: 0, opacity: 0 }}
-      transition={{ type: "spring", damping: 28, stiffness: 300 }}
-      style={panelStyle}
+      initial={{ scale: 0.5, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.6, ease: [0.22, 0.61, 0.36, 1] }}
+      style={{ position: "relative", width: size, height: size, flexShrink: 0 }}
     >
-      {/* Header */}
-      <div style={{ padding: isMobile ? "12px 16px" : "16px 20px", paddingTop: isMobile ? "max(12px, env(safe-area-inset-top))" : 16, borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", gap: 10, background: BG, flexShrink: 0 }}>
-        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, fontWeight: 700, flexShrink: 0 }}>D</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>Donna</div>
-          <div style={{ fontSize: 11, color: GREEN, display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: GREEN, display: "inline-block" }} /> En ligne · Mode démo
-          </div>
-        </div>
-        <button onClick={onToggle} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: TEXT_MUTED, flexShrink: 0 }}><X size={16} /></button>
-      </div>
-
-      {/* Messages */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px", WebkitOverflowScrolling: "touch" }}>
-        {messages.map((msg, i) => (
-          <div key={i} style={{ marginBottom: 16, display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start" }}>
-            {msg.role === "assistant" && (
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 8, maxWidth: "92%" }}>
-                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>D</div>
-                <div style={{ background: "#F9FAFB", borderRadius: "16px 16px 16px 4px", padding: "10px 14px", fontSize: 13, color: TEXT, lineHeight: 1.65, border: `1px solid ${BORDER}` }}>
-                  <ReactMarkdown components={mdComponents}>{msg.content}</ReactMarkdown>
-                </div>
-              </div>
-            )}
-            {msg.role === "user" && (
-              <div style={{ background: ACCENT, borderRadius: "16px 16px 4px 16px", padding: "10px 14px", fontSize: 13, color: "#fff", lineHeight: 1.65, maxWidth: "85%", boxShadow: "0 2px 8px rgba(37,99,235,0.25)" }}>{msg.content}</div>
-            )}
-          </div>
-        ))}
-        {loading && (
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 8, marginBottom: 16 }}>
-            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>D</div>
-            <div style={{ background: "#F9FAFB", borderRadius: "16px 16px 16px 4px", padding: "12px 16px", border: `1px solid ${BORDER}` }}>
-              <div style={{ display: "flex", gap: 4 }}>
-                {[0, 1, 2].map(i => <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }} transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }} style={{ width: 6, height: 6, borderRadius: "50%", background: TEXT_MUTED }} />)}
-              </div>
-            </div>
-          </div>
+      {/* Fond violet plein avec glow */}
+      <div className="donna-scan-circle" style={{
+        position: "absolute",
+        inset: 0,
+        borderRadius: "50%",
+        background: "#111111",
+        boxShadow: "0 0 20px rgba(17,17,17,0.3), 0 0 60px rgba(17,17,17,0.1)",
+      }} />
+      {/* Anneau de progression SVG par-dessus */}
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", top: 0, left: 0 }}>
+        {/* Anneau de fond semi-transparent */}
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth={size >= 100 ? 6 : 4} />
+        {/* Anneau de progression blanc */}
+        <circle
+          cx={cx} cy={cy} r={r}
+          fill="none"
+          stroke="rgba(255,255,255,0.85)"
+          strokeWidth={size >= 100 ? 6 : 4}
+          strokeLinecap="round"
+          strokeDasharray={`${circumference}`}
+          strokeDashoffset={`${dashOffset}`}
+          transform={`rotate(-90 ${cx} ${cy})`}
+          style={{ transition: isFiltering ? "stroke-dashoffset 0.8s ease" : "stroke-dashoffset 0.35s ease" }}
+        />
+      </svg>
+      {/* Texte centré */}
+      <div style={{
+        position: "absolute", inset: 0,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        pointerEvents: "none",
+      }}>
+        {isFiltering ? (
+          <motion.span
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 0.7, repeat: Infinity }}
+            style={{ fontSize: size >= 100 ? 22 : 16, fontWeight: 700, color: "#fff", lineHeight: 1 }}
+          >
+            {displayCount}
+          </motion.span>
+        ) : (
+          <span style={{ fontSize: size >= 100 ? (size >= 115 ? 28 : 22) : 16, fontWeight: 700, color: "#fff", lineHeight: 1 }}>
+            {displayCount}
+          </span>
         )}
-        {showSuggestions && messages.length === 1 && !loading && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
-            {SUGGESTIONS.map(s => (
-              <button key={s} onClick={() => send(s)}
-                style={{ textAlign: "left", padding: "8px 12px", borderRadius: 8, border: `1px solid ${BORDER}`, background: "#FAFAFA", fontSize: 12, color: TEXT_MUTED, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s", lineHeight: 1.4 }}
-                onMouseEnter={e => { (e.target as HTMLElement).style.background = ACCENT_BG; (e.target as HTMLElement).style.borderColor = "#BFDBFE"; (e.target as HTMLElement).style.color = ACCENT }}
-                onMouseLeave={e => { (e.target as HTMLElement).style.background = "#FAFAFA"; (e.target as HTMLElement).style.borderColor = BORDER; (e.target as HTMLElement).style.color = TEXT_MUTED }}
-              >{s}</button>
-            ))}
-          </div>
+        {size >= 100 && (
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.72)", marginTop: 3, letterSpacing: "0.03em" }}>
+            {isFinal ? "emails" : "emails lus"}
+          </span>
         )}
-        <div ref={bottomRef} />
-      </div>
-
-      {/* Input */}
-      <div style={{ padding: "12px 16px", paddingBottom: isMobile ? "max(16px, env(safe-area-inset-bottom))" : 16, borderTop: `1px solid ${BORDER}`, background: BG, flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 8, padding: "10px 12px", borderRadius: 12, border: `1.5px solid ${BORDER}`, background: "#FAFAFA" }}>
-          <textarea ref={textareaRef} value={input} onChange={e => { setInput(e.target.value); autoResize() }} onKeyDown={handleKey}
-            placeholder="Posez votre question à Donna..." rows={1}
-            style={{ flex: 1, border: "none", background: "transparent", resize: "none", outline: "none", fontSize: 13, color: TEXT, lineHeight: 1.5, fontFamily: "inherit", minHeight: 20, maxHeight: 120 }}
-          />
-          <button onClick={() => send(input)} disabled={!input.trim() || loading}
-            style={{ width: 32, height: 32, borderRadius: "50%", background: input.trim() && !loading ? ACCENT : "#E5E7EB", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: input.trim() && !loading ? "pointer" : "default", flexShrink: 0 }}
-          ><ArrowUp size={15} color={input.trim() && !loading ? "#fff" : TEXT_LIGHT} /></button>
-        </div>
-        <div style={{ fontSize: 10, color: TEXT_LIGHT, textAlign: "center", marginTop: 6 }}>Mode démo — données fictives à titre d'illustration</div>
       </div>
     </motion.div>
+  )
+}
+
+// ─── Cinematic Phase A: email scanning ───
+function PhaseAScanZone({ mailCount, currentEmailSubject, isMobile, donnaLines, donnaActive, isFiltering }: {
+  mailCount: number; currentEmailSubject: string; isMobile: boolean
+  donnaLines: string[]; donnaActive: boolean; isFiltering: boolean
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
+      style={{ border: `1px solid ${BORDER}`, borderRadius: 16, padding: isMobile ? "20px 16px" : "28px 32px", background: BG, boxShadow: "0 1px 3px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column", alignItems: "center" }}
+    >
+      {/* Grand cercle centré */}
+      <ScanCircle size={120} count={mailCount} total={89} isFiltering={isFiltering} isFinal={false} />
+
+      {/* Texte sous le cercle */}
+      <div style={{ marginTop: 16, textAlign: "center" }}>
+        {isFiltering ? (
+          <motion.p
+            animate={{ opacity: [0.6, 1, 0.6] }}
+            transition={{ duration: 0.8, repeat: Infinity }}
+            style={{ fontSize: 13, color: ACCENT, fontWeight: 600, margin: "0 0 8px" }}
+          >
+            Donna filtre le bruit...
+          </motion.p>
+        ) : (
+          <p style={{ fontSize: 13, color: TEXT_MUTED, margin: "0 0 8px" }}>Analyse de vos emails...</p>
+        )}
+      </div>
+
+      {/* Sujet de mail défilant */}
+      {!isFiltering && (
+        <AnimatePresence mode="wait">
+          <motion.div key={currentEmailSubject} initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.2 }}
+            style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}
+          >
+            <Mail size={11} color={TEXT_LIGHT} style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 11, color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: isMobile ? 260 : 400 }}>{currentEmailSubject}</span>
+          </motion.div>
+        </AnimatePresence>
+      )}
+
+      {/* Donna voice */}
+      {donnaActive && (
+        <div style={{ marginTop: 12, borderTop: `1px solid ${BORDER}`, paddingTop: 14, width: "100%", maxWidth: 480 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+            <div style={{ width: 20, height: 20, borderRadius: "50%", background: TEXT, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>D</div>
+            <DonnaVoice lines={donnaLines} active={donnaActive} />
+          </div>
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+// ─── Cinematic Phase B (NOUVEAU): extraction dates → calendrier ───
+
+interface CalendarExtractionItem {
+  source: "email" | "pj"
+  icon: string
+  from: string
+  text: string
+  date: string
+  dossier: string
+  color: string
+  // Parsed pour le MiniCalendar
+  parsedDate: Date
+}
+
+const CALENDAR_EXTRACTIONS: CalendarExtractionItem[] = [
+  { source: "email", icon: "📧", from: "Me Vidal (notaire)", text: "Signature compromis", date: "28 mai", dossier: "Garnier", color: DOSSIER_COLORS["d1"], parsedDate: new Date(new Date().getFullYear(), 4, 28) },
+  { source: "pj", icon: "📎", from: "Compromis_Garnier_v2.pdf", text: "Versement séquestre 10 %", date: "30 mai", dossier: "Garnier", color: DOSSIER_COLORS["d1"], parsedDate: new Date(new Date().getFullYear(), 4, 30) },
+  { source: "email", icon: "📧", from: "Marc Lemaire", text: "3 visites Yvelines", date: "24 mai", dossier: "Lemaire", color: DOSSIER_COLORS["d2"], parsedDate: new Date(new Date().getFullYear(), 4, 24) },
+  { source: "pj", icon: "📎", from: "Projet_bail_Levallois.pdf", text: "Réponse bailleur Sopra", date: "23 mai", dossier: "Bernard", color: DOSSIER_COLORS["d3"], parsedDate: new Date(new Date().getFullYear(), 4, 23) },
+  { source: "email", icon: "📧", from: "Indivision Roux", text: "Réponse acheteur", date: "25 mai", dossier: "Roux", color: DOSSIER_COLORS["d4"], parsedDate: new Date(new Date().getFullYear(), 4, 25) },
+  { source: "pj", icon: "📎", from: "Promesse_achat_fonds.pdf", text: "Réponse Préfecture licence IV", date: "8 juin", dossier: "Café du Marché", color: DOSSIER_COLORS["d5"], parsedDate: new Date(new Date().getFullYear(), 5, 8) },
+  { source: "email", icon: "📧", from: "Nexity Promoteur", text: "Livraison + état des lieux", date: "18 juin", dossier: "Atelier 7", color: DOSSIER_COLORS["d6"], parsedDate: new Date(new Date().getFullYear(), 5, 18) },
+]
+
+function PhaseCalendarExtraction({ active, isMobile }: { active: boolean; isMobile: boolean }) {
+  const [visibleCount, setVisibleCount] = useState(0)
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [showSummary, setShowSummary] = useState(false)
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+
+  useEffect(() => {
+    if (!active) {
+      setVisibleCount(0)
+      setShowCalendar(false)
+      setShowSummary(false)
+      timersRef.current.forEach(t => clearTimeout(t))
+      timersRef.current = []
+      return
+    }
+    const add = (fn: () => void, delay: number) => {
+      const t = setTimeout(fn, delay)
+      timersRef.current.push(t)
+    }
+    // 0.5s : le calendrier apparaît
+    add(() => setShowCalendar(true), 500)
+    // Chaque extraction : 2s d'intervalle, à partir de 1.5s
+    CALENDAR_EXTRACTIONS.forEach((_, i) => {
+      add(() => setVisibleCount(i + 1), 1500 + i * 2000)
+    })
+    // Après la dernière extraction + 1.5s : afficher le résumé
+    add(() => setShowSummary(true), 1500 + CALENDAR_EXTRACTIONS.length * 2000 + 1000)
+
+    return () => { timersRef.current.forEach(t => clearTimeout(t)) }
+  }, [active])
+
+  // Construire les items du calendrier progressivement
+  const calendarItems = CALENDAR_EXTRACTIONS.slice(0, visibleCount).map(ex => ({
+    date: ex.parsedDate,
+    label: ex.text,
+    dossierName: ex.dossier,
+    dossierColor: ex.color,
+    urgent: false,
+  }))
+
+  const lastExtraction = visibleCount > 0 ? CALENDAR_EXTRACTIONS[visibleCount - 1] : null
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
+      style={{ border: `1px solid ${BORDER}`, borderRadius: 16, padding: isMobile ? "20px 16px" : "24px 28px", background: BG, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+    >
+      {/* En-tête Donna */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 16 }}>
+        <div style={{ width: 22, height: 22, borderRadius: "50%", background: TEXT, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>D</div>
+        <div style={{ flex: 1 }}>
+          {!showSummary ? (
+            <motion.p
+              animate={{ opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 1.8, repeat: Infinity }}
+              style={{ fontSize: 13, color: TEXT, margin: 0, lineHeight: 1.5 }}
+            >
+              J'analyse les emails et pièces jointes pour détecter chaque échéance...
+            </motion.p>
+          ) : (
+            <motion.p
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              style={{ fontSize: 13, fontWeight: 600, color: TEXT, margin: 0 }}
+            >
+              7 dates critiques identifiées. Votre calendrier judiciaire est à jour.
+            </motion.p>
+          )}
+        </div>
+      </div>
+
+      {/* Calendrier — apparaît dès showCalendar */}
+      <AnimatePresence>
+        {showCalendar && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            style={{ border: `1px solid ${BORDER}`, borderRadius: 12, overflow: "hidden", marginBottom: 14 }}
+          >
+            <MiniCalendarCinematic deadlineItems={calendarItems} visibleCount={visibleCount} isMobile={isMobile} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Zone d'extraction — dernière ligne visible */}
+      <AnimatePresence mode="wait">
+        {lastExtraction && !showSummary && (
+          <motion.div
+            key={visibleCount}
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35 }}
+            style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 14px",
+              borderRadius: 10,
+              background: SIDEBAR_BG,
+              border: `1px solid ${BORDER}`,
+            }}
+          >
+            <span style={{ fontSize: 16, flexShrink: 0 }}>{lastExtraction.icon}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: 12, color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
+                <span style={{ fontWeight: 600, color: TEXT }}>{lastExtraction.from}</span>
+                {" → "}
+                <span style={{ fontWeight: 500, color: lastExtraction.color }}>{lastExtraction.text}</span>
+                {" "}
+                <span style={{ color: TEXT_MUTED }}>{lastExtraction.date}</span>
+              </span>
+            </div>
+            {/* Pastille animée */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.5, type: "spring", stiffness: 400, damping: 18 }}
+              style={{ width: 10, height: 10, borderRadius: "50%", background: lastExtraction.color, flexShrink: 0 }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  )
+}
+
+// ─── MiniCalendar simplifié pour la cinématique (sans interactions) ───
+function MiniCalendarCinematic({ deadlineItems, visibleCount, isMobile }: {
+  deadlineItems: { date: Date; label: string; dossierName: string; dossierColor: string; urgent: boolean }[]
+  visibleCount: number
+  isMobile: boolean
+}) {
+  const [calMonth] = useState(() => {
+    const n = new Date()
+    return new Date(n.getFullYear(), n.getMonth(), 1)
+  })
+
+  const year = calMonth.getFullYear()
+  const month = calMonth.getMonth()
+
+  const MONTH_NAMES_FULL = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+  const DAY_NAMES = ["L", "M", "M", "J", "V", "S", "D"]
+
+  const today = new Date()
+  const todayYear = today.getFullYear()
+  const todayMonth = today.getMonth()
+  const todayDate = today.getDate()
+
+  const dlMap: Record<string, typeof deadlineItems> = {}
+  deadlineItems.forEach(item => {
+    const key = `${item.date.getFullYear()}-${item.date.getMonth()}-${item.date.getDate()}`
+    if (!dlMap[key]) dlMap[key] = []
+    dlMap[key].push(item)
+  })
+
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const daysInPrevMonth = new Date(year, month, 0).getDate()
+
+  type Cell = { day: number; currentMonth: boolean; dateObj: Date }
+  const cells: Cell[] = []
+  for (let i = 0; i < firstDow; i++) {
+    const d = daysInPrevMonth - firstDow + 1 + i
+    cells.push({ day: d, currentMonth: false, dateObj: new Date(year, month - 1, d) })
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ day: d, currentMonth: true, dateObj: new Date(year, month, d) })
+  }
+  const remaining = 42 - cells.length
+  for (let d = 1; d <= remaining; d++) {
+    cells.push({ day: d, currentMonth: false, dateObj: new Date(year, month + 1, d) })
+  }
+
+  return (
+    <div style={{ background: BG, width: "100%" }}>
+      {/* Header mois */}
+      <div style={{ display: "flex", alignItems: "center", padding: "8px 12px 6px", borderBottom: `1px solid #f0f0f0` }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>
+          {MONTH_NAMES_FULL[month]} {year}
+        </span>
+      </div>
+      {/* En-têtes jours */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderBottom: `1px solid #f0f0f0` }}>
+        {DAY_NAMES.map((d, i) => (
+          <div key={i} style={{ textAlign: "center", fontSize: 10, fontWeight: 500, color: TEXT_LIGHT, padding: "4px 0", letterSpacing: "0.04em" }}>{d}</div>
+        ))}
+      </div>
+      {/* Grille */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
+        {cells.map((cell, i) => {
+          const key = `${cell.dateObj.getFullYear()}-${cell.dateObj.getMonth()}-${cell.dateObj.getDate()}`
+          const events = cell.currentMonth ? (dlMap[key] || []) : []
+          const isTodayCell = cell.currentMonth && cell.day === todayDate && month === todayMonth && year === todayYear
+          const col = i % 7
+          const row = Math.floor(i / 7)
+          const borderRight = col < 6 ? `1px solid #f0f0f0` : "none"
+          const borderBottom = row < 5 ? `1px solid #f0f0f0` : "none"
+
+          return (
+            <div key={i} style={{ borderRight, borderBottom, minHeight: isMobile ? 38 : 44, padding: "2px", boxSizing: "border-box" }}>
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <span style={{
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  width: isMobile ? 16 : 18, height: isMobile ? 16 : 18,
+                  borderRadius: "50%",
+                  fontSize: isMobile ? 10 : 11,
+                  fontWeight: isTodayCell ? 700 : 400,
+                  color: isTodayCell ? "#fff" : cell.currentMonth ? TEXT : TEXT_LIGHT,
+                  background: isTodayCell ? ACCENT : "transparent",
+                  lineHeight: 1,
+                }}>
+                  {cell.day}
+                </span>
+              </div>
+              {events.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+                  {events.map((ev, ei) => (
+                    <motion.div
+                      key={ei}
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 22, delay: ei * 0.05 }}
+                      style={{ width: isMobile ? 7 : 9, height: isMobile ? 7 : 9, borderRadius: "50%", background: ev.dossierColor, flexShrink: 0 }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Cinematic Phase C (ex-B): dossier being processed (main area) ───
+function PhaseBDossierFocus({ dossier, donnaLines, donnaActive, showCheck, dossierIdx }: {
+  dossier: typeof DOSSIERS[0]
+  donnaLines: string[]
+  donnaActive: boolean
+  showCheck: boolean
+  dossierIdx: number
+}) {
+  // Track internal progression: how many emails/docs/deadlines are visible
+  // Timeline over 9s: header 0-0.5s, emails 0.5-3s, docs 3-4.5s, deadlines 4.5-6s, check 6-7s
+  const [visibleEmails, setVisibleEmails] = useState(0)
+  const [visibleDocs, setVisibleDocs] = useState(0)
+  const [visibleDeadlines, setVisibleDeadlines] = useState(0)
+  const [showEmailSection, setShowEmailSection] = useState(false)
+  const [showDocSection, setShowDocSection] = useState(false)
+  const [showDeadlineSection, setShowDeadlineSection] = useState(false)
+
+  const internalTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+
+  // Reset and re-run when dossier changes
+  useEffect(() => {
+    // Clear previous timers
+    internalTimersRef.current.forEach(t => clearTimeout(t))
+    internalTimersRef.current = []
+
+    // Reset state
+    setVisibleEmails(0)
+    setVisibleDocs(0)
+    setVisibleDeadlines(0)
+    setShowEmailSection(false)
+    setShowDocSection(false)
+    setShowDeadlineSection(false)
+
+    if (!donnaActive) return
+
+    const add = (fn: () => void, delay: number) => {
+      const t = setTimeout(fn, delay)
+      internalTimersRef.current.push(t)
+    }
+
+    // 0.5s: show ÉCHANGES section
+    add(() => setShowEmailSection(true), 500)
+
+    // Emails appear one by one starting at 0.7s, 1.2s apart each
+    dossier.emails.forEach((_, i) => {
+      add(() => setVisibleEmails(i + 1), 700 + i * 800)
+    })
+
+    // 3s: show PIÈCES JOINTES section
+    add(() => setShowDocSection(true), 3000)
+
+    // Docs appear starting at 3.2s
+    dossier.documents.forEach((_, i) => {
+      add(() => setVisibleDocs(i + 1), 3200 + i * 700)
+    })
+
+    // 4.5s: show ÉCHÉANCES section
+    add(() => setShowDeadlineSection(true), 4500)
+
+    // Deadlines appear starting at 4.7s
+    dossier.deadlines.forEach((_, i) => {
+      add(() => setVisibleDeadlines(i + 1), 4700 + i * 650)
+    })
+
+    return () => {
+      internalTimersRef.current.forEach(t => clearTimeout(t))
+    }
+  }, [dossier.id, donnaActive])
+
+  const dossierColor = DOSSIER_COLORS[dossier.id] || INITIALS_BG
+
+  return (
+    <motion.div
+      key={dossier.id}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
+      style={{ border: `1px solid ${BORDER}`, borderRadius: 16, padding: "22px 26px", background: BG, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+    >
+      {/* Header: scan circle + dossier identity */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+        <ScanCircle size={60} count={89} total={89} isFiltering={false} isFinal={true} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, color: TEXT_LIGHT, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+            Dossier {dossierIdx + 1} / {DOSSIERS.length}
+          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            style={{ display: "flex", alignItems: "center", gap: 10 }}
+          >
+            <div style={{
+              width: 36, height: 36, borderRadius: "50%",
+              background: dossierColor,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0,
+            }}>
+              {dossier.initials}
+            </div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: TEXT }}>{dossier.name}</div>
+              <div style={{ fontSize: 12, color: TEXT_MUTED }}>{dossier.type}</div>
+            </div>
+            <AnimatePresence>
+              {showCheck && (
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                  style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}
+                >
+                  <CheckCircle2 size={18} color="#059669" />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#059669" }}>Dossier traité</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* LIVE FILL: Échanges */}
+      <AnimatePresence>
+        {showEmailSection && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            style={{ marginBottom: 16 }}
+          >
+            <div style={{ fontSize: 10, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+              <Mail size={10} />
+              Échanges
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <AnimatePresence>
+                {dossier.emails.slice(0, visibleEmails).map((email, i) => (
+                  <motion.div
+                    key={email.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      background: SIDEBAR_BG,
+                      border: `1px solid ${BORDER}`,
+                    }}
+                  >
+                    {/* Initiale expéditeur */}
+                    <div style={{
+                      width: 26, height: 26, borderRadius: "50%",
+                      background: INITIALS_BG,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 10, fontWeight: 700, color: INITIALS_TEXT, flexShrink: 0,
+                    }}>
+                      {email.sender.charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {email.sender}
+                      </div>
+                      <div style={{ fontSize: 11, color: TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {email.subject}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 10, color: TEXT_LIGHT, flexShrink: 0 }}>{email.date}</span>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* LIVE FILL: Pièces jointes */}
+      <AnimatePresence>
+        {showDocSection && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            style={{ marginBottom: 16 }}
+          >
+            <div style={{ fontSize: 10, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+              <Paperclip size={10} />
+              Pièces jointes
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <AnimatePresence>
+                {dossier.documents.slice(0, visibleDocs).map((doc) => (
+                  <motion.div
+                    key={doc.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      background: SIDEBAR_BG,
+                      border: `1px solid ${BORDER}`,
+                    }}
+                  >
+                    <FileText size={14} color={ACCENT} style={{ flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {doc.name}
+                      </div>
+                      <div style={{ fontSize: 10, color: TEXT_LIGHT }}>{doc.type} · {doc.size}</div>
+                    </div>
+                    {/* Download progress indicator — fast fade-in bar */}
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: 32 }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                      style={{ height: 3, background: "rgba(0,0,0,0.12)", borderRadius: 2, overflow: "hidden", flexShrink: 0 }}
+                    >
+                      <motion.div
+                        initial={{ width: "0%" }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: 0.45, ease: "easeOut" }}
+                        style={{ height: "100%", background: ACCENT, borderRadius: 2 }}
+                      />
+                    </motion.div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* LIVE FILL: Échéances */}
+      <AnimatePresence>
+        {showDeadlineSection && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            style={{ marginBottom: 16 }}
+          >
+            <div style={{ fontSize: 10, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+              <Calendar size={10} />
+              Échéances
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <AnimatePresence>
+                {dossier.deadlines.slice(0, visibleDeadlines).map((dl, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 22 }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      background: dl.urgent ? URGENT_BG : SIDEBAR_BG,
+                      border: `1px solid ${dl.urgent ? "rgba(255,85,85,0.25)" : BORDER}`,
+                    }}
+                  >
+                    <span style={{ fontSize: 14, flexShrink: 0 }}>{dl.urgent ? "⚠️" : "📅"}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: dl.urgent ? URGENT : TEXT }}>
+                        {dl.date}
+                      </div>
+                      <div style={{ fontSize: 11, color: TEXT_MUTED }}>{dl.label}</div>
+                    </div>
+                    {dl.urgent && (
+                      <span style={{ fontSize: 9, fontWeight: 700, color: URGENT, background: URGENT_BG, padding: "2px 6px", borderRadius: 3, letterSpacing: "0.05em", flexShrink: 0 }}>URGENT</span>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Donna voice — commentary below the live fill */}
+      {donnaActive && (
+        <div style={{ marginTop: 12, paddingTop: 14, borderTop: `1px solid ${BORDER}` }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+            <div style={{ width: 20, height: 20, borderRadius: "50%", background: TEXT, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>D</div>
+            <DonnaVoice lines={donnaLines} active={donnaActive} />
+          </div>
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+// ─── Cinematic Phase C: briefing being typed ───
+function PhaseCBriefing({ lines, active, isMobile, onAllDone }: {
+  lines: string[]; active: boolean; isMobile: boolean; onAllDone?: () => void
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
+      style={{ border: `1px solid ${BORDER}`, borderRadius: 16, padding: isMobile ? "16px" : "22px 26px", background: BG, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+        <div style={{ width: 22, height: 22, borderRadius: "50%", background: TEXT, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>D</div>
+        <div style={{ flex: 1 }}>
+          <DonnaVoice lines={lines} active={active} onAllDone={onAllDone} />
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+// ─── Calendrier style Google Calendar — grille mensuelle complète ───
+function MiniCalendar({ deadlineItems }: {
+  deadlineItems: { date: Date; label: string; dossierName: string; dossierColor: string; urgent: boolean }[]
+}) {
+  const isMobile = useIsMobile(768)
+  const [calMonth, setCalMonth] = useState(() => {
+    const n = new Date()
+    return new Date(n.getFullYear(), n.getMonth(), 1)
+  })
+  const [tooltip, setTooltip] = useState<{ key: string; x: number; y: number } | null>(null)
+  const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null)
+
+  const year = calMonth.getFullYear()
+  const month = calMonth.getMonth()
+
+  const MONTH_NAMES_FULL = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+  const MONTH_NAMES_SHORT = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
+  const DAY_NAMES = ["L", "M", "M", "J", "V", "S", "D"]
+
+  const today = new Date()
+  const todayYear = today.getFullYear()
+  const todayMonth = today.getMonth()
+  const todayDate = today.getDate()
+
+  // Build deadline map: key → items
+  const dlMap: Record<string, typeof deadlineItems> = {}
+  deadlineItems.forEach(item => {
+    const key = `${item.date.getFullYear()}-${item.date.getMonth()}-${item.date.getDate()}`
+    if (!dlMap[key]) dlMap[key] = []
+    dlMap[key].push(item)
+  })
+
+  // Build full 6-row grid (42 cells)
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7 // 0=lundi
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const daysInPrevMonth = new Date(year, month, 0).getDate()
+
+  type Cell = { day: number; currentMonth: boolean; dateObj: Date }
+  const cells: Cell[] = []
+
+  // Days from previous month
+  for (let i = 0; i < firstDow; i++) {
+    const d = daysInPrevMonth - firstDow + 1 + i
+    cells.push({ day: d, currentMonth: false, dateObj: new Date(year, month - 1, d) })
+  }
+  // Current month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ day: d, currentMonth: true, dateObj: new Date(year, month, d) })
+  }
+  // Next month days to fill 42 cells
+  const remaining = 42 - cells.length
+  for (let d = 1; d <= remaining; d++) {
+    cells.push({ day: d, currentMonth: false, dateObj: new Date(year, month + 1, d) })
+  }
+
+  // Month pill bar: current month ± 5 months
+  const pillMonths = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(todayYear, todayMonth + i - 2, 1)
+    return { year: d.getFullYear(), month: d.getMonth() }
+  })
+
+  const isCurrentMonth = year === calMonth.getFullYear() && month === calMonth.getMonth()
+
+  return (
+    <div style={{ background: BG, width: "100%", maxWidth: "100%", boxSizing: "border-box", overflow: "hidden" }}>
+      {/* En-tête : mois + année + flèches */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "10px 14px 8px",
+        borderBottom: `1px solid #f0f0f0`,
+      }}>
+        <span style={{ fontSize: 16, fontWeight: 600, color: TEXT }}>
+          {MONTH_NAMES_FULL[month]} {year}
+        </span>
+        <div style={{ display: "flex", gap: 2 }}>
+          <button
+            onClick={() => { setCalMonth(new Date(year, month - 1, 1)); setSelectedDayKey(null) }}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 7px", borderRadius: 5, color: TEXT_MUTED, display: "flex", alignItems: "center", transition: "background 0.12s" }}
+            onMouseEnter={e => (e.currentTarget.style.background = SIDEBAR_BG)}
+            onMouseLeave={e => (e.currentTarget.style.background = "none")}
+            aria-label="Mois précédent"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8L10 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+          <button
+            onClick={() => { setCalMonth(new Date(year, month + 1, 1)); setSelectedDayKey(null) }}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 7px", borderRadius: 5, color: TEXT_MUTED, display: "flex", alignItems: "center", transition: "background 0.12s" }}
+            onMouseEnter={e => (e.currentTarget.style.background = SIDEBAR_BG)}
+            onMouseLeave={e => (e.currentTarget.style.background = "none")}
+            aria-label="Mois suivant"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Barre de mois scrollable */}
+      <div style={{
+        display: "flex", gap: 4, overflowX: "auto", padding: "7px 12px",
+        borderBottom: `1px solid #f0f0f0`,
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+        WebkitOverflowScrolling: "touch",
+        boxSizing: "border-box",
+        maxWidth: "100%",
+      }}>
+        {pillMonths.map((pm, i) => {
+          const isActive = pm.year === year && pm.month === month
+          return (
+            <button
+              key={i}
+              onClick={() => { setCalMonth(new Date(pm.year, pm.month, 1)); setSelectedDayKey(null) }}
+              style={{
+                flexShrink: 0,
+                padding: "3px 10px",
+                borderRadius: 20,
+                border: isActive ? `1.5px solid ${ACCENT}` : `1px solid ${BORDER}`,
+                background: isActive ? ACCENT : "transparent",
+                color: isActive ? "#fff" : TEXT_MUTED,
+                fontSize: 11,
+                fontWeight: isActive ? 600 : 400,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: "all 0.15s",
+                whiteSpace: "nowrap" as const,
+              }}
+            >
+              {MONTH_NAMES_SHORT[pm.month]}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* En-têtes jours de semaine */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "repeat(7, 1fr)",
+        width: "100%", boxSizing: "border-box",
+        borderBottom: `1px solid #f0f0f0`,
+      }}>
+        {DAY_NAMES.map((d, i) => (
+          <div key={i} style={{
+            textAlign: "center",
+            fontSize: isMobile ? 10 : 11,
+            fontWeight: 500,
+            color: TEXT_LIGHT,
+            padding: isMobile ? "5px 0" : "6px 0",
+            letterSpacing: "0.04em",
+            boxSizing: "border-box",
+          }}>{d}</div>
+        ))}
+      </div>
+
+      {/* Grille 6x7 */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", width: "100%", boxSizing: "border-box" }}>
+        {cells.map((cell, i) => {
+          const key = `${cell.dateObj.getFullYear()}-${cell.dateObj.getMonth()}-${cell.dateObj.getDate()}`
+          const events = cell.currentMonth ? (dlMap[key] || []) : []
+          const isTodayCell = cell.currentMonth &&
+            cell.day === todayDate &&
+            month === todayMonth &&
+            year === todayYear
+          const hasEvents = events.length > 0
+          const hasUrgent = events.some(e => e.urgent)
+          const isTooltipVisible = tooltip?.key === key
+          const isSelected = selectedDayKey === key
+
+          // Border: right except last column, bottom except last row
+          const col = i % 7
+          const row = Math.floor(i / 7)
+          const borderRight = col < 6 ? `1px solid #f0f0f0` : "none"
+          const borderBottom = row < 5 ? `1px solid #f0f0f0` : "none"
+
+          return (
+            <div
+              key={i}
+              style={{
+                position: "relative",
+                borderRight,
+                borderBottom,
+                minHeight: isMobile ? 46 : 56,
+                padding: isMobile ? "2px 2px 2px" : "2px 2px 2px",
+                background: isSelected ? "#f5f5f5" : isTooltipVisible ? "#fafafa" : BG,
+                cursor: hasEvents ? "pointer" : "default",
+                transition: "background 0.1s",
+                boxSizing: "border-box",
+                overflow: isMobile ? "visible" : "hidden",
+              }}
+              onMouseEnter={e => {
+                if (hasEvents && !isMobile) {
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                  setTooltip({ key, x: rect.left, y: rect.top })
+                }
+              }}
+              onMouseLeave={() => { if (!isMobile) setTooltip(null) }}
+              onClick={() => {
+                if (!hasEvents) return
+                setSelectedDayKey(prev => prev === key ? null : key)
+              }}
+            >
+              {/* Numéro du jour — aligné en haut à droite */}
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 1 }}>
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: isMobile ? 17 : 20,
+                  height: isMobile ? 17 : 20,
+                  borderRadius: "50%",
+                  fontSize: isMobile ? 11 : 12,
+                  fontWeight: isTodayCell ? 700 : 400,
+                  color: isTodayCell ? "#fff" : cell.currentMonth ? TEXT : TEXT_LIGHT,
+                  background: isTodayCell ? ACCENT : "transparent",
+                  lineHeight: 1,
+                  flexShrink: 0,
+                }}>
+                  {cell.day}
+                </span>
+              </div>
+
+              {/* Blocs d'échéances : pastilles sur mobile ET desktop */}
+              {hasEvents && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+                  {events.slice(0, isMobile ? 3 : 4).map((ev, ei) => (
+                    <div
+                      key={ei}
+                      style={{
+                        width: isMobile ? 7 : 10,
+                        height: isMobile ? 7 : 10,
+                        borderRadius: "50%",
+                        background: ev.urgent ? URGENT : ev.dossierColor,
+                        flexShrink: 0,
+                      }}
+                    />
+                  ))}
+                  {!isMobile && events.length > 4 && (
+                    <div style={{ fontSize: 9, color: TEXT_LIGHT, lineHeight: 1 }}>
+                      +{events.length - 4}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Tooltip au survol */}
+              {isTooltipVisible && hasEvents && (
+                <div style={{
+                  position: "absolute",
+                  top: "calc(100% + 4px)",
+                  left: col >= 4 ? "auto" : 0,
+                  right: col >= 4 ? 0 : "auto",
+                  zIndex: 30,
+                  background: "#fff",
+                  border: `1px solid ${BORDER}`,
+                  borderRadius: 10,
+                  boxShadow: "0 6px 24px rgba(0,0,0,0.10)",
+                  padding: "10px 12px",
+                  minWidth: 200,
+                  maxWidth: 260,
+                  pointerEvents: "none",
+                }}>
+                  {events.map((ev, ei) => (
+                    <div key={ei} style={{
+                      display: "flex", alignItems: "flex-start", gap: 8,
+                      marginBottom: ei < events.length - 1 ? 8 : 0,
+                    }}>
+                      <div style={{
+                        width: 3, alignSelf: "stretch", borderRadius: 2,
+                        background: ev.urgent ? URGENT : ev.dossierColor,
+                        flexShrink: 0, marginTop: 2,
+                      }} />
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: TEXT, lineHeight: 1.4 }}>{ev.dossierName}</div>
+                        <div style={{ fontSize: 10, color: TEXT_MUTED, lineHeight: 1.4 }}>{ev.label}</div>
+                        {ev.urgent && (
+                          <div style={{ fontSize: 9, color: URGENT, fontWeight: 600, marginTop: 2 }}>Urgent</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Panneau détail jour sélectionné */}
+      <AnimatePresence>
+        {selectedDayKey && dlMap[selectedDayKey] && (
+          <motion.div
+            key={selectedDayKey}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.22, ease: [0.22, 0.61, 0.36, 1] }}
+            style={{
+              background: "#fff",
+              border: `1px solid #f0f0f0`,
+              borderRadius: 8,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.07)",
+              padding: "14px 16px",
+              margin: "8px 0 0",
+            }}
+          >
+            {/* En-tête panneau */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: TEXT_LIGHT, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>
+                {(() => {
+                  const parts = selectedDayKey.split("-")
+                  const d = new Date(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]))
+                  const MONTH_NAMES_FULL_LOCAL = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+                  return `${d.getDate()} ${MONTH_NAMES_FULL_LOCAL[d.getMonth()]} ${d.getFullYear()}`
+                })()}
+              </span>
+              <button
+                onClick={() => setSelectedDayKey(null)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: TEXT_LIGHT, padding: 2, display: "flex", alignItems: "center" }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Liste des échéances */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {dlMap[selectedDayKey].map((ev, ei) => {
+                const daysLeft = daysUntil(ev.date)
+                const isUrgent = daysLeft >= 0 && daysLeft < 7
+                return (
+                  <div
+                    key={ei}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 10,
+                      padding: "10px 12px",
+                      borderRadius: 7,
+                      border: `1px solid ${isUrgent ? "rgba(255,85,85,0.18)" : BORDER}`,
+                      background: isUrgent ? URGENT_BG : SIDEBAR_BG,
+                    }}
+                  >
+                    {/* Pastille couleur dossier */}
+                    <div style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: isUrgent ? URGENT : ev.dossierColor,
+                      flexShrink: 0,
+                      marginTop: 3,
+                    }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {/* Nom du dossier */}
+                      <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, marginBottom: 2 }}>{ev.dossierName}</div>
+                      {/* Type d'échéance */}
+                      <div style={{ fontSize: 12, color: TEXT_MUTED, lineHeight: 1.4, marginBottom: 4 }}>{ev.label}</div>
+                      {/* Date complète */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" as const }}>
+                        <span style={{ fontSize: 11, color: TEXT_LIGHT, display: "flex", alignItems: "center", gap: 3 }}>
+                          <Clock size={10} />
+                          {(() => {
+                            const MONTH_NAMES_FULL_LOCAL = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+                            return `${ev.date.getDate()} ${MONTH_NAMES_FULL_LOCAL[ev.date.getMonth()]} ${ev.date.getFullYear()}`
+                          })()}
+                        </span>
+                        {isUrgent && (
+                          <span style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            color: "#fff",
+                            background: URGENT,
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                            letterSpacing: "0.04em",
+                            textTransform: "uppercase" as const,
+                          }}>
+                            Urgent
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─── Section Calendrier — directement visible en phase 4 ───
+function EcheancesSection({ isMobile }: { isMobile: boolean }) {
+  // Construire les items calendrier depuis tous les dossiers
+  const calItems = DOSSIERS.flatMap(d =>
+    d.deadlines.map(dl => {
+      const parsed = parseFrenchDate(dl.date)
+      if (!parsed) return null
+      const remaining = Math.round((parsed.getTime() - new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()).getTime()) / (1000 * 60 * 60 * 24))
+      return {
+        date: parsed,
+        label: dl.label,
+        dossierName: d.name,
+        dossierColor: DOSSIER_COLORS[d.id] || "#888",
+        urgent: dl.urgent || remaining <= 7,
+      }
+    })
+  ).filter(Boolean) as { date: Date; label: string; dossierName: string; dossierColor: string; urgent: boolean }[]
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
+      style={{ marginBottom: 16 }}
+    >
+      {/* Titre de section */}
+      <div style={{ marginBottom: 10, marginTop: 2 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: TEXT_LIGHT, textTransform: "uppercase" as const, letterSpacing: "0.12em" }}>
+          VOS ÉCHÉANCES
+        </span>
+      </div>
+
+      {/* Calendrier Google Calendar style — pleine largeur */}
+      <div style={{ width: "100%", boxSizing: "border-box" }}>
+        <MiniCalendar deadlineItems={calItems} />
+
+        {/* Boutons de connexion */}
+        <div style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          gap: 8,
+          marginTop: 10,
+          justifyContent: isMobile ? "stretch" : "flex-start",
+        }}>
+          <button
+            onClick={() => console.log("Bientôt disponible")}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              padding: isMobile ? "12px 16px" : "8px 16px",
+              minHeight: isMobile ? 44 : "auto",
+              borderRadius: 8,
+              border: `1px solid #ddd`,
+              background: BG,
+              color: "#737373",
+              fontSize: 12,
+              fontWeight: 400,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              transition: "border-color 0.15s, color 0.15s, background 0.15s",
+              width: isMobile ? "100%" : "auto",
+              boxSizing: "border-box",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#bbb"; (e.currentTarget as HTMLButtonElement).style.background = "#fafafa" }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#ddd"; (e.currentTarget as HTMLButtonElement).style.background = BG }}
+          >
+            <Calendar size={12} />
+            Connecter Google Calendar
+          </button>
+          <button
+            onClick={() => console.log("Bientôt disponible")}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              padding: isMobile ? "12px 16px" : "8px 16px",
+              minHeight: isMobile ? 44 : "auto",
+              borderRadius: 8,
+              border: `1px solid #ddd`,
+              background: BG,
+              color: "#737373",
+              fontSize: 12,
+              fontWeight: 400,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              transition: "border-color 0.15s, color 0.15s, background 0.15s",
+              width: isMobile ? "100%" : "auto",
+              boxSizing: "border-box",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#bbb"; (e.currentTarget as HTMLButtonElement).style.background = "#fafafa" }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#ddd"; (e.currentTarget as HTMLButtonElement).style.background = BG }}
+          >
+            <Calendar size={12} />
+            Connecter Outlook
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+// ─── Sidebar ───
+function SidebarContent({ onDossierClick, activeDossierId, visibleDossierCount, animPhase }: {
+  onDossierClick: (d: typeof DOSSIERS[0] | null) => void
+  activeDossierId: string | null
+  visibleDossierCount: number
+  animPhase: number
+}) {
+  const visible = DOSSIERS.slice(0, visibleDossierCount)
+  const cinematicHighlight = animPhase === 2 ? DOSSIERS[Math.min(visibleDossierCount - 1, DOSSIERS.length - 1)]?.id : null
+
+  return (
+    <>
+      <div style={{ padding: "18px 14px 12px", borderBottom: `1px solid ${SIDEBAR_BORDER}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 17, color: TEXT }}>Donna</span>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#0D0D0D", color: "#FFFFFF", letterSpacing: "0.05em" }}>DÉMO</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 2.2, repeat: animPhase < 5 ? Infinity : 0 }}
+            style={{ width: 6, height: 6, borderRadius: "50%", background: animPhase < 5 ? ACCENT : GREEN, flexShrink: 0 }} />
+          <span style={{ fontSize: 11, color: TEXT_MUTED }}>
+            {animPhase < 5 ? "Analyse en cours..." : "À jour · il y a 2 min"}
+          </span>
+        </div>
+      </div>
+
+      <div style={{ padding: "10px 6px" }}>
+        <button onClick={() => onDossierClick(null)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 6, background: activeDossierId === null && animPhase >= 5 ? ACCENT_BG : "transparent", marginBottom: 2, width: "100%", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
+          <LayoutDashboard size={14} style={{ color: activeDossierId === null ? ACCENT : TEXT_MUTED, flexShrink: 0 }} />
+          <div style={{ fontSize: 13, fontWeight: activeDossierId === null ? 600 : 400, color: activeDossierId === null ? TEXT : TEXT_MUTED }}>Tableau de bord</div>
+        </button>
+      </div>
+
+      <div style={{ padding: "4px 14px 8px", flex: 1, overflowY: "auto" }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
+          Dossiers {visibleDossierCount > 0 && `(${visibleDossierCount})`}
+        </div>
+        {visible.length === 0 && (
+          <div style={{ fontSize: 11, color: TEXT_LIGHT, fontStyle: "italic", paddingLeft: 2 }}>En cours de création...</div>
+        )}
+        <AnimatePresence>
+          {visible.map((d) => {
+            const isActive = activeDossierId === d.id || (animPhase === 1 && cinematicHighlight === d.id)
+            return (
+              <motion.div key={d.id}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                onClick={() => animPhase >= 5 && onDossierClick(d)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", marginBottom: 2,
+                  cursor: animPhase >= 5 ? "pointer" : "default",
+                  borderRadius: 6,
+                  background: isActive ? ACCENT_BG : "transparent",
+                  borderLeft: isActive ? `3px solid ${ACCENT}` : "3px solid transparent",
+                  transition: "all 0.2s",
+                }}
+              >
+                <div style={{ width: 26, height: 26, borderRadius: "50%", background: DOSSIER_COLORS[d.id] || INITIALS_BG, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{d.initials}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: isActive ? 600 : 400, color: isActive ? TEXT : TEXT_MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</div>
+                  <div style={{ fontSize: 10, color: TEXT_LIGHT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.domain}</div>
+                </div>
+                {isActive && animPhase === 2 && (
+                  <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }} style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />
+                )}
+              </motion.div>
+            )
+          })}
+        </AnimatePresence>
+      </div>
+
+      <div style={{ padding: "10px 14px", borderTop: `1px solid ${SIDEBAR_BORDER}` }}>
+        <a href="https://calendly.com/contact-donna-legal/onboarding-15min" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: ACCENT, fontWeight: 500, display: "flex", alignItems: "center", gap: 5, textDecoration: "none", marginBottom: 6 }}>
+          <Mail size={11} /> Demander un essai gratuit
+        </a>
+        <Link to="/" style={{ fontSize: 11, color: TEXT_MUTED, textDecoration: "none" }}>← Retour au site</Link>
+      </div>
+    </>
   )
 }
 
@@ -983,32 +2395,183 @@ function DonnaChatPanel({ isOpen, onToggle, isMobile }: { isOpen: boolean; onTog
 // ─── MAIN PAGE ───
 // ═══════════════════════════════════════════════════════
 
-export default function DemoV2() {
+// Textes Phase A — Donna lors du scan
+const PHASE_A_DONNA_LINES = [
+  "Je me connecte à votre boîte mail et j'analyse les 30 derniers jours...",
+  "89 emails reçus ce mois-ci. Je vais les trier pour vous.",
+]
+
+// Textes Phase D (ex-C) — Donna construit le briefing
+const PHASE_C_DONNA_LINES = [
+  "Bonjour Camille. 19 emails lus. 3 tâches identifiées.",
+  "9 étaient du bruit, je m'en suis occupée. Il vous reste 3 brouillons de réponse à valider, tout est prêt.",
+]
+
+// Textes Phase E (ex-D) — ROI
+const PHASE_D_DONNA_LINES = [
+  "J'ai lu, trié et organisé les pièces jointes par dossier de 89 emails durant ces 24 dernières heures.",
+  "Demain matin à 8h, votre prochain tableau de bord sera prêt automatiquement.",
+]
+
+export default function DemoV3() {
   const isMobile = useIsMobile()
-  const [chatOpen, setChatOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [donnaTyping, setDonnaTyping] = useState(true)
-  const [showMessage, setShowMessage] = useState(false)
-  const [statsVisible, setStatsVisible] = useState(false)
   const [treatedIds, setTreatedIds] = useState<Set<number>>(new Set())
+  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null)
+  const [activeTab, setActiveTab] = useState<"todo" | "inbox">("todo")
+  const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null)
+  const [inboxPeriodFilter, setInboxPeriodFilter] = useState<"24h" | "7j" | "30j">("24h")
+  const [inboxTypeFilter, setInboxTypeFilter] = useState<"tous" | "dossiers" | "bruit">("tous")
+
+  // Collapsible tâches
+  const [tasksCollapsed, setTasksCollapsed] = useState(false)
 
   // Drawer state
   const [selectedTask, setSelectedTask] = useState<typeof TASKS[0] | null>(null)
   const [drawerMode, setDrawerMode] = useState<"view" | "draft">("view")
 
-  // Dossier detail state
+  // Dossier detail
   const [selectedDossier, setSelectedDossier] = useState<typeof DOSSIERS[0] | null>(null)
 
-  // Guided tour
-  const [showTour, setShowTour] = useState(false)
+  // ─── Animation phases ───
+  // 0 = Phase A (scan, 0-10s)
+  // 1 = Phase B (NOUVEAU calendrier, 10-26s)
+  // 2 = Phase C (dossiers, 26-80s, ~9s par dossier)
+  // 3 = Phase D (briefing, 80-94s)
+  // 4 = Phase E (ROI, 94-106s)
+  // 5 = Phase F (interactive, 106s+)
+  const [animPhase, setAnimPhase] = useState(0)
+  const [mailCount, setMailCount] = useState(0)
+  const [currentEmailIdx, setCurrentEmailIdx] = useState(0)
+  const [visibleDossierCount, setVisibleDossierCount] = useState(0)
+  const [activeCinematicDossierIdx, setActiveCinematicDossierIdx] = useState(-1)
+  const [dossierDonnaActive, setDossierDonnaActive] = useState(false)
+  const [dossierShowCheck, setDossierShowCheck] = useState(false)
+  // Phase A donna lines
+  const [phaseADonnaActive, setPhaseADonnaActive] = useState(false)
+  const [phaseAFiltering, setPhaseAFiltering] = useState(false)
+  // Phase C + D donna lines state
+  const [phaseCActive, setPhaseCActive] = useState(false)
+  const [phaseDActive, setPhaseDActive] = useState(false)
+  const [visibleTaskCount, setVisibleTaskCount] = useState(0)
+  const [roiVisible, setRoiVisible] = useState(false)
+  const [animDone, setAnimDone] = useState(false)
 
-  useEffect(() => {
-    const t1 = setTimeout(() => { setDonnaTyping(false); setShowMessage(true) }, 2200)
-    const t2 = setTimeout(() => setStatsVisible(true), 800)
-    // Show tour every time the page loads
-    const t3 = setTimeout(() => setShowTour(true), 3000)
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+  const emailIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const addTimer = useCallback((fn: () => void, delay: number) => {
+    const t = setTimeout(fn, delay)
+    timersRef.current.push(t)
+    return t
   }, [])
+
+  // ─── Skip to final state ───
+  const skipToEnd = useCallback(() => {
+    timersRef.current.forEach(t => clearTimeout(t))
+    timersRef.current = []
+    if (emailIntervalRef.current) clearInterval(emailIntervalRef.current)
+    setAnimPhase(5)
+    setMailCount(89)
+    setVisibleDossierCount(DOSSIERS.length)
+    setActiveCinematicDossierIdx(-1)
+    setDossierDonnaActive(false)
+    setDossierShowCheck(false)
+    setPhaseADonnaActive(false)
+    setPhaseAFiltering(false)
+    setPhaseCActive(false)
+    setPhaseDActive(false)
+    setVisibleTaskCount(TASKS.length)
+    setRoiVisible(true)
+    setAnimDone(true)
+  }, [])
+
+  // ─── Animation sequence ───
+  useEffect(() => {
+    // === PHASE A: 0-10s — scan emails ===
+    // 0s: start email counter
+    addTimer(() => {
+      emailIntervalRef.current = setInterval(() => {
+        setCurrentEmailIdx(i => (i + 1) % SIMULATED_EMAILS.length)
+      }, 200)
+      const milestones = [3, 8, 14, 22, 30, 40, 50, 60, 70, 78, 83, 86, 88, 89]
+      milestones.forEach((target, i) => {
+        addTimer(() => setMailCount(target), 500 + i * (8500 / milestones.length))
+      })
+    }, 300)
+
+    // 1s: Donna Phase A starts speaking
+    addTimer(() => {
+      setPhaseADonnaActive(true)
+    }, 1000)
+
+    // Dossiers appear DURING scan (progressive discovery)
+    const dossierAppearTimes = [3000, 4500, 5500, 6500, 7200, 8000]
+    dossierAppearTimes.forEach((delay, i) => {
+      addTimer(() => {
+        setVisibleDossierCount(i + 1)
+      }, delay)
+    })
+
+    // 8.5s: Phase A filtering — compteur atteint 89, Donna "filtre le bruit"
+    addTimer(() => {
+      if (emailIntervalRef.current) { clearInterval(emailIntervalRef.current); emailIntervalRef.current = null }
+      setPhaseAFiltering(true)
+    }, 8500)
+
+    // === PHASE B (NOUVEAU): 10-26s — extraction dates → calendrier ===
+    addTimer(() => {
+      if (emailIntervalRef.current) { clearInterval(emailIntervalRef.current); emailIntervalRef.current = null }
+      setAnimPhase(1)
+    }, 10000)
+
+    // === PHASE C: 26-80s — dossiers detail (~9s each for 6 dossiers) ===
+    const dossierStartTimes = [26000, 35000, 44000, 53000, 62000, 71000]
+    dossierStartTimes.forEach((delay, i) => {
+      addTimer(() => {
+        setAnimPhase(2)
+        setActiveCinematicDossierIdx(i)
+        setDossierShowCheck(false)
+        setDossierDonnaActive(false)
+        addTimer(() => {
+          setDossierDonnaActive(true)
+        }, 300)
+        addTimer(() => {
+          setDossierShowCheck(true)
+        }, 7500)
+      }, delay)
+    })
+
+    // === PHASE D: 80s — briefing construction ===
+    addTimer(() => {
+      setAnimPhase(3)
+      setActiveCinematicDossierIdx(-1)
+      setDossierDonnaActive(false)
+      setPhaseCActive(true)
+      // Tasks appear progressively
+      addTimer(() => setVisibleTaskCount(1), 3000)
+      addTimer(() => setVisibleTaskCount(2), 6000)
+      addTimer(() => setVisibleTaskCount(3), 9000)
+    }, 80000)
+
+    // === PHASE E: 94s — ROI ===
+    addTimer(() => {
+      setAnimPhase(4)
+      setRoiVisible(true)
+      setPhaseDActive(true)
+    }, 94000)
+
+    // === PHASE F: 106s — interactive ===
+    addTimer(() => {
+      setAnimPhase(5)
+      setAnimDone(true)
+    }, 106000)
+
+    return () => {
+      timersRef.current.forEach(t => clearTimeout(t))
+      if (emailIntervalRef.current) clearInterval(emailIntervalRef.current)
+    }
+  }, [addTimer])
 
   useEffect(() => { if (!isMobile) setSidebarOpen(false) }, [isMobile])
 
@@ -1022,24 +2585,34 @@ export default function DemoV2() {
       return next
     })
   }
+  const handleExpandTask = (id: number) => {
+    setExpandedTaskId(prev => prev === id ? null : id)
+  }
+
+  const currentEmailSubject = SIMULATED_EMAILS[currentEmailIdx] || ""
+  const currentCinematicDossier = activeCinematicDossierIdx >= 0 ? DOSSIERS[activeCinematicDossierIdx] : null
+  const currentDonnaLines = activeCinematicDossierIdx >= 0 ? DOSSIER_DONNA_LINES[activeCinematicDossierIdx] : []
+  const urgentRemaining = TASKS.slice(0, visibleTaskCount).filter(t => t.urgent && !treatedIds.has(t.id)).length
 
   return (
-    <div style={{ background: BG, color: TEXT, height: "100vh", fontFamily: "Inter, system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ background: "#FFFFFF", color: TEXT, height: "100vh", fontFamily: "Inter, system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+      `}</style>
 
       {/* Top bar — mobile only */}
       {isMobile && (
-        <div style={{ height: 40, background: "#F3F4F6", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", padding: "0 16px", gap: 8, flexShrink: 0 }}>
+        <div style={{ height: 40, background: BG, borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", padding: "0 16px", gap: 8, flexShrink: 0 }}>
           <button onClick={() => setSidebarOpen(o => !o)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}>
             <Menu size={18} color={TEXT_MUTED} />
           </button>
           <div style={{ flex: 1, textAlign: "center", fontSize: 13, fontWeight: 600, color: TEXT }}>Donna</div>
           <Link to="/" style={{ fontSize: 11, color: TEXT_LIGHT, textDecoration: "none", display: "flex", alignItems: "center", gap: 2 }}>
-            Landing <ChevronRight size={10} />
+            Site <ChevronRight size={10} />
           </Link>
         </div>
       )}
 
-      {/* Layout */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
 
         {/* Mobile sidebar overlay */}
@@ -1049,13 +2622,12 @@ export default function DemoV2() {
               <>
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   onClick={() => setSidebarOpen(false)}
-                  style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 50 }}
-                />
+                  style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 50 }} />
                 <motion.aside initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
                   transition={{ type: "spring", damping: 28, stiffness: 300 }}
-                  style={{ position: "fixed", top: 40, left: 0, bottom: 0, zIndex: 51, width: 260, background: SIDEBAR_BG, borderRight: `1px solid ${SIDEBAR_BORDER}`, display: "flex", flexDirection: "column", overflowY: "auto" }}
+                  style={{ position: "fixed", top: 40, left: 0, bottom: 0, zIndex: 51, width: 240, background: SIDEBAR_BG, borderRight: `1px solid ${SIDEBAR_BORDER}`, display: "flex", flexDirection: "column", overflowY: "auto" }}
                 >
-                  <SidebarContent onDossierClick={d => { setSelectedDossier(d); setSidebarOpen(false) }} activeDossierId={selectedDossier?.id || null} />
+                  <SidebarContent onDossierClick={d => { setSelectedDossier(d); setSidebarOpen(false) }} activeDossierId={selectedDossier?.id || null} visibleDossierCount={visibleDossierCount} animPhase={animPhase} />
                 </motion.aside>
               </>
             )}
@@ -1064,107 +2636,484 @@ export default function DemoV2() {
 
         {/* Desktop sidebar */}
         {!isMobile && (
-          <aside style={{ width: 220, background: SIDEBAR_BG, borderRight: `1px solid ${SIDEBAR_BORDER}`, display: "flex", flexDirection: "column", flexShrink: 0, overflowY: "auto" }}>
-            <SidebarContent onDossierClick={d => setSelectedDossier(d)} activeDossierId={selectedDossier?.id || null} />
+          <aside style={{ width: 210, background: SIDEBAR_BG, borderRight: `1px solid ${SIDEBAR_BORDER}`, display: "flex", flexDirection: "column", flexShrink: 0, overflowY: "auto" }}>
+            <SidebarContent onDossierClick={d => setSelectedDossier(d)} activeDossierId={selectedDossier?.id || null} visibleDossierCount={visibleDossierCount} animPhase={animPhase} />
           </aside>
         )}
 
-        {/* Main content — either dashboard or dossier detail */}
+        {/* Main content */}
         {selectedDossier ? (
           <DossierDetailView dossier={selectedDossier} onClose={() => setSelectedDossier(null)} isMobile={isMobile} />
         ) : (
-          <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px" : "32px 32px" }}>
-            <motion.div data-tour="briefing" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? 24 : 30, fontWeight: 400, color: TEXT, marginBottom: 4, letterSpacing: "-0.02em" }}>Bonjour, Alexandra</h1>
-              <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 24 }}>Je suis Donna, votre employée numérique · Jeudi 3 avril</p>
-            </motion.div>
+          <main style={{ flex: 1, overflowY: "auto", position: "relative", width: "100%" }}>
+          <div style={{ maxWidth: isMobile ? "100%" : 900, margin: "0 auto", padding: isMobile ? "20px 16px" : "36px 44px" }}>
 
+            {/* Header + Skip button — always visible */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}>
+                <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? 22 : 27, fontWeight: 400, color: TEXT, marginBottom: 4, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+                  Bonjour, Camille
+                </h1>
+                <p style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.4 }}>
+                  Je suis Donna, votre assistante · {getToday()}
+                </p>
+              </motion.div>
+
+              {/* Bouton Passer — toujours en haut à droite, visible jusqu'à animDone */}
+              <AnimatePresence>
+                {!animDone && (
+                  <motion.button
+                    initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
+                    transition={{ delay: 0.4, duration: 0.3 }}
+                    onClick={skipToEnd}
+                    style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 7, border: `1px solid ${BORDER}`, background: BG, color: TEXT_MUTED, fontSize: 12, cursor: "pointer", fontFamily: "inherit", flexShrink: 0, marginLeft: 16, marginTop: 4 }}
+                  >
+                    <SkipForward size={12} /> Passer
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* PHASE A: scanning zone */}
+            <AnimatePresence mode="wait">
+              {animPhase === 0 && (
+                <motion.div key="phaseA" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} style={{ marginBottom: 20 }}>
+                  <PhaseAScanZone
+                    mailCount={mailCount}
+                    currentEmailSubject={currentEmailSubject}
+                    isMobile={isMobile}
+                    donnaLines={PHASE_A_DONNA_LINES}
+                    donnaActive={phaseADonnaActive}
+                    isFiltering={phaseAFiltering}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* PHASE B (NOUVEAU): extraction dates → calendrier */}
+            <AnimatePresence mode="wait">
+              {animPhase === 1 && (
+                <motion.div key="phaseB-calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }} style={{ marginBottom: 20 }}>
+                  <PhaseCalendarExtraction active={animPhase === 1} isMobile={isMobile} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* PHASE C: dossier focus */}
+            <AnimatePresence mode="wait">
+              {animPhase === 2 && currentCinematicDossier && (
+                <motion.div key={`phaseC-${currentCinematicDossier.id}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }} style={{ marginBottom: 20 }}>
+                  <PhaseBDossierFocus
+                    dossier={currentCinematicDossier}
+                    donnaLines={currentDonnaLines}
+                    donnaActive={dossierDonnaActive}
+                    showCheck={dossierShowCheck}
+                    dossierIdx={activeCinematicDossierIdx}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* BLOC UNIQUE — Cercle emails + message Donna */}
             <AnimatePresence>
-              {statsVisible && (
-                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-                  style={{ border: `1px solid ${BORDER}`, borderRadius: 12, padding: isMobile ? "14px 16px" : "18px 22px", marginBottom: 16, display: "flex", alignItems: "center", gap: isMobile ? 12 : 20, flexWrap: "wrap" }}
-                >
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: isMobile ? 26 : 32, fontWeight: 700, color: TEXT, lineHeight: 1 }}>{treatedIds.size}</div>
-                    <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2 }}>/3</div>
-                  </div>
-                  <div style={{ width: 1, height: 36, background: BORDER }} />
-                  <div style={{ display: "flex", gap: isMobile ? 10 : 16, flex: 1, flexWrap: "wrap" }}>
-                    {[{ icon: Mail, value: "12 reçus" }, { icon: LayoutDashboard, value: "6 dossiers" }, { icon: Settings, value: "9 filtrés" }].map((s, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: TEXT_MUTED }}><s.icon size={13} /> {s.value}</div>
-                    ))}
+              {animPhase >= 3 && (
+                <motion.div key="donna-bloc" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }} style={{ marginBottom: 20 }}>
+                  <div style={{
+                    background: BG,
+                    border: `1px solid ${BORDER}`,
+                    borderRadius: 16,
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                    padding: isMobile ? "18px 16px" : "22px 24px",
+                    display: "flex",
+                    flexDirection: isMobile ? "column" : "row",
+                    alignItems: isMobile ? "flex-start" : "center",
+                    gap: isMobile ? 14 : 20,
+                  }}>
+                    {/* Indicateur emails — même cercle que la cinématique */}
+                    <button
+                      onClick={() => setActiveTab(prev => prev === "inbox" ? "todo" : "inbox")}
+                      title={activeTab === "inbox" ? "Retour aux tâches" : "Voir l'inbox complète"}
+                      style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: "50%",
+                        background: ACCENT,
+                        cursor: "pointer",
+                        padding: 0,
+                        border: "none",
+                        flexShrink: 0,
+                        transition: "all 0.25s ease",
+                        display: "flex",
+                        flexDirection: "column" as const,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.15)" }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.1)" }}
+                    >
+                      <span style={{ fontSize: 18, fontWeight: 700, color: "#fff", lineHeight: 1 }}>19</span>
+                      <span style={{ fontSize: 8, color: "rgba(255,255,255,0.75)", letterSpacing: "0.04em", textTransform: "uppercase" as const, marginTop: 2 }}>emails</span>
+                    </button>
+
+                    {/* Texte Donna */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {activeTab === "inbox" ? (
+                        /* Vue Inbox activée */
+                        <div>
+                          <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.7, margin: "0 0 8px" }}>
+                            Vous consultez votre inbox. <strong>19 emails</strong> reçus dans les dernières 24 heures.
+                          </p>
+                          <button
+                            onClick={() => setActiveTab("todo")}
+                            style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", fontSize: 12, color: ACCENT, fontFamily: "inherit", padding: 0, fontWeight: 500 }}
+                          >
+                            <ArrowLeft size={13} /> Retour aux tâches
+                          </button>
+                        </div>
+                      ) : animPhase >= 5 ? (
+                        /* Texte statique post-cinématique */
+                        <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.7, margin: 0 }}>
+                          <strong>Bonjour Camille.</strong> <strong>19 emails</strong> lus ces dernières 24h. <strong>3 tâches</strong> identifiées.
+                        </p>
+                      ) : (
+                        /* Texte animé pendant la cinématique */
+                        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: "14px 16px", background: BG }}>
+                          <PhaseCBriefing
+                            lines={PHASE_C_DONNA_LINES}
+                            active={phaseCActive}
+                            isMobile={isMobile}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5 }}
-              style={{ border: `1px solid ${BORDER}`, borderRadius: 12, padding: isMobile ? "14px 16px" : "18px 22px", marginBottom: 24 }}
-            >
-              {donnaTyping ? (
-                <div style={{ display: "flex", gap: 5, alignItems: "center", height: 20 }}>
-                  <span style={{ fontSize: 12, color: TEXT_MUTED, marginRight: 4 }}>Donna analyse...</span>
-                  {[0, 1, 2].map(i => <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }} style={{ width: 5, height: 5, borderRadius: "50%", background: TEXT_MUTED }} />)}
-                </div>
-              ) : (
-                <AnimatePresence>
-                  {showMessage && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
-                      <p style={{ fontSize: 14, color: TEXT, lineHeight: 1.7, marginBottom: 6 }}>
-                        Bonjour Alexandra, c'est Donna. J'ai trié vos <strong>12 emails</strong> ce matin — 9 étaient du bruit (newsletters, prospection), je m'en suis occupée. Il vous reste <strong>3 brouillons de réponse</strong> à valider, tout est prêt.
-                      </p>
-                      <p style={{ fontSize: 12, color: TEXT_MUTED, fontStyle: "italic" }}>Votre to-do du jour est juste en dessous.</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+
+            {/* Échéances à surveiller — visible en phase 5 (interactif) uniquement */}
+            <AnimatePresence>
+              {animPhase >= 5 && activeTab === "todo" && (
+                <motion.div key="echeances" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+                  <EcheancesSection isMobile={isMobile} />
+                </motion.div>
               )}
-            </motion.div>
+            </AnimatePresence>
 
-            <div data-tour="todos" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: TEXT_LIGHT, letterSpacing: "0.08em", textTransform: "uppercase" }}>TO-DO LIST</div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: URGENT }}>{TASKS.filter(t => t.urgent && !treatedIds.has(t.id)).length}</span>
-            </div>
+            {/* Tasks — onglet To-do list */}
+            <AnimatePresence>
+              {visibleTaskCount > 0 && animPhase >= 3 && activeTab === "todo" && (
+                <motion.div key="tasks" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} style={{ marginBottom: 8 }}>
+                  {/* Titre collapsible "Tâches créées par Donna" */}
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: tasksCollapsed ? 0 : 14, marginTop: 4, cursor: "pointer", userSelect: "none" as const }}
+                    onClick={() => setTasksCollapsed(o => !o)}
+                  >
+                    <div style={{ height: 1, flex: 1, background: BORDER }} />
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <span style={{ fontSize: 11, fontWeight: 500, color: TEXT_LIGHT, textTransform: "uppercase" as const, letterSpacing: 0.8, whiteSpace: "nowrap" as const }}>Tâches créées par Donna</span>
+                      <motion.div
+                        animate={{ rotate: tasksCollapsed ? -90 : 0 }}
+                        transition={{ duration: 0.2 }}
+                        style={{ display: "flex", alignItems: "center" }}
+                      >
+                        <ChevronDown size={12} color={TEXT_LIGHT} />
+                      </motion.div>
+                    </div>
+                    <div style={{ height: 1, flex: 1, background: BORDER }} />
+                  </div>
+                  <AnimatePresence>
+                    {!tasksCollapsed && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        style={{ overflow: "hidden" }}
+                      >
+                        {TASKS.slice(0, visibleTaskCount).map((task) => (
+                          <SlimTaskCard
+                            key={task.id}
+                            task={task}
+                            onExpand={() => handleExpandTask(task.id)}
+                            expanded={expandedTaskId === task.id}
+                            onDraft={() => handleDraft(task)}
+                            onTreat={() => handleTreat(task.id)}
+                            treated={treatedIds.has(task.id)}
+                          />
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {TASKS.map((task, i) => (
-              <TaskCard key={task.id} task={task} delay={0.6 + i * 0.15}
-                onView={() => handleView(task)}
-                onDraft={() => handleDraft(task)}
-                onTreat={() => handleTreat(task.id)}
-                treated={treatedIds.has(task.id)}
-              />
-            ))}
+            {/* Inbox — onglet Inbox */}
+            <AnimatePresence>
+              {animPhase >= 3 && activeTab === "inbox" && (
+                <motion.div key="inbox" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} style={{ marginBottom: 8 }}>
+                  {/* En-tête inbox : titre à gauche, filtres à droite */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: TEXT }}>
+                        Boîte de réception
+                      </span>
+                      <span style={{ fontSize: 11, fontWeight: 700, background: ACCENT, color: "#fff", borderRadius: 10, padding: "1px 7px", lineHeight: 1.6 }}>
+                        {INBOX_EMAILS.length}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <select
+                        value={inboxPeriodFilter}
+                        onChange={e => setInboxPeriodFilter(e.target.value as "24h" | "7j" | "30j")}
+                        style={{ fontSize: 11, color: TEXT_MUTED, background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 5, padding: "3px 8px", cursor: "pointer", fontFamily: "inherit", outline: "none" }}
+                      >
+                        <option value="24h">24h</option>
+                        <option value="7j">7 jours</option>
+                        <option value="30j">30 jours</option>
+                      </select>
+                      <select
+                        value={inboxTypeFilter}
+                        onChange={e => setInboxTypeFilter(e.target.value as "tous" | "dossiers" | "bruit")}
+                        style={{ fontSize: 11, color: TEXT_MUTED, background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 5, padding: "3px 8px", cursor: "pointer", fontFamily: "inherit", outline: "none" }}
+                      >
+                        <option value="tous">Tous</option>
+                        <option value="dossiers">Dossiers</option>
+                        <option value="bruit">Bruit</option>
+                      </select>
+                    </div>
+                  </div>
 
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5, duration: 0.6 }}
-              style={{ marginTop: 24, padding: isMobile ? "16px" : "18px 22px", borderRadius: 12, background: ACCENT_BG, border: `1px solid rgba(37,99,235,0.15)`, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: isMobile ? 80 : 0 }}
-            >
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: ACCENT, marginBottom: 4 }}>Vous aimez ce que vous voyez ?</div>
-                <div style={{ fontSize: 13, color: TEXT_MUTED }}>Connectez votre vraie boîte mail — 14 jours gratuits, sans engagement.</div>
-              </div>
-              <Link to="/contact" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", borderRadius: 8, background: ACCENT, color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none", flexShrink: 0 }}>
-                Demander un essai gratuit <Send size={13} />
-              </Link>
-            </motion.div>
+                  {/* Liste emails — style boîte mail */}
+                  {(() => {
+                    // Couleurs variées pour les avatars
+                    const AVATAR_COLORS = [
+                      { bg: "#DBEAFE", text: "#1D4ED8" }, // bleu
+                      { bg: "#D1FAE5", text: "#065F46" }, // vert
+                      { bg: "#FEE2E2", text: "#991B1B" }, // rouge
+                      { bg: "#EDE9FE", text: "#5B21B6" }, // violet
+                      { bg: "#FEF3C7", text: "#92400E" }, // ambre
+                      { bg: "#E0F2FE", text: "#0369A1" }, // bleu ciel
+                      { bg: "#FCE7F3", text: "#9D174D" }, // rose
+                      { bg: "#F3F4F6", text: "#374151" }, // gris
+                    ]
+                    // Assigne une couleur fixe par expéditeur (hash simple)
+                    function getAvatarColor(sender: string) {
+                      let h = 0
+                      for (let i = 0; i < sender.length; i++) h = (h * 31 + sender.charCodeAt(i)) & 0xffff
+                      return AVATAR_COLORS[h % AVATAR_COLORS.length]
+                    }
+
+                    const d0 = getDaysAgo(0)
+                    const d1 = getDaysAgo(1)
+
+                    const filtered = INBOX_EMAILS.filter(email => {
+                      if (inboxTypeFilter === "dossiers" && email.isBruit) return false
+                      if (inboxTypeFilter === "bruit" && !email.isBruit) return false
+                      if (inboxPeriodFilter === "24h") {
+                        return email.date === d0 || email.date === d1
+                      }
+                      if (inboxPeriodFilter === "7j") {
+                        const days7 = Array.from({ length: 8 }, (_, i) => getDaysAgo(i))
+                        return days7.includes(email.date)
+                      }
+                      return true
+                    })
+
+                    if (filtered.length === 0) {
+                      return (
+                        <div style={{ padding: "32px 16px", textAlign: "center", color: TEXT_MUTED, fontSize: 13 }}>
+                          Aucun email sur cette période.
+                        </div>
+                      )
+                    }
+
+                    return (
+                      <div style={{ marginTop: 12, border: `1px solid ${BORDER}`, borderRadius: 12, background: BG, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+                        {filtered.map((email, idx) => {
+                          const isUnread = email.date === d0 || email.date === d1
+                          const isExpanded = expandedEmailId === email.id
+                          const avatar = getAvatarColor(email.sender)
+                          const isLast = idx === filtered.length - 1
+
+                          return (
+                            <div key={email.id} style={{ borderBottom: isLast ? "none" : "1px solid rgba(0,0,0,0.04)" }}>
+                              {/* Ligne principale — style Gmail */}
+                              <div
+                                onClick={() => setExpandedEmailId(prev => prev === email.id ? null : email.id)}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 10,
+                                  padding: "9px 14px",
+                                  cursor: "pointer",
+                                  background: isExpanded ? SIDEBAR_BG : "transparent",
+                                  transition: "background 0.12s",
+                                }}
+                                onMouseEnter={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = SIDEBAR_BG }}
+                                onMouseLeave={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = "transparent" }}
+                              >
+                                {/* Point non lu */}
+                                <div style={{ width: 8, flexShrink: 0, display: "flex", justifyContent: "center" }}>
+                                  {isUnread && (
+                                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#0D0D0D" }} />
+                                  )}
+                                </div>
+
+                                {/* Avatar initiale */}
+                                <div style={{
+                                  width: 32, height: 32, borderRadius: "50%",
+                                  background: avatar.bg,
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  fontSize: 12, fontWeight: 700, color: avatar.text,
+                                  flexShrink: 0,
+                                }}>
+                                  {email.sender.charAt(0).toUpperCase()}
+                                </div>
+
+                                {/* Contenu : expéditeur + objet */}
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  {/* Ligne 1 : expéditeur + date */}
+                                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 1 }}>
+                                    <span style={{
+                                      fontSize: 13,
+                                      fontWeight: isUnread ? 700 : 400,
+                                      color: "#111827",
+                                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                      maxWidth: "60%",
+                                    }}>
+                                      {email.sender}
+                                    </span>
+                                    <span style={{ fontSize: 11, color: TEXT_LIGHT, flexShrink: 0, fontWeight: isUnread ? 600 : 400 }}>
+                                      {email.date}
+                                    </span>
+                                  </div>
+                                  {/* Ligne 2 : objet */}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <span style={{
+                                      fontSize: 12,
+                                      color: isUnread ? TEXT : TEXT_MUTED,
+                                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                      flex: 1,
+                                    }}>
+                                      {email.subject}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Expand : contenu de l'email */}
+                              <AnimatePresence>
+                                {isExpanded && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.22 }}
+                                    style={{ overflow: "hidden" }}
+                                  >
+                                    <div style={{
+                                      padding: "16px 20px 18px 54px",
+                                      borderTop: `1px solid ${BORDER}`,
+                                      borderLeft: `3px solid ${ACCENT}`,
+                                      background: SIDEBAR_BG,
+                                    }}>
+                                      {/* En-tête email */}
+                                      <div style={{ marginBottom: 14, fontSize: 12, lineHeight: 1.9 }}>
+                                        <div>
+                                          <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 44 }}>De</span>
+                                          <span style={{ fontWeight: 600, color: TEXT }}>{email.sender}</span>
+                                        </div>
+                                        <div>
+                                          <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 44 }}>Date</span>
+                                          <span style={{ color: TEXT }}>{email.date}</span>
+                                        </div>
+                                        <div>
+                                          <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 44 }}>Objet</span>
+                                          <span style={{ color: TEXT, fontWeight: 500 }}>{email.subject}</span>
+                                        </div>
+                                        {email.dossier && (
+                                          <div>
+                                            <span style={{ color: TEXT_LIGHT, display: "inline-block", minWidth: 44 }}>Dossier</span>
+                                            <span style={{ fontSize: 11, color: ACCENT, background: ACCENT_BG, borderRadius: 4, padding: "1px 7px", fontWeight: 600 }}>{email.dossier}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      {/* Corps */}
+                                      <p style={{ fontSize: 13, color: TEXT, lineHeight: 1.8, margin: 0 }}>
+                                        {email.resume}
+                                      </p>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* PHASE D: ROI — Encart élégant style DemoV2 */}
+            <AnimatePresence>
+              {roiVisible && (
+                <motion.div key="roi"
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1], delay: 0.2 }}
+                  style={{ marginTop: 24, padding: isMobile ? "18px 16px" : "22px 26px", borderRadius: 16, background: ACCENT_BG, border: `1px solid ${BORDER}` }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                    {/* Icône Donna */}
+                    <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>D</div>
+                    <div style={{ flex: 1 }}>
+                      {/* Texte principal en gras */}
+                      <div style={{ fontSize: isMobile ? 15 : 16, fontWeight: 700, color: TEXT, marginBottom: 8, lineHeight: 1.3 }}>
+                        89 emails lus, triés et classés en 4 minutes
+                      </div>
+                      {/* Sous-texte */}
+                      <p style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.65, margin: "0 0 10px" }}>
+                        Donna a organisé vos pièces jointes par dossier et identifié 3 actions prioritaires.
+                      </p>
+                      {/* Texte DonnaVoice si cinématique active */}
+                      {phaseDActive && !animDone && (
+                        <DonnaVoice lines={PHASE_D_DONNA_LINES} active={phaseDActive} />
+                      )}
+                      {/* Dernière ligne après cinématique */}
+                      {(animDone || !phaseDActive) && (
+                        <p style={{ fontSize: 12, color: TEXT_LIGHT, margin: 0 }}>
+                          Demain matin à 8h, votre prochain tableau de bord sera prêt.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* PHASE E: CTA */}
+            <AnimatePresence>
+              {animDone && (
+                <motion.div key="cta"
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1], delay: 0.3 }}
+                  style={{ marginTop: 24, padding: isMobile ? "18px" : "22px 28px", borderRadius: 16, background: "#0D0D0D", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, marginBottom: isMobile ? 24 : 0 }}
+                >
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 5 }}>Vous aimez ce que vous voyez ?</div>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>Connectez votre boîte mail professionnelle — 7 jours gratuits.</div>
+                  </div>
+                  <a href="https://calendly.com/contact-donna-legal/onboarding-15min" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "10px 24px", borderRadius: 8, background: "#FFFFFF", color: "#0D0D0D", fontSize: 13, fontWeight: 500, textDecoration: "none", flexShrink: 0 }}>
+                    Demander un essai gratuit <Send size={13} />
+                  </a>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           </main>
-        )}
-
-        {/* Chat panel */}
-        <div data-tour="chat">
-          <AnimatePresence mode="wait">
-            <DonnaChatPanel key={chatOpen ? "open" : "closed"} isOpen={chatOpen} onToggle={() => setChatOpen(o => !o)} isMobile={isMobile} />
-          </AnimatePresence>
-        </div>
-
-        {/* Mobile floating bubble */}
-        {isMobile && !chatOpen && (
-          <motion.button initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 1, type: "spring", stiffness: 300, damping: 20 }}
-            onClick={() => setChatOpen(true)}
-            style={{ position: "fixed", bottom: 20, right: 20, zIndex: 40, width: 56, height: 56, borderRadius: "50%", background: ACCENT, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 20px rgba(37,99,235,0.35)" }}
-          >
-            <MessageCircle size={24} color="#fff" />
-            <div style={{ position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#EF4444", border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff" }}>1</div>
-          </motion.button>
         )}
 
         {/* Email drawer */}
@@ -1173,101 +3122,7 @@ export default function DemoV2() {
             <EmailDrawer task={selectedTask} mode={drawerMode} onClose={() => setSelectedTask(null)} isMobile={isMobile} />
           )}
         </AnimatePresence>
-
-        {/* Guided tour */}
-        {showTour && (
-          <GuidedTour
-            steps={[
-              {
-                target: "briefing",
-                title: "Votre briefing quotidien",
-                text: "Chaque matin — ou à n'importe quelle heure — Donna a déjà lu tous vos emails. Elle résume l'essentiel et prépare votre journée. Donna travaille 24h/24, 7j/7.",
-              },
-              {
-                target: "dossiers",
-                title: "Vos dossiers organisés",
-                text: "Donna classe automatiquement chaque email dans le bon dossier client. Les spams sont filtrés, les pièces jointes téléchargées et résumées. Cliquez sur un dossier pour tout voir.",
-              },
-              {
-                target: "todos",
-                title: "Brouillons prêts à envoyer",
-                text: "Donna génère instantanément des brouillons de réponse à partir de ce qu'elle a lu. Cliquez sur « Brouillon » pour relire, modifier et envoyer en un clic.",
-              },
-              {
-                target: "chat",
-                title: "Posez vos questions à Donna",
-                text: "Besoin d'un détail sur un dossier ? D'un résumé d'une pièce jointe ? Donna connaît tout votre cabinet — posez-lui la question directement ici.",
-              },
-              {
-                target: null,
-                title: "Donna est proactive",
-                text: "Donna ne dort jamais. Quand un email arrive, elle le range, le résume et prépare la réponse. Vous gardez le contrôle — Donna fait le travail.",
-              },
-            ]}
-            onComplete={() => {
-              setShowTour(false)
-              completeDemoTour()
-            }}
-          />
-        )}
       </div>
     </div>
-  )
-}
-
-// ─── Sidebar content ───
-function SidebarContent({ onDossierClick, activeDossierId }: { onDossierClick: (d: typeof DOSSIERS[0]) => void; activeDossierId: string | null }) {
-  return (
-    <>
-      <div style={{ padding: "20px 16px 12px", borderBottom: `1px solid ${SIDEBAR_BORDER}` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 18, color: TEXT }}>Donna</span>
-          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: ACCENT_BG, color: ACCENT, letterSpacing: "0.05em" }}>DÉMO</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: GREEN }} />
-          <span style={{ fontSize: 11, color: TEXT_MUTED }}>À jour · Dernière analyse il y a 2 min</span>
-        </div>
-      </div>
-      <div style={{ padding: "12px 8px" }}>
-        <button onClick={() => onDossierClick(null as any)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 8px", borderRadius: 6, background: !activeDossierId ? "#F3F4F6" : "transparent", marginBottom: 2, width: "100%", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
-          <LayoutDashboard size={15} style={{ color: !activeDossierId ? TEXT : TEXT_MUTED }} />
-          <div>
-            <div style={{ fontSize: 13, fontWeight: !activeDossierId ? 600 : 400, color: !activeDossierId ? TEXT : TEXT_MUTED }}>Briefing</div>
-            <div style={{ fontSize: 10, color: TEXT_MUTED }}>Votre journée en un coup d'œil</div>
-          </div>
-        </button>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 8px", borderRadius: 6, marginBottom: 2 }}>
-          <Settings size={15} style={{ color: TEXT_MUTED }} />
-          <div>
-            <div style={{ fontSize: 13, color: TEXT_MUTED }}>Configurez-moi</div>
-            <div style={{ fontSize: 10, color: TEXT_LIGHT }}>Personnalisez votre assistante</div>
-          </div>
-        </div>
-      </div>
-      <div data-tour="dossiers" style={{ padding: "8px 16px", flex: 1 }}>
-        <div style={{ fontSize: 10, fontWeight: 600, color: TEXT_LIGHT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Dossiers</div>
-        {DOSSIERS.map((d, i) => (
-          <motion.div key={d.name} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.08, duration: 0.4 }}
-            onClick={() => onDossierClick(d)}
-            style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", marginBottom: 2, cursor: "pointer", borderRadius: 6, background: activeDossierId === d.id ? "#F3F4F6" : "transparent", transition: "background 0.15s" }}
-            onMouseEnter={e => { if (activeDossierId !== d.id) e.currentTarget.style.background = "#F9FAFB" }}
-            onMouseLeave={e => { if (activeDossierId !== d.id) e.currentTarget.style.background = "transparent" }}
-          >
-            <div style={{ width: 26, height: 26, borderRadius: "50%", background: d.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{d.initials}</div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: activeDossierId === d.id ? 600 : 500, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</div>
-              <div style={{ fontSize: 10, color: TEXT_MUTED }}>{d.type}</div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-      <div style={{ padding: "12px 16px", borderTop: `1px solid ${SIDEBAR_BORDER}` }}>
-        <Link to="/contact" style={{ fontSize: 12, color: ACCENT, fontWeight: 500, marginBottom: 6, display: "flex", alignItems: "center", gap: 5, textDecoration: "none" }}>
-          <Mail size={12} /> Demander un essai gratuit
-        </Link>
-        <Link to="/" style={{ fontSize: 12, color: TEXT_MUTED, textDecoration: "none" }}>← Retour au site</Link>
-      </div>
-    </>
   )
 }
